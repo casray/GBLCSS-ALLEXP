@@ -43,6 +43,6 @@ GB-LCSS and related GB–GCL research archive, assembled on 2026-10-21 from the 
 ## Integrity / 完整性
 
 源文件复制前后SHA-256一致，原实验文件不改动。上传完成后核对Git树中的文件字节与清单。
-归档脚本及范围规则在 [tools/](tools/)，上传状态与远端核验信息随后写入仓库记录。
+归档脚本及范围规则在 [tools/](tools/)，完整上传状态与远端核验见 [UPLOAD_STATUS.md](UPLOAD_STATUS.md)。
 
 另有9份下载目录中的GB-LCSS稿件原件，见 [补充材料](supplemental/README.md) 和独立校验清单。
