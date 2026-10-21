@@ -1,0 +1,336 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>Coverage-Aware Granular Ball Denoising - Experiment Plan</title>
+<style>
+  body { font-family: 'Segoe UI', sans-serif; max-width: 1100px; margin: 0 auto; padding: 20px; background: #f8f9fa; color: #333; }
+  h1 { color: #1a1a2e; border-bottom: 3px solid #e94560; padding-bottom: 10px; }
+  h2 { color: #16213e; margin-top: 40px; border-left: 4px solid #e94560; padding-left: 12px; }
+  h3 { color: #0f3460; }
+  table { border-collapse: collapse; width: 100%; margin: 16px 0; }
+  th, td { border: 1px solid #ddd; padding: 10px 14px; text-align: left; }
+  th { background: #16213e; color: white; }
+  tr:nth-child(even) { background: #f2f2f2; }
+  .phase { background: #fff; border-radius: 8px; padding: 20px; margin: 20px 0; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+  .gate-pass { color: #27ae60; font-weight: bold; }
+  .gate-fail { color: #e74c3c; font-weight: bold; }
+  .priority-high { background: #ffeaa7; }
+  .priority-low { background: #dfe6e9; }
+  code { background: #e8e8e8; padding: 2px 6px; border-radius: 3px; font-size: 0.95em; }
+  pre { background: #2d2d2d; color: #f8f8f2; padding: 16px; border-radius: 6px; overflow-x: auto; font-size: 0.9em; }
+  .warn { background: #fff3cd; border-left: 4px solid #ffc107; padding: 12px 16px; margin: 12px 0; }
+  .info { background: #d1ecf1; border-left: 4px solid #17a2b8; padding: 12px 16px; margin: 12px 0; }
+  .success { background: #d4edda; border-left: 4px solid #28a745; padding: 12px 16px; margin: 12px 0; }
+  .formula { background: #fff; border: 1px solid #ddd; padding: 12px; margin: 10px 0; font-family: 'Cambria Math', serif; font-size: 1.05em; text-align: center; }
+</style>
+</head>
+<body>
+
+<h1>Coverage-Aware Granular Ball Denoising</h1>
+<div class="warn">
+<strong>2026-06-22 状态更新（覆盖下方旧执行顺序）</strong>：
+Phase A 的 coverage-aware gating 已判负，Phase B 不再推进。当前任务切换为修正 NoisyGL 协议并补充 2025 最新基线。旧标准 runner 实际污染全图标签并使用 noisy validation，由其产生的历史 NoisyGL/XH/TFR 数字全部标记为 legacy，不进入新主表。
+</div>
+<p><strong>项目目标</strong>：在当前已验证的 C1 (GRACE + GB 去噪) 基础上，加入 coverage-aware gating 机制，使算法与 CGBC/GBmooer 产生明确差异，并与图节点去噪领域的 baseline 对比。</p>
+
+<div class="success">
+<strong>已有成果 (C1 ratio-split 5-seed)</strong>：Cora C1=0.748±0.018 (vs noball +19.3pp)，CiteSeer C1=0.571±0.026 (vs noball +14.8pp)。所有 paired delta 5/5 正。机制验证通过。
+</div>
+
+<div class="warn">
+<strong>核心问题</strong>：当前 C1 的多数投票/label smoothing/intra-inter 和 CGBC/GBmooer 高度相似。论文 novelty 不足。需要加入图节点场景特有的 coverage-aware 机制。
+</div>
+
+<!-- ============================================================ -->
+<h2>Phase A: Coverage-Aware Gated Soft Correction (最高优先级)</h2>
+<!-- ============================================================ -->
+<div class="phase">
+
+<h3>A.1 算法改动</h3>
+<p>在 <code>losses.py</code> 中新增 <code>gated_ball_soft_correction</code> 函数，替代当前的 <code>ball_majority_vote</code>：</p>
+
+<div class="formula">
+  y_soft_i = (1 - &alpha;) &middot; onehot(y_noisy_i) + &alpha; &middot; p_B(i)<br>
+  <strong>仅当</strong> n_train(B_i) &ge; &tau;<sub>cov</sub> <strong>且</strong> margin(B_i) &ge; &tau;<sub>conf</sub> 时启用<br>
+  否则保留 onehot(y_noisy_i)
+</div>
+
+<p>其中：</p>
+<ul>
+  <li><code>p_B(i)</code> = 球 B_i 内 train 节点 noisy label 的归一化分布（现有 <code>ball_label_smoothing</code> 已实现）</li>
+  <li><code>n_train(B_i)</code> = 球内 train 节点数量</li>
+  <li><code>margin(B_i)</code> = 最高票数 / 总票数（多数投票的置信度）</li>
+  <li><code>&tau;<sub>cov</sub></code> = coverage 阈值（默认 3）</li>
+  <li><code>&tau;<sub>conf</sub></code> = confidence 阈值（默认 0.6）</li>
+  <li><code>&alpha;</code> = soft correction 强度（默认 0.3，区别于现有的 label_smoothing=0.1）</li>
+</ul>
+
+<h3>A.2 需要修改的文件</h3>
+<table>
+  <tr><th>文件</th><th>改动</th></tr>
+  <tr><td><code>src/gb_stage_b/losses.py</code></td><td>新增 <code>gated_ball_soft_correction(assignment, noisy_labels, reliable_balls, num_classes, train_mask, tau_cov, tau_conf, alpha)</code> 函数</td></tr>
+  <tr><td><code>src/gb_stage_b/config.py</code></td><td>新增方法 <code>C1_gated</code>；新增字段 <code>gate_tau_cov</code>(int, default 3), <code>gate_tau_conf</code>(float, default 0.6), <code>gate_alpha</code>(float, default 0.3)</td></tr>
+  <tr><td><code>src/gb_stage_b/train.py</code></td><td><code>C1_gated</code> 方法使用 <code>gated_ball_soft_correction</code> 替代 <code>ball_majority_vote + ball_label_smoothing</code></td></tr>
+  <tr><td><code>src/gb_stage_b/cli.py</code></td><td>新增 CLI 参数 <code>--gate-tau-cov</code>, <code>--gate-tau-conf</code>, <code>--gate-alpha</code></td></tr>
+  <tr><td><code>tests/test_losses.py</code></td><td>新增 gated correction 单元测试（gate 通过/不通过的行为）</td></tr>
+</table>
+
+<h3>A.3 Seed0 Smoke 实验</h3>
+<table>
+  <tr><th>方法</th><th>说明</th><th>验证什么</th></tr>
+  <tr class="priority-high"><td><code>C1_gated</code></td><td>coverage gate + confidence gate + soft correction</td><td>gating 是否比 hard majority vote 更好</td></tr>
+  <tr><td><code>C1</code></td><td>当前方法（hard majority vote）</td><td>baseline 对照</td></tr>
+  <tr><td><code>C1_gated_noball</code></td><td>无球，只用 noisy CE</td><td>C1_gated 的增量是否真实</td></tr>
+  <tr><td><code>C1_gated_shuffled</code></td><td>shuffled ball + gated correction</td><td>球结构是否真贡献</td></tr>
+</table>
+
+<p><strong>实验设置</strong>：Cora, train_ratio=0.2, val_ratio=0.1, noise_rate=0.4 (symmetric), seed=0</p>
+
+<pre>
+# C1_gated smoke
+python -m gb_stage_b.cli run --config configs/stage_c_smoke.yaml \
+  --method C1_gated --dataset Cora --split-mode ratio \
+  --train-ratio 0.2 --val-ratio 0.1 --noise-rate 0.4 --seed 0 \
+  --gate-tau-cov 3 --gate-tau-conf 0.6 --gate-alpha 0.3 \
+  --results-dir results_phase_a
+
+# C1 baseline (已有结果可直接引用)
+# C1_gated_noball / C1_gated_shuffled 同上改 --method
+</pre>
+
+<h3>A.4 通过门</h3>
+<table>
+  <tr><th>Gate</th><th>条件</th><th>通过</th><th>失败</th></tr>
+  <tr>
+    <td>GA1</td>
+    <td>C1_gated test_acc &ge; C1 test_acc</td>
+    <td class="gate-pass">进入 Phase B 或直接 Phase D</td>
+    <td class="gate-fail">调参 tau_cov/tau_conf/alpha，最多 3 轮</td>
+  </tr>
+  <tr>
+    <td>GA2</td>
+    <td>C1_gated &gt; C1_gated_shuffled + 5pp</td>
+    <td class="gate-pass">球结构贡献确认</td>
+    <td class="gate-fail">检查 gate 是否过松</td>
+  </tr>
+  <tr>
+    <td>GA3</td>
+    <td>C1_gated &gt; C1_gated_noball + 10pp</td>
+    <td class="gate-pass">粒球去噪增量确认</td>
+    <td class="gate-fail">检查 soft correction 实现</td>
+  </tr>
+</table>
+
+</div>
+
+<!-- ============================================================ -->
+<h2>Phase B: Graph-Supported Coverage Compensation (Phase A 通过后)</h2>
+<!-- ============================================================ -->
+<div class="phase">
+
+<h3>B.1 算法改动</h3>
+<p>在 <code>losses.py</code> 中新增 <code>graph_neighbor_soft_prior</code>：</p>
+
+<div class="formula">
+  graph_prior_i = mean( onehot(y_noisy_j) ) &nbsp; for j &isin; N<sub>1-hop</sub>(i) &cap; train_mask
+</div>
+
+<p>agreement gate：</p>
+<div class="formula">
+  启用 soft correction 的额外条件：argmax(graph_prior_i) == argmax(p_B(i))
+</div>
+
+<div class="warn">
+<strong>关键约束</strong>：
+<ul>
+  <li>只用 1-hop 邻居，不做多步传播（避免噪声扩散）</li>
+  <li>只看 train_mask 邻居（避免标签泄漏）</li>
+  <li>graph prior 只作为 agreement 验证，不直接参与 target 构造</li>
+  <li>如果节点无 train 邻居，agreement gate 自动通过（回退到 Phase A 的 coverage+confidence gate）</li>
+</ul>
+</div>
+
+<h3>B.2 需要修改的文件</h3>
+<table>
+  <tr><th>文件</th><th>改动</th></tr>
+  <tr><td><code>src/gb_stage_b/losses.py</code></td><td>新增 <code>graph_neighbor_soft_prior(edge_index, noisy_labels, num_classes, train_mask)</code></td></tr>
+  <tr><td><code>src/gb_stage_b/config.py</code></td><td>新增方法 <code>C1_graph_coverage</code>；新增字段 <code>use_graph_agreement</code>(bool, default False)</td></tr>
+  <tr><td><code>src/gb_stage_b/train.py</code></td><td><code>C1_graph_coverage</code> 方法在 gated correction 基础上加 agreement check</td></tr>
+  <tr><td><code>tests/test_losses.py</code></td><td>新增 graph prior 和 agreement gate 测试</td></tr>
+</table>
+
+<h3>B.3 Seed0 Smoke 实验</h3>
+<table>
+  <tr><th>方法</th><th>说明</th><th>验证什么</th></tr>
+  <tr class="priority-high"><td><code>C1_graph_coverage</code></td><td>ball + coverage gate + graph agreement</td><td>完整方法</td></tr>
+  <tr><td><code>C1_graph_only</code></td><td>只用 graph prior 做 soft correction，无球</td><td>图传播单独够不够</td></tr>
+  <tr><td><code>C1_gated</code></td><td>Phase A 的最佳结果</td><td>graph agreement 有没有额外增量</td></tr>
+  <tr><td><code>C1_graph_shuffled</code></td><td>shuffled ball + graph agreement</td><td>球结构在 graph agreement 下还有无贡献</td></tr>
+</table>
+
+<h3>B.4 通过门</h3>
+<table>
+  <tr><th>Gate</th><th>条件</th><th>通过</th><th>失败</th></tr>
+  <tr>
+    <td>GB1</td>
+    <td>C1_graph_coverage &ge; C1_gated</td>
+    <td class="gate-pass">graph agreement 有效，用 C1_graph_coverage 作为主方法</td>
+    <td class="gate-fail">graph agreement 无增量，用 C1_gated 作为主方法（论文不写图传播）</td>
+  </tr>
+  <tr>
+    <td>GB2</td>
+    <td>C1_graph_coverage &gt; C1_graph_only</td>
+    <td class="gate-pass">粒球在有图传播时仍有独立贡献</td>
+    <td class="gate-fail">粒球被图传播取代，严重问题，需要重新评估</td>
+  </tr>
+</table>
+
+<div class="info">
+<strong>决策点</strong>：Phase B 的 GB1 失败不是灾难。如果 C1_gated 本身就很好，论文可以不写图传播，只写 coverage-aware gated correction。图传播可以放在 ablation 里作为"进一步提升不显著"的分析。
+</div>
+
+</div>
+
+<!-- ============================================================ -->
+<h2>Phase C: 外部 Baseline 对比 (Phase A/B 确定主方法后)</h2>
+<!-- ============================================================ -->
+<div class="phase">
+
+<h3>C.1 需要对比的方法</h3>
+<table>
+  <tr><th>类别</th><th>方法</th><th>来源</th><th>优先级</th></tr>
+  <tr class="priority-high"><td>基础</td><td>GCN + CE (noisy labels)</td><td>自行实现或 NoisyGL</td><td>必须</td></tr>
+  <tr class="priority-high"><td>基础</td><td>GCN + CE (clean labels, oracle)</td><td>自行实现</td><td>必须 (upper bound)</td></tr>
+  <tr class="priority-high"><td>Robust loss</td><td>GCN + SCE</td><td>已有实现 (C2_sce_noball)</td><td>必须</td></tr>
+  <tr class="priority-high"><td>图去噪</td><td>NRGNN</td><td>NoisyGL</td><td>必须</td></tr>
+  <tr class="priority-high"><td>图去噪</td><td>RTGNN</td><td>NoisyGL</td><td>必须</td></tr>
+  <tr class="priority-high"><td>对比学习去噪</td><td>CLNode</td><td>NoisyGL</td><td>必须 (最相似的方法)</td></tr>
+  <tr><td>图去噪</td><td>PIGNN</td><td>NoisyGL</td><td>建议</td></tr>
+  <tr><td>通用抗噪</td><td>Co-teaching</td><td>NoisyGL</td><td>建议</td></tr>
+  <tr><td>传播类</td><td>Correct &amp; Smooth (C&amp;S)</td><td>PyG 内置</td><td>建议</td></tr>
+  <tr><td>Robust loss</td><td>GCE / Forward / Backward</td><td>NoisyGL</td><td>可选</td></tr>
+</table>
+
+<div class="warn">
+<strong>关键</strong>：所有 baseline 必须使用相同实验设置 (train_ratio=0.2, val_ratio=0.1, symm noise 0.4, 5 seeds)。如果 NoisyGL 默认用 Planetoid split，需要修改其 split 逻辑或自行实现。
+</div>
+
+<h3>C.2 NoisyGL 对接方案</h3>
+<p>NoisyGL 仓库在 <code>C:\Users\Admin\Desktop\NoisyGL-main</code>（参考 memory 记录）。需要：</p>
+<ol>
+  <li>确认 NoisyGL 是否支持 ratio split 或需要 patch</li>
+  <li>在相同 split + noise 设置下跑 NRGNN/RTGNN/CLNode</li>
+  <li>收集 5-seed test_acc mean ± std</li>
+</ol>
+
+</div>
+
+<!-- ============================================================ -->
+<h2>Phase D: 正式 5-Seed 扩展 (主方法 + baselines 都确认后)</h2>
+<!-- ============================================================ -->
+<div class="phase">
+
+<h3>D.1 实验矩阵</h3>
+<table>
+  <tr><th>数据集</th><th>方法</th><th>Seeds</th><th>总 Runs</th></tr>
+  <tr><td rowspan="6">Cora + CiteSeer</td><td>主方法 (C1_gated 或 C1_graph_coverage)</td><td>0-4</td><td>10</td></tr>
+  <tr><td>C1 (当前方法，已有结果)</td><td>0-4</td><td>已完成</td></tr>
+  <tr><td>C1_noball / shuffled / topk (消融，已有结果)</td><td>0-4</td><td>已完成</td></tr>
+  <tr><td>NRGNN / RTGNN / CLNode</td><td>0-4</td><td>30</td></tr>
+  <tr><td>GCN+CE / GCN+SCE</td><td>0-4</td><td>20</td></tr>
+  <tr><td>GCN+CE (clean, oracle)</td><td>0-4</td><td>10</td></tr>
+</table>
+
+<h3>D.2 论文主表格式</h3>
+<table>
+  <tr><th>Method</th><th>Cora (symm 0.4)</th><th>CiteSeer (symm 0.4)</th></tr>
+  <tr><td>GCN + CE (clean)</td><td colspan="2" style="text-align:center"><em>oracle upper bound</em></td></tr>
+  <tr><td>GCN + CE (noisy)</td><td></td><td></td></tr>
+  <tr><td>GCN + SCE</td><td></td><td></td></tr>
+  <tr><td>NRGNN</td><td></td><td></td></tr>
+  <tr><td>RTGNN</td><td></td><td></td></tr>
+  <tr><td>CLNode</td><td></td><td></td></tr>
+  <tr><td style="background:#e8f5e9"><strong>Ours (CA-GB)</strong></td><td></td><td></td></tr>
+</table>
+
+<h3>D.3 论文消融表格式</h3>
+<table>
+  <tr><th>变体</th><th>Cora</th><th>CiteSeer</th><th>验证什么</th></tr>
+  <tr><td>Ours (full)</td><td></td><td></td><td>完整方法</td></tr>
+  <tr><td>w/o coverage gate</td><td></td><td></td><td>coverage gate 的贡献</td></tr>
+  <tr><td>w/o ball (noball)</td><td></td><td></td><td>粒球的贡献</td></tr>
+  <tr><td>shuffled ball</td><td></td><td></td><td>球结构是真贡献</td></tr>
+  <tr><td>kNN matched (topk)</td><td></td><td></td><td>球 vs kNN</td></tr>
+  <tr><td>hard majority vote (C1)</td><td></td><td></td><td>soft gated vs hard vote</td></tr>
+  <tr><td>w/o graph agreement*</td><td></td><td></td><td>图 agreement 的贡献 (如果 Phase B 通过)</td></tr>
+</table>
+
+<h3>D.4 论文分析图</h3>
+<ul>
+  <li><strong>Coverage sensitivity curve</strong>：train_ratio 从 0.05 到 0.6，展示 test_acc 随 coverage 变化</li>
+  <li><strong>Ball vote coverage histogram</strong>：不同 train_ratio 下球内 train 节点数分布</li>
+  <li><strong>Gate activation rate</strong>：不同 train_ratio 下通过 coverage+confidence gate 的球比例</li>
+</ul>
+
+</div>
+
+<!-- ============================================================ -->
+<h2>执行顺序总览</h2>
+<!-- ============================================================ -->
+
+<table>
+  <tr><th>步骤</th><th>内容</th><th>预估时间</th><th>依赖</th></tr>
+  <tr class="priority-high"><td>1</td><td>实现 C1_gated (losses.py + config.py + train.py + cli.py + tests)</td><td>1 小时</td><td>无</td></tr>
+  <tr class="priority-high"><td>2</td><td>Phase A seed0 smoke (4 runs)</td><td>30 分钟</td><td>步骤 1</td></tr>
+  <tr><td>3</td><td>判断 GA1-GA3 → 决定是否进 Phase B</td><td>5 分钟</td><td>步骤 2</td></tr>
+  <tr><td>4a</td><td>如果进 Phase B：实现 graph agreement + seed0 smoke</td><td>1.5 小时</td><td>步骤 3</td></tr>
+  <tr><td>4b</td><td>如果跳过 Phase B：直接进 Phase C</td><td>-</td><td>步骤 3</td></tr>
+  <tr><td>5</td><td>Phase C：NoisyGL baseline 对接 + 跑结果</td><td>2-3 小时</td><td>步骤 3/4</td></tr>
+  <tr><td>6</td><td>Phase D：5-seed 正式实验</td><td>2-3 小时</td><td>步骤 5</td></tr>
+  <tr><td>7</td><td>生成论文表格和分析图</td><td>1 小时</td><td>步骤 6</td></tr>
+</table>
+
+<div class="info">
+<strong>Python 环境</strong>：必须使用 <code>/c/Users/Admin/AppData/Local/Programs/Python/Python312/python.exe</code>。默认 <code>python</code> 是 Windows Store stub。运行命令用 <code>python -m gb_stage_b.cli</code>（无 __main__.py）。
+</div>
+
+<h2>Current Phase: 2025 Baselines under Corrected Train-Only Noise</h2>
+<div class="phase">
+<h3>已实现</h3>
+<ul>
+  <li>TFR（CIKM 2025，官方代码适配）</li>
+  <li>ProCon（IJCAI 2025，paper reimplementation）</li>
+  <li>GD²（NeurIPS 2025，paper reimplementation）</li>
+  <li>train-only noise、clean validation、split/noise fingerprint、config ID、wall time、trainable parameter count</li>
+  <li>CPU 与 ROCm 环境均完成 Cora 2-epoch、Coauthor-CS 1-epoch smoke；三方法均完成且 val/test 污染数为 0</li>
+</ul>
+
+<h3>固定协议</h3>
+<table>
+  <tr><th>项目</th><th>设置</th></tr>
+  <tr><td>数据集</td><td>Cora、CiteSeer、Coauthor-CS</td></tr>
+  <tr><td>划分</td><td>train/val/test = 0.2/0.1/0.7</td></tr>
+  <tr><td>噪声</td><td>uniform 0.4，仅 train 标签</td></tr>
+  <tr><td>选参</td><td>每方法每数据集最多 12 配置；seed0 clean validation 选择，test 不参与</td></tr>
+  <tr><td>正式结果</td><td>冻结配置后 seeds 0-4；少于 5 个成功 seed 不报告均值</td></tr>
+  <tr><td>输入公平性</td><td>外部方法使用原生 X；GCN/NRGNN/SoftDist 另列 [X||H] 表示控制</td></tr>
+</table>
+
+<h3>执行命令</h3>
+<pre>
+# smoke（已完成）
+python scripts/run_latest_baseline_experiments.py --mode smoke --device cpu
+
+# ROCm 环境下依次执行
+python scripts/run_latest_baseline_experiments.py --mode tune --device cuda:0
+python scripts/run_latest_baseline_experiments.py --mode formal --device cuda:0
+python scripts/run_latest_baseline_experiments.py --mode appendix --device cuda:0
+python scripts/run_latest_baseline_experiments.py --mode summarize --device cuda:0
+</pre>
+
+<p><strong>输出目录</strong>：<code>external/NoisyGL/runs/latest_baselines_trainonly_20260622/</code>。正式运行前后均须通过协议 hash 审计；历史 legacy CSV 不得拼入该目录的汇总。</p>
+</div>
+
+</body>
+</html>

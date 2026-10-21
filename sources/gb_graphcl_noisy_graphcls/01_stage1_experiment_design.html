@@ -1,0 +1,438 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>第一阶段实验设计 — 图级 GB 去噪 Gate</title>
+  <style>
+    :root {
+      --bg: #f6f7f9; --paper: #ffffff; --ink: #1f2933; --muted: #5c6670;
+      --line: #d8dee6; --accent: #2457a6; --accent-soft: #e9f0fb;
+      --warn: #8a4b00; --warn-soft: #fff3dd; --bad: #8d1f1f; --bad-soft: #fde7e7;
+      --good: #17633a; --good-soft: #e5f5ec; --code: #f0f2f5;
+    }
+    * { box-sizing: border-box; }
+    body { margin: 0; background: var(--bg); color: var(--ink);
+           font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Microsoft YaHei", Arial, sans-serif;
+           line-height: 1.65; }
+    main { max-width: 1080px; margin: 0 auto; padding: 32px 20px 64px; }
+    header, section { background: var(--paper); border: 1px solid var(--line);
+                      border-radius: 8px; padding: 24px; margin: 16px 0; }
+    h1, h2, h3 { line-height: 1.25; margin: 0 0 14px; }
+    h1 { font-size: 28px; } h2 { font-size: 22px; color: var(--accent); }
+    h3 { font-size: 18px; margin-top: 20px; }
+    p { margin: 10px 0; } ul, ol { margin: 10px 0 10px 24px; padding: 0; } li { margin: 6px 0; }
+    code, pre { font-family: "Cascadia Code", "Consolas", monospace; background: var(--code); border-radius: 5px; }
+    code { padding: 2px 5px; font-size: 0.94em; }
+    pre { padding: 14px; overflow-x: auto; border: 1px solid var(--line); white-space: pre-wrap; }
+    table { width: 100%; border-collapse: collapse; margin: 12px 0; font-size: 14px; }
+    th, td { border: 1px solid var(--line); padding: 9px 10px; vertical-align: top; text-align: left; }
+    th { background: #eef2f7; font-weight: 650; }
+    .box { border: 1px solid var(--line); border-radius: 8px; padding: 14px 16px; margin: 12px 0; background: #fafbfc; }
+    .good { border-color: #b9dfca; background: var(--good-soft); }
+    .warn { border-color: #efd19d; background: var(--warn-soft); }
+    .bad { border-color: #f0b6b6; background: var(--bad-soft); }
+    .accent { border-color: #bdd0ee; background: var(--accent-soft); }
+    .small { font-size: 14px; color: var(--muted); }
+  </style>
+</head>
+<body>
+<main>
+  <header>
+    <h1>第一阶段实验设计 — 图级 GB 去噪可行性 Gate</h1>
+    <p class="small">创建日期：2026-06-08。作者：Claude。配合 <code>00_graph_level_noisy_gbcl_handoff.html</code> 阅读。</p>
+    <div class="box accent">
+      <strong>本阶段唯一目标：</strong>在图级 i.i.d. embedding 空间里，GB denoising 是否能稳定超过 kNN/kmeans denoising？
+      <br>不是完整论文方法，不做 encoder coupling，不做 pair noise，不扩数据集。
+    </div>
+  </header>
+
+  <!-- ============================================================ -->
+  <section>
+    <h2>0. 总体思路</h2>
+    <p>本阶段采用 <strong>两步解耦</strong> 设计：</p>
+    <ol>
+      <li><strong>Step A — 表示学习（一次性，不针对噪声调）</strong>：用 GIN encoder + GraphCL 风格的对比学习，在 <em>不看标签</em> 的情况下训练 graph-level encoder，得到每个图的 embedding 向量。L2 归一化后保存。</li>
+      <li><strong>Step B — 噪声鲁棒分类（本阶段核心比较）</strong>：在 frozen graph embedding 上注入标签噪声，用不同去噪策略（GB / kNN / kmeans / shuffled / random / CE / robust CE / clean oracle）训练线性分类器，比较 test accuracy。</li>
+    </ol>
+    <p>两步解耦的好处：(1) 表示学习不受噪声影响，各方法严格同表示同 split 同噪声；(2) 快速迭代去噪策略，不用每次重训 encoder。</p>
+    <p><strong>为什么先 frozen</strong>：旧实验教训表明，必须先确认 GB 在 embedding 空间里有没有 kNN 之外的独立信号。如果 frozen 下 GB 就输给 kNN，说明球的结构信息在这个空间里已被覆盖，再做 coupling 也救不了。反之，frozen 下 GB 赢 kNN，才有必要进入第二阶段做 coupling 放大优势。</p>
+  </section>
+
+  <!-- ============================================================ -->
+  <section>
+    <h2>1. 数据集与 Split</h2>
+    <table>
+      <thead><tr><th>数据集</th><th>图数</th><th>类数</th><th>角色</th><th>平均节点数</th></tr></thead>
+      <tbody>
+        <tr><td><strong>NCI1</strong></td><td>4110</td><td>2</td><td>主实验</td><td>~30</td></tr>
+        <tr><td>PROTEINS</td><td>1113</td><td>2</td><td>辅助验证</td><td>~39</td></tr>
+        <tr><td>MUTAG</td><td>188</td><td>2</td><td>仅管线 debug</td><td>~18</td></tr>
+      </tbody>
+    </table>
+
+    <h3>Split 协议</h3>
+    <ul>
+      <li>按 8:1:1（train:val:test）随机 stratified split。</li>
+      <li>每个 seed 对应一个固定 split + 固定噪声实例 + 固定分类器初始化（三者由同一 seed 派生，保证可复现）。</li>
+      <li>噪声只注入 train split 的标签；val/test 标签保持 clean。</li>
+      <li>Split 和噪声标签缓存到磁盘（路径含 dataset/seed/noise_type/noise_rate），避免重复生成。</li>
+    </ul>
+  </section>
+
+  <!-- ============================================================ -->
+  <section>
+    <h2>2. Step A — 图对比表示学习</h2>
+
+    <h3>Encoder</h3>
+    <ul>
+      <li><strong>GIN（Graph Isomorphism Network）</strong>，5 层，hidden dim 128，global mean pooling → graph embedding dim 128。</li>
+      <li>标准 PyG 实现（<code>torch_geometric.nn.GINConv</code> + <code>global_mean_pool</code>）。</li>
+    </ul>
+
+    <h3>对比学习</h3>
+    <ul>
+      <li>采用 GraphCL 风格：对每个图生成两个增强视图（augmentation pair），用 NT-Xent（InfoNCE）loss 训练。</li>
+      <li><strong>增强方式</strong>（从 GraphCL 论文的四种中选两种组合）：
+        <ul>
+          <li>Node dropping（随机丢弃 20% 节点）</li>
+          <li>Edge perturbation（随机增删 20% 边）</li>
+        </ul>
+      </li>
+      <li>Projection head：2 层 MLP（128 → 128 → 128），仅用于对比 loss，eval 时丢弃。</li>
+      <li>训练 100 epochs，Adam lr=0.001，batch_size=128，temperature τ=0.2。</li>
+      <li><strong>完全无标签</strong>——对比学习阶段不看任何标签（clean 或 noisy 都不看）。</li>
+    </ul>
+
+    <h3>Embedding 提取与保存</h3>
+    <ul>
+      <li>训练完成后，用 encoder（不含 projection head）对所有图提取 embedding。</li>
+      <li>L2 归一化后保存为 <code>checkpoints/embeddings/{dataset}/pretrain{seed}/H.pt</code>。</li>
+      <li>同时保存 labels、split masks、num_classes。</li>
+      <li>每个 seed 独立训练一个 encoder（因为 split 不同，对比学习看到的 train 图不同）。</li>
+    </ul>
+
+    <div class="box warn">
+      <strong>注意</strong>：对比学习的超参（层数、dim、aug 比例、epochs、lr、τ）一次性固定，不为通过 gate 调参。
+      如果某个数据集上 GraphCL 本身表示质量很差（clean oracle 线性分类器都很低），应先排查表示学习，不归因于去噪方法。
+    </div>
+  </section>
+
+  <!-- ============================================================ -->
+  <section>
+    <h2>3. Step B — 噪声鲁棒分类（核心比较）</h2>
+
+    <h3>噪声注入</h3>
+    <ul>
+      <li>第一阶段只做 <strong>symmetric 0.4</strong>。</li>
+      <li>标准 symmetric noise：train 中每个样本以概率 0.4 将标签随机替换为其他类（均匀）。</li>
+      <li>NCI1 是二分类，symmetric 0.4 = 每个 train 样本 40% 概率翻转标签。</li>
+    </ul>
+
+    <h3>分类器</h3>
+    <ul>
+      <li>线性分类器（单层 Linear: 128 → num_classes），在 frozen graph embedding 上训练。</li>
+      <li>优化器 Adam，lr=0.01，weight_decay=5e-4。</li>
+      <li>训练 200 epochs，patience 30（val accuracy early stopping）。</li>
+      <li>报告 <code>test_acc_at_best_val</code>。</li>
+    </ul>
+
+    <h3>方法集</h3>
+    <table>
+      <thead><tr><th>方法名</th><th>去噪策略</th><th>角色</th></tr></thead>
+      <tbody>
+        <tr>
+          <td><code>ce</code></td>
+          <td>标准 CE，不做任何去噪</td>
+          <td>下界基线</td>
+        </tr>
+        <tr>
+          <td><code>sce</code></td>
+          <td>Symmetric Cross Entropy（SCE = CE + α·RCE）</td>
+          <td>Robust loss 基线</td>
+        </tr>
+        <tr>
+          <td><code>sel_topk</code></td>
+          <td>kNN 共识 reliability + commit-style sample selection<br>
+              对每个 train 样本，算其 k 近邻（embedding 空间）中 noisy label 多数票占比作为 reliability，
+              结合 per-epoch loss 做 trust score = z(-loss) + z(rel)，按 keep-ratio schedule 选可信样本训练。</td>
+          <td><strong>kNN 对照（旧实验的赢家）</strong></td>
+        </tr>
+        <tr>
+          <td><code>sel_kmeans</code></td>
+          <td>kmeans 聚类 consensus reliability + 同上 commit selection<br>
+              用 kmeans 把 embedding 聚成若干 cluster（cluster 数 = GB 的平均组数，matched），
+              cluster 内 noisy label 多数票占比作为 reliability。</td>
+          <td><strong>kmeans 对照</strong></td>
+        </tr>
+        <tr>
+          <td><code>sel_gb</code></td>
+          <td>Density-guided granular ball consensus reliability + commit selection<br>
+              在 L2 归一化的 embedding 空间中，用密度引导的粒球构建（自适应多尺度，不需要预设 k），
+              球内 noisy label 多数票占比作为 reliability。</td>
+          <td><strong>主方法（待验证）</strong></td>
+        </tr>
+        <tr>
+          <td><code>sel_shuffled</code></td>
+          <td>打乱 GB 成员关系（保持组大小不变），破坏球的语义结构</td>
+          <td>结构对照</td>
+        </tr>
+        <tr>
+          <td><code>sel_random</code></td>
+          <td>随机 size-matched 分组</td>
+          <td>随机对照</td>
+        </tr>
+        <tr>
+          <td><code>sel_noball</code></td>
+          <td>纯 small-loss selection（无 reliability 项，trust = z(-loss)）</td>
+          <td>消融：reliability 的价值</td>
+        </tr>
+        <tr>
+          <td><code>clean_oracle</code></td>
+          <td>只选 clean 样本训练（用 clean label 筛选，仅诊断用）</td>
+          <td>Headroom 上限</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <h3>Selection 机制细节（所有 sel_* 方法共享）</h3>
+    <ul>
+      <li>Keep-ratio schedule：warmup=20 epochs（保留全部），ramp=20 epochs（线性从 1.0 降到 ρ），然后保持 ρ=1−noise_rate=0.6。</li>
+      <li>Trust score：每 epoch 对 train 样本算 z-score(−loss) + z-score(rel)，取 top keep_ratio 的样本参与 CE loss。</li>
+      <li>唯一差别是 reliability 的来源（kNN / kmeans / GB / shuffled / random / none）。</li>
+      <li>k 值（kNN 的 k、kmeans 的 cluster 数）与 GB 的平均组数 matched，确保"局部区域"大小一致。</li>
+    </ul>
+
+    <div class="box accent">
+      <strong>为什么用 commit-style selection 而非 label smoothing？</strong>
+      旧实验证明 commit-style selection 是唯一能有效转化局部可靠性的机制（soft-target/reweight 全部失败）。
+      第一阶段沿用已验证的转化机制，只换 reliability 来源（kNN → GB），保持其他变量不变。
+    </div>
+  </section>
+
+  <!-- ============================================================ -->
+  <section>
+    <h2>4. 粒球构建算法</h2>
+    <p>在 i.i.d. graph embedding 空间中构建粒球，不再依赖图拓扑。</p>
+
+    <h3>Density-guided Granular Ball（DGB）</h3>
+    <ol>
+      <li>所有 train 样本的 L2-normalized embedding 作为输入点集。</li>
+      <li>从全集出发，递归二分：
+        <ul>
+          <li>每个球计算内部 purity（基于 noisy label 的多数票占比）和半径。</li>
+          <li>若 purity ≥ purity_threshold 且 球内样本数 ≤ max_size，停止分裂。</li>
+          <li>否则用 2-means 分裂为两个子球。</li>
+        </ul>
+      </li>
+      <li>最终得到自适应大小的球集合，每个球有 center（成员均值）、成员列表、majority noisy label。</li>
+    </ol>
+
+    <h3>与 kNN / kmeans 的关键区别</h3>
+    <ul>
+      <li><strong>kNN</strong>：以每个样本为中心看 k 个邻居，区域大小固定（k），以查询点为中心。</li>
+      <li><strong>kmeans</strong>：全局聚类，cluster 数固定，cluster 大小自适应但无密度约束。</li>
+      <li><strong>GB（粒球）</strong>：自适应分裂，区域大小和数量都由数据密度/纯度决定，
+          密集纯净区域形成大球（统计更稳定），稀疏混杂区域形成小球（避免噪声扩散）。
+          <strong>这是 GB 可能优于 kNN/kmeans 的核心假设——自适应粒度</strong>。</li>
+    </ul>
+
+    <h3>超参（一次性固定，不调）</h3>
+    <ul>
+      <li><code>purity_threshold = 0.7</code>（noisy-label majority ≥ 70% 停止分裂）</li>
+      <li><code>min_samples = 5</code>（球内最少 5 个样本，防止过细）</li>
+      <li><code>max_size = 100</code>（球内最多 100 个样本，防止过粗）</li>
+    </ul>
+
+    <div class="box warn">
+      <strong>超参一次性固定的原则</strong>：purity_threshold / min_samples / max_size 在 seed0 冒烟时确定一次，
+      之后 5-seed gate 实验不允许再调。如果发现这些超参对结果敏感，本身就是 GB 方法的弱点，需如实记录。
+    </div>
+  </section>
+
+  <!-- ============================================================ -->
+  <section>
+    <h2>5. 实验矩阵与执行顺序</h2>
+
+    <h3>Phase 0：管线搭建 + MUTAG debug</h3>
+    <ol>
+      <li>搭建项目结构（src/scripts/tests/configs/checkpoints）。</li>
+      <li>实现 GIN + GraphCL 对比学习训练脚本。</li>
+      <li>实现噪声注入 + split 缓存。</li>
+      <li>实现 frozen embedding 上的分类器 + selection 训练。</li>
+      <li>实现 GB / kNN / kmeans / shuffled / random 的统一 reliability 接口。</li>
+      <li>在 MUTAG 上跑通全管线（不看结果，只看不崩）。</li>
+      <li>写单元测试，全绿确认。</li>
+    </ol>
+
+    <h3>Phase 1：NCI1 seed0 冒烟</h3>
+    <ul>
+      <li>NCI1, symmetric 0.4, seed 0。</li>
+      <li>先训 GraphCL encoder → 提取 embedding → 跑全部 8 个方法。</li>
+      <li>记录：各方法 test_acc、selection_precision、noise_exclusion_recall、GB 的平均球数/球大小。</li>
+      <li><strong>冒烟 gate</strong>：
+        <ul>
+          <li>clean_oracle 与 ce 的差（headroom）≥ 3pp → 该设置有足够油水。</li>
+          <li>sel_gb 的 selection_precision &gt; random_clean_rate (0.6) → GB 选择有信号。</li>
+          <li>如果 headroom 太小或 GB precision 不如 random → 先排查表示质量，不盲目跑 5 seed。</li>
+        </ul>
+      </li>
+    </ul>
+
+    <h3>Phase 2：NCI1 5-seed 正式 gate</h3>
+    <ul>
+      <li>NCI1, symmetric 0.4, seeds 0-4。</li>
+      <li>每 seed 独立训 encoder → 独立提取 embedding → 独立跑全部方法。</li>
+      <li>按 §6 的预注册判定机械判定。</li>
+    </ul>
+
+    <h3>Phase 3（仅 Phase 2 通过后）：PROTEINS 验证</h3>
+    <ul>
+      <li>PROTEINS, symmetric 0.4, seeds 0-4，同流程。</li>
+      <li>验证 NCI1 的结论在不同数据集上是否成立。</li>
+    </ul>
+  </section>
+
+  <!-- ============================================================ -->
+  <section>
+    <h2>6. 预注册 Gate 判定</h2>
+
+    <h3>Gate-1：GB 赢 kNN</h3>
+    <div class="box good">
+      <code>sel_gb &gt; sel_topk</code>，5 seeds 中 ≥4 seeds 胜出，mean delta ≥ 0.5pp。
+      <br>paired t-test 报 t 值 + SIG/ns（|t| &gt; 2.78, df=4 为 SIG）。
+    </div>
+
+    <h3>Gate-2：GB 赢 kmeans</h3>
+    <div class="box good">
+      <code>sel_gb &gt; sel_kmeans</code>，5 seeds 中 ≥4 seeds 胜出。
+    </div>
+
+    <h3>Gate-3：结构有效（非随机）</h3>
+    <div class="box good">
+      <code>sel_gb &gt; sel_shuffled</code> 且 <code>sel_gb &gt; sel_random</code>，各 ≥4/5 seeds。
+    </div>
+
+    <h3>Gate-4：reliability 有价值</h3>
+    <div class="box good">
+      <code>sel_gb &gt; sel_noball</code>（纯 small-loss），≥4/5 seeds。
+    </div>
+
+    <h3>整体判定</h3>
+    <table>
+      <thead><tr><th>结果</th><th>行动</th></tr></thead>
+      <tbody>
+        <tr>
+          <td>Gate 1-4 全过</td>
+          <td class="good">GB 在图级空间有独立价值，进入第二阶段（encoder coupling + pair noise + 更多数据集）。</td>
+        </tr>
+        <tr>
+          <td>Gate 3+4 过但 Gate 1 或 2 不过（GB ≈ kNN/kmeans）</td>
+          <td class="warn">GB 有信号但无独立增量。记录为"局部一致性 selection 在图级有效，但 GB 不比 kNN/kmeans 强"。
+              可考虑：(a) 改 GB 算法（密度加权、多尺度）再试一次；(b) 转向 GB 作为 encoder coupling 的结构先验（第二阶段直接 coupling，跳过 frozen gate）。</td>
+        </tr>
+        <tr>
+          <td>Gate 3 或 4 不过（GB 连 shuffled/noball 都赢不了）</td>
+          <td class="bad">图级空间里 GB 也没有信号。及时止损。</td>
+        </tr>
+      </tbody>
+    </table>
+  </section>
+
+  <!-- ============================================================ -->
+  <section>
+    <h2>7. 每格必报指标</h2>
+    <ul>
+      <li>各方法 5-seed <strong>mean ± std</strong> test accuracy（<code>test_acc_at_best_val</code>）。</li>
+      <li><strong>Paired delta + t 值 + SIG/ns</strong>：sel_gb vs sel_topk、sel_gb vs sel_kmeans、sel_gb vs sel_shuffled、sel_gb vs sel_noball、sel_gb vs ce。</li>
+      <li>sel_gb 和 sel_topk 的 <strong>selection_precision</strong>（选中样本中 clean 比例，用 clean label 事后核算）。</li>
+      <li>sel_gb 和 sel_topk 的 <strong>noise_exclusion_recall</strong>（noisy 样本被排除的比例）。</li>
+      <li>GB 的 <strong>平均球数、平均球大小、最大/最小球</strong>（结构诊断）。</li>
+      <li><strong>clean_oracle test</strong>（headroom 上限）。</li>
+    </ul>
+  </section>
+
+  <!-- ============================================================ -->
+  <section>
+    <h2>8. 项目结构</h2>
+    <pre>
+gb_graphcl_noisy_graphcls/
+├── 00_graph_level_noisy_gbcl_handoff.html   # GPT 交接文档
+├── 01_stage1_experiment_design.html          # 本文件
+├── src/
+│   └── gb_graphcl/
+│       ├── __init__.py
+│       ├── data.py              # 数据加载、split、噪声注入、缓存
+│       ├── encoder.py           # GIN encoder + projection head
+│       ├── contrastive.py       # GraphCL 增强 + NT-Xent loss
+│       ├── granular_ball.py     # 密度引导粒球构建
+│       ├── reliability.py       # 统一 reliability 接口（kNN/kmeans/GB/shuffled/random）
+│       ├── selection.py         # commit-style sample selection 训练
+│       └── evaluate.py          # test_acc_at_best_val, selection_precision, noise_exclusion
+├── scripts/
+│   ├── train_graphcl.py         # Step A: 训练 GraphCL encoder
+│   ├── extract_embeddings.py    # Step A: 提取并保存 graph embeddings
+│   ├── run_smoke.py             # Phase 1: seed0 冒烟
+│   └── run_gate.py              # Phase 2: 5-seed gate 实验 + 报告
+├── tests/
+│   ├── test_data.py
+│   ├── test_granular_ball.py
+│   ├── test_reliability.py
+│   ├── test_selection.py
+│   └── run_unit_tests.py
+├── configs/
+│   └── default.yaml             # 所有超参集中管理
+├── checkpoints/
+│   └── embeddings/              # 保存 graph embeddings
+└── reports/                     # 实验报告
+    </pre>
+  </section>
+
+  <!-- ============================================================ -->
+  <section>
+    <h2>9. 依赖</h2>
+    <ul>
+      <li><code>torch</code>（已有）</li>
+      <li><code>torch_geometric</code>（PyG，用于图数据加载、GIN、数据集下载）</li>
+      <li><code>scikit-learn</code>（kmeans、stratified split）</li>
+      <li><code>numpy</code>、<code>scipy</code>（统计检验、t-test）</li>
+      <li><code>pyyaml</code>（配置管理）</li>
+      <li><code>matplotlib</code>（报告出图）</li>
+    </ul>
+    <p>不引入额外的大型外部 repo（不 clone GraphCL 原版仓库），用 PyG 内置能力自行实现。</p>
+  </section>
+
+  <!-- ============================================================ -->
+  <section>
+    <h2>10. 护栏（硬约束）</h2>
+    <div class="box bad">
+      <ol>
+        <li>Clean labels 只用于 val/test 评估 + selection_precision/noise_exclusion 的事后诊断，<strong>绝不进入 reliability 计算、样本选择、loss 或 target</strong>。</li>
+        <li>所有 sel_* 方法<strong>同 frozen embedding、同 split、同噪声实例、同 keep-ratio schedule、同 epochs/lr/patience</strong>；唯一差别是 reliability 来源。</li>
+        <li><strong>不 threshold-shopping</strong>：GB 的 purity_threshold/min_samples/max_size、kNN 的 k、selection 的 warmup/ramp/ρ，全部一次性固定，不为过 gate 调参。</li>
+        <li>判定一律 5-seed paired；<strong>paired delta 必报 t 值与 SIG/ns</strong>。</li>
+        <li>不把 graph-level 结果与旧 node-level 结果混在同一张表。</li>
+        <li>不做 hard same-ball positive、prototype pulling、hard inter-ball negative。</li>
+        <li>不从单 seed 得结论（seed0 仅冒烟，确认管线 + headroom）。</li>
+        <li>test 一律 <code>test_acc_at_best_val</code>；数字来自 CSV，禁止手填。</li>
+        <li>如果 GB 输给 kNN/kmeans，如实记录，不通过删对照或换 coverage 来伪造通过。</li>
+      </ol>
+    </div>
+  </section>
+
+  <!-- ============================================================ -->
+  <section>
+    <h2>11. 旧实验可复用的代码思路（不直接 import）</h2>
+    <p>以下是旧项目中经过验证的设计思路，新项目应重写但可参考逻辑：</p>
+    <ul>
+      <li><strong>commit-style selection</strong>（<code>旧/evaluation/selection.py</code>）：trust = z(-loss) + z(rel)、keep_ratio_at_epoch schedule。</li>
+      <li><strong>kNN consensus score</strong>（<code>旧/evaluation/selection.py:knn_train_consensus_score</code>）：对 train 节点，k 近邻中 noisy label 多数票占比。</li>
+      <li><strong>噪声注入</strong>（<code>旧/noise/label_noise.py</code>）：symmetric noise 和 pair noise 的标准实现 + 缓存。</li>
+      <li><strong>paired delta 统计</strong>（<code>旧/scripts/run_deathmatch_common.py:_paired_delta</code>）：5-seed paired t-test + SIG/ns 标注。</li>
+    </ul>
+    <p>新项目代码独立，不 import 旧项目。但上述经过验证的算法逻辑应沿用，不要重新发明。</p>
+  </section>
+
+</main>
+</body>
+</html>

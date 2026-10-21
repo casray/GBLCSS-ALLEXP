@@ -1,0 +1,2885 @@
+
+### NAUGRIN研究生周报-曹思磊8.22.docx
+NAUGRIN研究生文献周报
+[表]姓   名 | 曹思磊 | 填表时间 | 2025.8.22 | 本周有效
+工作时长 | 合计：  24 小时
+[表]本周研读
+文献清单 | 作者：Shuyin Xia , Yunsheng Liu , Xin Ding , Guoyin Wang , Hong Yu , Yuoguo Luo
+文献名：Granular ball computing classifiers for efficient, scalable and robust learning
+发表期刊会议名：Information Sciences
+发表年：2019 | 作者：Shuyin Xia , Yunsheng Liu , Xin Ding , Guoyin Wang , Hong Yu , Yuoguo Luo
+发表年：2019
+[表]任务目标
+（上周计划） | 研读奠基文献：Granular ball computing classifiers for efficient, scalable and robust learning（附件1） | 研读奠基文献：Granular ball computing classifiers for efficient, scalable and robust learning（附件1） | 研读奠基文献：Granular ball computing classifiers for efficient, scalable and robust learning（附件1） | 研读奠基文献：Granular ball computing classifiers for efficient, scalable and robust learning（附件1） | 研读奠基文献：Granular ball computing classifiers for efficient, scalable and robust learning（附件1）
+[表]重点文献精读总结（主要包括研究目的、方法、实验、效果、贡献与创新等） | 现有的分类器的输入都是点或像素，即细粒度数据；导致在处理大量数据时算法变得低效。此文献提出了一种名为粒球计算的新方法，模仿人类“从粗到细”的认知过程。该方法将一群彼此靠近的数据点作为一个独立的计算单元聚合起来，形成一个个粒球；用球体覆盖数据集（细粒度->粗粒度）。
+粒球（Granular Ball）有两个关键属性：中心与半径。
+中心：粒球中所有样本点的重心
+半径：其内部所有样本到其中心的平均距离。
+粒球的标签：粒球中数据样本最多的标签。这也间接消除了数据噪声的影响，因此粒球算法具有鲁棒性。
+粒球的纯度：粒球中多数样本的百分比。但若纯度阈值设为1，原本可以被粒球计算消除的噪声，最终还是会以单个样本形成的粒球表现出来，使得粒球计算的鲁棒性降低。
+粒球生成：采用2-means粒球生成算法；将整个数据集划分为两个粒球开始，检查每个粒球球的纯度阈值。如果纯度低于预设阈值，则对该球内部的数据再次进行2-means聚类，将其分裂成两个更小的子球。此过程递归进行，直到所有粒球都达到纯度要求。
+GBSVM（粒球支持向量机）：将传统SVM与粒球结合，将”支持粒球”替代原本的”支持向量”;决策边界由支持粒球共同支撑，支持平面与这些支持粒球相切。
+找到一条最好的直线，离两边最近的数据点都尽可能远。
+边界距离仅仅由边界最近的几个数据点所决定，即支持向量
+移动那些远离边界的点，决策边界不会改变。
+但是，如果移动一个支持向量，那么决策边界就可能会随之移动和调整。
+决策边界由支持粒球决定
+新的构建规则：决策边界（超平面）不再是要求离支持向量“尽可能远”，而是要求它与这些支持粒球相切，并且所有非支持粒球都位于街道的更外侧。
+超平面 l0 是决策边界，而 l1 和 l2 是间隔边界（支持平面）。可以看到，l1 和 l2 不再是穿过某个点，而是与粒球 b1, b2, b3, b4 等相切。这些相切的球就是“支持粒球”。
+GBkNN:GBkNN通过寻找带预测样本距离最近的粒球，并根据该粒球的标签来决定新样本的标签。它不需要选择参数k，避免了在传统kNN中选择最优k值的麻烦；擅长处理不平衡数据，并且准确度比FSA和其他精确的KNN更高。 | 现有的分类器的输入都是点或像素，即细粒度数据；导致在处理大量数据时算法变得低效。此文献提出了一种名为粒球计算的新方法，模仿人类“从粗到细”的认知过程。该方法将一群彼此靠近的数据点作为一个独立的计算单元聚合起来，形成一个个粒球；用球体覆盖数据集（细粒度->粗粒度）。
+[表]批判性思考与引申（优点与启发、局限与不足、展望等） | 优点：粒球的提出解决传统机器学习分类器在处理大规模数据集时面临的效率低下、可扩展性差和对噪声敏感的问题。
+启发：不要直接在原始的、复杂的数据上解决问题；将数据整合为更好计算的对象。
+局限：是否使用粒球一定优于不使用粒球。
+展望：是否可以设计一种算法可以选择最优纯度阈值。粒球是否可以与其他机器学习，深度学习模型结合。 | 优点：粒球的提出解决传统机器学习分类器在处理大规模数据集时面临的效率低下、可扩展性差和对噪声敏感的问题。
+[表]存在问题及
+拟解决方案 | GBSVM与GBkNN的数学模型较难理解；还不懂如何复现论文算法。
+暂时不对GBSVM与GBkNN进行仔细研究，先多读几篇文献打好基础，确定大概方向后再对相关文献精读。学习如何复现论文算法。 | GBSVM与GBkNN的数学模型较难理解；还不懂如何复现论文算法。
+[表]下周计划 | 研读《An Efficient and Adaptive Granular-Ball Generation Method in Classification Problem》（附件3）并尝试复现粒球快速生成算法。 | 研读《An Efficient and Adaptive Granular-Ball Generation Method in Classification Problem》（附件3）并尝试复现粒球快速生成算法。 | 研读《An Efficient and Adaptive Granular-Ball Generation Method in Classification Problem》（附件3）并尝试复现粒球快速生成算法。 | 研读《An Efficient and Adaptive Granular-Ball Generation Method in Classification Problem》（附件3）并尝试复现粒球快速生成算法。 | 研读《An Efficient and Adaptive Granular-Ball Generation Method in Classification Problem》（附件3）并尝试复现粒球快速生成算法。
+
+### NAUGRIN研究生周报-曹思磊8.29.docx
+NAUGRIN研究生文献周报
+[表]姓   名 | 曹思磊 | 填表时间 | 25.8.29 | 本周有效
+工作时长 | 合计： 24  小时
+[表]本周研读
+文献清单 | 《An Efficient and Adaptive Granular-Ball Generation Method in Classification Problem》（附件3） | 《An Efficient and Adaptive Granular-Ball Generation Method in Classification Problem》（附件3） | 《An Efficient and Adaptive Granular-Ball Generation Method in Classification Problem》（附件3） | 《An Efficient and Adaptive Granular-Ball Generation Method in Classification Problem》（附件3） | 《An Efficient and Adaptive Granular-Ball Generation Method in Classification Problem》（附件3）
+[表]任务目标
+（上周计划） | 研读《An Efficient and Adaptive Granular-Ball Generation Method in Classification Problem》（附件3）并尝试复现粒球快速生成算法。 | 研读《An Efficient and Adaptive Granular-Ball Generation Method in Classification Problem》（附件3）并尝试复现粒球快速生成算法。 | 研读《An Efficient and Adaptive Granular-Ball Generation Method in Classification Problem》（附件3）并尝试复现粒球快速生成算法。 | 研读《An Efficient and Adaptive Granular-Ball Generation Method in Classification Problem》（附件3）并尝试复现粒球快速生成算法。 | 研读《An Efficient and Adaptive Granular-Ball Generation Method in Classification Problem》（附件3）并尝试复现粒球快速生成算法。
+[表]重点文献精读总结（主要包括研究目的、方法、实验、效果、贡献与创新等） | 介绍了GBKNN算法，并清晰的给出了其较于传统KNN算法的三点优势：不需要优化参数k；粒球的数量远小于样本点，所以效率高；GBkNN将一些少数样本视为噪声，因此具有良好的鲁棒性。
+粒球采样（GBS）：为了减少分类中数据集的大小,同时最大限度地保留对分类任务最重要的决策边界信息，文章提出了这个方法。简言之就是只从每个粒球的“表面”上采样少数几个最有代表性的点，使数据集规模更小，质量更高。
+粒球覆盖模型：如何去评价一个粒球集合是否是最优的，作者在数学模型上给出了定义。其中有三个指标：覆盖（数据点）率高；粒球数量少 ；粒球纯度高。并且三者是相互制约的。
+粒球快速生成算法：作者认为，在粒球递归分裂的每一步都追求k-means算法的完全收敛是没必要的，在中间过程中并不需要稳定性。所以使用一次划分，即k-means中的一次迭代过程，来分裂一个粒球，而不是整个k-means算法；分裂时，其中一个子球直接继承父球的球心，只需要为另外k-1个子球寻找新的中心点即可；在所有粒球都停止分裂后，进行一次全局划分，优化粒球的整体布局。时间复杂度从k-means的O(Nkt)降低到近线性O((mn-n+k+1)N)。
+粒球自适应生成算法：提出了三个自适应条件来实现粒球的自适应生成，包括每个粒球的子球加权纯度总和是否增加；任何一对异构粒球之间是否存在重叠；每个粒球是否达到纯度下界。（下界是初始多数样本占总样本的比例）
+基于文章开头给出的网址运行代码后如下图，gb_accelerate_upload为粒球快速生成算法，gb_adaptive_upload为粒球自适应生成算法。
+实验在涵盖了不同样本量，维度的12个数据集中进行，分别对比了快速生成算法；自适应生成算法；原始生成算法（k-means算法）； kNN算法。评估指标主要使用分类准确率和运行时间。在原始数据集和带噪声的数据集上实验，证明了两种新算法的可靠性。 | 介绍了GBKNN算法，并清晰的给出了其较于传统KNN算法的三点优势：不需要优化参数k；粒球的数量远小于样本点，所以效率高；GBkNN将一些少数样本视为噪声，因此具有良好的鲁棒性。
+[表]批判性思考与引申（优点与启发、局限与不足、展望等） | 对于分类问题，最有价值的数据点往往位于不同类别群体的交界处。（GBS）
+粒球自适应生成算法仍然不能自适应地生成最优的GBS，并且实验准确率略低于现有方法。 | 对于分类问题，最有价值的数据点往往位于不同类别群体的交界处。（GBS）
+[表]存在问题及
+拟解决方案 | 不太理解粒球快速生成算法中的全局划分和粒球采样的过程，继续研究。 | 不太理解粒球快速生成算法中的全局划分和粒球采样的过程，继续研究。 | 不太理解粒球快速生成算法中的全局划分和粒球采样的过程，继续研究。 | 不太理解粒球快速生成算法中的全局划分和粒球采样的过程，继续研究。 | 不太理解粒球快速生成算法中的全局划分和粒球采样的过程，继续研究。
+[表]下周计划 | 由于粒球快速生成算法的重要性，继续研读本文献，研究代码，理解算法。 | 由于粒球快速生成算法的重要性，继续研读本文献，研究代码，理解算法。 | 由于粒球快速生成算法的重要性，继续研读本文献，研究代码，理解算法。 | 由于粒球快速生成算法的重要性，继续研读本文献，研究代码，理解算法。 | 由于粒球快速生成算法的重要性，继续研读本文献，研究代码，理解算法。
+
+### NAUGRIN研究生周报-曹思磊9.12.docx
+NAUGRIN研究生文献周报
+[表]姓   名 | 曹思磊 | 填表时间 | 25.9.12 | 本周有效
+工作时长 | 合计： 15 小时
+[表]本周研读
+文献清单 | 附件2 《GBG++ A Fast and Stable Granular Ball grneration method for classification》 | 附件2 《GBG++ A Fast and Stable Granular Ball grneration method for classification》 | 附件2 《GBG++ A Fast and Stable Granular Ball grneration method for classification》 | 附件2 《GBG++ A Fast and Stable Granular Ball grneration method for classification》 | 附件2 《GBG++ A Fast and Stable Granular Ball grneration method for classification》
+[表]任务目标
+（上周计划） | 研读《GBG++: A Fast and Stable Granular Ball Generation Method for Classification》（附件2） | 研读《GBG++: A Fast and Stable Granular Ball Generation Method for Classification》（附件2） | 研读《GBG++: A Fast and Stable Granular Ball Generation Method for Classification》（附件2） | 研读《GBG++: A Fast and Stable Granular Ball Generation Method for Classification》（附件2） | 研读《GBG++: A Fast and Stable Granular Ball Generation Method for Classification》（附件2）
+[表]重点文献精读总结（主要包括研究目的、方法、实验、效果、贡献与创新等） | 从摘要来看，文章提出了一种新的粒球生成算法（GBG++）和一种改进的基于GB的k近邻算法（GBKNN++）。
+首先回头复习了《Granular ball computing classifiers for efficient, scalable and robust learning》（附件1）中提出的GBKNN算法和2-means粒球生成算法：
+对于2-means粒球生成算法。
+对所有数据点进行k=2的k-means算法，然后所有数据点被分成两个簇
+对于得到的两个簇，计算其中心（即2-means找到的质心）和半径（所有点到这个中心的平均距离）。然后得到了两个粒球。
+检查所有粒球是否低于所设纯度阈值，如果低于，则在低于纯度阈值的粒球内部的所有数据点再重复步骤1，2直到所有粒球纯度阈值都达到要求。
+GBKNN首先对样本进行2-means粒球生成算法，将所有样本点变为一个个粒球，对于查询点O，计算O到每一个粒球中心的距离，找到那个离O最近的粒球，直接赋予O粒球的标签。
+而对于传统的KNN算法，首先需要选出一个较好的K值，然后要计算查询点到所有样本的距离，找到最近的K个邻居再赋予标签。 | 从摘要来看，文章提出了一种新的粒球生成算法（GBG++）和一种改进的基于GB的k近邻算法（GBKNN++）。
+[表]批判性思考与引申（优点与启发、局限与不足、展望等） | 在对比中可以加深两个不同算法的概念。
+在读文献的过程中找出算法的缺陷并改进是写出新论文的一种思路。
+了解到了k-means 由于随机选择初始中心点，用同样的数据跑两次算法，可能因为随机种子不同，得到完全不同的粒球划分结果，进而导致分类结果也不同。所以在粒球快速生成算法（附件3）中最后一步全局划分中使用最终粒球的所有重心k_centers作为k-means的初始种子。是否也是因为这个原因？
+在学习kmeans算法时发现了kmeans++算法：KMeans++ 对初始化步骤进行了改进。它首先随机选择一个数据点作为第一个聚类中心，然后根据已选择的中心点，选择下一个中心点，使得新的中心点距离现有中心点尽可能远。GBG++算法是否是基于此改进的？ | 在对比中可以加深两个不同算法的概念。
+[表]存在问题及
+拟解决方案 | 基于粒球（GB）的多粒度学习是什么？
+即利用多粒度的思想与机器学习算法相结合，如GBSVM，GBKNN与本篇提出的GBKNN++等。
+遗忘了kmeans算法的具体过程。
+选择k值
+随机选择k个种子点
+计算其他每个点到每个种子点的距离，选择最近的种子点作为其簇的一部分
+移动种子点到其簇的中心（所有点的坐标的平均值）
+重新计算其他每个点到每个种子点的距离，如果有更近的种子点，更改其所属簇
+再次移动种子点到其簇的中心
+回到5，6步直到簇的中心不发生变化
+在阅读附件1时在暂时跳过了对GBKNN的研究，导致阅读不顺利，因此重新学习了相关概念以及算法过程。 | 基于粒球（GB）的多粒度学习是什么？
+[表]下周计划 | 使用代码复现一下kmeans聚类算法。
+继续阅读《GBG++: A Fast and Stable Granular Ball Generation Method for Classification》（附件2）
+加深前两篇文献的概念理解。 | 使用代码复现一下kmeans聚类算法。
+加深前两篇文献的概念理解。
+
+### NAUGRIN研究生周报-曹思磊9.19.docx
+NAUGRIN研究生文献周报
+[表]姓   名 | 曹思磊 | 填表时间 | 25.9.19 | 本周有效
+工作时长 | 合计： 25 小时
+[表]本周研读
+文献清单 | 附件2 《GBG++ A Fast and Stable Granular Ball grneration method for classification》 | 附件2 《GBG++ A Fast and Stable Granular Ball grneration method for classification》 | 附件2 《GBG++ A Fast and Stable Granular Ball grneration method for classification》 | 附件2 《GBG++ A Fast and Stable Granular Ball grneration method for classification》 | 附件2 《GBG++ A Fast and Stable Granular Ball grneration method for classification》
+[表]任务目标
+（上周计划） | 使用代码复现一下kmeans聚类算法。
+继续阅读《GBG++: A Fast and Stable Granular Ball Generation Method for Classification》（附件2）
+加深前两篇文献的概念理解。 | 使用代码复现一下kmeans聚类算法。
+加深前两篇文献的概念理解。
+[表]重点文献精读总结（主要包括研究目的、方法、实验、效果、贡献与创新等） | kmeans聚类算法代码
+代码通过 random.sample 方法随机抽取初始质心，这也是为什么kmeans不稳定的原因。
+np.argmin 将点分配给距离最近的质心
+np.mean 计算每个簇内所有点的平均坐标
+注意到代码中有一个参数为容忍度，因为在实际的在实际的浮点数计算中，质心可能永远不会精确的停止移动，当质心的移动距离小于这个很小的阈值时，我们认为算法已经足够收敛了，继续迭代也不会带来显著的改进。所以设置容忍度可以使得算法在达到一个足够好的状态时及时停止，从而提高效率。
+GBG++
+Fig.4是论文核心，展示了GBG++的工作流程。
+gb = (C, R, O),即中心，半径，球内数据点。
+Fig.4左下侧为原始数据集T=O，每个颜色对应一个类别。
+Step 1.Splitting the GB （分裂粒球）
+基于“注意力机制”，算法会找出数据集中数量最多的那个类别，给这个类别打上最高的注意力分数（attention score），现在算法会暂时忽略其他数据，聚焦于此类数据。
+接下来算法使用这些相同类别的数据构造一个新的粒球gb1（C1，R1，O1）。
+然后从原始数据集中剔除掉刚才新构建的粒球gb1所覆盖的所有数据点（T=O-O1），注意力就从原来的 T 转移到了这个新的、更小的 T 上。
+在剩余的样本中，再次寻找数量最多的类别。再次构造一个新的粒球（C2，R2，O2）。
+再次更新未划分数据集：T=O-O1-O2。
+重复以上操作直到达到分裂停止条件->（划分样本的数量等于标签类别的数量，即所有未划分的粒球为孤儿粒球。）
+令gb = (c, r, O)为一个粒球。如果|O|=1，则bg被称为孤儿粒球。
+Step 2.Outlier Detection（离群点检测）
+对Step 1产生的新粒球进行检查，如果一个粒球是孤儿粒球，则认为它是由离群点或噪声构成的，直接删除。
+Step 3.De-Conflicts（去冲突）
+此步骤的原因是由于所提出的构建粒球方法是按顺序的，因此所构造的粒球可能会相互嵌套。目的是为了解决异质嵌套问题。（不处理同质嵌套）
+给定两个粒球 gb1 = (c1, r1, O1) 和 gb2 = (c2, r2, O2)。如果Δ(c1, c2) ≤ abs(r1 - r2)，则gb1和gb2被称为嵌套粒球 （Δ表示距离函数，abs为绝对值）
+假设l1和l2分别是gb1和gb2的标签。如果l1 ≠ l2，则gb1和gb2被称为异质嵌套粒球，否则称为同质嵌套粒球。
+算法会检查从Step 2过来的所有粒球，两两之间进行比较，看是否存在“异质嵌套”的情况。
+一旦发现有两个异质嵌套的粒球，算法会把这两个粒球所包含的全部原始数据点，重新收集到一个新集合中，送入步骤1重新分裂，同时这两个粒球也会被删除。
+Step 4: Granulation Stopping Condition (粒化停止条件)
+如果一个粒球纯度达到了阈值，可以被最终输出。（Output）
+如果一个粒球无法再分裂（分裂结果和自身一样），说明它达到了稳定状态。若此时它仍不纯，则会被删除。
+如果一个粒球既不纯，也未达到稳定状态，则会被送回步骤1继续处理。
+GBKNN++
+BGKNN只计算该点到所有粒球的几何距离，然后将它归类到最近的那个粒球的类别中。而忽略了质量（即粒球内部的样本数量）。如上左图，在传统GBKNN中X1会归为红色类别，而他的真实标签是蓝色，显然蓝色gb1的质量要好。
+GBkNN++引入了一个全新的度量标准——和谐距离 (Harmonic Distance)。（右上图）
+这个距离不再是纯粹的几何距离，而是一个综合了“几何远近”和“质量高低”的智能指标。
+其中Δ(x, ci)，x 是待分类的新样本，ci 是粒球 gbi 的中心点，Δ即欧式距离。
+|Oi| 是粒球 gbi 内部包含的样本点的数量，Σ|Oj| 是所有粒球中包含的样本点总数。|Oi| / Σ|Oj| 代表了粒球gbi的样本占了全体样本的多大比例。
+GBKNN++就与GBKNN的流程很类似，只是在决策时的几何距离改为“和谐距离”，把半径改为了一个表示质量的惩罚项 | kmeans聚类算法代码
+[表]批判性思考与引申（优点与启发、局限与不足、展望等） | 刚开始没有意识到GBG++ step1中 在一组相同样本的数据点中，构造粒球时是可能有其他不同标签的少数样本的。
+和谐距离的”质量“为什么不直接用粒球内的样本数量代表，而用|Oi| / Σ|Oj|？
+|Oi| / Σ|Oj| 使用了归一化的思想，这样无论数据集有多大，这个奖励项的尺度都被稳定地控制住了。如果要直接-|Oi|，那么质量占的权重就很大了，没法平衡几何距离。
+对于和谐距离，如果数据集非常大，几何距离也非常大的情况下，|Oi| / Σ|Oj|永远都不会超过1，那么|Oi| / Σ|Oj|所起到的作用不是非常小了吗？
+和谐距离有没有可能是负的？
+很有可能。比如说样本非常靠近一个质量高的粒球。
+文中提出的注意力机制虽与深度学习的注意力机制无直接关联，但本质上都是处理数据的一种方法，所以可以应用深度学习中的数据处理方法，巧妙的转化用于粒球上。 | 刚开始没有意识到GBG++ step1中 在一组相同样本的数据点中，构造粒球时是可能有其他不同标签的少数样本的。
+[表]存在问题及
+拟解决方案 | GBKNN中计算样本到粒球的距离是 样本到粒球中心的距离 还是样本到粒球中心的距离减半径（√）？
+GBKNN   ： dis(x, gbi) = Δ(x, ci) - ri
+GBkNN++:   hd(x, gbi) = Δ(x, ci) - (|Oi| / Σ|Oj|)
+对粒球中心和半径定义的数学公式理解不太清晰：
+中心：所有样本特征向量平均值的一个点
+D为整个数据集，Di为样本集合，|Di|为样本个数，x为特征（向量形式），y为标签。中心为所有样本的特征相加/样本量，就得到了特征的均值。
+半径：（所有样本的特征与中心特征的差）的和/样本量得到的均值
+半径：样本点与中心点特征向量的距离之和/样本量
+GBC和GrC是否相同？
+GBC和GRC有区别和也有联系，可以看作特殊和一般的关系，即粒球可以看作是一种特殊的粒模型。粒计算包含很多理论，比如模糊集、粗糙集、三支决策、商空间、云模型等。粒球计算以粒球为基础，粒计算以各种粒模型为基础。 | GBKNN中计算样本到粒球的距离是 样本到粒球中心的距离 还是样本到粒球中心的距离减半径（√）？
+[表]下周计划 | 阅读《Ball k-Means: Fast Adaptive Clustering With No Bounds》（附件4） | 阅读《Ball k-Means: Fast Adaptive Clustering With No Bounds》（附件4） | 阅读《Ball k-Means: Fast Adaptive Clustering With No Bounds》（附件4） | 阅读《Ball k-Means: Fast Adaptive Clustering With No Bounds》（附件4） | 阅读《Ball k-Means: Fast Adaptive Clustering With No Bounds》（附件4）
+
+### NAUGRIN研究生周报-曹思磊9.26.docx
+NAUGRIN研究生文献周报
+[表]姓   名 | 曹思磊 | 填表时间 | 25.9.26 | 本周有效
+工作时长 | 合计： 28 小时
+[表]本周研读
+文献清单 | 《Ball k-Means: Fast Adaptive Clustering With No Bounds》（附件4） | 《Ball k-Means: Fast Adaptive Clustering With No Bounds》（附件4） | 《Ball k-Means: Fast Adaptive Clustering With No Bounds》（附件4） | 《Ball k-Means: Fast Adaptive Clustering With No Bounds》（附件4） | 《Ball k-Means: Fast Adaptive Clustering With No Bounds》（附件4）
+[表]任务目标
+（上周计划） | 阅读《Ball k-Means: Fast Adaptive Clustering With No Bounds》（附件4） | 阅读《Ball k-Means: Fast Adaptive Clustering With No Bounds》（附件4） | 阅读《Ball k-Means: Fast Adaptive Clustering With No Bounds》（附件4） | 阅读《Ball k-Means: Fast Adaptive Clustering With No Bounds》（附件4） | 阅读《Ball k-Means: Fast Adaptive Clustering With No Bounds》（附件4）
+[表]重点文献精读总结（主要包括研究目的、方法、实验、效果、贡献与创新等） | Ball k-Means：一种无边界的快速自适应聚类方法，使用粒球的思想对传统Kmeans算法的优化升级。
+给定一个簇C，我们通过定义其质心c（centroid）和半径r如下，称C为一个球簇：
+其中xi是分配给C的点，|C|表示C中的样本数量。
+半径r是该簇中距离质心最远的数据点的距离（||  ||），
+为了消除点与相距很远的质心之间的距离计算，引入一种寻找给定簇的邻居簇的方法，并将距离计算限制在点与其邻居簇的质心之间。文中定义了一个新概念：邻居簇。
+邻居簇（Neighbor Cluster）：给定两个球簇Ci和Cj，其质心分别为ci和cj，如果Ci的半径ri满足以下不等式（质心距离的一半小于半径ri），则Cj是Ci的邻居簇。
+在定义了邻居簇后，任意两个球簇一定有以下三种关系之一：
+Ci和Cj是互为邻居簇，如图1中的簇C2和C3所示。由于C2和C3是邻居簇，C3(C2)中的一些点可能会在当前迭代中移动到C2(C3)中。
+Ci是Cj的邻居簇，但Cj不是Ci的邻居簇；这种情况由图1中的簇C1和C3展示。C1是C3的邻居簇，但C3不是C1的邻居簇。在这种情况下，C3中的一些点可能会移动到C1中，但C1中没有点可以移动到C3中。文中定理1通过数学证明，证明了点的移动方式。
+Ci和Cj彼此没有邻居关系。这种情况由图1中的簇C3和C4展示。在这种情况下，C3(C4)中没有点可以在当前迭代中移动到C4(C3)中。
+作者又对球簇的内部空间划分成了稳定区域和活跃区域，活跃区域可以进一步划分为环形区域。
+稳定区域：这个区域是一个以ci为中心，半径为“ci到其最近的邻居簇质心的距离的一半”的球。因为由定理2，稳定区域的点不会移动到邻居簇中。
+活跃区域：球簇中除去稳定区域数据点的剩下点，即球簇中稳定区域的补集。这个区域的数据点可能会移动到其他球簇中。
+算法通过一层一层划分，通过数学证明了一个簇在聚类过程中哪些范围的数据不需要参与计算，极大减少了计算量。
+通过邻居簇，排除了大量不可能成为新归属的簇。（非邻居簇不用计算）
+通过稳定区域，排除了簇内部大量不会移动的点。（稳定区域数据无需计算）
+通过环形区域，找到了可能会移动的点，又因不同环形区域离邻居簇质心距离的不同，
+都分配了最小的计算任务。（第i个环形区域中的点只能在查询球簇本身及其前i个最近邻居簇内参与分配步骤。即外层的环形区域的数据只会在本簇和 内层环形区域所指向的邻居簇中移动。）
+文中还增加了两个优化方法：
+一是通过跟踪前后两次迭代质心的移动距离，来预测下一轮迭代中哪些簇之间不可能是邻居关系，从而避免了部分O(k²)的质心间距离计算。（定理4）
+二是在迭代后期，许多簇会变为稳定球簇（没有点的移入和移出）。一旦一个簇和它的所有邻居簇都变得稳定，那么在后续计算中，这个簇就可以被完全跳过，这使得算法的后期迭代速度越来越快，呈现次线性的复杂度。（定理5）
+在实验中，在多个真实数据集上，文章将Ball k-Means与7种其他主流的算法进行了对比。在两个核心指标（距离计算次数和运行时间）的对比中，Ball k-Means
+的效果几乎都最好。因为
+1.Ball k-Means可以精确且自适应地找到一个紧凑的集合而没有任何边界
+2.Ball k-Means在后期迭代中越来越多的球簇将变得稳定，这些稳定球簇中的数据点将不参与任何距离计算，呈现次线性水平，时间复杂度低于O(n)（定理5） | Ball k-Means：一种无边界的快速自适应聚类方法，使用粒球的思想对传统Kmeans算法的优化升级。
+[表]批判性思考与引申（优点与启发、局限与不足、展望等） | 在Kmeans算法迭代的过程中，一个样本的标签可能会被距离相近的几个簇的标签改变，而不太可能更改为很远的簇的标签，所以它不必计算很远的簇的质心的距离，因此在引入邻居簇后，结论是可以理解的，它的标签只可能是自己簇或邻居簇的标签。
+Ball k-Means 为了实现剪枝策略，需要维护一些额外的数据结构。其中主要的是一个k*k的矩阵，用来存储质心之间的距离。实际上是用空间换时间。
+论文在第5.2节分析了高维数据的影响，并引入了“邻居球比例”来解释性能下降的原因，但没有深入探究解决方案。
+非均匀数据集上Ball k-Means的表现远好于均匀分布的数据集，在非均匀数据集上，几乎所有点都位于“活跃区”，Ball k-Means优化空间很小。这说明Ball k-Means的有效性强依赖于数据本身具有良好的簇结构。它更适合具有球形或凸形内部结构的数据。
+并不了解其他七种k-means算法的具体过程以及其文中提到的上下界的计算，以及Speedup Over Lloyd。
+Speedup Over Lloyd = 传统 Lloyd 算法的运行时间 / 新算法的运行时间；
+他是算法性能评测中一个公认的、最基础的标准参照物。
+如TABLE4中Birch数据集上k=100 时Speedup Over Lloyd =55.93/0.81=69
+其他kmeans算法后续如有需要再详细研究。 | 在Kmeans算法迭代的过程中，一个样本的标签可能会被距离相近的几个簇的标签改变，而不太可能更改为很远的簇的标签，所以它不必计算很远的簇的质心的距离，因此在引入邻居簇后，结论是可以理解的，它的标签只可能是自己簇或邻居簇的标签。
+其他kmeans算法后续如有需要再详细研究。
+[表]存在问题及
+拟解决方案 | 球簇 (Ball Cluster)的质心与粒球 (Granular Ball)的中心是否相同？
+相同。都是对所有样本特征向量取平均值。而不同，一个取最大值，一个取均值。
+粒球替代数据点作为分类器输入的框架，以提升效率和鲁棒性。
+而此处的球簇是为了优化Ball k-Means算法而提出的，通过球簇一层一层划分不需要计算的数据。
+活跃区域中划分环形区域的公式较难理解。
+k’为邻居簇的数量，ci和ci+1表示C的第i近和第(i+1)近的邻居簇的质心
+(1/2)||c - ci||是稳定区域和活跃区域的边界，可理解。
+因环形区域一定在稳定区域外 所以 (1/2)||c - ci|| < ||x - c||
+有几个邻居簇，活跃区域就被划分为几个环形区域。
+1： (0 ≤ i < k') 表示中间的环，如下图1st annular area
+(1/2)||c - ci|| < ||x - c|| :点 x 在这个内边界的外面
+||x - c|| ≤ (1/2)||c - ci+1|| :点 x 在这个外边界的里面（或者正好在边界上）。
+可以理解为，c对每一个邻居簇计算(1/2)||c - ci||，每一个计算结果所形成的环就是每个环形区域的边界。
+2: (i = k')总表示最外一层环到簇边界的范围 如上图2st annular area
+(1/2)||c - ci|| < ||x - c|| ≤ r | 球簇 (Ball Cluster)的质心与粒球 (Granular Ball)的中心是否相同？
+(1/2)||c - ci|| < ||x - c|| ≤ r
+[表]下周计划 | 阅读 《A Fast Granular-Ball-Based Density Peaks Clustering Algorithm for Large-Scale Data》（附件5） | 阅读 《A Fast Granular-Ball-Based Density Peaks Clustering Algorithm for Large-Scale Data》（附件5） | 阅读 《A Fast Granular-Ball-Based Density Peaks Clustering Algorithm for Large-Scale Data》（附件5） | 阅读 《A Fast Granular-Ball-Based Density Peaks Clustering Algorithm for Large-Scale Data》（附件5） | 阅读 《A Fast Granular-Ball-Based Density Peaks Clustering Algorithm for Large-Scale Data》（附件5）
+
+### NAUGRIN研究生周报-曹思磊9.5.docx
+NAUGRIN研究生文献周报
+[表]姓   名 | 曹思磊 | 填表时间 | 25.9.5 | 本周有效
+工作时长 | 合计： 26 小时
+[表]本周研读
+文献清单 | 《An Efficient and Adaptive Granular-Ball Generation Method in Classification Problem》（附件3） | 《An Efficient and Adaptive Granular-Ball Generation Method in Classification Problem》（附件3） | 《An Efficient and Adaptive Granular-Ball Generation Method in Classification Problem》（附件3） | 《An Efficient and Adaptive Granular-Ball Generation Method in Classification Problem》（附件3） | 《An Efficient and Adaptive Granular-Ball Generation Method in Classification Problem》（附件3）
+[表]任务目标
+（上周计划） | 由于粒球快速生成算法的重要性，继续研读本文献，研究代码，理解算法。 | 由于粒球快速生成算法的重要性，继续研读本文献，研究代码，理解算法。 | 由于粒球快速生成算法的重要性，继续研读本文献，研究代码，理解算法。 | 由于粒球快速生成算法的重要性，继续研读本文献，研究代码，理解算法。 | 由于粒球快速生成算法的重要性，继续研读本文献，研究代码，理解算法。
+[表]重点文献精读总结（主要包括研究目的、方法、实验、效果、贡献与创新等） | gb_accelerate_upload遵循论文中描述的粒球快速生成算法逻辑，用py代码实现了整个流程。其中粒球以Numpy数组形式存储，其中第一列是标签，其余列是特征。
+首先选取一个包含了数据集中的所有样本点的粒球，随机选取一个初始中心点center_init，并将所有数据打包成第一个gb_dict。
+其次将这个gb_dict传入splits()函数，进入一个循环，如果纯度低于阈值，并且球内不止一个点，就调用 splits_ball()方法进行分裂，直到所有粒球都满足预设的纯度要求。
+len_label = numpy.unique(gb[:, 0], axis=0)会检查父球内包含了多少个不同的数据类别，即k值。
+splits_ball(gb_dict)方法是粒球快速生成算法的核心也是难点：首先保留父粒球重心；从异类数据中随机选择k-1个新中心；随后再执行一次划分，计算所有点到所有新重心的距离并将每个点分配给最近的重心，从而组成新的粒球。
+最后使用一次k-means对整个数据集进行一次全局优化，其中使用最终粒球的所有重心k_centers作为k-means的初始种子。 | gb_accelerate_upload遵循论文中描述的粒球快速生成算法逻辑，用py代码实现了整个流程。其中粒球以Numpy数组形式存储，其中第一列是标签，其余列是特征。
+[表]批判性思考与引申（优点与启发、局限与不足、展望等） | 对于粒球快速生成算法，分裂时，其中一个子球直接继承父球的球心。这个旧的重心极有可能接近分裂后某个子球的理想中的重心，相当于减少了计算又保留了有效信息，效率很高。
+完整的k-means在分配完点之后，会重新计算每个新簇的重心，然后用这个新重心去进行下一轮的分配。而splits_ball方法在分配完一次之后，就立刻停止了。它不重新计算新簇的重心，也不进行下一轮分配，而是直接把这些新形成的子球返回，避免了最耗时的迭代环节。
+解读代码可以更好的理解作者的算法思路，也能找到在理解上的不足。 | 对于粒球快速生成算法，分裂时，其中一个子球直接继承父球的球心。这个旧的重心极有可能接近分裂后某个子球的理想中的重心，相当于减少了计算又保留了有效信息，效率很高。
+解读代码可以更好的理解作者的算法思路，也能找到在理解上的不足。
+[表]存在问题及
+拟解决方案 | 代码中计算粒球中心点center = data_no_label.mean(axis=0)刚开始不理解，在之前（Granular ball computing classifiers for efficient, scalable and robust learning）的文献中粒球中心的定义是粒球中所有样本点的重心，思维只局限在二维平面。而在数据集中特征是多维的，所以计算每个特征维度的平均值找重心是正确的。 | 代码中计算粒球中心点center = data_no_label.mean(axis=0)刚开始不理解，在之前（Granular ball computing classifiers for efficient, scalable and robust learning）的文献中粒球中心的定义是粒球中所有样本点的重心，思维只局限在二维平面。而在数据集中特征是多维的，所以计算每个特征维度的平均值找重心是正确的。 | 代码中计算粒球中心点center = data_no_label.mean(axis=0)刚开始不理解，在之前（Granular ball computing classifiers for efficient, scalable and robust learning）的文献中粒球中心的定义是粒球中所有样本点的重心，思维只局限在二维平面。而在数据集中特征是多维的，所以计算每个特征维度的平均值找重心是正确的。 | 代码中计算粒球中心点center = data_no_label.mean(axis=0)刚开始不理解，在之前（Granular ball computing classifiers for efficient, scalable and robust learning）的文献中粒球中心的定义是粒球中所有样本点的重心，思维只局限在二维平面。而在数据集中特征是多维的，所以计算每个特征维度的平均值找重心是正确的。 | 代码中计算粒球中心点center = data_no_label.mean(axis=0)刚开始不理解，在之前（Granular ball computing classifiers for efficient, scalable and robust learning）的文献中粒球中心的定义是粒球中所有样本点的重心，思维只局限在二维平面。而在数据集中特征是多维的，所以计算每个特征维度的平均值找重心是正确的。
+[表]下周计划 | 研读《GBG++: A Fast and Stable Granular Ball Generation Method for Classification》（附件2） | 研读《GBG++: A Fast and Stable Granular Ball Generation Method for Classification》（附件2） | 研读《GBG++: A Fast and Stable Granular Ball Generation Method for Classification》（附件2） | 研读《GBG++: A Fast and Stable Granular Ball Generation Method for Classification》（附件2） | 研读《GBG++: A Fast and Stable Granular Ball Generation Method for Classification》（附件2）
+
+### NAUGRIN研究生周报-曹思磊10.10.docx
+NAUGRIN研究生文献周报
+[表]姓   名 | 曹思磊 | 填表时间 | 25.10.10 | 本周有效
+工作时长 | 合计： 30 小时
+[表]本周研读
+文献清单 | 阅读 《A Fast Granular-Ball-Based Density Peaks Clustering Algorithm for Large-Scale Data》（附件5） | 阅读 《A Fast Granular-Ball-Based Density Peaks Clustering Algorithm for Large-Scale Data》（附件5） | 阅读 《A Fast Granular-Ball-Based Density Peaks Clustering Algorithm for Large-Scale Data》（附件5） | 阅读 《A Fast Granular-Ball-Based Density Peaks Clustering Algorithm for Large-Scale Data》（附件5） | 阅读 《A Fast Granular-Ball-Based Density Peaks Clustering Algorithm for Large-Scale Data》（附件5）
+[表]任务目标
+（上周计划） | 阅读 《A Fast Granular-Ball-Based Density Peaks Clustering Algorithm for Large-Scale Data》（附件5） | 阅读 《A Fast Granular-Ball-Based Density Peaks Clustering Algorithm for Large-Scale Data》（附件5） | 阅读 《A Fast Granular-Ball-Based Density Peaks Clustering Algorithm for Large-Scale Data》（附件5） | 阅读 《A Fast Granular-Ball-Based Density Peaks Clustering Algorithm for Large-Scale Data》（附件5） | 阅读 《A Fast Granular-Ball-Based Density Peaks Clustering Algorithm for Large-Scale Data》（附件5）
+[表]重点文献精读总结（主要包括研究目的、方法、实验、效果、贡献与创新等） | 目的：提升密度峰值聚类（DP）算法在处理大规模数据集时的效率，
+首先研究密度峰值聚类（DP）算法：
+DPC算法的两个假设
+1）类簇中心被类簇中其他密度较低的数据点包围；
+2）类簇中心间的距离相对较远。
+指标一：局部密度ρ
+ρ用来衡量一个数据点周围的“拥挤”程度。计算方法通常有两种：
+离散值采用截断核的计算方式，连续值则用高斯核的计算方式。
+定义数据点Xi局部密度Pi：
+dij为Xi和Xj之间的距离，dc为截断距离
+截断核 (Cutoff Distance)：设定一个距离阈值 dc（落在dc圆区域内平均点数，占总点数的1%-2%），然后统计在这一点 i 的 dc 半径范围内，有多少个其他数据点。范围内的点越多，ρ_i 的值就越大。（硬统计）简而言之就是统计在以Xi为中心、dc为半径的“圈”内，有多少个其他数据点。圈内的点越多，Pi值越大。
+高斯核 (Gaussian Kernel)：计算点 i 与所有其他点 j 之间的距离，并通过一个高斯函数进行加权求和。距离越近的点贡献的权重越大。(软统计)
+当dij>dc时 会得到一个接近0的数
+当dij<dc时 会得到一个接近1的数
+有点类似于tanh的作用？区分了圈内和圈外的点。
+两种方法都要计算每个点的P，复杂度为O(n²)。
+指标二：相对距离 δ (delta)
+相对距离δi指样本点i与其他密度更高的点之间的最小距离。
+对于密度最高的样本，相对距离定义为：
+对于其余数据点，相对距离定义为：
+- - > 所有局部密度p值比它大的点的距离的最小值。
+复杂度也为O(n²)。
+密度峰值聚类算法认为两者都大的点就是聚类中心点
+以X轴为局部密度p（rho），Y轴为相对距离δ（deltas）画决策图，右上角的点即为聚类中心
+最后将所有非中心点分配给其最近的 更高密度邻居所属的簇。
+具体执行步骤
+利用样本集数据计算距离矩阵 dij，（n*n，为下面步骤服务）
+2）确定邻域截断距离 dc
+3）计算局部密度p和相对距离 δ
+4）绘制决策图，选取聚类中心点；
+5）对非聚类中心数据点进行归类，聚类结束。
+本文就是为了解决DP算法高复杂度的问题，并将粒球用在无监督学习中。
+我们使用一种无监督的方法来生成GBs。与直接使用k-means生成GBs相比，所提出的方法不需要设置簇的数量，并且速度快得多。
+2）我们定义了GBs的密度，而不是对象的密度，且无需设置任何参数。它结合了中心、半径以及中心与其他成员之间的距离，因此密度能更好地描述数据分布，并可以作为一个通用的密度计算框架。
+3）当使用DP算法对GBs进行聚类时，我们只需要计算GBs之间的距离。由于无需计算任意两个对象之间的距离，且GBs的数量远少于数据中对象的数量，所提出的算法具有较低的时间复杂度，运行速度远快于DP，并改进了DP算法在大规模数据上的表现。
+Generate - Granular Balls：
+n为样本数量，初始将所有样本X看做一个粒球，
+GBs为输出粒球集合。
+使用一个队列来存储所要分裂的粒球。
+每当队列不空时，且粒球包含的样本数量大于√n时：
+使用2-means分裂粒球并送入队列，
+如果小于√n，计算其中心与半径输出到最终粒球集合。
+最后返回一个粒球集合作为DP
+定义5：粒球的密度：
+aveDIst代表所有粒球到中心的平均距离，可以衡量GB内部的离散度。
+m为GB内样本的数量。
+整合得到：
+样本越多，半径越小，到中心距离之和越小。密度越大，逻辑可理解。
+定义6：粒球的δ距离
+这个定义是以粒球方式对DP算法中相对距离 δ (delta)的重新定义。
+与DP算法一致，对于密度最高的粒球，给定他最大的δ值，
+对于其他粒球，δ为所有密度p值比它大的粒球的距离的最小值
+公式9是为了找到产生这个距离的那个具体的邻居
+arg min 指找到后面产生最小值时的参数
+GB-DP具体过程
+CL = φ: 初始化最终的簇标签列表 CL 为空。GBCL[i] 存储第 i 个粒球的簇标签。
+首先调用Generate - Granular Balls生成一个处理好的粒球集合。
+计算每个粒球的密度p和距离矩阵Dist。
+Dist[i, j] 为粒球 gbi 和 gbj 中心之间的欧氏距离。
+计算每一个粒球的相对距离δ和其更高密度的最近邻粒球N(gbi)
+以所有粒度球的 (p,δ) 值为坐标，绘制决策图。
+手动选择右上角的点作为聚类中心
+遍历所有聚类中心粒球，分配给他们不同的标签（初始化）
+遍历不是聚类中心的粒球，将它的标签设置为其更高密度的最近邻粒球N(gbi) 的标签。
+对于所有粒球，将标签赋予它之中的每个数据点
+在实验阶段，
+在6个合成数据集上，k-means(Fig.4)几乎无法对非球状数据聚类，而GB-DP（Fig.10）和其他更复杂的改进DP算法一样，都能区分不规则的簇。说明了算法的可靠性。
+在11个真实数据集上，当数据集规模较小时，GB-DP需要时间生成GBs，所以稍慢，当数据量稍大时，速度就会变快很多。且ACC和NMI都是第一（ACC是聚类结果中正确分类对象数量与对象总数的比例，而NMI是聚类结果与真实类别之间的相似性），证明了算法的有效性。
+在大规模数据集上，DP和DPC-KNN-PCA因其高复杂度，内存不足。而在ACC和NMI都比FastDPeak高的情况下，GB-DP的速度也远快于FastDPeak。证明了算法的可扩展性。 | 目的：提升密度峰值聚类（DP）算法在处理大规模数据集时的效率，
+[表]批判性思考与引申（优点与启发、局限与不足、展望等） | 本文将粒球的思想运用到DP算法中，重新界定了距离，局部密度 ρ，相对距离 δ
+，将原本的大量数据降维，待到每个粒球的标签被打上后，粒球内部的数据点的标签也相同。其思想是在简化后的空间中高效求解，再将解映射回原始空间。首次使用无监督方法生成粒球。
+论文结尾说到，由于GB间的距离采用欧氏距离，算法难以发现“瑞士卷”这类流形结构的簇。这是其当前最大的适用性局限。一个点集的“中心”在流形上可能没有意义，两个在欧氏空间中很近的GB，在流形上可能相距很远。
+所以算法在高维数据上的聚类是否可行，也是文中没有提到的。 | 本文将粒球的思想运用到DP算法中，重新界定了距离，局部密度 ρ，相对距离 δ
+所以算法在高维数据上的聚类是否可行，也是文中没有提到的。
+[表]存在问题及
+拟解决方案 | Generate-GBs中GBs造成了误解，以为是附件3中的GBS（粒球采样），
+其实是粒球生成：Generate - Granular Balls
+但也回头复习一下了一下GBS的过程：
+第一步：在粒球A的中心点（球心）上，画一个虚拟的十字坐标轴。它会在球的边界上留下4个交点。在图5(b)中，这4个虚拟的几何交点被标记为 a, b, c, d。
+第二步：对于每一个虚拟交点，我们在粒球A内部进行搜索。找到一个真实的、存在的数据点，这个点必须满足两个条件：1.它离虚拟交点a的距离是最近的。2.它的标签必须和粒球A的标签一样（去除噪数据的影响，提升鲁棒性）
+第三步：完成采样这4个真实的数据点 a', b', c', d' 就是粒球A为我们贡献的采样点。我们对所有的粒球都重复以上步骤，把每个粒球选出来的数据点全部收集起来，就构成了我们最终的采样结果。（如图c）
+Generate-GBs是为了GB-DP而设计的还是能单独使用？
+在Generate-GBs中输出的是带有中心 c 和半径 r的粒球集合，服务于GB-DP中计算粒球的密度。（至于为什么不使用k-means方法，作者在最后的讨论中也说明了实验中Generate-GBs算法的高效性，也避免了设置k值的问题。）而且DP算法本身是无监督的，因此作为其预处理步骤的Generate-GBs也必须是无监督的，区别于需要设置纯度阈值的k-means方法。
+所以确实是为了GB-DP设计的。但是Generate-GBs也可以用于其他方面，比如运行k-means前，可以先用Generate-GBs生成a个粒球，然后将这a个球的中心点作为k-means的初始中心点，然后在进行聚类。 | Generate-GBs中GBs造成了误解，以为是附件3中的GBS（粒球采样），
+[表]下周计划 | 研读《GEC: A novel and efficient classifier based on granular-ellipsoid model》（附件6）开始粒椭球的学习。 | 研读《GEC: A novel and efficient classifier based on granular-ellipsoid model》（附件6）开始粒椭球的学习。 | 研读《GEC: A novel and efficient classifier based on granular-ellipsoid model》（附件6）开始粒椭球的学习。 | 研读《GEC: A novel and efficient classifier based on granular-ellipsoid model》（附件6）开始粒椭球的学习。 | 研读《GEC: A novel and efficient classifier based on granular-ellipsoid model》（附件6）开始粒椭球的学习。
+
+### NAUGRIN研究生周报-曹思磊10.17.docx
+NAUGRIN研究生文献周报
+[表]姓   名 | 曹思磊 | 填表时间 | 2025.10.17 | 本周有效
+工作时长 | 合计： 15 小时
+[表]本周研读
+文献清单 | 研读《GEC: A novel and efficient classifier based on granular-ellipsoid model》（附件6） | 研读《GEC: A novel and efficient classifier based on granular-ellipsoid model》（附件6） | 研读《GEC: A novel and efficient classifier based on granular-ellipsoid model》（附件6） | 研读《GEC: A novel and efficient classifier based on granular-ellipsoid model》（附件6） | 研读《GEC: A novel and efficient classifier based on granular-ellipsoid model》（附件6）
+[表]任务目标
+（上周计划） | 研读《GEC: A novel and efficient classifier based on granular-ellipsoid model》（附件6） | 研读《GEC: A novel and efficient classifier based on granular-ellipsoid model》（附件6） | 研读《GEC: A novel and efficient classifier based on granular-ellipsoid model》（附件6） | 研读《GEC: A novel and efficient classifier based on granular-ellipsoid model》（附件6） | 研读《GEC: A novel and efficient classifier based on granular-ellipsoid model》（附件6）
+[表]重点文献精读总结（主要包括研究目的、方法、实验、效果、贡献与创新等） | 提出了一种粒计算中新的粒度划分的方法：粒椭球。
+并非所有现实生活中的数据都符合球形。
+我们能否改变GB的形状，或者找到一种新的粒度模型来替代GB，一种能够覆盖数据集中所有样本的模型？文本就提出了粒椭球的概念。
+有两种方法可以用来生成粒椭球。
+一种方法是通过根据粒球内的数据在特定方向上拉伸粒球，将其转换为粒椭球。
+另一种方法是直接从划分的粒度单元生成粒椭球。
+本文选择后一种方法，即直接生成GE。
+GE的中心c和形状矩阵H可以通过一个优化问题来确定，即最小体积包围椭球（MVEE）问题。
+对于粒椭球的定义：GE(H,c) = {x ∈ Rⁿ|(x − c)ᵀ H (x − c) ≤ 1}
+H是一个正定矩阵。c为中心。
+x ∈ Rⁿ：表示数据集 D 是存在于一个 n 维空间中的一群点。
+≤ 1代表点在粒椭球边界或内部上。
+即粒椭球中多数样本的标签。
+粒椭球中多数样本所占的比例。 | 提出了一种粒计算中新的粒度划分的方法：粒椭球。
+粒椭球中多数样本所占的比例。
+[表]批判性思考与引申（优点与启发、局限与不足、展望等） | 粒椭球可以通过改变不同方向上半轴的长度来改变其自身生成的形状，每个基本粒度的信息都可以被准确地描述，所以更加灵活，能够适应非球形数据。
+当一个模型无法很好地拟合数据时，应该要思考是否有更好的数学模型更适合这个任务。
+MVEE：
+设X = {x1, x2, …, xn}是n维欧几里得空间中的点集。
+X的MVEE是所有包含X的椭球中体积最小的一个。
+MVEE问题具体假设任何椭球GE(H,c)都可以由其中心和形状矩阵H表示（即上述定义）
+在H进行Cholesky分解后，就存在一个下三角矩阵L使得H = LLᵀ
+所以椭球GE(H,c)可以表示为{x∈Rⁿ | ||Lᵀ(x-c)|| ≤ 1}
+即{x∈Rⁿ | x = c + L⁻ᵀz, ||z|| ≤ 1}
+所以椭球可以看作是单位球经过仿射变换x' = L⁻ᵀx + c的结果
+我们使用表示中心在原点的单位球的体积
+因为平移不改变单位球的体积，
+所以经过线性变换L⁻ᵀ后，单位球的体积变为det(L⁻ᵀ)Vol(B)
+因此，一个n维椭球的体积可以表示为Vol(B)/√det(H)。det(H)越大，椭球GE(H,c)的体积就越小。所以接下来问题就转变为求det(H)的最大值。（det为行列式）。
+Khachiyan 指出，任意点集X的MVEE可以从一个中心对称点集的MVEE中获得。因此，我们只需要考虑关于原点中心对称的集合X，即X = -X，且c = 0。 | 粒椭球可以通过改变不同方向上半轴的长度来改变其自身生成的形状，每个基本粒度的信息都可以被准确地描述，所以更加灵活，能够适应非球形数据。
+[表]存在问题及
+拟解决方案 | 刚开始对与粒椭球对定义不太清楚，而且加入了线性代数的知识。
+GE(H,c) = {x ∈ Rⁿ|(x − c)ᵀ H (x − c) ≤ 1} 为什么 H 要是正定矩阵？
+这保证了我们定义的“加权距离平方” (x − c)ᵀ H (x − c) 总是非负的。即距离不可能是负数。也保证了方程描述的才是一个封闭的、有界的椭球体。也或者说在马氏距离的定义中它必须是一个正定矩阵。
+这个方程是如何想出来的？
+第一种方法（也许不对）：
+我觉得是先找到数学上描述一个椭圆的方程是什么，再与粒结合。
+(x/a)² + (y/b)² = 1 了解到这个方程可以改成矩阵形式（二次型）：
+其中，x 是点的向量表示，Σ是一个正定矩阵（协方差矩阵的逆），其中
+=H ，=H-1，c 是一个常数。
+所以H-1的特征值就是a2，b2，开方后就得到了两个半轴的大小。
+H⁻¹ 的特征向量表示了粒椭球每个半轴的方向，因为：
+对于一个椭球x，他可以是由一个圆u经过一个变换矩阵M得到的
+椭圆上的点 x 和单位圆上的点 u 的关系是：x = Mu。
+椭圆方程：xᵀHx = 1，单位圆方程uᵀu = 1；
+代入三个等式得到：H⁻¹ = M Mᵀ。
+M 可以是一个任意的线性变换，他可以包含旋转和拉伸的操作，但其特征向量可能并不是互相垂直的，而对于H⁻¹ = M Mᵀ，它永远是一个对称矩阵，所以其特征向量是相互垂直的，可以说抵消了“旋转的过程”。一个变换的主方向是由特征向量来描述的，所以H⁻¹ 的特征向量，就是那个创造了椭球的几何变换的“主方向”。在最终的几何图形上，就体现为椭球的主轴方向。
+第二种方法：马氏距离
+马氏距离：一个点 x 到一个数据分布中心 μ (即 c) 的马氏距离 D_M 的平方被定义为：
+D_M²(x) = (x - μ)ᵀ Σ⁻¹ (x - μ)
+μ是数据分布的均值（即中心）。
+Σ是数据分布的协方差矩阵。
+Σ⁻¹是协方差矩阵的逆矩阵，它必须是一个正定矩阵。
+可以看到粒椭球的定义与马氏距离的定义完全相同。
+所以粒椭球就是一个等马氏距离面所包围的区域。
+论文中的s.t.是什么意思？
+表示“subject to”，即“受限于”。 | 刚开始对与粒椭球对定义不太清楚，而且加入了线性代数的知识。
+表示“subject to”，即“受限于”。
+[表]下周计划 | 本周事务及课程较多，科研投入时间较少，下周继续研读《GEC: A novel and efficient classifier based on granular-ellipsoid model》（附件6）。 | 本周事务及课程较多，科研投入时间较少，下周继续研读《GEC: A novel and efficient classifier based on granular-ellipsoid model》（附件6）。 | 本周事务及课程较多，科研投入时间较少，下周继续研读《GEC: A novel and efficient classifier based on granular-ellipsoid model》（附件6）。 | 本周事务及课程较多，科研投入时间较少，下周继续研读《GEC: A novel and efficient classifier based on granular-ellipsoid model》（附件6）。 | 本周事务及课程较多，科研投入时间较少，下周继续研读《GEC: A novel and efficient classifier based on granular-ellipsoid model》（附件6）。
+
+### NAUGRIN研究生周报-曹思磊10.24.docx
+NAUGRIN研究生文献周报
+[表]姓   名 | 曹思磊 | 填表时间 | 2025.10.24 | 本周有效
+工作时长 | 合计： 20 小时
+[表]本周研读
+文献清单 | 研读《GEC: A novel and efficient classifier based on granular-ellipsoid model》（附件6） | 研读《GEC: A novel and efficient classifier based on granular-ellipsoid model》（附件6） | 研读《GEC: A novel and efficient classifier based on granular-ellipsoid model》（附件6） | 研读《GEC: A novel and efficient classifier based on granular-ellipsoid model》（附件6） | 研读《GEC: A novel and efficient classifier based on granular-ellipsoid model》（附件6）
+[表]任务目标
+（上周计划） | 研读《GEC: A novel and efficient classifier based on granular-ellipsoid model》（附件6） | 研读《GEC: A novel and efficient classifier based on granular-ellipsoid model》（附件6） | 研读《GEC: A novel and efficient classifier based on granular-ellipsoid model》（附件6） | 研读《GEC: A novel and efficient classifier based on granular-ellipsoid model》（附件6） | 研读《GEC: A novel and efficient classifier based on granular-ellipsoid model》（附件6）
+[表]重点文献精读总结（主要包括研究目的、方法、实验、效果、贡献与创新等） | 对于粒椭球的定义：GE(H,c) = {x ∈ Rⁿ|(x − c)ᵀ H (x − c) ≤ 1}
+MVEE：
+设X = {x1, x2, …, xn}是n维欧几里得空间中的点集。
+X的MVEE是所有包含X的椭球中体积最小的一个。
+MVEE问题具体假设任何椭球GE(H,c)都可以由其中心和形状矩阵H表示（即上述定义）
+在H进行Cholesky分解后，就存在一个下三角矩阵L使得H = LLᵀ
+所以椭球GE(H,c)可以表示为{x∈Rⁿ | ||Lᵀ(x-c)|| ≤ 1}
+即{x∈Rⁿ | x = c + L⁻ᵀz, ||z|| ≤ 1}
+所以椭球可以看作是单位球经过仿射变换x' = L⁻ᵀx + c的结果
+使用表示中心在原点的单位球的体积
+因为平移不改变单位球的体积，
+所以经过线性变换L⁻ᵀ后，单位球的体积变为det(L⁻ᵀ)Vol(B)
+因此，一个n维椭球的体积可以表示为Vol(B)/√det(H)。det(H)越大，椭球GE(H,c)的体积就越小。所以接下来问题就转变为求det(H)的最大值。（det为行列式）。
+进而可以转化为求-ln det H的最小值（可能好计算一点？）（1）
+Khachiyan 指出，任意点集X的MVEE可以从一个中心对称点集的MVEE中获得。因此，只需要考虑关于原点中心对称的集合X，即X = -X，且c = 0。（简化问题）
+所以公式变为xⱼᵀ H xⱼ ≤ 1。（2）
+结合以上两点，可以通过求解如下优化问题来获得MVEE GE(H, 0)
+目标是求出-ln det H的最小值；
+约束条件是xⱼᵀ H xⱼ ≤ 1，H为正定矩阵
+直接求解这个问题可能很复杂，所以提出了其对偶问题：
+（对偶问题是一个问题的“另一面”，通常有更好的数学性质，更容易求解，而且它的解能帮助得到原问题的解。即引入一个新变量u来更好的解决问题）
+H⁻¹ = XUXᵀ
+eᵀu = 1表示所有数据点分配的加权总和为1，而只有那些外围的数据点会起到“支撑”作用，只会给这些数据点分配权重，那内部不起作用的点权重为0。
+计算MVEE的方法大致可分为两类：
+内点法（牛顿型算法）和条件梯度法（Frank-Wolfe [FW]型算法）。
+内点法 主要用于求解模型(3)，而FW方法 用于求解模型(4)。
+本研究采用FW型算法来计算MVEE，因为实验证明FW型算法在处理大样本量和高样本维度方面优于牛顿型算法。
+而FW-K和FW-KY算法只能获得一个ε-原始可行解，这未必满足近似最优性条件。
+所以在此基础上，提出了ε-近似最优解的概念：
+假设u是(4)的一个可行解，如果H(u) = (XUXᵀ)⁻¹满足xⱼᵀ H xⱼ ≤ 1 + ε, j = 1, 2, ..., m，则u被称为一个ε-原始可行解，其中ε是一个足够小的正数。
+在实际计算中，很难得到一个完美的解。所以这个ε将算法的标准放宽，得到一个合格的结果即可。计算速度更快，也提高了鲁棒性。它允许生成的椭球可以有数据点在它的边界之外，但超出边界的距离不能超过 ε。
+如果u是模型(4)的一个ε-原始可行解，并且u还应满足uⱼ > 0, xⱼᵀH(u)xⱼ ≥ 1 − ε, j = 1, 2, ..., m，则u被称为一个ε-近似最优解。
+对于那些分配权重的外围数据点，它们到边界的距离不能超过ε。
+为了减少椭球的重叠，提出了一个合并椭球的方法：
+给定两个粒度椭球GEₐ(Hₐ, cₐ)和GEₑ(Hₑ, cₑ)，rₐˢ表示GEₐ(Hₐ, cₐ)在第s个方向上半轴的长度，1 ≤ s ≤ d，其中d是粒度椭球的维度。如果满足以下条件：
+则这两个粒度椭球可以被合并。
+每个椭球的每个纬度上半轴的长度的平方之和再开根的均值
+要大于半径之间的距离
+Generation of GEs
+将一整个数据集视为一个椭球
+2.对每一个椭球进行如下操作
+计算它的纯度 T；
+如果椭球的纯度小于阈值 T 并且样本数量大于 2d：
+保留一个旧中心，选择k-1个随机中心。
+3.使用k-means算法分裂椭球。
+4.删除样本数量小于样本维度的椭球（但没有删除样本）
+5.如果所有椭球都达到了所设纯度阈值：
+对于每一个的椭球：
+使用算法1计算其H以及C
+进行一次去重叠操作
+如果有没有达到纯度阈值的椭球：返回步骤2分裂。
+6.返回一个椭球集
+GE(H,c) = {x ∈ Rⁿ|(x − c)ᵀ H (x − c) ≤ 1}
+重新定义了从一个样本点到一个椭球的距离：
+可以看到这个距离定义复用了椭球的原始定义，非常巧妙，也刚好是马氏距离的平方。
+原本的定义是以“1”为边界，而这个”1“刚好描述了数据点与椭球边界的关系。
+样本的最近邻椭球集（NGES）
+给定一个GE集 {GEⱼ(Hⱼ, cⱼ)}, j = 1,2,…,m，其中包含k类标签，以及一个样本x。如果x在一个GEₐ内部，即满足dis{x, GEₐ(Hₐ, cₐ)} ≤ 1，那么x的NGES就是那个GEₐ。如果x位于所有GE之外，即满足dis{x, GEⱼ(Hⱼ,cⱼ)} > 1, j=1,2,…,m，那么x的NGES {GEᵢ(Hᵢ, cᵢ)}, i=1,2,…,k，是由每个类别中离x最近的GEᵢ组成的集合。
+简而言之有两种情况。
+1:x在一个椭球内部，其NGES为这个椭球。
+2:x不在任何一个椭球内部，其NGES为每个类别中离x最近的GEᵢ组成的集合。
+GEC概率预测模型:
+P(x属于a类) = ( x到所有非a类椭球的距离之和 ) / ( x到所有椭球的总距离 )
+可以理解为，到其他椭球的距离越远，属于自己这个类别的椭球的概率越大？
+（概率总和并不是1，但并不影响决策）
+Algorithm 3 GEC Algorithm.
+输入：数据集D，一个待分类点x
+输出：x属于每个类别的概率。
+通过算法2生成椭球集
+计算x的最近邻椭球集
+如果在计算x的最近邻椭球集时发现他在一个椭球内部（dis<=1），
+直接结束，x属于这个椭球的概率为100%。
+4.如果不在任何一个椭球内部，使用GEC的概率预测模型计算x属于每个类别的概率
+GEC Algorithm的时间复杂度
+对k个类别，n个样本，d个特征纬度的数据集，执行k-means聚类算法，每次迭代的时间复杂度是knd。可以认为是O(knd)
+在l个样本上，求解MVEE模型，然后计算其形状矩阵H和中心c，这个过程所需的时间复杂度是ld²，(最坏情况l=d)生成椭球的总时间复杂度可以表示为O(nd²)。
+3.最后需要进行NGES的计算。确定一个待预测样本与单个椭球之间的距离需要d²的时间。在最不利的情况下，NGES计算所需的时间将达到kmd²。假设有n₁个样本待预测，那么在预测阶段，所需的时间复杂度将是O(n₁kmd²)。
+GEC算法的总体时间复杂度是O(knd + nd² + n₁kmd²)。
+所以GEC算法可以在线性时间复杂度内完成模型训练过程，效率更高。
+实验阶段
+真实数据集来自加州大学欧文分校（UCI）基准数据集。
+每个实验都进行十次交叉验证，并使用平均值来衡量准确性。
+1.对比了kNN  Weighted kNN  k-means tree  GBkNN  GBkNN++  GEC
+大多数情况GEC都最优，但在svmguide3上，GEC的准确性较低，因为数据集纬度高但样本数量少且过于分散，生成的有效椭球很少。
+2.对比了CART SVM LDA QDA GEC 各分类器的比较，GEC在7个指标上取得了最佳性能，
+对比相比下性能更好的加权kNN和CART，GEC在F1分数上也取得了更显著的成果
+对比了 GBkNN和GEC，在一些数据集上的接收者操作特征（ROC）曲线和曲线下面积（AUC）值
+对比了GBkNN和GEC在一些数据集上的精确率-召回率（PR）曲线
+进行了非参数统计实验，使用Friedman检验来分析算法之间的统计差异
+在纯度阈值在0.9到1的范围内测试精度，一般设置为0.95。最直接的策略是在0.9到1的范围内对纯度阈值进行网格搜索找到最优结果。
+一个优秀的粒度模型应该能够用更少的粒度单元覆盖更多的样本数据。对比了T = 0.95时生成的GB和GE的数量。椭球能用更少的元素来表示数据集 | 对于粒椭球的定义：GE(H,c) = {x ∈ Rⁿ|(x − c)ᵀ H (x − c) ≤ 1}
+[表]批判性思考与引申（优点与启发、局限与不足、展望等） | 在进行计算时可以不必追求最精确的结果，加上一些“容忍度”或许可以更好的提升计算速度和鲁棒性。有点类似于粒球生成算法中不必追求每次迭代的过程稳定一样。
+对于这个求最小体积的几何问题，转化成了一个求最优化的问题的数学模型，又转化为求其对偶问题，这次也认识到了数学是计算机算法的基础，以及算法涉及的广度。
+对于一个“最优化问题”，可以转而求其对偶问题，这也是在最近的运筹学课程上学到的。
+文中提到在算法3中，在待预测样本数量极多的情况下，我们可以考虑优先计算较大GE与这些待预测样本之间的距离。所以是否算法3还没有优化这一步？所以在算法3的第2步计算x的最近邻椭球集前，是否可以通过对每一个椭球的H从小到大排序，然后再进行下一步？不过这样也会导致很大的计算开销。 | 在进行计算时可以不必追求最精确的结果，加上一些“容忍度”或许可以更好的提升计算速度和鲁棒性。有点类似于粒球生成算法中不必追求每次迭代的过程稳定一样。
+[表]存在问题及
+拟解决方案 | 由（3）到其对偶问题的（4）的过程是怎样的，或许需要复杂的数学推理过程？
+粒度模型计算可以分为三个步骤。首先，将给定的数据集划分为各种基本粒度。是什么意思？  应该是聚类将数据点变为一个个簇的过程。
+在文中 k-means与椭球结合中：
+”如果一个椭球的纯度低于指定的纯度阈值，则在该椭球内选择k-1个异构点作为新的聚类中心“ 其中，选择k-1个异构点说明不是传统的kmeans，是依据粒球快速生成算法的思想改进而来的吗？
+可以理解如果三维空间中只有三个样本无法生成三维空间的椭球，因为三个样本一定可以是共面的。但为什么一定要在n维空间内生成n维的椭球？
+椭球定义中H是一个正定矩阵，但正定矩阵必须是满秩的，如果有一个纬度没有，那么他的秩就是n-1了。所以所有样本数少于维度的椭球都会被丢弃
+对于样本点到一个椭球的距离：椭球的尺寸越大，它在样本空间中的权重就越高。这种定义距离的方式可以将相似性与椭球的权重结合起来。如何理解？
+椭球的尺寸越大，样本点越分散，其方差也就越大，协方差矩阵（H的逆）的特征值越大，对应的H越小，dis就更容易变得更小，所以点就更容易的分配给这个尺寸更大的椭球，所以认为其权重越大。
+至于相似性：在粒球中，欧式距离越近的粒球有较大可能标签一致，所以他们有“相似性”，所以在椭球中（x-c）和其转置 就代表其相似性。可以这么理解吗？ | 由（3）到其对偶问题的（4）的过程是怎样的，或许需要复杂的数学推理过程？
+[表]下周计划 | 阅读附件7（Synthetic_Minority_Oversampling_Technique_Based_on_Granular_Ellipsoid_for_Imbalanced_Data_Classification） | 阅读附件7（Synthetic_Minority_Oversampling_Technique_Based_on_Granular_Ellipsoid_for_Imbalanced_Data_Classification） | 阅读附件7（Synthetic_Minority_Oversampling_Technique_Based_on_Granular_Ellipsoid_for_Imbalanced_Data_Classification） | 阅读附件7（Synthetic_Minority_Oversampling_Technique_Based_on_Granular_Ellipsoid_for_Imbalanced_Data_Classification） | 阅读附件7（Synthetic_Minority_Oversampling_Technique_Based_on_Granular_Ellipsoid_for_Imbalanced_Data_Classification）
+
+### NAUGRIN研究生周报-曹思磊10.31.docx
+NAUGRIN研究生文献周报
+[表]姓   名 | 曹思磊 | 填表时间 | 2025.10.31 | 本周有效
+工作时长 | 合计： 25 小时
+[表]本周研读
+文献清单 | 阅读附件7（Synthetic_Minority_Oversampling_Technique_Based_on_Granular_Ellipsoid_for_Imbalanced_Data_Classification） | 阅读附件7（Synthetic_Minority_Oversampling_Technique_Based_on_Granular_Ellipsoid_for_Imbalanced_Data_Classification） | 阅读附件7（Synthetic_Minority_Oversampling_Technique_Based_on_Granular_Ellipsoid_for_Imbalanced_Data_Classification） | 阅读附件7（Synthetic_Minority_Oversampling_Technique_Based_on_Granular_Ellipsoid_for_Imbalanced_Data_Classification） | 阅读附件7（Synthetic_Minority_Oversampling_Technique_Based_on_Granular_Ellipsoid_for_Imbalanced_Data_Classification）
+[表]任务目标
+（上周计划） | 阅读附件7
+（Synthetic_Minority_Oversampling_Technique_Based_on_Granular_Ellipsoid_for_Imbalanced_Data_Classification） | 阅读附件7
+[表]重点文献精读总结（主要包括研究目的、方法、实验、效果、贡献与创新等） | 不平衡数据 (Imbalanced data) 分类是机器学习和数据挖掘等领域的一项关键任务。由于少数类样本的数量远低于多数类样本，分类器通常难以有效地从少数类中学习。
+目前，针对不平衡分类的解决方案主要分为算法层面和数据层面
+算法层面，改进是基于分类算法本身的固有缺陷和不平衡数据的特点进行的。如不平衡支持向量机 ，高度集成的决策树，代价敏感方法。
+数据层面，通常采用增加少数类样本数量或减少多数类样本数量
+随机过采样是一种常用的方法，其核心思想是随机复制少数类中的样本以增加数据集中少数类样本的数量，从而平衡类别分布。这种方法简单易行，不需要复杂的算法和计算资源，但它容易导致过拟合，因为复制样本会使模型对少数类的特征过于敏感。
+为了解决这个问题，研究者提出了合成少数类过采样技术 (SMOTE)，该技术通过随机选择一个少数类样本，并在其与邻近样本之间进行线性插值来合成非冗余的少数类样本，但由于其盲目过采样，它仍然存在缺点。
+本文将粒椭球与SMOTE 算法结合，
+提出了两种基于粒椭球模型的算法：基于粒椭球边界的SMOTE (GEB-SMOTE)和基于粒椭球分布的SMOTE (GED-SMOTE)。
+GEB-SMOTE在粒椭球的表面合成少数类样本，更加强调不同类别样本之间的边界。
+GED-SMOTE使用多元正态分布，根据粒椭球的形状矩阵来合成少数类样本，更加强调合成数据集与原始数据集分布之间的相似性。
+先了解SMOTE算法：
+syn_data存储生成的样本
+k_neighbor存储每个原始样本的k个近邻的索引
+get_neighbor_point计算每个原始少数类样本的k个最近邻
+：对于每一个少数类样本，计算它与所有其他样本之间的特征差值的平方之和，这个距离作为衡量远近的标准。而我们只需要最近的k个样本，所以将所得到的数组排序（argsort() 返回排序后原始数组的索引），选择最近的k个（[1:k+1]）存储到k_neighbor
+get_syn_data用来生成最终的合成数据：
+先调用get_neighbor_point方法，然后进入一个循环（合成样本数量），随机选择一个样本，再从他的最近邻k个邻居中随机选一个，计算其差值向量（P_neighbor - P_original
+），然后进行线性插值（P_original + gap * diff），就得到了合成样本。
+这个差值向量代表了两个向量之间的方向和距离
+而线性插值就保证了这个合成向量是在这两个向量的方向上的随机一个点。
+设大生成的样本数，可以清楚的看到合成样本都在连线上。
+其缺点是：
+1.新样本缺乏多样性
+2.可能无法有效处理非线性边界
+3.会导致过拟合，并且合成的样本存在噪声问题。
+本文工作：
+椭球定义：ρ是椭球的边界系数，一个大于0的常数，通常设为1。c 所有样本点的质心，H 为样本点的协方差矩阵 Σ，再加上一个正则项 ϵI。
+ϵI: 当样本数量少于维度或数据共线性很强时，协方差矩阵可能不是正定的，导致无法求逆。加上一个单位矩阵 I 的微小倍数 ϵ 可以保证 H 矩阵是正定的，从而确保椭球可以被唯一定义。
+协方差矩阵：对角线元素：是每个变量自身的方差，非对角线元素是不同变量之间的协方差（衡量两个变量如何一起变化）。
+2.一个 d 维椭球的体积可以表示为：
+（中心在原点的单位球的体积经过变换而来）
+3.纯度和标签与上篇论文定义一致：
+4.椭球的体积仅取决于 det(H)。因此，对于中心 c 和形状矩阵 H，使用以下优化模型来求解它们：
+通过这个模型求得的解得到的粒椭球可以类比为一个半径等于从中心到所有样本点最大距离的粒球，然而求解该模型可能需要巨大的计算复杂度。
+在给定数据集 D = {X₁, X₂, ..., Xₐ} 上生成一个粒度椭球 GE，其中 Xⱼ 是一个随机变量，H 是 GE 的形状矩阵，它是一个正定矩阵，可以具体表示为：
+H = Σ + εI ，i是单位矩阵，ε 是一个非常小的正数，保证H是一个正定矩阵
+在实际应用中，我们可以使用边界系数（P）来控制协方差矩阵的大小，从而完全替代上面的优化模型（4）。本质上，并不需要粒椭球精确地包含所有样本点；一个近似相似的粒椭球就足够了。
+所以，最小化椭球体积（唯一且复杂度高）的方法就被替代为协方差矩阵（确定椭球的“形状”和“方向”） + 边界系数（调整大小）的方法
+6.Algorithm 1 Generation of Granular Ellipsoids
+将数据集D视为一个粒椭球，初始化一个粒椭球集合 Ellipsoids = {GE}
+对于集合中的每一个椭球，计算其纯度：（直到集合中没有生成新椭球，循环停止）
+如果纯度小于1:计算椭球中每一类样本的均值，用来找到 k 个新的椭球中心，使用一次k划分方法分裂椭球，加入集合并删除原来的椭球。
+删除集合中只包含单个样本的粒椭球（去噪）
+7.num
+首先，对于给定的训练集 T，我们根据算法1在 T 上生成一个粒椭球集 Ellipsoids。然后，对于每个带有少数类标签的粒椭球，我们在其边界上随机生成一定数量的样本。为每一个少数类样本，合成的样本数量 num 的公式如右图：
+Tmaj 表示 T 中的多数类样本，Tmin 表示 T 中的少数类样本，Ellipsoidsmin 表示椭球集中带有少数类标签的粒椭球。在合成后，少数样本数量的和 应该等于多数样本的数量。
+8. Λ和Υ
+Υ (Υ = (υ1, υ2...υd))是 H 的特征向量（一个矩阵的特征向量，是当该矩阵对它进行变换时，其方向保持不变的向量）
+Λ (Λ = (λ1, λ2...λd))是 H 的特征值 （AY = λY，代表其特征向量拉伸了λ倍）
+9.映射函数
+GE 的一个边界点可以通过以下映射函数获得：即在粒椭球的边界上随机生成一个新的数据点。
+其中ω是d维随机向量，⊙表示Hadamard积，∥·∥表示2范数。
+这个公式要解决的问题是如何在一个任意形状和方向的椭球的边界上，随机地找到一个点。其过程是从“单位球”出发，通过“拉伸”，”旋转“和“平移”得到目标点。
+f(GE) = c + Υ ∘ (ω / ||ω|| ∘ (ρ√Λ))
+ω : 一个 d 维的随机向量。
+ω / ||ω||: 将ω转化为单位向量
+这一步我们就可以在单位圆上得到一个点
+√Λ: Λ 是 H 的特征值矩阵，λ 代表了椭球在各个主轴方向上的方差。
+√λ 就代表了椭球在该主轴方向上的半轴长度（标准差）。
+√Λ 提供了将单位球“拉伸”成目标椭球形状所需要的拉伸比例。
+ρ边界系数：对椭球进行一个整体的缩放。
+即每个半轴的长度*ρ
+ω / ||ω|| ∘ (ρ√Λ):
+∘ : 哈达玛积，也就是逐元素相乘。
+其含义是把单位球上的随机点 (ω / ||ω||)，按照 (ρ√Λ) 提供的比例，在每个维度上进行拉伸。得到一个中心在原点，主轴与坐标轴对齐的椭球边界上的点。
+Υ 是 H 的特征向量矩阵。
+特征向量 υ 指出了椭球各个主轴在空间中的方向。Υ 作为一个旋转矩阵 ，负责将这个“标准位置”的椭球，旋转到它在数据空间中实际应在的方向。
+c: 平移变换
+我们已经创造了一个形状正确、方向也正确的椭球边界点，但这个椭球的中心还在原点。最后一步就是把它平移到实际的中心 c 的位置。
+10.GEB-SMOTE算法详细过程：对于原始数据集T，给出重采样后的结果T’。
+1: 初始化 T' = T;
+2: 根据算法1（6.）在T上生成粒椭球集 Ellipsoids;
+3: 使用(7.)确定每个少数类粒椭球需要合成的样本数量 num;
+对于在椭球集Ellipsoids中的每一个标签为少数类的粒椭球：
+对其H进行特征值分解，得到特征值和特征向量，从而得到其Λ和Υ。
+5.开始循环num次，通过映射函数（9.）生成num个样本,并将样本点加入最终数据集中。
+SMOTE 的问题在于盲目地在点与点之间线性插值，这可能产生不真实的样本。我们的改进方法是，不再关注单个的点，而是先用更鲁棒的“粒椭球”把少数类样本“圈”起来，然后在这些椭球的边界上生成新的、高质量的样本。
+11.GED-SMOTE
+现有的SMOTE算法，包括GEB-SMOTE（e），仅关注待合成的单个样本与现有少数类样本之间的相似性，而忽略了所有合成的少数类样本与原始少数类样本之间数据分布的相似性。简单来说，合成的少数类样本作为一个整体，与真实数据集并不相似。
+真实世界的数据大多近似服从正态分布，粒椭球定义中中刚好拥有中心（均值 c）和形状（协方差矩阵 H），而一个多元正态分布正好也是由均值向量和协方差矩阵这两个参数唯一决定的。
+所以也就有了GED-SMOTE（f） 的核心思想：
+将每个少数类粒椭球 GE(c, H) 等价于一个均值为 c、协方差为 H 的多元正态分布 N(c, H)。
+多元正态分布的概率密度函数标准形式为：
+正定矩阵 H 可以通过 Cholesky 因式分解进行分解：存在一个较低的三角形矩阵 L，使得 H = LLT 。这里的L就起 把原始单位圆椭球旋转拉伸为目标椭球 的作用
+所以GE 的一个边界点可以通过以下映射函数获得：
+z ∼ N (0, I)：
+z 是一个 d 维随机向量，它的每个分量都是从标准正态分布（均值为0，方差为1）中独立抽取的。
+用进行Cholesky分解后得到的矩阵 L 左乘向量 z，这样 Lz 就具有了协方差结构 H。Lz 是一个已经是服从 N(0, H) 分布的随机向量。
+ρ边界系数：对向量进行缩放。
+C：将数据点“平移”到目标椭球的中心位置。
+GED-SMOTE算法详细过程：对于原始数据集T，给出重采样后的结果T’。
+4.对于在椭球集Ellipsoids中的每一个标签为少数类的粒椭球：
+对 Hᵢ 进行乔列斯基分解并计算 Lᵢ。
+开始循环num次，通过映射函数生成num个样本,并将样本点加入最终数据集中。
+可以看到在算法流程上和GEB-SMOTE没有太大差别。
+时间复杂度
+GEB-SMOTE和GED-SMOTE都包含三个主要步骤：
+首先，对训练集内的信息粒进行分割，复杂度可以视为 O(knd)。
+其次，在这些信息粒上构建粒椭球，并计算它们的中心O(n₁d)和形状矩阵O(n₁d²)；
+最后，基于这些粒椭球合成样本点O(md³ + n₀d).
+GEB-SMOTE和GED-SMOTE之间的区别在于最后一步中各自的样本合成方法。它们在时间复杂度上是等价的。
+综上所述，算法的总体时间复杂度是 O(knd + n₁d² + n₁d + md³ + n₀d)。当数据量 n 远大于数据维度 d 时，我们主要关注样本量 n，算法的时间复杂度可以认为是线性的，即 O(n)。对于高维数据集，尽管算法相对于数据维度 d 的时间复杂度是 O(d³)，看起来很高，但类似于主成分分析(PCA)，其 O(d³) 的时间复杂度主要来自矩阵的特征值分解。在高维数据集中，数据的协方差矩阵通常是稀疏的，因此实际所需的计算时间通常远低于预期。
+评估指标
+准确性经常用来评估分类模型的性能。然而在数据集不平衡的情况下，即使模型无法识别少数类的任何样本，准确性仍然可能显得相对较高。
+为了更精确地评估模型的性能，构建了一个混淆矩阵来建立评估指标。
+基于混淆矩阵使用曲线下面积（AUC）、几何平均值（G-mean）和F1值作为性能的评估指标。
+G-mean 既考虑了模型的灵敏度 （Sens），它反映了准确识别阳性样本的速率，也考虑了模型的特异性 （Spec），它表示正确预测阴性样本的速率。G-mean 可以更全面地评估分类模型在不平衡数据集上的有效性。计算详细如下：
+Sens = TP / (TP + FN)
+Spec = TN / (TN + FP)
+G-mean = √(Sens × Spec)
+AUC通常指接收者操作特征(ROC)曲线下的面积，是ROC分析中的一个关键指标。AUC量化了分类器将一个随机选择的正类实例的得分排在一个随机选择的负类实例得分之上的可能性。AUC可以使用Sens和Spec来计算：
+AUC = (Sens + Spec) / 2
+F1分数是精确率(Precision)和召回率(Recall)的调和平均值，对分类器正确识别少数类实例的能力提供了更细致的评估。
+F1 = (2 × Precision × Recall) / (Precision + Recall)
+= (2 × TP) / (2 × TP + FP + FN)
+B.实验环境：Intel i5-8300H处理器，2.30-GHz频率，16-GB RAM，Windows 10操作系统。代码在Python 3.10环境下运行。
+C.与现有算法的对比实验
+从UCI机器学习库中提取了十个真实数据集
+对多数类和少数类进行采样，选择更多的多数类样本和更少的少数类样本。
+将GEB-SMOTE和GED-SMOTE与现有算法如ROS、SMOTE、B-SMOTE、ADASYN和GBS进行比较。在五种不同的分类器上测试这些算法的AUC、F1和G-mean指标：k-近邻(kNN)、逻辑回归(LR)、决策树(DT)、支持向量机(SVM)和朴素贝叶斯(NB)。
+在大多数情况下，GEB-SMOTE和GED-SMOTE的性能通常能达到最好或次好的结果。
+在fourclass数据集上，边界区域合成了过多的少数类样本，导致原本属于多数类的样本在边界附近变成了少数类。GEB-SMOTE和GED-SMOTE有效避免了这个问题。
+D. 消融实验
+消融实验（类似于控制变量法）：用粒球模型替换粒椭球模型来实现两种采样方法，并将它们与粒椭球模型下的两种采样方法相结合，
+对于粒球和粒椭球模型。
+当使用分布采样策略时，粒椭球模型（蓝线）显著优于粒球模型（黄线）。
+在边界采样策略下，粒椭球模型（红线）和粒球模型（绿线）各有千秋，
+但总体上，粒椭球模型表现更好。
+对于两种采样策略。
+在粒椭球模型中，基于粒椭球分布的采样方法（蓝线）优于基于粒椭球边界的采样方法（红线）。然而在粒球模型的应用中，基于分布的采样方法（黄线）远不如基于边界的采样方法（绿线）。
+这是因为分布采样依赖于精确的分布特征来预测新合成的样本；如果分布特征不够准确，可能会导致生成大量噪声样本，从而损害算法性能。
+相比之下，基于边界的采样方法只需要在粒模型的边界上合成新样本，因此表现出很强的鲁棒性。即使数据特征不够精确，它也能保持良好的性能。
+E. 不平衡比率比较
+这一部分研究数据集不平衡比率对算法性能的影响。
+使用skinnonskin数据集，最初从多数类中选择2000个样本，从少数类中选择1000个样本来创建基础训练集。然后逐步减少少数类样本的数量以加剧不平衡比率，同时监测各种算法的性能趋势。该分析的结果如下所示。
+可以明显看出，在不同的不平衡比率下，我们提出的算法始终表现出最优且稳定的性能。ADASYN和GBS算法紧随其后，保持相对稳定性的同时也维持了较高的性能水平。相比之下，ROS、SMOTE和B-SMOTE算法的性能表现出更显著的波动。特别是当不平衡比率增加到一定程度时，ROS和SMOTE算法的性能都出现了明显的下降。这主要是由于原始样本数量不足，导致合成的新样本缺乏多样性。
+F.非参数统计实验
+在这一部分，我们利用威尔克森符号秩检验  来评估各种算法之间的显著差异。以AUC和F1作为评估指标，我们选择了50个实验结果进行测试。全面的实验结果如表IV和表V所示。
+威尔克森符号秩检验是什么？
+R+是A胜过B的所有实验中，差异大小排名的总和。
+R-是B胜过A的所有实验中，差异大小排名的总和。
+若R+远超过R-，则说明A系统性地优于B
+P值的含义: 如果A和B没有本质区别（原假设成立），那么我们能碰巧观察到R+和R-有这么大差距的概率，只有p。
+如果P值低于显著性阈值α = 0.05，则拒绝原假设，表明两组成对样本之间存在统计学上的显著差异。可以看出GED-SMOTE和GEB-SMOTE在统计上显著地优于SMOTE，且GED-SMOTE更好。
+这一部分使用了严谨的统计学方法证明了算法的性能优势，更有说服力。 | 不平衡数据 (Imbalanced data) 分类是机器学习和数据挖掘等领域的一项关键任务。由于少数类样本的数量远低于多数类样本，分类器通常难以有效地从少数类中学习。
+这一部分使用了严谨的统计学方法证明了算法的性能优势，更有说服力。
+[表]批判性思考与引申（优点与启发、局限与不足、展望等） | GEB-SMOTE（几何边界采样模型）先在一个单位球的边界上生成随机样本点，再通过一系列的几何操作（旋转，拉伸，平移）将目标点转化到目标椭球上，导致这些点都在椭球的边界上。
+GED-SMOTE（概率分布采样模型）将整个粒椭球视为一个多元正态分布的载体，并从这个分布中进行随机采样来生成新点。这些点会呈现中心密集，边缘稀疏的特点，比较符合现实中的数据。
+在粒计算的学习中，到现在为止都是使用数据的几何特征去构造模型的，使用数据的概率分布特征是一个新的视角，生成的数据也非常“真实“。
+本文使用了非常多的评估指标来验证实验，而且也认识到这些评估指标不是一成不变的应用的论文中的，比如说数据集不平衡的情况下，就不使用准确性这一单一指标，而是改用基于混淆矩阵的指标；GED-SMOTE基于概率分布，也使用了威尔克森检验这一统计学方法来验证。
+对于文中的许多公式和概念，还是只能停留于”是什么“，“为什么“只能意会一些，仍需阅读更多的文献和学习相关的理论。 | GEB-SMOTE（几何边界采样模型）先在一个单位球的边界上生成随机样本点，再通过一系列的几何操作（旋转，拉伸，平移）将目标点转化到目标椭球上，导致这些点都在椭球的边界上。
+[表]存在问题及
+拟解决方案 | Euclidean_distance = np.array([np.sum(np.square(single_signal - i)) for i in self.sample])这里的sum作用没有理解。
+其实是高维数据中每一个特征的“差值”要相加，不只是一个纬度。
+这一篇和上一篇论文中定义椭球的公式并不一样，为什么？
+：在于其H和C的来源不同。
+c 所有样本点的质心 （所有样本点的均值）
+H 为样本点的协方差矩阵 Σ（+一个正则项 ϵI）描述椭球的形状和方向
+体积： Vol/sqrt(det(H-1))= Vol*sqrt(det(H))=
+GE(H,c) = {x ∈ Rⁿ|(x − c)ᵀ H (x − c) ≤ 1}
+这里的 H 和 c 是通过求MVEE优化问题出来的。
+目标是找到一个椭球，使其体积最小，同时又能包含所有的样本点。
+中心点c不一定是数据点的算术平均值
+在这里H换成H⁻¹应该也可以？因为他们代表的几何意义都一样（形状和方向）。
+体积：Vol/sqrt(det(H))
+但对这两个定义怎么来的理解的还是不太清晰。
+附件6（上一篇文中）中MVEE的优化模型和本文中的优化模型（4）是不是都是在求解一个H 让椭球的体积最小？可以理解为GEB-SMOTE是上一篇文章的思想“进化”而来吗？
+应该是的，上一篇文章使用较多的篇幅求解这个优化问题，计算也比较精确和复杂。在GEB-SMOTE这里做了一个近似解（H = Σ + εI ），来优化这个问题。
+文中也提到：“本质上，并不需要粒椭球精确地包含所有样本点；一个近似相似的粒椭球就足够了。”
+通过模型(3)的解得到的粒度椭球可以类比为一个半径等于从中心到所有样本点最大距离的粒球。类似地，由协方差矩阵(6)推导出的粒度椭球可以看作一个半径由中心到所有样本点的平均距离定义的粒球。如何理解这句话？
+模型（3）的约束条件要求找到的椭球必须包含数据集里的每一个样本点。为了满足这个条件，椭球必须把离中心最远的那个样本点也包含进去。
+协方差矩阵是通过计算数据集中所有点相对于其均值（中心）的离散程度和相关性得到的。它本质上描述的是数据的平均分布情况。
+部分概念问题在重点文献精读总结中已解决 | Euclidean_distance = np.array([np.sum(np.square(single_signal - i)) for i in self.sample])这里的sum作用没有理解。
+部分概念问题在重点文献精读总结中已解决
+[表]下周计划 | 再理解一下这两篇椭球文献，整理好问题。
+阅读 基于网格自组织粒球模型的不平衡回归方法_胡峰 | 再理解一下这两篇椭球文献，整理好问题。
+阅读 基于网格自组织粒球模型的不平衡回归方法_胡峰
+
+### NAUGRIN研究生周报-曹思磊11.14.docx
+NAUGRIN研究生文献周报
+[表]姓   名 | 曹思磊 | 填表时间 | 2025.11.14 | 本周有效
+工作时长 | 合计： 15 小时
+[表]本周研读
+文献清单 | 无 | 无 | 无 | 无 | 无
+[表]任务目标
+（上周计划） | 复现GBKNN，GBKNN++，GBG++算法。 | 复现GBKNN，GBKNN++，GBG++算法。 | 复现GBKNN，GBKNN++，GBG++算法。 | 复现GBKNN，GBKNN++，GBG++算法。 | 复现GBKNN，GBKNN++，GBG++算法。
+[表]重点文献精读总结（主要包括研究目的、方法、实验、效果、贡献与创新等） | GBKNN算法：
+时间问题还未测试代码。
+GBG++算法：
+首先优化一下代码结构。用一个list存储粒球以及其数据不够好。构造一个粒球对象。
+GBG++代码结构
+在编写step1（基于多数类样本分裂粒球）中发现一个问题，不能直接的生成一个既有多数类样本又包含其他样本点的粒球。
+我的想法是：找出多数类样本生成一个“不完全”粒球 ， 找到其中心和半径 。然后再遍历所有剩下的数据点 ，计算其到这个不完全 粒球中心的距离 ，如果小于半径 ， 那么就把这些数据点加入这个粒球，最终才能得到目标粒球。
+主函数（GBGplus）也需要写一个循环（每次输入处理完后剩下的数据）
+在编写step3（去冲突）遇到的问题是：如何在移除粒球时 保证这个循环的正常运行（也就是不依赖于索引），主要的思路是在移除两个粒球后从循环中break，难点在于对索引的逻辑操作。所以：设置两个指针i，j。先以第一个粒球为基准，依次向后寻找，如果找到了就从list中pop，i再从0开始就可以避免删除所造成的问题了。
+主函数（GBG++）
+运行结果：可以看到还是存在异质嵌套问题，但暂时还没有找到问题所在 | GBKNN算法：
+运行结果：可以看到还是存在异质嵌套问题，但暂时还没有找到问题所在
+[表]批判性思考与引申（优点与启发、局限与不足、展望等） | 多次运行代码后他的最终结果是不会变的。所以相较与two-means生成算法，GBG++算法是可复现以及稳定的。
+GBG++算法的最大时间复杂度来自第三步，两两对比粒球以解决异质嵌套问题。所以下一步可以改进解决异质嵌套问题的新方法。 | 多次运行代码后他的最终结果是不会变的。所以相较与two-means生成算法，GBG++算法是可复现以及稳定的。
+[表]存在问题及
+拟解决方案 | 刚开始编写时“移除粒球”功能时直接将list中的相应数据赋值0，但是它会引起下次np.power((temp_data[i] - notenough_gb.center)的计算错误。这一次的算法实现也遇到很多这样的修改原list导致的问题，之后遇到这种问题尽量不修改数据，创造一个新list存放，将原list“分拣”到两个list中。 | 刚开始编写时“移除粒球”功能时直接将list中的相应数据赋值0，但是它会引起下次np.power((temp_data[i] - notenough_gb.center)的计算错误。这一次的算法实现也遇到很多这样的修改原list导致的问题，之后遇到这种问题尽量不修改数据，创造一个新list存放，将原list“分拣”到两个list中。 | 刚开始编写时“移除粒球”功能时直接将list中的相应数据赋值0，但是它会引起下次np.power((temp_data[i] - notenough_gb.center)的计算错误。这一次的算法实现也遇到很多这样的修改原list导致的问题，之后遇到这种问题尽量不修改数据，创造一个新list存放，将原list“分拣”到两个list中。 | 刚开始编写时“移除粒球”功能时直接将list中的相应数据赋值0，但是它会引起下次np.power((temp_data[i] - notenough_gb.center)的计算错误。这一次的算法实现也遇到很多这样的修改原list导致的问题，之后遇到这种问题尽量不修改数据，创造一个新list存放，将原list“分拣”到两个list中。 | 刚开始编写时“移除粒球”功能时直接将list中的相应数据赋值0，但是它会引起下次np.power((temp_data[i] - notenough_gb.center)的计算错误。这一次的算法实现也遇到很多这样的修改原list导致的问题，之后遇到这种问题尽量不修改数据，创造一个新list存放，将原list“分拣”到两个list中。
+[表]下周计划 | 本周有三个课程的汇报演讲，时间投入较少，
+找到GBG++代码中的问题，继续实现算法， | 本周有三个课程的汇报演讲，时间投入较少，
+找到GBG++代码中的问题，继续实现算法，
+
+### NAUGRIN研究生周报-曹思磊11.21.docx
+NAUGRIN研究生文献周报
+[表]姓   名 | 曹思磊 | 填表时间 | 2025.11.21 | 本周有效
+工作时长 | 合计： 22 小时
+[表]本周研读
+文献清单 | 无 | 无 | 无 | 无 | 无
+[表]任务目标
+（上周计划） | 找到GBG++代码中的问题，继续实现算法， | 找到GBG++代码中的问题，继续实现算法， | 找到GBG++代码中的问题，继续实现算法， | 找到GBG++代码中的问题，继续实现算法， | 找到GBG++代码中的问题，继续实现算法，
+[表]重点文献精读总结（主要包括研究目的、方法、实验、效果、贡献与创新等） | 对于之前的GBG++无法解决异质嵌套问题的原因：
+刚开始一直认为是自己算法的逻辑流程出了问题，但在仔细梳理过后，按照论文中的算法逻辑（许多细节也没提到），异质嵌套就是解决局部的问题，也就是无法检查已经放入最终粒球集合的粒球G中的粒球 与现有正在处理粒球的异质嵌套问题。 所以和师兄讨论后觉得要加一个全局的检查异质嵌套的方法，否则我认为在不修改原算法流程的情况下是复现不出来论文中的fig6图D的-->。
+在原代码（左）的基础上增加全局异质嵌套后的结果如图（右）：
+全局异质嵌套的实现：之前粒球达到纯度阈值就直接加入最终粒球集合，现在他会和最终粒球集合的粒球一一对比，如果存在异质嵌套问题，将两者的数据合并成一个新的粒球，再加入待处理list。
+GBKNN与GBKNN++算法
+修改了之前的GBKNN算法,
+（之前的有一个问题：每次都会调用一次twomeans，计算距离方式也是错的）
+以7:3的比例用fourclass构造训练和测试集
+纯度阈值设置为0.95
+结果如下：
+粒球快速生成算法
+split（初始大粒球，阈值）函数用来判断当前粒球处理列表是否需要处理，
+需要处理的粒球放入splits_ball函数，函数返回粒球放入待处理列表
+splits_ball（粒球对象）用来分裂粒球，返回多个处理后的粒球
+保留原中心，随机选择k-1个中心（k为当前粒球的类别），
+执行一次k划分，计算每个点到每个中心的距离，分裂粒球
+# 执行一次全局划分（以中心为初始种子的kmeans）
+结果图：可以看到效果非常好
+粒椭球_SOMTE算法
+先写出了椭球类和文中的粒球生成算法
+如果纯度小于1:计算椭球中每一类样本的均值，用来找到 k 个新的椭球中心，使用一次k划分方法分裂椭球，加入集合并删除原来的椭球。 | 对于之前的GBG++无法解决异质嵌套问题的原因：
+[表]批判性思考与引申（优点与启发、局限与不足、展望等） | 为什么在这个数据集上大多数时候GBkNN比GBKNN++效果好？
+我觉得是数据集的问题，GBKNN适合边界分明没有噪声，的数据集，GBKNN++适合真实一些的数据集。而且fourclass数据集数据分布还是挺均匀的，GBKNN++定义的惩罚项可能不会起到很好的作用。
+GBG++相比其他两个粒球生成算法的优势是速度快且稳定，但个人觉得在实际应用中这些同质嵌套的粒球很难处理，所以如果单在fourclass数据集上我会选择粒球快速生成算法。
+GBKNN++相较于GBKNN是他不止考虑了欧式距离，还考虑了粒球本身的一些特征即质量（当前粒球内的样本/总样本数量），所以在以后修改算法的一个思路也是这样，将原始的算法+粒球的特征（半径，纯度阈值，中心等等）结合。
+一些常用的代码块如 一次k划分，计算距离矩阵，判断球是否在球中，这类代码可以写函数增加复用性。 | 为什么在这个数据集上大多数时候GBkNN比GBKNN++效果好？
+[表]存在问题及
+拟解决方案 | H如何在代码中计算？
+重点还是计算协方差矩阵，numpy有一个专门的库（np.cov）
+是否有一个大小，如何在计算机中表示？（sys.float_info.epsilon） | H如何在代码中计算？
+[表]下周计划 | 复现椭球SMOTE算法，阅读基于网格自组织粒球模型的不平衡回归方法_胡峰 | 复现椭球SMOTE算法，阅读基于网格自组织粒球模型的不平衡回归方法_胡峰 | 复现椭球SMOTE算法，阅读基于网格自组织粒球模型的不平衡回归方法_胡峰 | 复现椭球SMOTE算法，阅读基于网格自组织粒球模型的不平衡回归方法_胡峰 | 复现椭球SMOTE算法，阅读基于网格自组织粒球模型的不平衡回归方法_胡峰
+
+### NAUGRIN研究生周报-曹思磊11.28.docx
+NAUGRIN研究生文献周报
+[表]姓   名 | 曹思磊 | 填表时间 | 2025.11.28 | 本周有效
+工作时长 | 合计： 20 小时
+[表]本周研读
+文献清单 | 无 | 无 | 无 | 无 | 无
+[表]任务目标
+（上周计划） | 复现椭球SMOTE算法，阅读基于网格自组织粒球模型的不平衡回归方法_胡峰 | 复现椭球SMOTE算法，阅读基于网格自组织粒球模型的不平衡回归方法_胡峰 | 复现椭球SMOTE算法，阅读基于网格自组织粒球模型的不平衡回归方法_胡峰 | 复现椭球SMOTE算法，阅读基于网格自组织粒球模型的不平衡回归方法_胡峰 | 复现椭球SMOTE算法，阅读基于网格自组织粒球模型的不平衡回归方法_胡峰
+[表]重点文献精读总结（主要包括研究目的、方法、实验、效果、贡献与创新等） | GEB-SMOTEGED-SMOTE：将映射函数部分改为下图即可
+结果图（fourclass）：星为新样本
+基于网格自组织粒球模型的不平衡回归方法：
+定义粒球内样本区域的网格划分策略和粒球的填充度, 提出了网格自组织粒球模型 GSOGB;
+研究粒球的稀有度与粒球内样本的过采样策略, 提出了一种基于网格自组织粒球模型的不平衡回归方法 GSOGB-SMOTER.
+GSOGB：
+网格划分策略：
+dmax 表示粒球内样本到中心的最大距离,这样2*d就可以使用一个最小的正方形框住一个粒球，然后将这个正方形划分为一个个小网格。
+空白网格（网格内无样本点）、峰值网格（网格内有最多的样本点）、非空网格（网格内有样本点）
+粒球填充度：非空网格/总网格
+最小填充度：1/m（特征纬度），用来自动适应不同维度（高纬）的数据
+粒球划分算法：
+初始粒球为整个数据集
+计算GB的填充度，如果小于最小填充度，则需要划分
+保留旧中心，和峰值网格内样本的中心，计算每个样本到其距离，
+得到两个新粒球，
+重复直到所有粒球满足大于等于最小填充度。
+粒球稀有度：
+计算样本yi的概率密度。p(yi)越小越稀有：
+进行归一化后：
+p'(yi) 越接近0越稀有
+再对上一个式子进行转换：把稀有度转换为可用的“权重”
+如果 说明稀有，权重较高
+所以就可以得到粒球稀有度：
+即粒球内所有样本稀有度的平均值。
+所以作者提出的过采样方法就是基于稀有度：
+GSOGB-SMOTER 算法：
+1.对于每个样本，计算样本稀有度fw(y)
+2.划分粒球
+3.对于 rar(GB)>1的粒球，准备在其内采样
+数量为：
+4.按稀有度权重随机选一个样本（稀有度越高越容易被选中）作为种子点b
+计算它的邻域半径 δ（）
+在δ范围内再按稀有度权重选一个邻居样本 b1​
+在b和b1之间做线性插值，产生新样本 | GEB-SMOTEGED-SMOTE：将映射函数部分改为下图即可
+在b和b1之间做线性插值，产生新样本
+[表]批判性思考与引申（优点与启发、局限与不足、展望等） | 新颖的一种思想，基于圆的几何特征，刚好可以被一个正方形框住，再将他划分为一个一个的小区域，用小正方形区域内粒球的数量来判定最密集点的位置。
+在不平衡数据中，并非所有少数类样本都一样重要，引入的样本稀有度概念进行过采样。
+不再使用标签也就是纯度阈值的方法，而是使用了网格划分(填充度)的策略，所以可用于回归问题。
+所以如果要做回归方向的问题，先思考一个方法来代替纯度阈值的作用，也就是如何才能不依赖于标签，解决如何分裂粒球的问题。
+一直认为GED-SMOTE算法生成的新样本都在椭球内部，但从结果图来看其实不是。
+因为z = np.random.randn(ge.n_features)只要z的模大于1，那么就有可能在球外。 | 新颖的一种思想，基于圆的几何特征，刚好可以被一个正方形框住，再将他划分为一个一个的小区域，用小正方形区域内粒球的数量来判定最密集点的位置。
+[表]存在问题及
+拟解决方案 | 过采样的新样本需要一个标签，如何得到？
+在GSOGB-SMOTER 算法中有一步：
+所以不止特征X，Y也会被线性插值。
+之前没有考虑过平均给每个椭球分配新样本数量的时候会有除不尽，也就是余数的问题，解决方法是给前（余数个）椭球多分配一个新生成样本数。
+在生成椭球后，可以看到有些2-3个样本的椭球，“体积”非常小，以致于在过采样的时候，大量的样本会聚到这些小粒球的边界上（右），导致采样的结果不太好。
+那么是否可以调整一下策略，不是平均分配新样本，而是依照椭球的质量来分配样本数。或者说把这些小粒球也视作噪声（论文中设为1）去除。
+最终在算法中，剔除了样本数量小于4的椭球，得到了比较好的效果。 | 过采样的新样本需要一个标签，如何得到？
+最终在算法中，剔除了样本数量小于4的椭球，得到了比较好的效果。
+[表]下周计划 | 准备和师兄老师讨论一下想法，从分类聚类回归中思考一个方向，有选择的阅读相关文献。 | 准备和师兄老师讨论一下想法，从分类聚类回归中思考一个方向，有选择的阅读相关文献。 | 准备和师兄老师讨论一下想法，从分类聚类回归中思考一个方向，有选择的阅读相关文献。 | 准备和师兄老师讨论一下想法，从分类聚类回归中思考一个方向，有选择的阅读相关文献。 | 准备和师兄老师讨论一下想法，从分类聚类回归中思考一个方向，有选择的阅读相关文献。
+
+### NAUGRIN研究生周报-曹思磊11.7.docx
+NAUGRIN研究生文献周报
+[表]姓   名 | 曹思磊 | 填表时间 | 2025.10.31 | 本周有效
+工作时长 | 合计： 25 小时
+[表]本周研读
+文献清单 | 阅读附件7（Synthetic_Minority_Oversampling_Technique_Based_on_Granular_Ellipsoid_for_Imbalanced_Data_Classification） | 阅读附件7（Synthetic_Minority_Oversampling_Technique_Based_on_Granular_Ellipsoid_for_Imbalanced_Data_Classification） | 阅读附件7（Synthetic_Minority_Oversampling_Technique_Based_on_Granular_Ellipsoid_for_Imbalanced_Data_Classification） | 阅读附件7（Synthetic_Minority_Oversampling_Technique_Based_on_Granular_Ellipsoid_for_Imbalanced_Data_Classification） | 阅读附件7（Synthetic_Minority_Oversampling_Technique_Based_on_Granular_Ellipsoid_for_Imbalanced_Data_Classification）
+[表]任务目标
+（上周计划） | 阅读附件7
+（Synthetic_Minority_Oversampling_Technique_Based_on_Granular_Ellipsoid_for_Imbalanced_Data_Classification） | 阅读附件7
+[表]重点文献精读总结（主要包括研究目的、方法、实验、效果、贡献与创新等） | 不平衡数据 (Imbalanced data) 分类是机器学习和数据挖掘等领域的一项关键任务。由于少数类样本的数量远低于多数类样本，分类器通常难以有效地从少数类中学习。
+目前，针对不平衡分类的解决方案主要分为算法层面和数据层面
+算法层面，改进是基于分类算法本身的固有缺陷和不平衡数据的特点进行的。如不平衡支持向量机 ，高度集成的决策树，代价敏感方法。
+数据层面，通常采用增加少数类样本数量或减少多数类样本数量
+随机过采样是一种常用的方法，其核心思想是随机复制少数类中的样本以增加数据集中少数类样本的数量，从而平衡类别分布。这种方法简单易行，不需要复杂的算法和计算资源，但它容易导致过拟合，因为复制样本会使模型对少数类的特征过于敏感。
+为了解决这个问题，研究者提出了合成少数类过采样技术 (SMOTE)，该技术通过随机选择一个少数类样本，并在其与邻近样本之间进行线性插值来合成非冗余的少数类样本，但由于其盲目过采样，它仍然存在缺点。
+本文将粒椭球与SMOTE 算法结合，
+提出了两种基于粒椭球模型的算法：基于粒椭球边界的SMOTE (GEB-SMOTE)和基于粒椭球分布的SMOTE (GED-SMOTE)。
+GEB-SMOTE在粒椭球的表面合成少数类样本，更加强调不同类别样本之间的边界。
+GED-SMOTE使用多元正态分布，根据粒椭球的形状矩阵来合成少数类样本，更加强调合成数据集与原始数据集分布之间的相似性。
+先了解SMOTE算法：
+syn_data存储生成的样本
+k_neighbor存储每个原始样本的k个近邻的索引
+get_neighbor_point计算每个原始少数类样本的k个最近邻
+：对于每一个少数类样本，计算它与所有其他样本之间的特征差值的平方之和，这个距离作为衡量远近的标准。而我们只需要最近的k个样本，所以将所得到的数组排序（argsort() 返回排序后原始数组的索引），选择最近的k个（[1:k+1]）存储到k_neighbor
+get_syn_data用来生成最终的合成数据：
+先调用get_neighbor_point方法，然后进入一个循环（合成样本数量），随机选择一个样本，再从他的最近邻k个邻居中随机选一个，计算其差值向量（P_neighbor - P_original
+），然后进行线性插值（P_original + gap * diff），就得到了合成样本。
+这个差值向量代表了两个向量之间的方向和距离
+而线性插值就保证了这个合成向量是在这两个向量的方向上的随机一个点。
+设大生成的样本数，可以清楚的看到合成样本都在连线上。
+其缺点是：
+1.新样本缺乏多样性
+2.可能无法有效处理非线性边界
+3.会导致过拟合，并且合成的样本存在噪声问题。
+本文工作：
+椭球定义：ρ是椭球的边界系数，一个大于0的常数，通常设为1。c 所有样本点的质心，H 为样本点的协方差矩阵 Σ，再加上一个正则项 ϵI。
+ϵI: 当样本数量少于维度或数据共线性很强时，协方差矩阵可能不是正定的，导致无法求逆。加上一个单位矩阵 I 的微小倍数 ϵ 可以保证 H 矩阵是正定的，从而确保椭球可以被唯一定义。
+协方差矩阵：对角线元素：是每个变量自身的方差，非对角线元素是不同变量之间的协方差（衡量两个变量如何一起变化）。
+2.一个 d 维椭球的体积可以表示为：
+（中心在原点的单位球的体积经过变换而来）
+3.纯度和标签与上篇论文定义一致：
+4.椭球的体积仅取决于 det(H)。因此，对于中心 c 和形状矩阵 H，使用以下优化模型来求解它们：
+通过这个模型求得的解得到的粒椭球可以类比为一个半径等于从中心到所有样本点最大距离的粒球，然而求解该模型可能需要巨大的计算复杂度。
+在给定数据集 D = {X₁, X₂, ..., Xₐ} 上生成一个粒度椭球 GE，其中 Xⱼ 是一个随机变量，H 是 GE 的形状矩阵，它是一个正定矩阵，可以具体表示为：
+H = Σ + εI ，i是单位矩阵，ε 是一个非常小的正数，保证H是一个正定矩阵
+在实际应用中，我们可以使用边界系数（P）来控制协方差矩阵的大小，从而完全替代上面的优化模型（4）。本质上，并不需要粒椭球精确地包含所有样本点；一个近似相似的粒椭球就足够了。
+所以，最小化椭球体积（唯一且复杂度高）的方法就被替代为协方差矩阵（确定椭球的“形状”和“方向”） + 边界系数（调整大小）的方法
+6.Algorithm 1 Generation of Granular Ellipsoids
+将数据集D视为一个粒椭球，初始化一个粒椭球集合 Ellipsoids = {GE}
+对于集合中的每一个椭球，计算其纯度：（直到集合中没有生成新椭球，循环停止）
+如果纯度小于1:计算椭球中每一类样本的均值，用来找到 k 个新的椭球中心，使用一次k划分方法分裂椭球，加入集合并删除原来的椭球。
+删除集合中只包含单个样本的粒椭球（去噪）
+7.num
+首先，对于给定的训练集 T，我们根据算法1在 T 上生成一个粒椭球集 Ellipsoids。然后，对于每个带有少数类标签的粒椭球，我们在其边界上随机生成一定数量的样本。为每一个少数类样本，合成的样本数量 num 的公式如右图：
+Tmaj 表示 T 中的多数类样本，Tmin 表示 T 中的少数类样本，Ellipsoidsmin 表示椭球集中带有少数类标签的粒椭球。在合成后，少数样本数量的和 应该等于多数样本的数量。
+8. Λ和Υ
+Υ (Υ = (υ1, υ2...υd))是 H 的特征向量（一个矩阵的特征向量，是当该矩阵对它进行变换时，其方向保持不变的向量）
+Λ (Λ = (λ1, λ2...λd))是 H 的特征值 （AY = λY，代表其特征向量拉伸了λ倍）
+9.映射函数
+GE 的一个边界点可以通过以下映射函数获得：即在粒椭球的边界上随机生成一个新的数据点。
+其中ω是d维随机向量，⊙表示Hadamard积，∥·∥表示2范数。
+这个公式要解决的问题是如何在一个任意形状和方向的椭球的边界上，随机地找到一个点。其过程是从“单位球”出发，通过“拉伸”，”旋转“和“平移”得到目标点。
+f(GE) = c + Υ ∘ (ω / ||ω|| ∘ (ρ√Λ))
+ω : 一个 d 维的随机向量。
+ω / ||ω||: 将ω转化为单位向量
+这一步我们就可以在单位圆上得到一个点
+√Λ: Λ 是 H 的特征值矩阵，λ 代表了椭球在各个主轴方向上的方差。
+√λ 就代表了椭球在该主轴方向上的半轴长度（标准差）。
+√Λ 提供了将单位球“拉伸”成目标椭球形状所需要的拉伸比例。
+ρ边界系数：对椭球进行一个整体的缩放。
+即每个半轴的长度*ρ
+ω / ||ω|| ∘ (ρ√Λ):
+∘ : 哈达玛积，也就是逐元素相乘。
+其含义是把单位球上的随机点 (ω / ||ω||)，按照 (ρ√Λ) 提供的比例，在每个维度上进行拉伸。得到一个中心在原点，主轴与坐标轴对齐的椭球边界上的点。
+Υ 是 H 的特征向量矩阵。
+特征向量 υ 指出了椭球各个主轴在空间中的方向。Υ 作为一个旋转矩阵 ，负责将这个“标准位置”的椭球，旋转到它在数据空间中实际应在的方向。
+c: 平移变换
+我们已经创造了一个形状正确、方向也正确的椭球边界点，但这个椭球的中心还在原点。最后一步就是把它平移到实际的中心 c 的位置。
+10.GEB-SMOTE算法详细过程：对于原始数据集T，给出重采样后的结果T’。
+1: 初始化 T' = T;
+2: 根据算法1（6.）在T上生成粒椭球集 Ellipsoids;
+3: 使用(7.)确定每个少数类粒椭球需要合成的样本数量 num;
+对于在椭球集Ellipsoids中的每一个标签为少数类的粒椭球：
+对其H进行特征值分解，得到特征值和特征向量，从而得到其Λ和Υ。
+5.开始循环num次，通过映射函数（9.）生成num个样本,并将样本点加入最终数据集中。
+SMOTE 的问题在于盲目地在点与点之间线性插值，这可能产生不真实的样本。我们的改进方法是，不再关注单个的点，而是先用更鲁棒的“粒椭球”把少数类样本“圈”起来，然后在这些椭球的边界上生成新的、高质量的样本。
+11.GED-SMOTE
+现有的SMOTE算法，包括GEB-SMOTE（e），仅关注待合成的单个样本与现有少数类样本之间的相似性，而忽略了所有合成的少数类样本与原始少数类样本之间数据分布的相似性。简单来说，合成的少数类样本作为一个整体，与真实数据集并不相似。
+真实世界的数据大多近似服从正态分布，粒椭球定义中中刚好拥有中心（均值 c）和形状（协方差矩阵 H），而一个多元正态分布正好也是由均值向量和协方差矩阵这两个参数唯一决定的。
+所以也就有了GED-SMOTE（f） 的核心思想：
+将每个少数类粒椭球 GE(c, H) 等价于一个均值为 c、协方差为 H 的多元正态分布 N(c, H)。
+多元正态分布的概率密度函数标准形式为：
+正定矩阵 H 可以通过 Cholesky 因式分解进行分解：存在一个较低的三角形矩阵 L，使得 H = LLT 。这里的L就起 把原始单位圆椭球旋转拉伸为目标椭球 的作用
+所以GE 的一个边界点可以通过以下映射函数获得：
+z ∼ N (0, I)：
+z 是一个 d 维随机向量，它的每个分量都是从标准正态分布（均值为0，方差为1）中独立抽取的。
+用进行Cholesky分解后得到的矩阵 L 左乘向量 z，这样 Lz 就具有了协方差结构 H。Lz 是一个已经是服从 N(0, H) 分布的随机向量。
+ρ边界系数：对向量进行缩放。
+C：将数据点“平移”到目标椭球的中心位置。
+GED-SMOTE算法详细过程：对于原始数据集T，给出重采样后的结果T’。
+4.对于在椭球集Ellipsoids中的每一个标签为少数类的粒椭球：
+对 Hᵢ 进行乔列斯基分解并计算 Lᵢ。
+开始循环num次，通过映射函数生成num个样本,并将样本点加入最终数据集中。
+可以看到在算法流程上和GEB-SMOTE没有太大差别。
+时间复杂度
+GEB-SMOTE和GED-SMOTE都包含三个主要步骤：
+首先，对训练集内的信息粒进行分割，复杂度可以视为 O(knd)。
+其次，在这些信息粒上构建粒椭球，并计算它们的中心O(n₁d)和形状矩阵O(n₁d²)；
+最后，基于这些粒椭球合成样本点O(md³ + n₀d).
+GEB-SMOTE和GED-SMOTE之间的区别在于最后一步中各自的样本合成方法。它们在时间复杂度上是等价的。
+综上所述，算法的总体时间复杂度是 O(knd + n₁d² + n₁d + md³ + n₀d)。当数据量 n 远大于数据维度 d 时，我们主要关注样本量 n，算法的时间复杂度可以认为是线性的，即 O(n)。对于高维数据集，尽管算法相对于数据维度 d 的时间复杂度是 O(d³)，看起来很高，但类似于主成分分析(PCA)，其 O(d³) 的时间复杂度主要来自矩阵的特征值分解。在高维数据集中，数据的协方差矩阵通常是稀疏的，因此实际所需的计算时间通常远低于预期。
+评估指标
+准确性经常用来评估分类模型的性能。然而在数据集不平衡的情况下，即使模型无法识别少数类的任何样本，准确性仍然可能显得相对较高。
+为了更精确地评估模型的性能，构建了一个混淆矩阵来建立评估指标。
+基于混淆矩阵使用曲线下面积（AUC）、几何平均值（G-mean）和F1值作为性能的评估指标。
+G-mean 既考虑了模型的灵敏度 （Sens），它反映了准确识别阳性样本的速率，也考虑了模型的特异性 （Spec），它表示正确预测阴性样本的速率。G-mean 可以更全面地评估分类模型在不平衡数据集上的有效性。计算详细如下：
+Sens = TP / (TP + FN)
+Spec = TN / (TN + FP)
+G-mean = √(Sens × Spec)
+AUC通常指接收者操作特征(ROC)曲线下的面积，是ROC分析中的一个关键指标。AUC量化了分类器将一个随机选择的正类实例的得分排在一个随机选择的负类实例得分之上的可能性。AUC可以使用Sens和Spec来计算：
+AUC = (Sens + Spec) / 2
+F1分数是精确率(Precision)和召回率(Recall)的调和平均值，对分类器正确识别少数类实例的能力提供了更细致的评估。
+F1 = (2 × Precision × Recall) / (Precision + Recall)
+= (2 × TP) / (2 × TP + FP + FN)
+B.实验环境：Intel i5-8300H处理器，2.30-GHz频率，16-GB RAM，Windows 10操作系统。代码在Python 3.10环境下运行。
+C.与现有算法的对比实验
+从UCI机器学习库中提取了十个真实数据集
+对多数类和少数类进行采样，选择更多的多数类样本和更少的少数类样本。
+将GEB-SMOTE和GED-SMOTE与现有算法如ROS、SMOTE、B-SMOTE、ADASYN和GBS进行比较。在五种不同的分类器上测试这些算法的AUC、F1和G-mean指标：k-近邻(kNN)、逻辑回归(LR)、决策树(DT)、支持向量机(SVM)和朴素贝叶斯(NB)。
+在大多数情况下，GEB-SMOTE和GED-SMOTE的性能通常能达到最好或次好的结果。
+在fourclass数据集上，边界区域合成了过多的少数类样本，导致原本属于多数类的样本在边界附近变成了少数类。GEB-SMOTE和GED-SMOTE有效避免了这个问题。
+D. 消融实验
+消融实验（类似于控制变量法）：用粒球模型替换粒椭球模型来实现两种采样方法，并将它们与粒椭球模型下的两种采样方法相结合，
+对于粒球和粒椭球模型。
+当使用分布采样策略时，粒椭球模型（蓝线）显著优于粒球模型（黄线）。
+在边界采样策略下，粒椭球模型（红线）和粒球模型（绿线）各有千秋，
+但总体上，粒椭球模型表现更好。
+对于两种采样策略。
+在粒椭球模型中，基于粒椭球分布的采样方法（蓝线）优于基于粒椭球边界的采样方法（红线）。然而在粒球模型的应用中，基于分布的采样方法（黄线）远不如基于边界的采样方法（绿线）。
+这是因为分布采样依赖于精确的分布特征来预测新合成的样本；如果分布特征不够准确，可能会导致生成大量噪声样本，从而损害算法性能。
+相比之下，基于边界的采样方法只需要在粒模型的边界上合成新样本，因此表现出很强的鲁棒性。即使数据特征不够精确，它也能保持良好的性能。
+E. 不平衡比率比较
+这一部分研究数据集不平衡比率对算法性能的影响。
+使用skinnonskin数据集，最初从多数类中选择2000个样本，从少数类中选择1000个样本来创建基础训练集。然后逐步减少少数类样本的数量以加剧不平衡比率，同时监测各种算法的性能趋势。该分析的结果如下所示。
+可以明显看出，在不同的不平衡比率下，我们提出的算法始终表现出最优且稳定的性能。ADASYN和GBS算法紧随其后，保持相对稳定性的同时也维持了较高的性能水平。相比之下，ROS、SMOTE和B-SMOTE算法的性能表现出更显著的波动。特别是当不平衡比率增加到一定程度时，ROS和SMOTE算法的性能都出现了明显的下降。这主要是由于原始样本数量不足，导致合成的新样本缺乏多样性。
+F.非参数统计实验
+在这一部分，我们利用威尔克森符号秩检验  来评估各种算法之间的显著差异。以AUC和F1作为评估指标，我们选择了50个实验结果进行测试。全面的实验结果如表IV和表V所示。
+威尔克森符号秩检验是什么？
+R+是A胜过B的所有实验中，差异大小排名的总和。
+R-是B胜过A的所有实验中，差异大小排名的总和。
+若R+远超过R-，则说明A系统性地优于B
+P值的含义: 如果A和B没有本质区别（原假设成立），那么我们能碰巧观察到R+和R-有这么大差距的概率，只有p。
+如果P值低于显著性阈值α = 0.05，则拒绝原假设，表明两组成对样本之间存在统计学上的显著差异。可以看出GED-SMOTE和GEB-SMOTE在统计上显著地优于SMOTE，且GED-SMOTE更好。
+这一部分使用了严谨的统计学方法证明了算法的性能优势，更有说服力。 | 不平衡数据 (Imbalanced data) 分类是机器学习和数据挖掘等领域的一项关键任务。由于少数类样本的数量远低于多数类样本，分类器通常难以有效地从少数类中学习。
+这一部分使用了严谨的统计学方法证明了算法的性能优势，更有说服力。
+[表]批判性思考与引申（优点与启发、局限与不足、展望等） | GEB-SMOTE（几何边界采样模型）先在一个单位球的边界上生成随机样本点，再通过一系列的几何操作（旋转，拉伸，平移）将目标点转化到目标椭球上，导致这些点都在椭球的边界上。
+GED-SMOTE（概率分布采样模型）将整个粒椭球视为一个多元正态分布的载体，并从这个分布中进行随机采样来生成新点。这些点会呈现中心密集，边缘稀疏的特点，比较符合现实中的数据。
+在粒计算的学习中，到现在为止都是使用数据的几何特征去构造模型的，使用数据的概率分布特征是一个新的视角，生成的数据也非常“真实“。
+本文使用了非常多的评估指标来验证实验，而且也认识到这些评估指标不是一成不变的应用的论文中的，比如说数据集不平衡的情况下，就不使用准确性这一单一指标，而是改用基于混淆矩阵的指标；GED-SMOTE基于概率分布，也使用了威尔克森检验这一统计学方法来验证。
+对于文中的许多公式和概念，还是只能停留于”是什么“，“为什么“只能意会一些，仍需阅读更多的文献和学习相关的理论。 | GEB-SMOTE（几何边界采样模型）先在一个单位球的边界上生成随机样本点，再通过一系列的几何操作（旋转，拉伸，平移）将目标点转化到目标椭球上，导致这些点都在椭球的边界上。
+[表]存在问题及
+拟解决方案 | Euclidean_distance = np.array([np.sum(np.square(single_signal - i)) for i in self.sample])这里的sum作用没有理解。
+其实是高维数据中每一个特征的“差值”要相加，不只是一个纬度。
+这一篇和上一篇论文中定义椭球的公式并不一样，为什么？
+：在于其H和C的来源不同。
+c 所有样本点的质心 （所有样本点的均值）
+H 为样本点的协方差矩阵 Σ（+一个正则项 ϵI）描述椭球的形状和方向
+体积： Vol/sqrt(det(H-1))= Vol*sqrt(det(H))=
+GE(H,c) = {x ∈ Rⁿ|(x − c)ᵀ H (x − c) ≤ 1}
+这里的 H 和 c 是通过求MVEE优化问题出来的。
+目标是找到一个椭球，使其体积最小，同时又能包含所有的样本点。
+中心点c不一定是数据点的算术平均值
+在这里H换成H⁻¹应该也可以？因为他们代表的几何意义都一样（形状和方向）。
+体积：Vol/sqrt(det(H))
+但对这两个定义怎么来的理解的还是不太清晰。
+附件6（上一篇文中）中MVEE的优化模型和本文中的优化模型（4）是不是都是在求解一个H 让椭球的体积最小？可以理解为GEB-SMOTE是上一篇文章的思想“进化”而来吗？
+应该是的，上一篇文章使用较多的篇幅求解这个优化问题，计算也比较精确和复杂。在GEB-SMOTE这里做了一个近似解（H = Σ + εI ），来优化这个问题。
+文中也提到：“本质上，并不需要粒椭球精确地包含所有样本点；一个近似相似的粒椭球就足够了。”
+通过模型(3)的解得到的粒度椭球可以类比为一个半径等于从中心到所有样本点最大距离的粒球。类似地，由协方差矩阵(6)推导出的粒度椭球可以看作一个半径由中心到所有样本点的平均距离定义的粒球。如何理解这句话？
+模型（3）的约束条件要求找到的椭球必须包含数据集里的每一个样本点。为了满足这个条件，椭球必须把离中心最远的那个样本点也包含进去。
+协方差矩阵是通过计算数据集中所有点相对于其均值（中心）的离散程度和相关性得到的。它本质上描述的是数据的平均分布情况。
+部分概念问题在重点文献精读总结中已解决 | Euclidean_distance = np.array([np.sum(np.square(single_signal - i)) for i in self.sample])这里的sum作用没有理解。
+部分概念问题在重点文献精读总结中已解决
+[表]下周计划 | 再理解一下这两篇椭球文献，整理好问题。
+阅读 基于网格自组织粒球模型的不平衡回归方法_胡峰 | 再理解一下这两篇椭球文献，整理好问题。
+阅读 基于网格自组织粒球模型的不平衡回归方法_胡峰
+
+### NAUGRIN研究生周报-曹思磊12.12.docx
+NAUGRIN研究生文献周报
+[表]姓   名 | 曹思磊 | 填表时间 | 2025.12.12 | 本周有效
+工作时长 | 合计： 20 小时
+[表]本周研读
+文献清单 | 《GAdaBoost: An efficient and robust AdaBoost algorithm based on granular-ball structure》
+《Enhancing graph convolutional networks with progressive granular ball sampling fusion: A novel approach to efficient and accurate GCN training》 | 《GAdaBoost: An efficient and robust AdaBoost algorithm based on granular-ball structure》
+[表]任务目标
+（上周计划） | 阅读
+《GAdaBoost: An efficient and robust AdaBoost algorithm based on granular-ball structure》
+[表]重点文献精读总结（主要包括研究目的、方法、实验、效果、贡献与创新等） | 《GAdaBoost: An efficient and robust AdaBoost algorithm based on granular-ball structure》
+AdaBoost：即"Adaptive Boosting"（自适应增强）
+，是一种集成学习算法，它的核心是将多个弱学习器结合，从而得到一个更强大的模型。提高整体的性能和稳定性。通过调整样本权重（如果样本被分类正确，那么在构造下一个训练集中，它对应的权值要减小；相反，它的权值就增大。），一个接一个训练，后一个依赖前一个的结果。
+但AdaBoost最初是用来解决二分类问题的，SAMME修改了权重计算公式，使得基分类器的准确率只要大于随机猜测概率，就能获得正向的权重，使得AdaBoost适用于多分类的问题。
+但AdaBoost对标签噪声和 离群点非常敏感，因为它优先考虑被误分类的样本。而且计算效率也不高。为了解决这两个问题，本文提出了GAdaBoost.SA。
+另一方面
+集成学习要想效果好，基分类器必须具备
+1分类器要准确
+2分类器之间要有差异，这样才能互补
+传统的POJG只能满足第一个要求。它的核心思想是：当我们把一堆数据压缩成一个“信息粒”（IG，比如一个聚类或一个球）时，这个粒必须满足覆盖性和特异性（下文有介绍）。
+所以传统 POJG只能保证粒球是有代表性的、纯度高的，但它没有要求生成的粒之间必须有差异。如果生成的粒都差不多，训练出来的基分类器也会差不多，集成效果就不会太好。所以需要增加一个针对集成学习的特殊标准，即多样性，来满足第二个条件。
+所以作者引用了 POJG-Ens理论：
+1.覆盖性：一个粒包含的数据越多越好。
+2.特异性：粒内部的数据越紧凑越好
+3.多样性：粒与粒之间的差异要尽可能大。（多切分数据，保持细粒度）
+但这三个标准是相互制约的，所以这是一个多目标优化问题：
+作者也提到求解该多目标优化问题计算成本过高，因此使用启发式方法来近似求解。即GBG-Ens。
+GBG-Ens，这是一个为了满足如上三个要求的粒球生成算法：
+1.把整个数据集看作一个巨大的初始粒球。
+2.设定一个最大容量阈值 N，用来控制粒球的最大尺寸。
+3.对于集合中的每一个球，检查它是否合格。如果不合格，就分裂。有三种情况：
+如果一个球分裂后，其样本数极少。就直接删除这个粒球
+粒球纯度小于1。计算球内每一类样本的中心，使用一次K划分方法重新分裂k个粒球。（如果发现一个样本为1的粒球，直接删除）
+如果球的大小超出了阈值N，在这个粒球里，找到距离最远的两个样本作为中心，再次分裂粒球（保证细粒度，多样性，也是这个算法特殊的地方）
+如果粒球合格，计算其中心和半径，加入最终粒球集合。
+GAdaBoost.SA：
+1.执行如上的粒球生成算法，得到粒球集合G
+2.从每个球里挑出距离球心最远的个样本作为训练集
+（靠近边界的样本对划分边界最有价值，类似支持向量）
+Boosting 流程：
+在当前的子集上训练基分类器
+计算分类器在子集上的错误率
+根据错误率计算当前分类器的权重
+增量采样
+找到所有包含错误分类样本的粒球，记为集合
+D在集合的每一个粒球中，找到一个还没被用过的、距离球心最远的样本。把它加入到下一轮的训练集中（这是与传统SAMME的不同点，不是增加样本的权重，而是增加错误区域的样本数量）
+提前终止，有两种情况
+没有错误分类样本的粒球，直接结束。
+仍有错误分类样本的粒球，但球内的每一个样本都被使用过了（在4.2中）,这时训练子集已经不再变化。继续训练只会产生重复的结果，所以也结束。
+6.将所有训练好的基分类器 根据它们的权重进行加权投票，得到最终的强分类器
+先了解了一下图神经网络：图神经网络不只考虑样本自身的特征，还通过聚合邻居的信息，来更新自己的特征。所以带来一些缺陷：通过聚合自生，邻居，邻居的邻居的特征，会造成非常大的计算量。但如果要从这些样本内随机采样，采样到噪声信息，也会导致错误。
+为了解决如上问题，作者提出了PGBSF（渐进式粒球采样）：包含粒球采样模块和基于GCN的学习模块.
+高效粒球采样机制:前一部分和2-means生成算法一致，
+为了将粒球转化为GCN 可以训练的图序列。增加了三个步骤：
+1.保留分类的中间粒球，获得若干规模递增的小批量顶点集，即，也就是从最初的区域一步一步扩大到整个区域
+2.对于每一个顶点集，查看原始的大图，构造其邻接矩阵
+3.为了防止信息丢失，对于那些没有包含在粒球中的样本，会被收集到一个集合中，并在最后一步加到训练集中。保证GCN不会漏掉节点。
+基于GCN的学习模块:
+遍历每一个子图阶段：
+如果是第一个，随机初始化权重。后续阶段，继承上一轮训练好的权重
+迭代训练多次，前向传播，计算误差（即标准的GCN训练过程）。
+计算每轮Loss 的方差，如果很小了，那么提前终止，结束训练
+保存当前权重，用于下一轮计算。
+最后进行一次前向传播，输出每个节点的分类预测结果。 | 《GAdaBoost: An efficient and robust AdaBoost algorithm based on granular-ball structure》
+最后进行一次前向传播，输出每个节点的分类预测结果。
+[表]批判性思考与引申（优点与启发、局限与不足、展望等） | 为了把粒球融入集成学习。分析了一个好的集成学习模型需要什么？看粒球不满足哪一个方面，就从粒球生成算法入手，让生成的粒球满足这个条件。
+所以到现在为止，有两个大切入点：粒球生成算法和损失函数，但细节部分还是要看你要通过这个算法解决什么问题，具体问题具体分析。
+所以要在深度学习这个方面结合的话，我觉得首先要确定目标，使用哪一种神经网络，集成学习？图神经网络？或是其他网络。然后要对某个网络详细的学习之后再思考如何把粒球结合。
+在了解POJG-Ens理论时，感觉和之前的粒球自适应生成算法很相似。也发现两篇文章的作者也有相同的，所以感觉POJG-Ens是在粒球自适应生成算法的基础上改进的来适应集成学习的分类器而来的。
+这两个算法都想要解决覆盖性和特异性问题。也都使用了一次K划分方法。
+但他们的目标是不同的，粒球自适应生成算法是想用最少的球，准确地描绘出类别的决策边界。而POJG-Ens在此基础上，要满足集成学习分类器的输入的多样性，所以他对那些纯度高且大的粒球还要进一步分裂。
+现在很多论文都有对高维数据的特殊处理方式，之后写论文也要注意这个方面 | 为了把粒球融入集成学习。分析了一个好的集成学习模型需要什么？看粒球不满足哪一个方面，就从粒球生成算法入手，让生成的粒球满足这个条件。
+现在很多论文都有对高维数据的特殊处理方式，之后写论文也要注意这个方面
+[表]存在问题及
+拟解决方案 | 为什么GAdaBoost.SA只使用一些边界样本训练就可以训练成功，而不是全部数据？
+因为在这个分类任务中，并非所有样本的价值都是相等的。位于两个类别交界处的样本贡献更大，甚至可以吧内部的样本认为是冗余信息。而且Boosting算法只关心如何减少当前的错误，内部样本在训练时产生的损失几乎为0.
+从每个球里挑出距离球心最远的个样本作为训练集，如何理解这个？
+q为维度，N为样本数，。即一个标准的粒球里的样本数量大概为。
+所以会分成两个情况：
+低维：在低维空间中确定一个边界只需要很少的点，所以没有必要把所有样本都输入，也可以减少算法的复杂度。
+高维：在高维空间中通常需要大量的样本才能描述清楚边界，这时候会只取到粒球样本的一半，这样保证了有足够的样本去训练模型，也保留了一半的样本点留给增量采样。
+而且在算法中是先找到“找到一个还没被用过的、距离球心最远的样本”，保证了先找到最边界的哪些有价值的样本作训练，刚好剩下的价值不多的内部样本用来纠错。感觉这一部分设计的很好。
+图神经网络的输入也可以用粒球表示吗？GCN网络的输入是什么？
+GCN网络的输入有两个：特征矩阵（节点数*特征数）和邻接矩阵（节点数*节点数）
+经过高效粒球采样机制的后三步处理粒球就可以输入到GCN中。
+标准的GCN训练过程是什么样的？
+输入完整的特征矩阵和邻接矩阵，还有训练集
+前向传播
+给邻接矩阵加上单位矩阵 ，以保留自己的信息
+归一化处理
+邻接矩阵*特征矩阵* 权重矩阵W
+使用Relu激活
+重复，邻接矩阵*特征矩阵* 权重矩阵W
+重复此步骤（n次）
+最后使用Softmax输出
+计算损失：这一步仅计算那些有标签数据的loss计入总分。
+(为什么？简单来说就是因为模型的输入是邻居结构，对于那些无标签的数据可以通过这种连接关系让模型学习他的特征)
+反向传播：通过loss，更新梯度重新计算权重
+重复2-4直到loss收敛 | 为什么GAdaBoost.SA只使用一些边界样本训练就可以训练成功，而不是全部数据？
+重复2-4直到loss收敛
+[表]下周计划 | 阅读文献
+《AW-GBGAE: An Adaptive Weighted Graph Autoencoder Based on Granular-Balls for General Data Clustering》
+《Capturing local and global information: Multi-view graph convolutional network via granular-ball computing and collaborative matrix》 | 阅读文献
+
+### NAUGRIN研究生周报-曹思磊12.19.docx
+NAUGRIN研究生文献周报
+[表]姓   名 | 曹思磊 | 填表时间 | 2025.12.19 | 本周有效
+工作时长 | 合计： 18 小时
+[表]本周研读
+文献清单 | 《Capturing local and global information: Multi-view graph convolutional network via granular-ball computing and collaborative matrix》
+《AW-GBGAE: An Adaptive Weighted Graph Autoencoder Based on Granular-Balls for General Data Clustering》 | 《Capturing local and global information: Multi-view graph convolutional network via granular-ball computing and collaborative matrix》
+[表]任务目标
+（上周计划） | 阅读文献
+[表]重点文献精读总结（主要包括研究目的、方法、实验、效果、贡献与创新等） | 本文旨在解决处理高维无标签数据的聚类问题
+现有的深度学习聚类方法通常使用KNN构建一个图，然后放入GCN中训练。但这有两个问题：高纬数据KNN复杂度非常高，而且K值无法适应局部密度。噪声的干扰会计算出错误的距离，导致构出来的图本身就是错的。
+加权粒球生成算法（借鉴了MGNR那篇文章的思想：DM，选择中心，分裂准则等）
+MGNR定义的是点到球心的平均距离作为密度的衡量。。
+本文首先定义了加权分布度量：
+先把整个数据集看作一个初始粒球。
+进行一次局部加权K-means，学习特征权重向量 W，将初始粒球直接分裂成k个粒球
+设定阈值（）让数据不会过少
+对于现有的几个粒球，如果样本量大于2，就分裂他。
+（为了保证分裂后的每个子球满足阈值）
+分裂中心的选择：找到离当前球心 c最远的点，记为 X1，作为一个中心X2为球内离X1最远的点，作为另一个中心
+再判断分裂后的加权DM是否增加，增加就分裂，并放入粒球集合。直到没有粒球分裂。
+总的来说就是先用一次局部加权K-means得到一个粗糙的结果，在借用其算出来的权重W去细分粒球。这个创新点利用粒球本身的特性去噪。
+为了输入模型GCN（GAE），需要有邻接矩阵，所以要对这些粒球构造图结构:
+分层图构建策略：
+对于球内的数据点分两个情况：
+样本数>k（预设的邻居数量）：对于球内的每个点，只连接它最近（加权距离）的 k个邻居
+样本数<k：全连接，球内所有点互相连线。
+对于球之间的数据：
+每个粒球找出距离质心 c最近的真实样本点作为代表（m个）。
+如果m>K:每一个粒球只连接与他最近k个的粒球
+如果m<K:每一个粒球都相互连接
+因为邻居并不是双向的，所以最后采用对称化处理：
+简单来说就是把权重做一个平均，就到到了一个无向加权的邻接矩阵。
+这一步利用构造好的粒球去低成本的构造图结构。
+图的动态更新机制：
+作者认为图结构不应该是一成不变的，而应该随着学习的过程动态调整，由粗到细，从全局到局部。这刚好也和粒球的思想吻合。所以对于邻居数量。采用了一种线性递减的策略来调整。训练初期较大，随着迭代，逐渐减小 ，直到达到最小值
+首先调用上面两个算法得到粒球集和邻接矩阵
+循环T轮：
+训练GAE图自编码器直到模型收敛得到Z
+动态调整图结构：从初始开始，每一轮减少个（步长），直到达到最小值
+重复3，4.
+最后做一次kmeans算法
+这一步给模型增加了很大的鲁棒性，模型不止依赖于初始的Z，一步一步的收缩。也解决了同质化的问题。 | 本文旨在解决处理高维无标签数据的聚类问题
+[表]批判性思考与引申（优点与启发、局限与不足、展望等） | 这篇文章应用到非常多的MGNR 文章的思想，尤其是生成粒球这一部分。MGNR解决的是传统 KNN的k值固定的问题，利用自然邻居理论自适应k值，而AW-GBGAE解决的是GCN构图难的问题，利用粒球的样本数去选择k值。两种方法说到底都是决绝如何动态调整参数的问题。
+这篇文章是动态减少邻居数量，是否一定是减少，有没有可能某些阶段不变。或者说调整其他的超参数？
+如何在一个粒球里同时多个特征？如何在异构图中定义“加权距离”？这是下一步可以突破的点。 | 这篇文章应用到非常多的MGNR 文章的思想，尤其是生成粒球这一部分。MGNR解决的是传统 KNN的k值固定的问题，利用自然邻居理论自适应k值，而AW-GBGAE解决的是GCN构图难的问题，利用粒球的样本数去选择k值。两种方法说到底都是决绝如何动态调整参数的问题。
+[表]存在问题及
+拟解决方案 | 图自编码器（GAE）是什么？
+可以把GAE看作是自编码器和图卷积网络 (GCN) 的融合：
+传统的自编码器仅输入特征矩阵，却不包含数据间的关系，
+GAE的输入是特征矩阵X和邻接矩阵A（与GCN一致）
+编码器 (Encoder)：使用GCN
+最终输出一个低维矩阵 Z（即特征的嵌入式表示）
+解码器：内积运算，重构邻接矩阵
+σ是 Sigmoid 激活函数，把结果压缩到 0 到 1 之间，代表有边的概率。
+训练，比较A和，loss越小越好。
+GCN已经实现了图的嵌入式表示，为什么还要使用GAE？
+GCN仅仅是一个计算过程，他无法更新自己的权重。传统的GCN分类会给模型部分节点的标签，通过反向传播更新权重，是半监督的。而GAE是通过让模型去尽力的去还原原始的图结构来训练的，所以是自监督的，可以用于聚类问题。
+LW-K-means（局部加权K-means）的过程是什么样的？
+0.随机选择k个聚类中心，初始化每个维度的权重相等
+分配样本：计算样本到各个中心的加权距离：
+2.更新中心：计算归属该簇的所有样本的平均值，作为新的中心。
+3.更新权重：计算每个簇在每个特征维度上的方差，方差大就降低权重，方差小就增高权重
+4.重复，直到中心不再发生变化 | 图自编码器（GAE）是什么？
+4.重复，直到中心不再发生变化
+[表]下周计划 | 最后两篇文章缺乏比较多的相关知识，分为两周看完。
+下周阅读
+《Capturing local and global information: Multi-view graph convolutional network via granular-ball computing and collaborative matrix》 | 最后两篇文章缺乏比较多的相关知识，分为两周看完。
+
+### NAUGRIN研究生周报-曹思磊12.26.docx
+NAUGRIN研究生文献周报
+[表]姓   名 | 曹思磊 | 填表时间 | 2025.12.26 | 本周有效
+工作时长 | 合计： 18 小时
+[表]本周研读
+文献清单 | 《Capturing local and global information: Multi-view graph convolutional network via granular-ball computing and collaborative matrix》 | 《Capturing local and global information: Multi-view graph convolutional network via granular-ball computing and collaborative matrix》 | 《Capturing local and global information: Multi-view graph convolutional network via granular-ball computing and collaborative matrix》 | 《Capturing local and global information: Multi-view graph convolutional network via granular-ball computing and collaborative matrix》 | 《Capturing local and global information: Multi-view graph convolutional network via granular-ball computing and collaborative matrix》
+[表]任务目标
+（上周计划） | 阅读文献
+《Capturing local and global information: Multi-view graph convolutional network via granular-ball computing and collaborative matrix》 | 阅读文献
+[表]重点文献精读总结（主要包括研究目的、方法、实验、效果、贡献与创新等） | 上一篇的PGBSF仅用粒球做采样，而这一篇它解决的是没有图结构的数据如何使用GCN的问题。其核心思想是：利用粒球来构建图结构，然后再用GCN进行学习。
+经典GCN公式：
+对上一篇标准的GCN训练过程做进一步理解：
+，A为原始的邻接矩阵，但对角线上元素是0，所以加上单位矩阵，保存自己的信息
+：进行特征变换N(节点)*D(特征）* D*D
+：对所有邻居的特征向量求和。
+：拉普拉斯归一化，在同一个尺度下衡量特征
+：最后用激活函数
+原始的GCN有如下几个问题
+1.GCN 必须在一张图上运行。但多视图数据通常没有天然的图结构，需要人为构建。
+现有的方法多使用KNN构建图，要人为选择k值，噪声无法避免，也会陷入局部的最优解。
+本文使用生成粒球的边界距离即     （边界距离越小，两个粒球之间的相似度越高）
+来构建图，
+算法流程即经典的2-means粒球生成算法，但分裂标准数量为。并且计算每个粒球到其他所有粒球的边界距离，找到最小的球作为其唯一的邻居NBR(GBi)。
+最后对于两个作为邻居的粒球，将其数据全连接（每个数据都连），即
+就依靠粒球构建出了图（邻接矩阵）。解决了传统knn构图的噪声和k值选择的问题。
+2.GCN 需要通过卷积核即W来提取特征。它对图上所有节点的处理逻辑是一样的。
+GCN倾向于把局部独特的特征抹平，导致它擅长看全局，但容易忽略局部细节。
+本文提出用一个协同矩阵T来代替W的作用。
+从全局来看，把特征图做全局平均池化，然后用1D卷积处理。得到
+从局部来看，直接对特征图用 2D 卷积 处理。得到
+将局部数据和全局数据联系起来（局部数据和全局数据各做一个外积）
+将其融合（加一个可调节的参数）得到协同矩阵T：
+是参数，模型会自动更新（更偏向局全局或局部）
+最后应用在原始数据上
+3.在多视图上GCN通常是:建立N个图，和N个GCN，最后将结果相加。但弱视图可能导致最后的结果会很差。
+本文提出一个新方法：先找出特征数量最多那个视图。只在这个视图上计算协同矩阵T，强制其他视图的卷积时，使用这个T。
+基于以上三个点作者借鉴GCNII的思想设计了一个新的卷积公式：
+为1的输出，为2的输出）
+原始的GCN不能设计太多层，因为每一层中都会做邻居特征的聚合（），导致最后特征同质化也就是所有特征都差不多一样。所以引入了初始残差：
+即卷积操作
+代表原始输入数据，在每一步都加上一点原始的特征，解决同质化的问题
+为参数，文中设为0.1，代表保留多少初始的输入
+即上一层的特征。  （设为0就变成了原始GCN）
+另一方面在深层网络中会导致梯度消失或梯度爆炸问题，最好让模型慢慢的调整权重
+R为线性变化（全连接层）
+是系数，代表学习特征的大小程度，他会随着网络层数的变深而变小
+最后乘上（包含全局和局部特征） | 上一篇的PGBSF仅用粒球做采样，而这一篇它解决的是没有图结构的数据如何使用GCN的问题。其核心思想是：利用粒球来构建图结构，然后再用GCN进行学习。
+最后乘上（包含全局和局部特征）
+[表]批判性思考与引申（优点与启发、局限与不足、展望等） | 论文让其他视图在卷积时使用特征数量最多那个视图的协同矩阵T。这种选择确实很大程度下减少了计算量，但是否没有考虑噪声的影响?也可能丢失一部分其他视图的信息。或许可以给每一个视图分配一个权重（注意力机制），再去将其融合起来。
+启发：在设计神经网络时可以不只使用一种卷积核。尝试同时使用GAP + Conv1D和 Conv2D，然后把它们融合起来。就能得到一个更高级的能捕捉到局部和全局特征的邻接矩阵。
+接下来或许可以从新的提取全局（局部）特征的卷积组合方式或者是新的融合方式去尝试。 | 论文让其他视图在卷积时使用特征数量最多那个视图的协同矩阵T。这种选择确实很大程度下减少了计算量，但是否没有考虑噪声的影响?也可能丢失一部分其他视图的信息。或许可以给每一个视图分配一个权重（注意力机制），再去将其融合起来。
+[表]存在问题及
+拟解决方案 | 基于协同矩阵的卷积模块这一部分，
+为什么GAP + Conv1D能提取全局信息，Conv2D能提取局部信息？
+GAP是全局的平均池化，他对特征维度求平均值，所以是忽略每一个维度上具体的值，只看最后的平均。所以着眼于全局。
+但为什么还要加上一个Conv1D？
+因为GAP算出来的是一个死的数字，模型并不知道它的好坏，Conv1D包含权重，能够提取这些数字所代表的含义，并能起平滑的作用（卷积核大于1）
+2.Conv2D：卷积核在反向传播更新权重的时候，能够找到你需要的特征组合（才能被激活），所以能找到这些特征之间的关系 | 基于协同矩阵的卷积模块这一部分，
+[表]下周计划 | 阅读
+《Granular-ball Representation Learning for Deep CNN on Learning with Label Noise
+阅读《深度学习入门》鱼书，系统了解基础概念和细节。 | 阅读
+阅读《深度学习入门》鱼书，系统了解基础概念和细节。
+
+### NAUGRIN研究生周报-曹思磊12.5.docx
+NAUGRIN研究生文献周报
+[表]姓   名 | 曹思磊 | 填表时间 | 2025.12.5 | 本周有效
+工作时长 | 合计： 20 小时
+[表]本周研读
+文献清单 | 无 | 无 | 无 | 无 | 无
+[表]任务目标
+（上周计划） | 准备和师兄老师讨论一下想法，从分类聚类回归中思考一个方向，有选择的阅读相关文献。
+首先在深度学习+粒球这个方向尝试一下，了解文献库内六篇文献主要创新点的思想后，看能不能自己做点东西出来。
+1《GB-RVFL--Fusion of randomized neural network and granular ball computing》
+2《MGNR_A_Multi-Granularity_Neighbor_Relationship_and_Its_Application_in_KNN_Classification_and_Clustering_Methods-TPAMI》 | 准备和师兄老师讨论一下想法，从分类聚类回归中思考一个方向，有选择的阅读相关文献。
+[表]重点文献精读总结（主要包括研究目的、方法、实验、效果、贡献与创新等） | 《GB-RVFL--Fusion of randomized neural network and granular ball computing》
+传统深度学习网络都要通过反向传播一次次迭代
+而：RVFL有三个层
+1输入层。
+2隐藏层： 输入层到隐藏层的权重是随机生成的，并且生成后就固定死，不再训练。
+3直接链接：输入层直接连到输出层。
+所以RVFL只要计算输出层的权重
+GB-RVFL的过程：输入为 经过粒球生成算法生成（2-means）的粒球的中心，计算权重之后就得到了一个模型。
+但它把每个粒球看作是特征空间里孤立的点。只关心这些点在欧氏距离上的远近，丢失了许多信息。所以引入了GE-GB-RVFL，它可以理解粒球之间的（类别）关系：
+使用LDA的思想（同类聚集，异类分开）设计了两个图（k*k的权重矩阵），加入损失函数，作为损失函数的第三项。
+内在图：    （对于矩阵中的任意两个粒球i,j）  惩罚图：
+同类：（为该种类的粒球总数）    同类：
+异类：                                异类：
+所以目标就是最小化损失：
+《MGNR_A_Multi-Granularity_Neighbor_Relationship_and_Its_Application_in_KNN_Classification_and_Clustering_Methods-TPAMI》
+引入了分布度量 (DM)：即所有点到中心的平均距离，来衡量一个粒球内数据的密度。
+所以可以用分裂后的加权DM是否增加 来判断一个粒球是否还要继续分裂。
+文中提出的粒球生成方法：
+初始整个数据集视作一个粒球，初始化一个集合
+寻找要分裂的两个粒球的中心：
+找到离当前球心 c最远的点，记为 X1，作为一个中心
+X2为球内离X1最远的点，作为另一个中心
+遍历集合内的所有粒球，判断分裂后的加权DM是否增加，增加就分裂，并放入粒球集合。直到没有粒球分裂。
+GMKNN算法：传统的KNN算法写死了一个K值，这一个k值不能够适应所有的数据分布。所以作者提出的这个算法可用自动识别数据所在的区域的密度，然后自己找到最适合这个区域的 k值，无需人工干预。
+经过分裂后：在数据稀疏的区域有很少且大的粒球，在数据稠密的区域有很多且小的粒球。 对于这些小的相邻的粒球，他们应该是属于同一个大类的。所以为了还原这种整体的结构，作者提出了合并两个粒球的方法，需要满足：
+分子取两个球中的较小半径。即小球的容忍度小，大球的容忍度大。
+x代表“累积重叠次数”。即这个球之前已经跟多少个别的球合并过了。
+这个是个很巧妙的设计，所以在刚开始很容易合并，随着次数增加合并的要求越来越严格。min (ri，rj)也保证了大球和小球不容易合并。
+所以在合并后，这些小而相邻的粒球都合并成一个了一个大粒球组。(GBG)
+接下来在每一个粒球组中，通过自然邻居理论，计算其自适应k值（mgk）
+1.：对于点 x，它距离最近的 λ个点。（关注）
+：有哪些点，把点 x选进了“最近邻名单”里（被关注）
+每个粒球组寻找mgk的算法过程：
+初始化 ， 统计Number（被关注数Nb=0的点）
+循环，在组内找到里自己最近的 个点，记录NN，RNN和Nb
+然后++ （如果Number=0或者Number不再变化，停止循环。）
+输出每个组的mgk值（）
+最后 当要分类一个新的样本时，首先找到离他最近的一个样本。看其所属粒球组的mgk值。这个样本的类别就由其最近的mgk个样本的多数类决定。
+NARD（自然自适应相对密度）算法：
+解决聚类算法在面对多密度数据时的问题，可以识别出高密度区和低密度区的聚类中心。
+首先生成多粒度邻居 (MGN)
+：为了寻找粒球中心之间的邻居关系
+算法流程和上面计算自适应k值（mgk）相似
+2.循环，在组内找到里自己最近的 个点，记录NN，RNN和Nb
+3.然后++ （如果Number=0或者Number不再变化，停止循环。）
+4.输出，即最终的搜索范围。
+然后每个中心 ci的 多粒度邻居 (MGN) 就可以定义为：
+生成表征样本分布 (SDGS)
+：把属于同一个密度层级的点划到一个集合里。
+利用MGN。邻居之间很可能处于同一个密度层级中。
+1.初始化所有中心点 ci为“未标记”状态。
+2.找到第一个未标记的点，建立一个新集合（sdgi）
+查看这个点的多粒度邻居，加入到集合中，并修改成“已标记”状态
+3.重复以上过程，直到没有未标记状态的粒球中心
+最终生成：
+所以处于同一个sdg中的粒球，可以认为他们的密度是一致的。
+上一步生成的MGN虽然稳定，但范围可能会很小。所以作者认为这种波动性会很大，所以决定扩大范围（即扩展到邻居的邻居，然后再清洗数据）
+为当前粒球中心的邻居 + 邻居的邻居
+的再外一层邻居
+然后清洗一下数据，只保留同一个密度层级的粒球（）
+现在就可以为每一个粒球计算密度分
+即 所有邻居数量/到自己的距离之和
+为了凸显中心的重要性，又加入了当前粒球邻居的密度加权和。
+这样使得中心点的分数更高，边缘的分数更低
+但不同密度层级的分数无法比较，所以最后一步引入归一化：
+很好理解，其分数就是在当前密度层级下的比较，分数最高的最为分母，所以结果就是中心点分数为1，边缘点分数接近0. | 《GB-RVFL--Fusion of randomized neural network and granular ball computing》
+[表]批判性思考与引申（优点与启发、局限与不足、展望等） | 论文1
+在看文献之前不了解怎么把粒球输入到深度学习模型，原来是使用粒球的中心。
+他确实是能代表大部分数据样本的点。但缺点和GBKNN一样，没有考虑粒球的质量。
+所以可以考虑加入半径和样本数一起作为输入。
+另一点可以将粒球换成椭球，那么输入的就是Λ和Υ。
+但如何糅合到一起输入到模型是个问题。看后面的文献有没有思路。
+这篇文章的一个思路是使用图正则化来增加一个损失函数项来让模型理解数据之间的关系。（所以能不能从损失函数入手？让模型理解粒球的其他特征？）
+对于粒球适合哪些网络，可以从粒球的优势来看：速度快，去噪声，
+所以哪些神经网络是速度慢的且噪声的影响比较大的，可以试试。
+这篇文章的主要思想就是 不做绝对的一个标准，而是通过自然邻居的思想把这些数据分为一个个层级，再在其内部做一个相对的比较。
+如何将每一个局部的比较扩展到全局？
+使用归一化的思想，简单但有效。
+了解了自然邻居的思想，可用于评估机器数据点之间的相似性，他比单个的邻居更加稳定，且邻居可自适应获得，不需要参数。
+了解到深度学习不平衡数据中的长尾分布问题，即少数几个类别拥有大量样本，而多数类只有很少的样本，那么NARD算法就可以解决这个问题。之前的方法都是靠给少数类样本直接增加权重，现在就可以基于密度来调整权重。应该可以作为一个方向去尝试。 | 论文1
+[表]存在问题及
+拟解决方案 | 为什么RVFL隐藏层的权重是随机且固定的？随机的效果会好吗？
+数学证明指出，只要隐藏层节点足够多，即使权重是随机生成的，这些随机特征的线性组合依然可以以任意精度逼近任何连续函数。
+这也是他比传统网络速度快的原因。
+而且我觉得这种“精度”换速度的思想非常广泛，比如说粒球本身，一次k划分方法等
+不太理解GE-GB-RVFL的权重是如何作用在网络里实现模型理解结构关系。
+网络的最终目标是使损失函数最小，通过把这个权重（两个图）写入损失函数里。
+即     ，简单来说就是
+通过权重的设置可以在模型中将这些粒球 拉近或者撑开。
+比如说如果粒球A，B是同一类，那么就把权重设置大，这样模型就会为了最小化惩罚来拉近A，B的距离。
+而且这个“距离“并不是真实的特征空间里的距离，而是可以理解为距离的投影，也就是模型的视角下如何看待这个距离。
+那么 是如何得来的呢？
+将图的权重矩阵转化为拉普拉斯矩阵（更好计算）
+内在图：。惩罚图：
+（F是对角矩阵，为每一行权重的总和）
+所以就要最小化和最大化
+告诉模型具体的数据是怎样的：
+所以最终要最小化  即
+最终，Tr为迹，将矩阵转化为数。是超参数，1/2为了求导方便
+这是一种经常使用的方法：图正则化。 | 为什么RVFL隐藏层的权重是随机且固定的？随机的效果会好吗？
+这是一种经常使用的方法：图正则化。
+[表]下周计划
+
+### NAUGRIN研究生周报-曹思磊26.1.16.docx
+NAUGRIN研究生文献周报
+[表]姓   名 | 曹思磊 | 填表时间 | 2026.1.16 | 本周有效
+工作时长 | 合计： 25 小时
+[表]本周研读
+文献清单 | 《Granular-ball Representation Learning for Deep CNN on Learning with Label Noise
+》 | 《Granular-ball Representation Learning for Deep CNN on Learning with Label Noise
+[表]任务目标
+（上周计划） | 阅读文献
+《Granular-ball Representation Learning for Deep CNN on Learning with Label Noise
+学习深度学习基础 | 阅读文献
+学习深度学习基础
+[表]重点文献精读总结（主要包括研究目的、方法、实验、效果、贡献与创新等） | 图像分类任务中深度 CNN 模型可以分为特征学习模块 (FLM) 和分类器，FLM 将输入图像转换为低维特征向量，分类器预测每个图像样本的标签。
+本研究设计了一个 GBC 模块并将其集成到 FLM 和分类器中。
+GBC：
+粒球生成（常见方法）：
+输入:Z（当前 Batch 里所有图片的特征向量），P（纯度阈值）
+输出：GBs（粒球集合），CVs（粒球的中心向量）
+初始整个数据集视为一个大粒球，放入待处理队列
+依次检查纯度，低于P就使用2-means切分
+直到所有粒球都满足p
+相较与普通粒球生成算法就多计算了一个中心向量（所有特征向量的均值）
+2.GBC层的误差反向传播
+在深度学习中，模型是通过反向传播来更新参数的。但模型把原本n个样本用m个粒球来表示了。输入和输出的维度（n和m）不匹配，所以如何进行反向传播？这是本文的创新点之一。
+本文提出了一个：逆向平均池化的方法：
+分类器计算误差：分类器算出某个粒球gbi的预测误差（梯度），记为 Δgbi
+误差分发：GBC 模块将Δgbi的梯度复制给该粒球内部的每一个样本xk。
+比较好理解，因为这个中心向量是加权平均而来的，所以要更新粒球的梯度只要每个样本都做一次相同的更新操作就可以了。
+3.经验回放
+在深度学习训练中，通常使用 Mini-batch SGD。也就是每次模型只看一小部分数据。但生成的粒球已经很少了，导致模型训练的过程非常不稳定。
+所以作者借用强化学习中的经验回放思想，建立一个记忆库（经验池），把高质量的球存入，在之后的训练中使用。这是创新点2。
+作者把训练样本分成了两类：经验样本（旧的高质量粒球）和非经验样本(当前粒球)
+混合采样：
+每次训练时，从经验池里找出一部分之前的高质量粒球（及其包含的原始图片）。再从训练集里随机抽取一部分新的图片。把这两部分拼在一起作为输入。
+分布处理：
+对于非经验样本，进行粒球生成算法生成粒球，如果纯度很高，就把它放入经验池。
+对于经验样本，利用当前最新的 CNN 参数，重新计算这些图片的新特征，然后只更新这个粒球的中心向量 。
+把这两个得到的中心送给分类器去预测，计算 Loss，反向传播。
+《深度学习入门》：
+读完了前三章：入门，感知机，神经网络。
+感知机给定一个输入后会输出一个值，参数为权重和偏置。
+这时的权重是人为选择的，偏置用来调整神经元被激活的容易程度。
+单层感知机只能表示线性空间，不能表示非线性空间。但多层感知机可以。
+神经网络（前向传播）：
+介绍了激活函数，神经网络的激活函数必须是非线性函数。
+而感知机实际上使用了阶跃函数作为激活函数
+输出层使用恒等函数，信号会直接输出
+回归问题一般恒等函数，分类一般用softmax | 图像分类任务中深度 CNN 模型可以分为特征学习模块 (FLM) 和分类器，FLM 将输入图像转换为低维特征向量，分类器预测每个图像样本的标签。
+回归问题一般恒等函数，分类一般用softmax
+[表]批判性思考与引申（优点与启发、局限与不足、展望等） | 反向传播：
+因为输入是 N个样本，中间变成了 m个球 (m<Nm<N)，维度对不上。很容易想到粒球作为输入，但模型如何进行反向传播？这才是难点。
+分类器计算出某个粒球 gbj的误差（梯度）后，系统会将这个梯度原样复制，并分发给该粒球内部包含的每一个原始样本 xi
+在阅读经验回放机制时想到之前也有一篇文章有类似的结构。
+《Capturing local and global information: Multi-view graph convolutional network via granular-ball computing and collaborative matrix》卷积层的设计中每一层都增加了初始层的特征矩阵，解决的是GCN在网络层数变深后的特征同质化问题。经验池保留高纯度粒球的思想和其中协同矩阵（使用特征数量最多的那个视图）的思想也很一致。
+所以这两种 保留高质量数据 和 “复习” 的思想在后面可能也用得上。 | 反向传播：
+所以这两种 保留高质量数据 和 “复习” 的思想在后面可能也用得上。
+[表]存在问题及
+拟解决方案 | 什么是对称噪声和非对称噪声？
+对称噪声：当一个样本的标签出错时，它变成其他任何一个错误类别的概率是相等的。
+因为错误是杂乱无章的。在训练过程中，这些错误的梯度会互相抵消。只要数据量够大，模型依然能从剩下的正确标签中找到主导方向。
+非对称噪声：标签出错是有规律的，通常只会错标成外观相似或语义相近的类别。这更符合现实世界中人类犯错的模式。因为这种噪声具有欺骗性。会引导模型去学习错误的特征，导致模型陷入偏差，很难纠正回来。 | 什么是对称噪声和非对称噪声？
+[表]下周计划 | 阅读
+《A Study of Deep CNN Model with Labeling Noise Based on Granular-ball Computing
+继续学习深度学习基础 | 阅读
+继续学习深度学习基础
+
+### NAUGRIN研究生周报-曹思磊26.1.23.docx
+NAUGRIN研究生文献周报
+[表]姓   名 | 曹思磊 | 填表时间 | 2026.1.23 | 本周有效
+工作时长 | 合计： 25 小时
+[表]本周研读
+文献清单 | 《Graph Coarsening via Supervised Granular-Ball for Scalable Graph Neural Network Training》https://arxiv.org/pdf/2412.13842 | 《Graph Coarsening via Supervised Granular-Ball for Scalable Graph Neural Network Training》https://arxiv.org/pdf/2412.13842 | 《Graph Coarsening via Supervised Granular-Ball for Scalable Graph Neural Network Training》https://arxiv.org/pdf/2412.13842 | 《Graph Coarsening via Supervised Granular-Ball for Scalable Graph Neural Network Training》https://arxiv.org/pdf/2412.13842 | 《Graph Coarsening via Supervised Granular-Ball for Scalable Graph Neural Network Training》https://arxiv.org/pdf/2412.13842
+[表]任务目标
+（上周计划） | 《A Study of Deep CNN Model with Labeling Noise Based on Granular-ball Computing》（阅读后发现是《Granular-ball Representation Learning for Deep CNN on Learning with Label Noise》的初稿，可读性不高），更改为另一篇文章：《Graph Coarsening via Supervised Granular-Ball for Scalable Graph Neural Network Training》
+继续学习深度学习基础 | 《A Study of Deep CNN Model with Labeling Noise Based on Granular-ball Computing》（阅读后发现是《Granular-ball Representation Learning for Deep CNN on Learning with Label Noise》的初稿，可读性不高），更改为另一篇文章：《Graph Coarsening via Supervised Granular-Ball for Scalable Graph Neural Network Training》
+继续学习深度学习基础
+[表]重点文献精读总结（主要包括研究目的、方法、实验、效果、贡献与创新等） | 这篇论文依旧是图神经网络与粒球结合，传统图神经网络最大的问题就是复杂度高，
+一般使用图粗化来解决，但图粗化也有以下几个问题：
+1.通常只利用图结构，忽略标签信息
+2.但粗化过程本身复杂度也很高
+3.依赖参数：粗化率
+为了解决如上问题，作者提出了SGBGC：
+1.初始粗粒度划分
+选择（N为初始节点总数）
+对于图中的k类标签，这个中心会平均分配给K类，每个类别有/K个
+在每一类标签内选择度最大的节点（邻居最多的）
+对于所有非中心点，计算其到每一个初始中心的最短路径距离，选择最近的分配
+最后形成粒球集合
+上一步得到的粒球集合，在边界区域，一个球里可有不同标签的节点，如果直接把这个混杂的球合并成一个超节点，就会影响GNN的训练。就有了接下来这一步。
+细粒度二分分裂
+循环检查所有粒球，如果没有达到所设初度阈值（中文为1），就分裂
+在当前球内部，找出度最大的两个节点，让其他节点重新分配
+生成后的两个新粒球进入循环队列，继续判断
+得到最终粒球集合
+经过这一步就得到了，同类区域聚集的一些大球和边界区域的许多小球。
+粒球图构建
+这一步进行图粗化，得到了一个小而质量高的图。
+把每一个粒球GBi看作新图中的一个单点（超节点），标签为球内出现次数最多的标签。
+对于两个粒球，如果他们内部的任意两个节点在原图中有边相连，那么在粗化图中，两个粒球之间就画一条边（无权重）。
+粒球的特征向量为球内所有原始节点特征向量的均值。
+得到了（邻接矩阵,特征矩阵，标签向量）
+4.粗化图上的 GNN 训练
+这一步在 上搭建并训练一个GNN模型，过程就和标准GNN一样了。
+前向传播，反向传播，计算loss，得到最优权重
+将迁移回原图的GNN模型进行推断
+《深度学习入门》
+神经网络的学习：
+机器学习需要人为构建特征再对投入机器学习模型
+而深度学习是“端到端”的，也就是可以从输入中直接获得输出
+泛化能力是指处理未被观察过的数据（不包含在训练数据中的数据）的能力。获得泛化能力是机器学习的最终目标。
+了解了均方误差和其计算损失的过程。
+mini-batch:不用算所有数据的loss，而是只选取一部分作为整体的结果
+梯度是一个向量（由全部变量的偏导数汇总而成），表示某一函数在该点处的方向导数沿着该方向取得最大值，即函数在该点处沿着该方向变化最快。
+梯度法：通过不断地沿梯度方向前进，逐渐减小函数值.
+虽然在复杂的函数中，梯度指示的方向基本上都不是函数值最小处。但可以通过梯度法去寻找。
+神经网络的权重和梯度的表示：
+所以随机梯度下降法，也就是之前在代码中常见的SGD的过程：
+1.从训练数据中随机选出一部分数据，称为mini-batch。
+2.为了减小mini-batch的损失函数的值，需要求出各个权重参数的梯度。
+3.将权重参数沿梯度方向进行微小更新。
+4.重复以上操作
+学习了两层全连接网络的代码实现，难点在于这个反向传播的代码。
+dy = (y-t)/batch_num。（输出误差）
+当 Softmax和 Cross Entropy组合使用时，它们的反向传播导数恰好是：预测值(y) - 真实标签(t)。
+grads['W2'] = np.dot(z1.T, dy)
+根据链式法则，梯度取决于两个因素：
+前面的输入Z和后面的误差dy，而且都成正比，所以要乘。至于转置是为了维度对齐。
+grads['b2'] = np.sum(dy, axis=0)
+因为 b2 在前向传播时参与了 n次，所以反向传播时，它要收集这n次产生的误差，也就是把所有误差加起来，就是偏置的梯度。
+da1 = np.dot(dy, W2.T)
+这是后面反向传回来的、还没有经过 Sigmoid 过滤的原始误差。
+中间层的梯度 = 后一层的梯度（误差）*权重
+通俗来说就是后一层所有神经元的误差*各自的权重传回前一层（加权求和）
+dz1 = sigmoid_grad(a1) * da1
+sigmoid_grad(a1)是sigmoid的导数，决定了让多少误差通过。
+这样就得到了到隐藏层的误差：dz1
+后续和前面步骤一致，继续计算权重和偏置的梯度。
+算出所有梯度后就可以通过SGD更新参数了。 | 这篇论文依旧是图神经网络与粒球结合，传统图神经网络最大的问题就是复杂度高，
+算出所有梯度后就可以通过SGD更新参数了。
+[表]批判性思考与引申（优点与启发、局限与不足、展望等） | 在标签纯度高的地方用少数大粒球包裹，边界区域用许多小粒球包裹。这个思想在论文中遇到很多次，应该属于粒球生成算法中的精髓，也有些类似于注意力机制。在纯度高的地方无需费力计算，利用粒球本身的特征就能去噪；注意力重点放于边界区域，使用较小的粒度精细处理，就能得到比较好的粒球集。
+神经网络为了找到使损失函数的值尽可能小的地方，需要计算参数的导数（梯度），然后以这个导数为指引，逐步更新参数的值。而sigmoid函数的导数在任何地方都不为0。得益于这个斜率不会为0的性质，神经网络的学习得以正确进行。
+这也是神经网络使用sigmoid的另一个原因
+发现书中的论述有些歧义，应该是负梯度（而非梯度）。
+而且公式中是负号，代表函数减小最多的方向。
+应该是配合梯度图（用负梯度表示）所以这么写的。
+所以所谓的梯度下降法中的负号，就代表了“下降” | 在标签纯度高的地方用少数大粒球包裹，边界区域用许多小粒球包裹。这个思想在论文中遇到很多次，应该属于粒球生成算法中的精髓，也有些类似于注意力机制。在纯度高的地方无需费力计算，利用粒球本身的特征就能去噪；注意力重点放于边界区域，使用较小的粒度精细处理，就能得到比较好的粒球集。
+所以所谓的梯度下降法中的负号，就代表了“下降”
+[表]存在问题及
+拟解决方案 | 什么是图粗化？
+类似于池化操作，将一个原始大图变换为一个规模更小的图。
+节点聚合：找到原图中相似或紧密连接的节点。
+生成超节点：把相似的几个点合并成一个新的大点。特征通常是均值
+重构边：如果原图中，节点A和节点D有连接，而D被合并到了另一个超节点，那么A的超节点和D的超节点之间就有一条边。
+为什么经过第一步生成的粒球没有半径？
+粒球在文中的定义为：
+实际上是一个连通子图，所以是不规则的，不能用半径衡量。
+均方误差和交叉熵，但他们有什么区别？什么时候用哪个？
+均方误差衡量距离，它计算的是预测值与真实值在几何空间上的距离。多用于回归问题。
+交叉熵衡量概率分布的差异，它关注的是模型预测的概率分布，与真实标签的概率分布有多像，所以多用于分类问题。
+不理解这个梯度图。
+这个图可以理解为这个函数的俯视图。
+这里画的是负梯度，也就是函数值减小最快的方向。（梯度是函数值增长最快的方向）。为了指向“谷底”，所以作者取的是负梯度，所有向量都指向中心。箭头越长，梯度越大，梯度下降的步长（学习率）也大，后续会越来越小。 | 什么是图粗化？
+[表]下周计划 | 阅读
+《GBRIP: Granular Ball Representation for Imbalanced Partial Label Learning》
+继续学习深度学习基础 | 阅读
+
+### NAUGRIN研究生周报-曹思磊26.1.30.docx
+NAUGRIN研究生文献周报
+[表]姓   名 | 曹思磊 | 填表时间 | 2026.1.30 | 本周有效
+工作时长 | 合计： 30 小时
+[表]本周研读
+文献清单 | 《GBRIP: Granular Ball Representation for Imbalanced Partial Label Learning》 | 《GBRIP: Granular Ball Representation for Imbalanced Partial Label Learning》 | 《GBRIP: Granular Ball Representation for Imbalanced Partial Label Learning》 | 《GBRIP: Granular Ball Representation for Imbalanced Partial Label Learning》 | 《GBRIP: Granular Ball Representation for Imbalanced Partial Label Learning》
+[表]任务目标
+（上周计划） | 阅读
+《GBRIP: Granular Ball Representation for Imbalanced Partial Label Learning》
+继续学习深度学习基础 | 阅读
+继续学习深度学习基础
+[表]重点文献精读总结（主要包括研究目的、方法、实验、效果、贡献与创新等） | 这篇论文解决的是非平衡偏标记学习问题。
+传统的偏标记学习通常假设类平衡或只关注类间不平衡，有两个问题。
+还是粒球与图神经网络结合。
+忽视类内不平衡：只看到了“大类”和“小类”的数量差异，忽略了同一个类内部（如“机场”类里的“白天”和“晚上”）特征分布也是极度不平衡的。
+消歧困难：在长尾且标记模糊的情况下，基于传统图的方法容易引入噪声边，导致伪标签生成错误。
+为了解决如上问题，作者提出了 GBRIP 框架：
+1. 粒球生成
+选设定阈值N（经验主义）
+对于当前的粒球gbi如果球内样本数大于阈值，使用2NN分裂（使用2-means确定中心，再使用KNN分配剩下的粒球的所属，就拆分为两个粒球）
+不大于阈值就保留，继续循环判断。
+最后形成粒球集合
+实际上就是2-means粒球生成算法，只是阈值不同，因为这个任务是偏标记学习，不使用标签的纯度做阈值。
+粒球自动捕捉了类内不平衡，避免了数量少的那类特征被砍掉。
+2. 基于粒球的加权图构建与标签消歧
+这一步利用粒球的几何关系来构建更鲁棒的图，用于后续的标签传播。
+粒球图构建
+球内连接：由于特征空间接近，每个样本都连接。
+球外连接：对于任意两个粒球，计算球心距离dist和最大半径 r_max。
+若 dist < 2 * r_max：认为这两个球虽然分离，但距离很近，很可能是“同一类的不同分布”（类内不平衡），因此允许它们内部的样本建立连接边。
+若 dist >= 2 * r_max：认为这是“类间差异”（不同的类），直接切断联系，权重置为0。
+样本重构权重：借鉴了局部线性嵌入的思想。对于每个样本，算法寻找一组权重W，使得它能被其在粒球图中的邻居节点通过加权求和的方式还原出来。
+一般来说，处在粒球中心或密集区域，他就很容易被邻居线性加权表示出来
+所以W会大。
+而一些离群点又或者说是长尾分布中的那少数类别，W会很小。
+置信度计算
+将模型的 Softmax 输出f(x)与候选标签集S结合。
+利用上一步得到的图权重 W进行修正。
+依据以上三者结合，为每个候选标签分配一个 [0, 1] 之间的置信度分数P。
+是候选标签，如果这个标签不在候选标签集S中，直接设为0
+是神经网络当前的预测，是认为当前样本属于标签j的概率。
+是刚才算出来的权重，放在分母上。这样就造成了一个结果：
+这样对于那些W小的少数类样本，就会有一个比较大的置信度。
+这就很好的实现了一个平衡的作用。
+为了让模型在处理长尾数据时更稳健，作者引入了 MCL（修改了损失函数）
+多中心损失 (MCL)
+是标准交叉熵
+是辅助项
+是样本经过神经网络后得到的特征表示。ci是粒球的几何中心。
+也就是计算每个样本特征与其球心之间的欧式距离。
+这就造成了在减少loss的过程中，样本特征不再是向原来的单个类别的中心靠近，而是每一个粒球的中心靠近，从而减少了分类的歧义性。
+动态类别分布估计
+由于是非平衡偏标记学习，真实的类别分布u是未知的。
+初始化：假设分布是均匀的。
+模型预测：算法统计模型在每一个样本的候选标签集中，Softmax分数最高的那个标签。
+动态更新
+每一轮训练，模型都会参考旧的分布估计，并加入这一轮看到的新信息，平滑地更新各类别的先验概率 u。
+最终算出来的u会加到之前的置信度公式中
+和之前的逻辑一样，加上一个负指数，
+对于那些W小的少数类样本，就会有一个比较大的置信度。
+生成粒球，粒球图和权重矩阵W
+模型前向传播
+计算置信度矩阵
+计算联合损失MCL
+反向传播
+《深度学习入门》
+与学习相关的技巧
+SGD的缺点是，如果函数的形状非均向，比如呈延伸状，搜索的路径就会非常低效。根本原因是，梯度的方向并没有指向最小值的方向。
+所有有一般情况下比SGD更好的方法：Momentum，AdaGrad，Adam（前两个结合）。
+他们都不是单纯朝梯度方向前进，但具体选择要视情况而定。
+权重问题：
+权重不可以一开始就设为0，会导致反向传播更新的同质化问题
+不同标准差的高斯分布初始值对输出值会有影响
+标准差为1会导致梯度消失（激活值在0，1两端）
+标准差为0.01是表现力会受限（在0.5附近）
+所以好的初始值，应该让各层的激活值均匀分布。
+书中给出了
+Xavier 初始值（针对 Sigmoid/Tanh）：标准差为
+和He 初始值（针对 ReLU）：标准差为
+（让各层的激活值均匀分布的经验初始值）
+Batch Normalization 解决的是神经网络初始参数设置的问题，可以让训练又快又稳。先通过归一化，再通过缩放和平移。一般放在卷积层和激活函数之间（可以有多个）。
+抑制过拟合的方法：
+权值衰减：
+在学习的过程中对大的权重进行惩罚
+（很多过拟合的原因就是因为权重取值太大）
+实现方式是在损失函数后加一个
+是超参，控制惩罚力度。
+就是L2范数，即权重平方和
+这样梯度也会变化
+所以对比之前的公式，W之前多了一个逐渐衰减的系数。
+Dropout：随机删除隐藏层某些神经元，常用。
+和集成学习的效果很像，因为每次删除不同的神经元就可以认为是不同的模型。
+超参数问题：
+验证集用来调整超参数（训练集确认参数，测试集评估）
+寻找最优化超参数方法：
+设定超参数范围
+在范围中随机采样
+使用采样的超参数进行学习，通过验证数据评估（epoch要小）
+重复1，2
+最后选定一个值 | 这篇论文解决的是非平衡偏标记学习问题。
+最后选定一个值
+[表]批判性思考与引申（优点与启发、局限与不足、展望等） | 之前看的很多论文中的思想，（如多视图中的协同矩阵，图粗化等等）数据中（或通过某种方式提取）一部分最具代表性的，质量最高的样本来表示整体。也和和深度学习minibatch的思想一样。
+图神经网络+粒球：
+先生成粒球，再考虑球内和球外如何连接构图，再考虑图是否要有权重，权重如何设置，最后应用在神经网络上，考虑其他创新，解决当前主要问题。
+论文中置信度计算 和深度学习中权值衰减的思路也是很相似的。
+对于权重大的，我惩罚。对于权重小的，我放大。
+以此来数据达到一种平衡的局面。
+初始值的选择和Batch Normalization有什么关系？前一小节不是已经给出了不同激活函数下的最佳初始值了吗？
+因为权重初始值是一次性的，只在最开始有效，它控制不了参数更新后的变化。
+而 Batch Normalization保证了在每一次前向传播时，它都会把数据重新归一化一遍，保证数据依然保持良好的分布。通过了解后现代深度学习这两个会一起用。 | 之前看的很多论文中的思想，（如多视图中的协同矩阵，图粗化等等）数据中（或通过某种方式提取）一部分最具代表性的，质量最高的样本来表示整体。也和和深度学习minibatch的思想一样。
+[表]存在问题及
+拟解决方案 | 刚开始并不理解第二步在做什么，因为没有了解传统偏标记学习方法的流程。
+传统方法还是使用图神经网络GNN。但在数据不平衡时和标记模糊的情况下方法容易引入噪声边，导致伪标签生成错误。而且类内不平衡的问题也没法解决。
+公式 (7) 的优化过程旨在最小化 xik的最近邻居的重构误差，不理解这个。
+这一步的逻辑是：
+一个样本身边有一群邻居。要找出一组权重（分配比例），让这些邻居按比例相加后，得到的那个点能尽可能重合在这个样本现在的位置上。
+也就是周围邻居的线性组合（加权求和）来表示自己。 | 刚开始并不理解第二步在做什么，因为没有了解传统偏标记学习方法的流程。
+也就是周围邻居的线性组合（加权求和）来表示自己。
+[表]下周计划 | 阅读《Graph-based Representation for Image based on Granular-ball》
+继续学习深度学习基础 | 阅读《Graph-based Representation for Image based on Granular-ball》
+
+### NAUGRIN研究生周报-曹思磊26.2.13.docx
+NAUGRIN研生文献周报
+[表]姓   名 | 曹思磊 | 填表时间 | 2026.2.13 | 本周有效
+工作时长 | 合计： 25 小时
+[表]本周研读
+文献清单 | 《Multi-Granularity Open Intent Classification via Adaptive Granular-Ball Decision Boundary》 | 《Multi-Granularity Open Intent Classification via Adaptive Granular-Ball Decision Boundary》 | 《Multi-Granularity Open Intent Classification via Adaptive Granular-Ball Decision Boundary》 | 《Multi-Granularity Open Intent Classification via Adaptive Granular-Ball Decision Boundary》 | 《Multi-Granularity Open Intent Classification via Adaptive Granular-Ball Decision Boundary》
+[表]任务目标
+（上周计划） | 阅读《Multi-Granularity Open Intent Classification via Adaptive Granular-Ball Decision Boundary》
+继续学习深度学习基础 | 阅读《Multi-Granularity Open Intent Classification via Adaptive Granular-Ball Decision Boundary》
+继续学习深度学习基础
+[表]重点文献精读总结（主要包括研究目的、方法、实验、效果、贡献与创新等） | 开放意图分类：在对话系统（Siri，小艺等）中，我们希望模型既能识别“已知意图”（天气，打电话等），又能准确拒绝“未知意图”。
+这篇论文将开放意图分类与粒球结合。
+传统的基于边界的方法（如ADB，DA-ADB）存在几个主要问题：
+理想化的球形假设默认已知意图在特征空间中呈紧凑的球形分布。然而真实数据往往是不规则的（如长条形、弯曲形），仅有约57%的数据符合高斯假设。
+如果试图用一个大球强行包围一个不规则的类，会导致球内在大量“空洞”（即类内未知区域）。
+如果未知意图恰好落在这些“空洞”里，会被错误识别为已知意图。
+为了解决如上问题，作者提出了 MOGB
+即用多个小粒球去精细地覆盖一个类的样本分布。
+（相对于传统的一个球一个类）
+一、分裂粒球
+首先将所有训练样本看作一个粒球。
+定义纯度阈值和样本数阈值,如果纯度小于阈值且样本数大于阈值时，才分裂
+分裂过程：对于球内的每一个类别，各随机抽取一个样本作为新的中心。计算原球内所有样本到每个临时中心的距离，每个样本归属到离它最近的那个中心。
+重复上述步骤
+这样每个一个粒球的边界就构成了开放意图分类的决策边界
+二、最近子质心分类器
+传统的Softmax或中心损失是把样本拉向唯一的类中心，这会破坏类内的多簇结构。
+MOGB提出让样本向语义上最近的子质心靠拢。
+模型先通过BERT把输入的句子变成一个向量，然后计算其到所有质心的聚类，最近的归为其类别。
+损失函数：优化目标是最小化样本与其所属粒球中心的距离，同时最大化与其他粒球中心的距离。
+实际上是对softmax的变形。
+分子变大:让样本z离它自己类别里最近的那个子质心更近
+分母里的其他项变小：让样本z离其他类别里最近的子质心更远
+三、推理阶段
+计算距离：计算测试样本到所有已知类别的所有子质心的距离。
+判别逻辑：
+未知意图判定（Unknown）：如果样本落在所有粒球的边界之外，则直接判定为“未知意图”。
+已知意图判定（Known）：如果样本落在一个或多个粒球内部，则将其归类为距离最近的那个子质心所属的类别。
+深度学习入门
+卷积神经网络
+比起全连接层多了卷积层和池化层
+全连接层的问题是多维数据被展平了，失去了原本的空间信息
+而卷积层可以保持原本的形状不变
+卷积核也叫滤波器（对应之前的权重）
+使用padding的理由是可以保持空间大小不变的情况下把数据传到下一层
+im2col （image to column）是一个把复杂的卷积变成简单的矩阵乘法的函数。
+简单来说就是把滤波器和滤波器要乘的区域展平，达到一个降维的效果，最后输出就是卷积计算的结果。
+输出大小计算公式为：，
+了解了LeNet和AlexNet
+滤波器是（FN,C,FH,Fw）的4维形状。即（滤波器数量，通道数，高，宽）
+卷积层代码：
+transpose是调整数据的维度顺序，为了方便后续把数据降维到二维。
+col2im为in2col的逆操作
+col_W为展平的col
+最后的self是为了下面的反向传播用
+池化层代码非常相似，
+主要是修改一下前向传播中的out（平均或最大）
+CNN主要代码：
+先提取参数计算卷积层的输出大小，然后初始化权重，最后添加几个层。
+SoftmaxWithLoss是把Softmax和Cross Entropy Error结合的组合层 | 开放意图分类：在对话系统（Siri，小艺等）中，我们希望模型既能识别“已知意图”（天气，打电话等），又能准确拒绝“未知意图”。
+[表]批判性思考与引申（优点与启发、局限与不足、展望等） | 深度学习中哪些（传统）方法本身就是和球有关的，可以尝试在这上面改进
+结合上一篇文章来看，是否可以不限于球。虽然椭球不太理想，粒方体也有一定优势。比如说边界判断比粒球要容易，比算欧氏距离要快。 | 深度学习中哪些（传统）方法本身就是和球有关的，可以尝试在这上面改进
+[表]存在问题及
+拟解决方案 | 协同作用：聚类生成的子质心指导了特征学习，而优化后的特征又反过来促进生成更准确的粒球，两者交替进行，互为补充。如何理解？
+因为MOGB 不是先聚类再训练，也不是先训练再聚类，而是边聚类、边训练的。
+两者在训练的每一个 Epoch 中交替进行。
+书中没有提到使用im2col后偏置如何运算？
+在im2col计算之后直接再每一列后面加上偏置（维度为滤波器的数量）。
+即代码中的out = np.dot(col, col_W) + self.b
+注意到SimpleConvNet（上述的CNN代码）中并没有关于前向和反向传播的代码，为什么？
+因为OrderedDict（有序字典），它会记住添加元素的顺序。不用手动写每一层的 forward/backward（如上述卷积层代码），直接使用一个循环（for layer in self.layers.values():x = layer.forward(x)）完全传播过程。 | 协同作用：聚类生成的子质心指导了特征学习，而优化后的特征又反过来促进生成更准确的粒球，两者交替进行，互为补充。如何理解？
+[表]下周计划 | 看完鱼书的最后一部分，思考并尝试论文方向 | 看完鱼书的最后一部分，思考并尝试论文方向 | 看完鱼书的最后一部分，思考并尝试论文方向 | 看完鱼书的最后一部分，思考并尝试论文方向 | 看完鱼书的最后一部分，思考并尝试论文方向
+
+### NAUGRIN研究生周报-曹思磊26.2.6.docx
+NAUGRIN研生文献周报
+[表]姓   名 | 曹思磊 | 填表时间 | 2026.2.6 | 本周有效
+工作时长 | 合计： 25 小时
+[表]本周研读
+文献清单 | 《Graph-based Representation for Image based on Granular-ball》 | 《Graph-based Representation for Image based on Granular-ball》 | 《Graph-based Representation for Image based on Granular-ball》 | 《Graph-based Representation for Image based on Granular-ball》 | 《Graph-based Representation for Image based on Granular-ball》
+[表]任务目标
+（上周计划） | 阅读《Graph-based Representation for Image based on Granular-ball》
+继续学习深度学习基础 | 阅读《Graph-based Representation for Image based on Granular-ball》
+继续学习深度学习基础
+[表]重点文献精读总结（主要包括研究目的、方法、实验、效果、贡献与创新等） | 这篇论文解决的是深度学习图像处理中基于像素方法存在的效率低、鲁棒性差和缺乏可解释性问题。
+传统的CNN在最细粒度（像素）上操作，存在两个主要问题：
+不可解释性：人类视觉是基于“对象”或“结构块”的（先看整体，再看局部），而CNN关注像素级差异，导致模型决策过程难以被人类理解。
+效率与鲁棒性矛盾：为了处理海量像素，模型需要极大的参数量；同时，微小的像素级扰动（对抗攻击）容易欺骗模型。
+为了解决如上问题，作者提出了GRIG框架，
+将图像化为结构化图。
+1. 粒矩形生成
+作者提出用“粒矩形”来代替抽象的“粒球”，以适应图像的矩阵存储形式。
+①基于梯度的种子选择
+先计算全图每个像素的梯度。
+优先选择梯度最小（最平滑）的点作为种子点。
+因为梯度小意味着这块区域颜色变化不大，很有可能是同一个物体或背景，适合合并。
+类似于粒球选择中心的过程（最能代表一个区域内的样本点）
+②自适应扩张与纯度控制
+以种子点为中心，向四周扩张矩形区域（长宽增加）。
+纯度判断：计算当前矩形内“正常像素”（与中心像素灰度差在阈值内的像素）的比例。
+若纯度>阈值：说明这块区域很一致，继续扩张。
+若纯度<阈值：说明碰到了边界或纹理复杂区，停止扩张。
+③形成粒节点
+未被覆盖的区域重复上述过程，最后平滑区域被聚合成一个大的矩形节点；复杂区域被切分成许多小的矩形节点。
+2.图构建与节点属性
+不同于传统的网格，这里构建的是一张不规则的图。
+节点属性设计
+每个节点不再是一个单一的像素值，而是一个低维向量
+分别表示节点位置（坐标）、平均灰度值、方差、最大灰度值、最小灰度值、矩形区域的大小和边缘信息。极大了降低了数据维度。
+（想到了之前用代码表示一个粒球的时候，最开始是用数组表示，实际上就是向量）
+② 边连接
+如果两个粒矩形在空间上相邻（有共享的边界或相交区域），则在它们之间建立一条边。这样就构成了拓扑结构图，保留了图像的空间位置关系。
+3.图上的图像操作
+为了让图神经网络能像CNN一样处理图像变换，作者在图节点上重新定义了基本操作：
+（因为深度学习对图片会用数据增强，每一次数据增强都要重新预处理，复杂度会很高，所以只生成一次图，然后直接再这个图上进行图像操作）
+几何变换：不需要重新生成图，直接对节点属性中的坐标进行数学变换
+水平翻转：（垂直同理）
+下采样（变粗糙）：合并相邻的节点。
+上采样（变精细）：将一个大节点分裂，或根据属性随机生成子节点。
+意义：这使得图表征具备了适应数据增强的能力，且计算量远小于像素级变换。
+4. 基于GAT的分类与解释性
+最后，将构建好的图输入到图注意力网络 (GAT) 中进行分类。
+极大提升了效率。
+可解释性：
+通过可视化GAT的注意力权重，作者发现模型关注的是“有意义的结构块”（如动物的躯干），而不是背景。
+当分类正确时，热力图集中在物体上。分类错误时，热力图往往集中到背景上。
+深度学习入门
+误差反向传播法
+之前通过数值微分计算权重梯度，比较浪费时间。
+学习了计算图形式了误差反向传播法，其优点有
+局部计算，简化问题
+保存全部中间结果
+可以通过反向传播高效计算导数
+学习了链式法则的反向传播
+加法节点的反向传播只乘1，也就是不会变化
+乘法节点会乘输入信号的翻转值
+学习了sigmod和Relu的反向传播过程
+神经网络的正向传播中进行的矩阵的乘积运算在几何学领域被称为“仿射变换”。称为为“Affine层”。
+确认数值微分求出的梯度结果和误差反向传播法求出的结果是否一致的操作称梯度确认 | 这篇论文解决的是深度学习图像处理中基于像素方法存在的效率低、鲁棒性差和缺乏可解释性问题。
+确认数值微分求出的梯度结果和误差反向传播法求出的结果是否一致的操作称梯度确认
+[表]批判性思考与引申（优点与启发、局限与不足、展望等） | 新颖的思想，利用粒球的思想与图像结构结合，不再用圆，而是用矩阵，和之前一篇的网格划分的思想很类似。
+也是第一次遇到直接用梯度进行划分的算法，对比之前的粒球生成算法（自顶向下的），这个算法是局部扩张性的。也是基于图片像素的连续性而设计 | 新颖的思想，利用粒球的思想与图像结构结合，不再用圆，而是用矩阵，和之前一篇的网格划分的思想很类似。
+[表]存在问题及
+拟解决方案 | 纯度：矩形区域中正常像素数量占像素总数的比例。正常像素是指与区域中心像素的灰度差小于特定阈值的像素；否则，它们是异常像素。如何理解？
+灰度差是一个量化指标，用来衡量两个像素有多像。
+将粒球的纯度迁移到图像领域，那么衡量相似度的就是灰度差了
+如果图像中的两个矩形区域有共享的子区域，这两个节点可以被认为形成了一条边。因此，可以基于节点及其对应的边构建表示给定图像的图。如何理解？
+像素粒矩形化后，有一堆独立的节点，但它们之间不是孤立的，而是有位置关系的。所以需要有一种方式来描述这种关系。
+把所有相邻的节点（无论是共享一条边或共享一个角）都用边连接起来，就得到了最终的图。 | 纯度：矩形区域中正常像素数量占像素总数的比例。正常像素是指与区域中心像素的灰度差小于特定阈值的像素；否则，它们是异常像素。如何理解？
+[表]下周计划 | 阅读《Multi-Granularity Open Intent Classification via Adaptive Granular-Ball Decision Boundary》
+继续学习深度学习基础 | 阅读《Multi-Granularity Open Intent Classification via Adaptive Granular-Ball Decision Boundary》
+
+### NAUGRIN研究生周报-曹思磊26.3.13.docx
+NAUGRIN研生文献周报
+[表]姓   名 | 曹思磊 | 填表时间 | 2026.3.13 | 本周有效
+工作时长 | 合计： 35 小时
+[表]本周研读
+文献清单 | 继续思考idea及尝试。 | 继续思考idea及尝试。 | 继续思考idea及尝试。 | 继续思考idea及尝试。 | 继续思考idea及尝试。
+[表]任务目标
+（上周计划） | 继续思考idea及尝试。 | 继续思考idea及尝试。 | 继续思考idea及尝试。 | 继续思考idea及尝试。 | 继续思考idea及尝试。
+[表]重点文献精读总结（主要包括研究目的、方法、实验、效果、贡献与创新等） | 《GB-RVFL--Fusion of randomized neural network and granular ball computing》
+这篇论文是最简单的深度学习+粒球的文章，适合初始阶段的实验代码学习。
+https://github.com/mtanveer1/GB-RVFL
+GB-RVFL：
+实验中RVFL列出了10种不同的激活函数，一个一个试，可以借鉴。
+代码清晰的分成了三个py文件，其中gen_ball和RVFL是完全可复用的，它们只在main中融合。gen_ball稍加修改就可以自己用。在后续实验部分也可以依照这个结构编写。
+数据流向：原始数据（n维特征，一列标签）->numpy格式->随机打乱后划分7:3(AA_train,A_test) -> AA_train经过粒球生成算法得到粒球集合 -> 粒球集合的中心作为新训练数据A_train  ->
+用A_train输入RVFL训练 -> 得到模型后用A_test评估模型。
+GE-GB-RVFL：
+核心代码为matrices_LDA，非常精简
+Llda_w = np.eye(N) - W
+对应内在图：
+Llda_b = W - (1 / N) * np.ones((N, N))对应惩罚图：
+其次作者还增加了Fisher判别分析 (LFDA) 和边缘 Fisher 分析 (MFA)的代码
+论文中的推导公式用的是LDA，然而代码中计算拉普拉斯矩阵却用的是LFDA。经过测试用LDA的准确率比LFDA低了很多，远达不到实验的效果，所以也许作者table1中的准确率都是用LFDA测得的。 | 《GB-RVFL--Fusion of randomized neural network and granular ball computing》
+[表]批判性思考与引申（优点与启发、局限与不足、展望等） | GB-RVFL只是将粒球中心输入，就是把粒球当作一种筛选器，在特征空间中用粒球的中心代表粒球内的所有数据，简而言之就是精简了数据集，用法比较单一。
+好处是只使用粒球中心，数据维度完全不用改，模型本身也不用改，很简单。
+局限性在于只输入中心比较单一，准确率并不高，只有85%，那么思考能否不只用中心，输入其他的粒球特征，让模型学习的更好呢？
+尝试1：
+普通的RVFL在计算闭式解时，认为所有的输入点都是平等的。
+那么可以引入一个对角权重矩阵W=N*P（样本数*纯度阈值）加入loss。
+对于质量高的粒球让模型更多的学习，杂质球就学习的少一些。
+原始GB-RVFL的loss：
+修改后的GB-RVFL的loss：
+gen_ball增加num和purity
+RVFL.py中把输入特征矩阵 X和目标矩阵 Y的每一行，都乘以即可达到目的
+main.py对权重进行归一化后传给RVFL_train
+经过测试在aus数据集上准确率由85.5提升到了87.5
+尝试2：
+此方法关注的是粒球内部的特征，而GE-GB-RVFL关注的是粒球间的类别关系
+前者修改loss的误差项，后者修改loss的正则项，所以完全可以结合
+结合尝试1与GE-GB-RVFL：
+在部分数据集上的测试结果：
+思考：不同数据集下：例如高维度少样本，不平衡数据集，单一的权重模型确实无法都很好的满足。对于aus这种噪声数据集效果确实会好，但例如sonar和ionosphere
+数据集（几何边界明确），边界上的粒球肯定是小且纯度偏低的，造成了算法忽略了边界信息。因为这个算法设计的初衷就是尽量减小边缘杂散小球的影响。
+GE-GB-RVFL也仅在几个数据集上效果好，结论是可能过度正则化了。
+但注意到，这个超参数仅仅是aus数据集上最好
+超参数：（c1_best = 0.01  alpha_best = 0.1  N_best = 203  Act_best = 8 ）
+并没有寻找到每个数据集下的最优超参数。
+所以采用网格搜索+5折交叉验证（论文中）的方式寻找最优超参数：
+注：准确率在1%之间浮动 | GB-RVFL只是将粒球中心输入，就是把粒球当作一种筛选器，在特征空间中用粒球的中心代表粒球内的所有数据，简而言之就是精简了数据集，用法比较单一。
+注：准确率在1%之间浮动
+[表]存在问题及
+拟解决方案 | 为什么要将类别标签转换为one-hot编码？
+1.防止模型用连续数值去计算损失，误导网络
+2.RVFL本身是一个多输入、多输出的网络。输出是N*C的矩阵，onehot恰好满足这个纬度。
+这是普通RVFL本身就要做的，而非这篇文章的创新点，不多思考。
+论文中作者跑GB-RVFL在aus上的准确率有87.02，而我跑他给的完全相同的代码却只有85.5为什么呢？
+随机种子固定了，应该我也跑一下最优的随机种子
+我只跑了单次，但文中是五折交叉验证
+K-Means 聚类的不确定性
+高维下的粒球生成算法还是比较抽象，如何可视化来看粒球生成的好不好？
+距离热力图，即文中图7，8使用的方法 | 为什么要将类别标签转换为one-hot编码？
+距离热力图，即文中图7，8使用的方法
+[表]下周计划 | 继续思考idea及尝试。 | 继续思考idea及尝试。 | 继续思考idea及尝试。 | 继续思考idea及尝试。 | 继续思考idea及尝试。
+
+### NAUGRIN研究生周报-曹思磊26.3.20.docx
+NAUGRIN研究生工作周报
+[表]姓   名 | 曹思磊 | 填表时间 | 3.20
+[表]有效工作
+时    长 | 工作时段： 30小时
+其他时段：  5小时
+合    计： 35小时 | 研究主题 | 深度学习+粒球
+[表]任务目标 | 继续思考idea及尝试。 | 继续思考idea及尝试。 | 继续思考idea及尝试。
+[表]工
+展 | 对于RVFL，模型上限太低，且较难作出开创性的创新。
+上一个实验可作为尝试和经验。转向图神经网络：
+《Graph Coarsening via Supervised Granular-Ball for Scalable Graph Neural Network Training》
+项目结构不小，理解花了较多时间。
+刚开始有点无从下手，还是先关注数据流向，暂时忽略tools下的代码，最后再去一个一个理解。
+数据集：
+Planetoid数据集（Cora、Citeseer、Pubmed）
+Coauthor数据集（CS、Physics）
+Planetoid数据集在PyG中内置了train_mask等属性，
+而Coauthor数据集默认不包含这些掩码属性。所以需要手动创建数据对象。
+稀疏邻接矩阵（COO格式），是一个“中间格式”，
+方便从 PyG 的边列表过渡到 NetworkX 的图结构。
+使用了两种划分技巧：
+"complete"划分：将最后1000个节点作为测试集，用于与早期研究进行公平比较，
+"normal"划分：标准比例划分（6:2:2），用于模型泛化能力评估，一般取多次平均值
+如果每篇论文都使用不同的随机划分，会对准确率有浮动，
+这在上一个实验中也遇到了，无法确定是算法改进还是划分差异
+如果只看main文件，和正常的GNN并没太大的区别
+最重要的就是new_data = gb_division(fun_data, args)这一步
+作者把所有与粒球相关的操作都封装进去了
+gb_division：
+原始data：
+x: 节点特征矩阵[节点数量, 特征维度]
+dge_index: 边索引矩阵 [2, 几条边]
+y: 节点标签向量[节点数量]
+train_mask: 训练集掩码[节点数量]
+val_mask: 验证集掩码 [节点数量]
+test_mask: 测试集掩码[节点数量]
+-->稀疏邻接矩阵（COO格式）：
+data: 边权重，本文全为1（无权图）
+(row,col): 边索引，row为源节点索引，col为目标节点索引
+shape: 矩阵形状 [节点数量, 节点数量]
+type: 数据类型为float32
+-->NetworkX 图对象（nx.Graph）(get_dataset)
+节点：attributes：原始特征向量。label：原始标签
+边：稀疏邻接矩阵的边索引
+边属性：edge_attr = np.zeros(3)（长度 3 的占位边特征）（没用到）
+-->构建双向ID映射字典
+total_degree_dict_old:{原始节点ID:度数}
+total_degree_dict:{连续新ID:度数}
+id_dict:{新ID:旧ID}
+id_dict_oldtonew:{旧ID:新ID}
+data_matrix：[old_index, features..., label, new_id（从0开始）]
+-->初始化第一个大粒球：
+C[[old_index, features..., label, new_id]，total_degree_dict]即[节点矩阵，节点度数]
+-->粗粒度划分（initial_splite）：
+对于每个连通分量的每个类别选取max(1, int(sqrt(num_nodes) / num_classes))个中心
+得到粗划分的少许粒球new_C
+-->控制粒球数量，如果大于目标数量total_balls_num，从粒球质量最小的开始移除。认为是去噪，提升效率的方式。
+-->添加纯度new_C = add_purity(new_C)
+new_C[[old_index, features..., label, new_id]，total_degree_dict,purity]
+-->基于纯度继续细划分粒球（split_ball_purity）
+new_C = split_ball_purity(graph, id_dict, new_C, total_degree_dict, total_balls_num)
+按照纯度升序排序，对于低于阈值的粒球，选择度数最高的两个节点作为划分中心，
+-->如果粒球数量未达到要求，继续划分质量大的粒球
+new_C = split_ball_further(graph, id_dict, new_C, total_degree_dict, total_balls_num)
+两者都调用split_2_co，通过BFS计算中心到所有节点的距离从而分配。
+-->补充粒球标签信息
+-->对每个粒球，计算所有节点特征的平均值GB_features。
+因为后续粒球将作为一个超节点输入到CNN
+-->构建粒球图：节点是粒球；边是原始图中节点连接的映射：如果原始图中两个节点分别属于不同的粒球（忽略球内边），则在对应粒球之间添加边。（GB_graph = new_graph(new_C, graph)）。
+可以考虑边权重=原始边数量，
+-->最后转化为输入到GNN的格式：new_f：{特征矩阵（gb_features）；标签向量（gb_labels）；边索引矩阵（adj）}
+尝试1：
+原论文在构建粒球图时，只要两个粒度球之间有边相连，就在新图中连一条无权边。这丢失了粒球之间连接强度的信息，所以尝试在粒球图间引入加权边，权重设为两个粒球之间包含的原图边数量。
+在new_graph中把跨球边改为累加weight
+并在gb_division中用权重导出COO，并新增返回new_f['adj_weight']
+最后在三个模型的前向传播中加入权重属性输入。
+（数据集cora，模型：GCN，runs=10，epochs=60） | 对于RVFL，模型上限太低，且较难作出开创性的创新。
+（数据集cora，模型：GCN，runs=10，epochs=60）
+[表]存在问题及拟解决方案 | gb_divisoin中为什么一定要构建稀疏邻接矩阵（COO格式）而不能直接把data变为NetworkX格式呢？
+1.可以方便的直接给 numpy 用，不需要频繁在Tensor和numpy之间转换。
+借由稀疏矩阵的nonzero()方法，可以快速去掉构建粒球时不需要的自环
+old_index和new_id到底有什么用？
+1如果孤立节点被删，下标可能就不再连续，所以需要给剩余节点重新排序new_id，
+2.最后需要建立粒球与粒球之间的连边，需要回到原始的邻接矩阵来找old_index
+最后矩阵就变成了[old_index, features..., label, new_id]的形式 | gb_divisoin中为什么一定要构建稀疏邻接矩阵（COO格式）而不能直接把data变为NetworkX格式呢？
+[表]下周计划 | 继续尝试不用固定 T=1，按球内特征方差或密度动态设阈值。并在不同数据集和模型下测试 | 继续尝试不用固定 T=1，按球内特征方差或密度动态设阈值。并在不同数据集和模型下测试 | 继续尝试不用固定 T=1，按球内特征方差或密度动态设阈值。并在不同数据集和模型下测试
+
+### NAUGRIN研究生周报-曹思磊26.3.27.docx
+NAUGRIN研究生工作周报
+[表]姓   名 | 曹思磊 | 填表时间 | 3.27
+[表]有效工作
+时    长 | 工作时段： 30小时
+其他时段：  5小时
+合    计： 35小时 | 研究主题 | 深度学习+粒球
+[表]任务目标 | 继续思考idea及尝试。 | 继续思考idea及尝试。 | 继续思考idea及尝试。
+[表]工
+展 | 尝试1:
+原论文在构建粒球图时，只要两个粒度球之间有边相连，就在新图中连一条无权边。这丢失了粒球之间连接强度的信息，所以尝试在粒球图间引入加权边，权重设为两个粒球之间包含的原图边数量。
+在new_graph中把跨球边改为累加weight
+并在gb_division中用权重导出COO，并新增返回new_f['adj_weight']
+最后在三个模型的前向传播中加入权重属性输入。
+在不同数据集和模型下测试：
+尝试2:自适应纯度阈值
+固定阈值会在噪声，边界区域过度分裂。
+所以给每个球单独算一个阈值T_ball，用“局部内聚度”动态调节：
+球内特征方差低、连接密度高-->内聚度高-->阈值下调（允许少量标签混杂，少分裂）
+球内特征方差高、连接稀疏-->内聚度低-->阈值接近基准阈值（继续分裂）
+T_ball = clip(base_threshold - beta * cohesion, adaptive_min, base_threshold)
+尝试3:
+先在粗化图训练，再回到原图做少量微调（补回粗化信息损失）。
+1：粗化图训练，保存最佳 checkpoint
+2：加载1的最优参数，在原图上用小学习率微调若干轮
+最后在原图测试集评估
+三种尝试影响都不是很大，在Cora/Citeseer这种标准图数据集上，模型基线已经很强了。
+作者在文中对比了5%，10%，15%，20%噪声率下SGBGC和其他方法的对比，所以在粒球+深度学习中，我的卖点不应该是干净，标准的数据，而是在那些充满噪声的数据集上。
+所以其实可以在以上表格中再加入不同噪声率下，并加一个通过网格找到最优超参数的实验。算力有限，下周尝试一下。 | 尝试1:
+[表]存在问题及拟解决方案 | 现有阶段
+第一个想法是在实验的基础上进行改进，看能否超过baseline，但现在看来很难行的通，大多实验完成度已经很高了，除非是精度高很多或是结构性的创新。
+第二个想法是在复现完几篇图神经网络+粒球的论文后，以一个全局的视角将他们的创新点联合起来，但我觉得可行性也不高，任务和场景不同，并不是像大模型那样可以揉搓到一起的。
+第三个想法是扩大范围，自己寻找深度学习任务及切入点：
+输入层：模型输入做粒球生成算法（图粗化，粒球采样）
+特征层：粒球代替全连接分类器，即《Granular-ball Representation Learning for Deep CNN on Learning with Label Noise》中的思想，变成预测一个粒球的标签（并没有开源代码，后续先尝试这个方向）。（不平衡学习）
+不变的是深度网络把数据映射到高维空间之后，粒球再发挥决策作用。
+损失函数：让模型能够看懂几何结构，或是在开放意图分类中直接应用，同一个球里的样本算正样本，不同球的算负样本（分布外检测，开放意图分类）
+未尝试的其他层：卷积，池化，或嵌入层等。
+未尝试过的其他深度学习方向：例如Transformer，联邦学习，强化学习，ViT，NLP等（后续选一周时间专门探索一下），关注这些常规方法的局限性和粒球的优势是否契合。 | 现有阶段
+[表]下周计划 | 复现《AW-GBGAE: An Adaptive Weighted Graph Autoencoder Based on Granular-Balls for General Data Clustering》（图神经网络+粒球）寻找idea。推进想法三。 | 复现《AW-GBGAE: An Adaptive Weighted Graph Autoencoder Based on Granular-Balls for General Data Clustering》（图神经网络+粒球）寻找idea。推进想法三。 | 复现《AW-GBGAE: An Adaptive Weighted Graph Autoencoder Based on Granular-Balls for General Data Clustering》（图神经网络+粒球）寻找idea。推进想法三。
+
+### NAUGRIN研究生周报-曹思磊26.3.6.docx
+NAUGRIN研生文献周报
+[表]姓   名 | 曹思磊 | 填表时间 | 2026.3.6 | 本周有效
+工作时长 | 合计： 35 小时
+[表]本周研读
+文献清单 | 将之前阅读的文献重新熟悉一遍，做到能直接想出每一个文献的主要内容和创新点及大概过程，奠基文献可以做到，但深度学习文献还达不到。再以现有的知识重新思考创新点及可以改进的方向作为idea。 | 将之前阅读的文献重新熟悉一遍，做到能直接想出每一个文献的主要内容和创新点及大概过程，奠基文献可以做到，但深度学习文献还达不到。再以现有的知识重新思考创新点及可以改进的方向作为idea。 | 将之前阅读的文献重新熟悉一遍，做到能直接想出每一个文献的主要内容和创新点及大概过程，奠基文献可以做到，但深度学习文献还达不到。再以现有的知识重新思考创新点及可以改进的方向作为idea。 | 将之前阅读的文献重新熟悉一遍，做到能直接想出每一个文献的主要内容和创新点及大概过程，奠基文献可以做到，但深度学习文献还达不到。再以现有的知识重新思考创新点及可以改进的方向作为idea。 | 将之前阅读的文献重新熟悉一遍，做到能直接想出每一个文献的主要内容和创新点及大概过程，奠基文献可以做到，但深度学习文献还达不到。再以现有的知识重新思考创新点及可以改进的方向作为idea。
+[表]任务目标
+（上周计划） | 看完鱼书的最后一部分，思考并尝试论文方向 | 看完鱼书的最后一部分，思考并尝试论文方向 | 看完鱼书的最后一部分，思考并尝试论文方向 | 看完鱼书的最后一部分，思考并尝试论文方向 | 看完鱼书的最后一部分，思考并尝试论文方向
+[表]重点文献精读总结（主要包括研究目的、方法、实验、效果、贡献与创新等） | 粒球基础：
+《Granular ball computing classifiers for efficient, scalable and robust learning》
+《GBG++: A Fast and Stable Granular Ball Generation Method for Classification》
+《An Efficient and Adaptive Granular-Ball Generation Method in Classification Problem》
+《GEC: A novel and efficient classifier based on granular-ellipsoid model》
+《Synthetic Minority Oversampling Technique Based on Granular Ellipsoid Model for Imbalanced Data Classification》
+《Ball k-Means: Fast Adaptive Clustering With No Bounds》
+《A Fast Granular-Ball-Based Density Peaks Clustering Algorithm for Large-Scale Data》
+《基于网格自组织粒球模型的不平衡回归方法_胡峰》
+粒球+深度学习：
+《GB-RVFL--Fusion of randomized neural network and granular ball computing》
+随机神经网络+粒球（中心）。
+如何将粒球的其他特征糅合，让模型能获得更多信息？（以向量形式存储结合图神经网络。多模态？）
+修改损失函数，让模型理解（几何）关系。即图正则化（）
+《MGNR_A_Multi-Granularity_Neighbor_Relationship_and_Its_Application_in_KNN_Classification_and_Clustering_Methods-TPAMI》
+自然（双向）邻居思想+粒球自动识别不同密度区，可用于分类，聚类。
+相对密度（对比绝对密度），DM衡量粒球密度，归一化思想。
+1.不再看样本数量，而是去关注特征空间中的相对密度
+2.初步思路：目标是解决深度学习中长尾分布的数据问题。提取特征后，对数据进行粒球生成，然后计算每一个粒球中心的NARD值，修改模型的loss（比如说*1/NARD），强制让模型更多的学习到那些更稀疏的样本。
+《GAdaBoost: An efficient and robust AdaBoost algorithm based on granular-ball structure》
+集成学习+粒球。
+1.通过调整训练数据子集来关注难分样本（而非权重）
+2.数据量太大时先关注边界和中心样本
+《Enhancing graph convolutional networks with progressive granular ball sampling fusion: A novel approach to efficient and accurate GCN training》
+图神经网络+粒球（仅做采样）。单视图，对节点特征矩阵和邻接矩阵做变化。
+1.渐进式训练（粒球分裂的每一次过程都作为一个图输入，保留中间态。由粗到细）
+2.权重共享（上层作为下层初始权重）
+《Capturing local and global information: Multi-view graph convolutional network via granular-ball computing and collaborative matrix》
+图神经网络+粒球，解决多视图下构图问题。
+1.卷积中同时捕捉局部（平均池化+Conv1D）和全局信息（Conv2D）并进行外积
+2.解决GCN下特征同质化，可以在每个卷积层增加初始层的特征矩阵。
+3.多视图中使用特征数量最多的视图，计算其协同矩阵供其他视图使用。
+改进点：特征数量多不一定质量好，先让所有视图算出自己的协同矩阵，然后引入注意力机制打分（给权重），最后所有视图的矩阵加权求和，变成一个融合所有矩阵的协同矩阵。
+4.初步思路：粒球生成是作为一个预处理步骤，在输入到神经网络后就无法改变了。所以能否将粒球划分的过程融入神经网络，分类器一边分类，一边调整粒球的大小和位置？
+《AW-GBGAE: An Adaptive Weighted Graph Autoencoder Based on Granular-Balls for General Data Clustering》
+图神经网络+粒球。图自编码器（无监督学习），解决高维无标签数据的聚类问题
+加权粒球生成算法（高维）
+粒球构图策略：球内与球间连接
+动态图更新机制：K值逐渐减少（由广入微），能否设计一种自适应K值？
+粒球能否作为一种池化策略直接嵌入到GNN中？
+《Graph Coarsening via Supervised Granular-Ball for Scalable Graph Neural Network Training》
+图神经网络+粒球，优化图粗化方法。自适应，利用标签。
+1.先粗分粒球，然后再提纯
+2.论文中粗化图连接的边是非0即1的，可以引入加权边，权重为原图中球 A 与球 B 之间连边的数量(或乘一个归一化后的系数)。
+《Granular-ball Representation Learning for Deep CNN on Learning with Label Noise》
+由粒球设计GBC模块，嵌入到CNN的FLM和分类器之中。
+1.保留CNN前一部分（卷积，池化），用粒球代替了全连接分类器。由单对单变成多对单。降低了噪声对分离器的影响。
+2.粒神经网络或许在这篇文中可以找到一些灵感，包括反向传播（逆平均池化）和miniBatch导致的训练不稳定问题（经验回放，记忆池思想）。但这篇文章仅是嵌入在CNN中，说明CNN仍有不可代替的作用。在CNN构建好特征空间之后，粒球才能发挥作用。
+《GBRIP: Granular Ball Representation for Imbalanced Partial Label Learning》
+通过粒球，解决分类器在非平衡偏标记学习下效果不行的问题。无监督2NN聚类。
+和上一篇一样，都是在神经网络提取特征后，依据特征空间的距离构建粒球，将粒球作为一个嵌入层。
+在标签不可靠时，从几何角度思考。在loss中加上一个多中心损失 (MCL)，拉近同类样本的距离，提高鲁棒性。
+3.构图时，能否引入图注意力机制（语义+几何），让网络自动学习球与球之间的权重？
+《Graph-based Representation for Image based on Granular-ball》
+图神经网络+粒矩形。基于梯度构建粒矩形，基于重叠连接边。
+依旧是围绕如何构建，输入给GAT的节点特征矩阵和邻接矩阵进行的。
+文中基于基于单通道（灰度）处理，如果改成三通道，是否可以通过颜色本身的特性去决策边界？
+学习前面论文的思想，先进行CNN提取语义特征，再在这个特征图上生成粒矩形？
+VIT是固定的16*16，是否可以自适应地生成大小不一的Patch？
+思路：与粒计算结合，重新设计一个方法获取节点特征矩阵和边连接表。
+《Multi-Granularity Open Intent Classification via Adaptive Granular-Ball Decision Boundary》
+开放意图分类（构建边界）+粒球。（NLP方向）
+1.BERT提取特征后进行多球覆盖，修改loss（基于最近的粒球中心）。
+2.是否可以和粒椭球结合？最近子质心分类器可以修改为马氏距离，但如何反向传播是个问题。
+《深度学习基础》
+鱼书的最后一章大多为概括性说明以及展望，不再赘述。 | 粒球基础：
+鱼书的最后一章大多为概括性说明以及展望，不再赘述。
+[表]批判性思考与引申（优点与启发、局限与不足、展望等） | 之前看论文主要看创新点和方法，现在看来数据结构的流向也非常重要。
+原始数据是什么->通过哪些算法变成了什么形态->最后输出是什么样子。
+如果阅读论文最开始就往这个方向走，可以更快的理解文章的算法结构。
+论文额外要考虑的问题
+超参数越少越好
+高维稀疏数据上效果如何
+流形数据上的表现
+不规则粒是否可行（椭球，方球）
+不改权重，关注其他（几何特征；增加少数类粒球中的数据即增量采样；）
+边界信息很关键
+粒球生成算法并不固定，要依据目标具体分析
+粒神经网络的可行性（粒球独自构建特征空间；复杂度；反向传播），如果不行可以先做嵌入层。
+网络训练时能否考虑由粗到细的思想
+粒计算前提：身处一个“距离等于语义相似度”的空间。（高维特征空间）
+把新数据加上部分旧数据混合在一起训练，效果可能更好。（GCN同质化问题；minibath抖动问题）
+NLP方向是否还能结合
+GCN（A.有图->通过粒球，重新设计节点特征矩阵和邻接矩阵输入到GCN。
+B.无图（只有特征）->利用粒球设计构图算法（邻接矩阵），再输入到GCN学习。所以粒球+GCN就是在特征矩阵和邻接矩阵中做变化。） | 之前看论文主要看创新点和方法，现在看来数据结构的流向也非常重要。
+[表]存在问题及
+拟解决方案
+[表]下周计划 | 继续思考idea及尝试。 | 继续思考idea及尝试。 | 继续思考idea及尝试。 | 继续思考idea及尝试。 | 继续思考idea及尝试。
+
+### NAUGRIN研究生周报-曹思磊26.4.10.docx
+NAUGRIN研究生工作周报
+[表]姓名 | 曹思磊 | 填表时间 | 4.10
+[表]有效工作
+时长 | 工作时段：35小时
+其他时段：5小时
+合计：40小时 | 研究主题 | 深度学习+粒球
+[表]任务目标 | 对比学习+粒球尝试 | 对比学习+粒球尝试 | 对比学习+粒球尝试
+[表]工
+展 | 对比学习关键的两个问题是：
+视图怎么增强。如果增强太弱，模型学不到不变性；如果增强太强，可能破坏语义。
+（尝试1）
+2.负样本怎么定义。如果把本来语义上很相近的节点也强行当成负样本，就会产生所谓的falsenegative，也就是“假负样本”，这会直接降低学习效果。（尝试2）
+先考虑基线方法GRACE：
+从同一张原图出发，随机做两次扰动，扰动方法为随机删边，特征遮蔽（随机删掉若干列特征），得到两个视图，
+2.把两个视图同时送进同一个 GNN 编码器得到两个节点表示：
+通过一个projection head投影（即一个两层MLP）算相似度，是用来专门服务对比损失的，文中说是为了防止干扰下游任务的表示结构。
+4.把同一个节点在两张视图中的表示看成正样本对；（Ui，Vi）
+利用相似度构造InfoNCE损失去拉近正样本、拉远负样本（其他节点在两个视图里的表示）。
+而GRACE的缺陷：随机删边可能把真正承载语义的关键边删掉，导致图的局部语义结构被破坏，训练里就会出现语义漂移或监督噪声。
+尝试1：先用粒球，把特征空间里语义接近的节点分到同一个粒球里，然后在生成对比学习的增强视图时，尽量保留球内边，更积极地扰动球间边。
+具体流程：
+首先把当前图视做一个初始大球
+分裂时会在当前球里挑出两个彼此差异比较大的中心点，把它们当作两个新中心。然后再看剩下的节点更接近（特征相似性+图结构）哪一个中心，就把它分到对应的那一边。
+判断分裂后的加权质量（）是否大于父球，如果大于就分裂。并保留每一层分裂粒球结果。
+在训练过程中，基于当前表示空间动态构建或更新粒球层级，然后选一个粒度层作为这轮增强依据
+5.基于该层粒球关系，独立采样两次边扰动，生成两张增强视图，球内边高概率保留，跨球边适度扰动。
+6.把两张视图送入共享编码器，做对比学习训练
+粒球质量函数：
+IntraSim用来评估球内语义一致性，z表示模型对每个节点学到的表征
+Density评估球内节点之间的紧密程度。表示球内边数。
+用来评估粒球和球外边的连接（混杂）程度，是球内节点和球外节点之间的边，
+Cora上5seeds，100epochs对比：
+粒球平均球数约为31，没有塌缩。但其效果仍低于GRACE。
+先后尝试了分裂节奏调度、边扰动强度调节、后期降扰动、后期冻结粒球层级，非对称双视图等策略，公式了也做了几轮调整。只有后期降扰动有效，追回了一部分性能，但整体仍未稳定超过GRACE，因此最终判断粒球参与视图生成这一条路可能不行。
+图对比学习通常将除正样本外的所有节点统一视为负样本，但在图数据中，一部分结构上相近、语义上相似的节点实际上更接近假负样本。如果这些节点在训练中被持续当作强负样本推远，往往会损伤表示学习质量。
+尝试2:让粒球不再主导视图生成，而是专门用于修正对比目标中的假负样本：
+利用粒球关系去判断，哪些“负样本”其实可能是假的，不应该被太强地推远。
+找出图里“结构上和语义上比较一致”的球；
+如果两个节点落在同一个高质量球里，就认为它们更可能是“假负样本”；
+在InfoNCE里，不再把这些节点当成普通强负样本处理。
+1.保持GRACE的双视图增强不变
+2.把两张视图送入共享编码器，得到当前每个节点在表示空间中的向量表示。训练前期先正常跑若干w轮
+3.当训练达到设定的轮数后，就进行粒球生成。粒球生成算法与尝试1一致。
+4.对于当前一个节点 i，对于它所在的粒球。如果这个球的质量高于阈值，就把同一个球里的其他节点都当作“候选假负样本”。
+5.在损失函数（InfoNCE）中，不再让这些同球高质量候选节点和普通负样本拥有一样的权重。分别尝试硬划分和软划分：
+硬抑制：直接把这些节点从负样本分母里去掉
+软抑制：保留它们在分母里，但乘一个小于1的权重α，让它们对损失的作用变小。
+6.最后继续按照标准对比学习方式训练
+Cora上5seeds，100epochs的对比：
+可以看到软抑制效果稍微好一些，并已经达到了baseline的基准。
+但有一个问题：它对整个高质量粒球统一处理，粒度还是太粗。同球节点不等于都不该当负样本。
+修改：先找出高质量同球节点，再按当前表示相似度排序，只对其中k个最相似的候选节点做软抑制，其他同球节点仍然作为普通负样本。即修改第四步，从整球候选全处理到整球候选里 只处理最相似的k个节点。 | 对比学习关键的两个问题是：
+[表]存在问题及拟解决方案 | GRACE许多概念不懂，已补全。
+实验中发现这个方法只对极少量负样本有效（3000个只影响了3个），所以上限不会很高，也比较依赖粒球粒球分裂的时间（前w轮）和质量，看后续能不能改进。 | GRACE许多概念不懂，已补全。
+[表]下周计划 | 尝试2感觉可行，补足并改进实验，继续推进到多个数据集：
+CiteSeer，PubMed，Amazon-Photo，Amazon-Computers， | 尝试2感觉可行，补足并改进实验，继续推进到多个数据集：
+
+### NAUGRIN研究生周报-曹思磊26.4.17.docx
+NAUGRIN研究生工作周报
+[表]姓名 | 曹思磊 | 填表时间 | 4.17
+[表]有效工作
+时长 | 工作时段：30小时
+其他时段：5小时
+合计：35小时 | 研究主题 | 深度学习+粒球
+[表]任务目标 | 对比学习+粒球尝试 | 对比学习+粒球尝试 | 对比学习+粒球尝试
+[表]工
+展 | 普通图对比学习里，对于一个 anchor 节点，除了它自己在另一张视图里的表示，其他节点一般都会进入分母，被当成负样本。问题在于，图里经常存在很多和 anchor 很接近的节点，它们可能属于同一个局部语义簇。如果还把它们像普通负样本那样强推远，模型就会学到不太理想的表示。
+提出一个GB-FN-GRACE方法：
+在GRACE框架下，不改增强和编码器，只对极少量高置信假负样本做 top-k soft suppression；粒球只负责提供局部结构先验，用来约束候选范围。
+最终整体流程：
+1.保持GRACE的双视图增强不变，得到两个视图，
+2.用共享编码器提取两张图上的表示：
+3.决定当前 epoch 是否更新粒球（前个epoch不更新，之后每轮更新）
+构建粒球：
+一开始把整个图看作一个大球：
+选两个分裂中心
+对于当前球 B，先取球内节点表示并做 L2 归一化。
+设球内归一化表示的均值为质心
+第一个中心C1取“和质心最不相似”（余弦相似度）的点；
+第二个中心C2取“和第一个中心最不相似”的另一个点。
+（语义上尽量分开）
+4.2 把球内节点分到两个子球
+对球内任一节点i，其对中心c的打分为（特征相似性+图结构相似性）：
+节点表示和中心表示先做L2归一化，再计算余弦相似度，并映射到 [0,1]：
+采用邻域 Jaccard 相似度：
+节点i的局部邻域：
+剩余节点，哪个分数大就分配给哪个中心。
+如果两个分数相同，则分给当前节点数更少的那个子球。
+4.3 计算球质量，并决定是否接受分裂
+每个球B都有一个质量分数：
+表示球内节点与球质心的平均相似度
+表示球内连接是否紧密。
+external_stubs(B)：球内节点连向球外的边端点数
+internal_stubs(B)：球内节点之间相连形成的边端点数
+表示粒球和球外边的连接（混杂）程度。越小越纯。
+则其加权子球质量为：
+当且仅当分裂后的质量提升足够大，才接受这次分裂：
+先找同球高质量候选：
+对于一个anchor节点 i，先找与它满足以下条件的节点：
+不是它自己，和它属于同一个粒球，这个球的质量高于阈值
+（这些节点和 anchor 位于同一个可信语义簇中，因此有可能是假负样本。）
+在候选里按相似度选Top-k：
+进一步计算这些候选节点和anchor的相似度：
+然后按相似度排序，只取最相似的前Top-k个。
+（同球节点里，并不是每个都同样像 anchor，真正最可能属于 false negatives 的，是同球里最像 anchor 的那一小部分）
+对每个负样本j，定义它在分母中的权重：
+修改损失
+view1-->view2
+标准GRACE的单项损失
+修改后：
+view2-->view1
+总损失:取双向平均：
+即为最后要优化的总目标。
+test accuracy (mean ± std)，100epoch，5（Cora,CiteSeer），3seed(PubMed) | 普通图对比学习里，对于一个 anchor 节点，除了它自己在另一张视图里的表示，其他节点一般都会进入分母，被当成负样本。问题在于，图里经常存在很多和 anchor 很接近的节点，它们可能属于同一个局部语义簇。如果还把它们像普通负样本那样强推远，模型就会学到不太理想的表示。
+[表]存在问题及拟解决方案 | 实验中发现这个方法只对极少量负样本有效（3000个只影响了3个）
+1: 改进方法让它影响更多负样本
+已经试过了，影响更多负样本，结果反而更差。这说明扩大操作面会引入噪声。
+2:去掉粒球，直接对全体负样本按相似度取 topk降权，效果一样吗？
+尝试了一下，确实topk是主要的效果改进点。那么如果不能对粒球进行完整的叙事，可能这个尝试也很难继续进行。
+如果创新点不够，可以考虑做个下游任务，但也是在方法有效的前提下。
+如果能在基础源码上修改更好，而不是重新从0开始搭建实验
+其实一直思考的是加入粒球能让模型准确度有多大的提升，其实也可以思考粒球提供了什么新的机制和视角。 | 实验中发现这个方法只对极少量负样本有效（3000个只影响了3个）
+[表]下周计划 | 思考以及尝试idea | 思考以及尝试idea | 思考以及尝试idea
+
+### NAUGRIN研究生周报-曹思磊26.4.24.docx
+NAUGRIN研究生工作周报
+[表]姓名 | 曹思磊 | 填表时间 | 4.24
+[表]有效工作
+时长 | 工作时段：30小时
+其他时段：5小时
+合计：35小时 | 研究主题 | 深度学习+粒球
+[表]任务目标 | 对比学习+粒球，将GB-FN-GRACE方法尝试将重点放在抗噪上。 | 对比学习+粒球，将GB-FN-GRACE方法尝试将重点放在抗噪上。 | 对比学习+粒球，将GB-FN-GRACE方法尝试将重点放在抗噪上。
+[表]工
+展 | 上周的GB-FN-GRACE的实验说明粒球在负样本筛选上的增益有限。
+本周尝试利用粒球，在图结构被噪声污染的情况下，帮助图对比学习模型识别并抑制噪声边。
+模拟噪声方式：边重连：随机选择一定比例的边，把它们断开，然后随机连到其他节点上。
+在图神经网络中噪声边会通过消息传递污染节点表示
+思考：能不能在训练过程中识别出哪些边可能是噪声，然后降低它们在消息传递中的影响？
+核心思想：给边加权来抑制噪声（软抑制）
+尝试1:粒球去噪（失败）
+同球边（两端节点在同一个粒球内）->可信度高，保持正常权重
+跨球边（两端节点在不同粒球内）->可信度低（可能是噪声），降低权重
+结果：实验效果很差，因为粒球生成算法依旧是GB-FN-GRACE的方法，实际上只能构建2个左右粒球，在40%的噪声下，被视作噪声的边极少。尝试改进粒球生成算法生成更多的粒球 ；尝试从GCN编码空间（Z）切换到原始特征空间（X），效果都不太好。
+结论：粒球提供的是组级别的二值信号（同球/跨球），而边级去噪需要的是逐边连续可信度评分。组级信号过于粗糙，无法精确区分"确实可疑的跨球噪声边"和"恰好跨球但实际干净的边"。
+但实验中发现：
+原始特征空间（X）的边端点余弦相似度对边有很强的区分力
+X空间：clean 边平均相似度 0.168，noisy 边平均 0.056，差距 0.112
+Z空间：clean 边平均 0.888，noisy 边平均 0.861，差距仅 0.027
+说明逐边特征相似度是一个优质的可信度信号。
+2. 百分位排名可以规避绝对相似度分布差异的影响，实现分布无关的自适应阈值。
+原因：GCN 的消息传递会平滑节点表示，使所有节点变得更相似，压缩了边之间的区分度。而原始特征没有经过消息传递，保留了天然的分离度。所以之前GB-FN-GRACE虽让Z能比较好的构建粒球，但失去了原始的特征区别度，所以很难用于去噪声。
+尝试2：x空间百分位方法（基于GRACE）
+通过原始特征空间（X）的逐边余弦相似度百分位排名，对低相似度边施加软降权，有效抑制噪声边在 GCN消息传递中的负面影响。
+一、对每条边，取两个端点的原始特征向量（X），先做 L2 归一化，再计算余弦相似度。然后对于所有M条边，得到一个相似度向量S：
+二、对所有边的相似度进行百分位排名R（rank 0% =最低相似度，rank 100% =最高相似度）
+三、将百分位排名映射为边权重（自适应）
+rank ≥ρ：保持权重 1.0，不做任何降权。
+rank <ρ：按线性插值从到1进行软降权。
+最优超参数：
+（认为底部多少比例的边可能有问题）
+（边权重最多被设置到多低）
+四、将边权重注入GCN消息传递（聚合邻居信息）
+五、最终结果
+经过超参消融确定最优参数（low_ratio=0.55, min_weight=0.0）在6个数据集上的结果：
+可以看到效果还是挺好的，而且遵循噪声比例越大效果越好的现象。
+与原始GRACE相比改变的：
+1.训练前新增了一个数据预处理阶段
+在原始特征 x 空间里：计算每条边两端的余弦相似度；做全局百分位排名；把排名映射成边权w。将原始图变成加权图。
+2.在 GCN 编码器中引入边权，采用加权消息传递机制进行节点表示学习。
+GRACE的双视图增强方式和InfoNCE对比损失保持不变。
+后续尝试扩展不同噪声比例在多个数据集上并尝试在干净图上跑一下。 | 上周的GB-FN-GRACE的实验说明粒球在负样本筛选上的增益有限。
+后续尝试扩展不同噪声比例在多个数据集上并尝试在干净图上跑一下。
+[表]存在问题及拟解决方案
+[表]下周计划 | 现有方法虽然效果好但是方法还是比较单一，与两位老师讨论可行性与后续方向。 | 现有方法虽然效果好但是方法还是比较单一，与两位老师讨论可行性与后续方向。 | 现有方法虽然效果好但是方法还是比较单一，与两位老师讨论可行性与后续方向。
+
+### NAUGRIN研究生周报-曹思磊26.4.3.docx
+NAUGRIN研究生工作周报
+[表]姓   名 | 曹思磊 | 填表时间 | 4.3
+[表]有效工作
+时    长 | 工作时段： 30小时
+其他时段：  5小时
+合    计： 35小时 | 研究主题 | 深度学习+粒球
+[表]任务目标 | 阅读《GBExplainer: Generalizing Adaptive-granularity Explanations with Granular Balls for Graph Neural Networks》。了解图神经网络基本模型。了解对比学习并尝试。 | 阅读《GBExplainer: Generalizing Adaptive-granularity Explanations with Granular Balls for Graph Neural Networks》。了解图神经网络基本模型。了解对比学习并尝试。 | 阅读《GBExplainer: Generalizing Adaptive-granularity Explanations with Granular Balls for Graph Neural Networks》。了解图神经网络基本模型。了解对比学习并尝试。
+[表]工
+展 | 现在图神经网络仍是主流，但并没有系统的学习过，了解的仅仅是读过论文的内容，如果确定方向，那至少要对其中的大部分内容都有大概的了解，了解图神经网络中的细分内容：
+主流的图神经网络模型（GNN）：
+核心：每个节点=自己的信息+邻居的信息
+GCN（图卷积网络）
+每个节点把自己和邻居的特征“加权平均”，得到新的特征。
+目前看到的用的最多的模型，一个是简单，另一个是能比较好的体现粒球的优势（解决加权平均带来的噪声问题）
+GraphSAGE（图采样与聚合）
+随机采样一部分邻居信息，再用多种方式（平均、LSTM等）聚合。
+GAT（图注意力网络）
+给每个邻居分配一个注意力权重，权重大的邻居聚合的特征信息就更多。
+但计算代价大。
+W是一个需要学习的线性变换矩阵。
+｜｜表示把节点i和节点j的特征向量拼接起来。
+a是一个需要学习的注意力向量。
+最后再套一个Softmax把所有邻居的分数归一化。
+思考：在一个粒球内部，距离球心越近的节点，特征越纯粹，越能代表这个粒球
+距离球心越远的节点，越有可能是离群点或噪声。
+那么节点到球心距离的远近本身 就可以衡量节点信息的可靠程度，
+所以可以尝试用粒球距离修改原始公式，用欧式距离代替需要网络学习的参数，就可能解决计算复杂度高的问题。
+GIN（图同构网络）
+用MLP（小神经网络）来聚合邻居，而不是简单平均，全用求和。
+例如，一个节点有3个值为1的邻居，求和得到3，平均得到1。另一个节点有10个值为0.3的邻居，求和也得3，平均得0.3。
+求和能分辨出“很多弱邻居”和“几个强邻居”的区别，而平均可能会混淆它们。
+适合图分类和图结构本身（如环的存在、连通性、子图模式）即上述论文
+Graph Transformer
+全局注意力，不仅仅能获取邻居信息，可以获取全图信息，但计算昂贵。
+《GBExplainer: Generalizing Adaptive-granularity Explanations with Granular Balls for Graph Neural Networks》，解释子图的（超参数）自适应问题。
+一、重要性表示模块
+1.边重要性分数：把这条边丢掉后再拿给GNN预测（）与原图预测相差越大，得分越高
+（复杂度不会很高吗？会，但引入了另一篇文章的高级方法：
+Eig-Search：基于梯度的近似：只需要对整图做1次前向传播和1次反向传播。
+把邻接矩阵 A看作是连续的变量，计算 GNN 预测目标类别对邻接矩阵中每一条边的梯度，梯度的绝对值越大，说明这条边对预测结果的影响越剧烈。）
+扰动法：删掉某条边，看GNN预测置信度下降多少（新）
+2.节点重要性分数：一个节点连着的所有边的分数的和
+二、图粒球生成模块（新，图中的粒球生成方法）
+1.从大图中挑选分数最高的两个节点作为新中心，
+2.其他节点通过 BFS计算距离，分给这两个中心，变成两个粒球
+3.计算这两个球的质量（平均边分数），如果两个子球的质量之和，大于初始球的质量，或者任意一个子球大于初始球，就分裂（防止另一个子球失效）。
+自适应，而且拥有完整的局部拓扑结构（fig1）
+三、解释子图生成模块
+质量超过初始全局图质量的粒球挑出来，拼接起来，作为最终的解释子图。
+图对比学习（GCL）：通过“自己和自己对比”，在没有标签的情况下，逼迫GNN学出高质量的图特征表示。目标：最大化正样本对（相似样本）之间的表示相似性，同时最小化负样本对（不相似样本）之间的相似性。
+1.数据增强
+拿到一张原始图，通过随机扰动生成两个稍微不同的版本（视图A和视图B）。
+（常见的扰动方法：随机删掉10%的边、随机抹掉某些节点的特征、抽取局部子图。）
+2.编码器
+用GNN分别处理视图A和视图B，把图里的节点变成低维向量。
+3.对比损失
+正样本对：视图A中的节点 i和视图B中的节点 i，迫使它们的特征向量变相似。
+负样本对：视图A中的节点 i和图里的其他所有节点j ，迫使它们的向量互相远离。
+（借鉴GBExplainer，扰动不应该随机的施加到所有边，而应该根据局部结构的重要性有选择的施加）
+图对比学习的很多方法生成两张增强视图时，会随机删边（扰动）。可能把真正承载语义的关键边删掉，导致图的局部语义结构被破坏，训练里就会出现语义漂移或监督噪声。
+所以可以尝试先用粒球，把特征空间里语义接近的节点分到同一个粒球里，再考虑是在球间边做扰动还是在低质量球间扰动。
+初步想法：
+对于输入图，先根据节点特征X（或语义特征，后续尝试）做粒球生成，把特征更接近的节点放到同一球里，具体的生成算法也可借鉴GBExplainer，原则是分裂后的粒球“质量”（在这是球内的语义一致性）是否增加，才允许继续分裂。（创新1）
+边保留概率：与是超参（版本一），>。（创新2）
+球内边：可能是核心语义边，尽量保留
+球间边：可能是弱语义边或噪声边，可以更强地扰动
+（或是只允许在低质量粒球中进行删边和扰动）
+3.采样两张增强图，再做标准对比学习。
+跑了一下GRACE和GCA（3seed）作为后续实验的对照 | 现在图神经网络仍是主流，但并没有系统的学习过，了解的仅仅是读过论文的内容，如果确定方向，那至少要对其中的大部分内容都有大概的了解，了解图神经网络中的细分内容：
+跑了一下GRACE和GCA（3seed）作为后续实验的对照
+[表]存在问题及拟解决方案
+[表]下周计划 | 思考以及尝试idea，推进对比学习的尝试。 | 思考以及尝试idea，推进对比学习的尝试。 | 思考以及尝试idea，推进对比学习的尝试。
+
+### NAUGRIN研究生周报-曹思磊26.5.15.docx
+NAUGRIN研究生工作周报
+[表]姓名 | 曹思磊 | 填表时间 | 5.15
+[表]有效工作
+时长 | 工作时段：35小时
+其他时段：5小时
+合计：40小时 | 研究主题 | 对比学习+粒球
+[表]任务目标 | 对比学习实验总结，阅读论文。 | 对比学习实验总结，阅读论文。 | 对比学习实验总结，阅读论文。
+[表]工
+展 | CGBC：Robust Smart Contract Vulnerability Detection via Contrastive Learning Enhanced Granular-ball Training
+用深度学习检测智能合约漏洞时，训练标签来自静态分析工具，工具标注会天然引入大量标签噪声，从而影响模型训练。
+前期无监督的对比学习训练，后期有监督的构造粒球层，最后用于分类任务，解决噪声问题。
+CGBC：
+数据增强后的得到合约 C～。
+设计了一个多层Transformer contract encoder，但表述非常简略。
+negative sample free对比学习，只构造正样本对，也就是说不显式指定其他样本为负样本。
+当前任务（智能合约）下容易出现 false negative问题，negative sample free可以避免false negative问题，也避免负样本污染表示空间。
+普通的2-means方法构造粒球，唯一不同的是使用余弦距离去算分裂中心而不是欧氏距离，因为是语义空间，所以用相似度距离，可以理解。
+修改GB layer损失函数：
+让同一粒球内部样本靠近粒球中心，每个粒球内部，样本离中心越远，损失越大。
+如果两个粒球标签相同，就拉近它们的中心；如果标签不同，就把它们推开，至少保持margin m（m=1）。
+6.最后分类器的损失是L_SCE，结合了普通交叉熵 CE和反向交叉熵 RCE，对噪声标签更鲁棒。
+本文使用negative sample free对比学习而不是使用普通的对比学习方法，思考了一下原因，因为如果用普通对比学习拉远负样本的话，会导致样本彼此远离，也就导致样本不够紧凑，所以可能导致生成的粒球质量很低。
+这就找到了之前实验失败可能的原因之一：
+普通对比学习中的负样本排斥力可能会和粒球的局部聚合目标发生冲突。
+另一点，之前实验里的粒球参与了训练流程，但没有成为训练目标的一部分；大部分是通过粒球去生成一套规则，用这种规则去修改或者约束视图，负样本，边权重等等，
+但粒球本身不被loss优化，所以生成的粒球的结构可能没有在持续变好，那么构建的规则效果也不会很可靠。所以后续要着重在粒球的生成上实验。
+之后在粒球生成的时候或许可以先生成一个二维的粒球图来直观的查看构造粒球的效果。以及在对比学习空间中构造粒球，到底该怎么判断粒球构造的好不好呢？这个方向是否也可以作为一个创新点去尝试。
+后续做图增强时，应像CGBC一样同时评估语义保持和结构扰动。好的增强不是扰动越强越好，而是在不破坏任务语义的前提下制造足够视图差异。
+实验总结：
+实验1:用粒球控制对比学习的视图生成
+思想：粒球被用来决定哪些边应该保留、哪些边可以扰动。
+更改的是GRACE（对比学习）的随机增强。
+算法过程：每个epoch用当前模型表示z构建粒球层级，然后用粒球关系控制边保留概率，生成两个视图，再继续用标准InfoNCE训练。
+失败原因：同球内部边重要，跨球边降权这个逻辑可能削弱 GRACE 本来有用的结构扰动。且早期Z空间就构球也不稳定。
+结论：视图生成是GCL中很敏感的部分，一旦结构先验有一点偏差，就会被每轮双视图训练持续放大。粒球还是不适合直接决定增强后的边分布。
+实验2：把粒球视图迁移到BGRL/GBT等其他自监督目标
+思想：在实验1中GRACE/InfoNCE目标下效果不好，尝试把粒球视图接入 BGRL、GBT 等非InfoNCE的自监督目标。也就是尝试不再使用原GRACE的对比损失，而改用其他自监督学习目标来吸收粒球视图。
+结果：这个方向也失败。GB-BGRL 明显不稳定，GB-GBT 虽然相对稳定，但仍低于 GRACE。
+失败原因：问题不在于是 InfoNCE 损失本身，换一个目标函数并没有解决粒球视图破坏训练分布的问题，反而引入了更多变量。
+结论：强化了实验1的判断，粒球不适合直接决定增强后的图结构分布，后续不再向这个方向投入。
+实验3: 用粒球修正对比学习中的负样本
+思想：粒球不再直接控制视图生成，而是用来判断哪些负样本可能其实是“假负样本”。同一个粒球里的节点更可能语义相近，所以在InfoNCE中不应该被当作强负样本过度推远。
+算法过程：使用表示空间z构建粒球。对每个anchor节点，只在同粒球、高质量粒球内寻找候选假负样本，再按相似度选Top-k（k为5）。把这些被选中的疑似假负样本在分母InfoNCE中进行降权。
+效果：在多个数据上确实都有正向提升，但提升幅度不大。实验发现按相似度 Top-k 已经能找到很多同类节点，但粒球相对纯相似度筛选只带来很小的作用。
+结论：粒球本身没有显著提升候选假负样本的标签命中率，绝大部分贡献来自Top-k这个策略。
+实验4：在实验3的基础上加入粒球辅助损失
+思想：实验3把疑似假负样本降权，属于弱信号但有收益，所以尝试进一步增强这个信号，尝试了三种方法。
+1.把同一个粒球里的其他节点直接当额外正样本拉近，对每个节点找同球节点，按同视图相似度选topk（1，2）个，把这些同球节点当作额外正样本去拉近。
+把当前节点所在球的中心当作正原型。用另一视图里同球节点embedding求均值，得到球中心向量。让当前节点靠近自己的球中心，远离其他粒球的中心。即以粒球中心作为正负对比对象。
+3.让两个增强视图里的同一粒球中心保持一致。视图1里每个球算中心，视图2里同一组节点也算中心。拉近同一粒球在两个增强视图中的平均表示。
+失败原因：同一个粒球并不一定等价于同语义类别。直接拉近同球节点或球中心，容易削弱节点级对比学习需要的区分能力。3虽然更温和，但信号太弱，基本也没收益。
+结论：实验3中有效的是“保守地降低疑似假负样本权重”，而不是把同球关系当成可靠正样本或原型监督。粒球更适合作为 soft prior，而不适合直接变成强正向约束。
+实验5:粒球在loss中构造局部关系约束
+思想：实验4中粒球的约束太强了，尝试把粒球从实验4的正样本标签降级成局部关系容器，让粒球的约束更温和一些。在一个局部组里，看每个节点和组内其他节点的相似度分布，然后要求这个分布在两个增强视图中一致。
+结果：和baseline差几乎一致，仅有轻微的正信号，且尝试了random，kmeans等方法，效果都差不多。
+失败原因：不能证明正信号来自粒球，可能来自局部关系约束的方法本身。
+结论：如果想保留粒球，可以适合在噪声图上构造局部关系约束看有没有正信号。
+实验6:粒球用来判断边的可靠性，从而降权并去噪。
+思想：更改的是GCN编码器使用的图结构权重。同球边可信度高，保持正常权重，跨球边可信度低，降低权重。
+结果：实验效果很差，因为粒球生成算法依旧是GB-FN-GRACE的方法，实际上只能构建2个左右粒球，在40%的噪声下，被视作噪声的边极少。
+后续会使用negative sample free方法改进这一点。
+结论：同球边不一定都是语义正确边，跨球边也不一定是噪声边。粒球只能提供很粗的局部结构先验，不能直接当作边是否可靠的标签。
+后续又实验了无粒球pct方法，虽然效果很好但不属于对比学习和粒球范畴，可以当作一个保留方向。
+大方向上：
+阶段一：粒球控制视图生成：
+实验1、实验2。失败。不继续投入。
+阶段二：粒球结合loss作为软先验：
+实验3、实验4、实验5。小收益但粒球贡献不强，可保留。
+阶段三：粒球用于结构去噪：
+实验6。可以继续尝试，但不改encoder。
+构造粒球的前提是粒球身处一个距离=语义相似度的空间，而刚好对比学习的目的就是通过无监督的方式把原始数据编码成更有结构、更适合下游任务的表示空间Z，让相似的样本靠近，从而提高粒球生成质量。
+依照CGBC的思想，可以通过粒球损失反向约束encoder，使表示空间进一步适配粒球划分和下游分类任务。
+虽然粒球并不可微，无法反向传播，但是可以利用粒球结构（中心、半径、标签等）产生可优化的约束，反过来塑造表示空间，间接影响模型训练。
+1.数据增强的质量可以通过增强前后语义相似度来评估。好的增强应当在保持任务语义不变的前提下引入足够结构扰动。
+2.尝试negative sample free对比学习对构造粒球的影响，实验负样本排斥力是否真的会和粒球的局部聚合目标发生冲突，并对比CLSA方法。
+3.尝试粒球损失反向约束encoder，提升粒球生成质量。
+4.不把粒球用作硬划分，适合软先验 | CGBC：Robust Smart Contract Vulnerability Detection via Contrastive Learning Enhanced Granular-ball Training
+4.不把粒球用作硬划分，适合软先验
+[表]存在问题及拟解决方案 | 算法设计和具体任务息息相关，但暂时没有具体下游任务的情况下如何设计实验？ | 算法设计和具体任务息息相关，但暂时没有具体下游任务的情况下如何设计实验？ | 算法设计和具体任务息息相关，但暂时没有具体下游任务的情况下如何设计实验？
+[表]下周计划 | 阅读另一篇文献，设计实验验证猜想。 | 阅读另一篇文献，设计实验验证猜想。 | 阅读另一篇文献，设计实验验证猜想。
+
+### NAUGRIN研究生周报-曹思磊26.5.22.docx
+NAUGRIN研究生工作周报
+[表]姓名 | 曹思磊 | 填表时间 | 5.22
+[表]有效工作
+时长 | 工作时段：35小时
+其他时段：5小时
+合计：40小时 | 研究主题 | 对比学习+粒球
+[表]任务目标 | 对比学习实验总结，阅读论文。 | 对比学习实验总结，阅读论文。 | 对比学习实验总结，阅读论文。
+[表]工
+展 | GBmooer
+1.文本增强。构造正样本，batch内其他样本作为负样本。
+2.超球面对比学习：
+使用BERT对文本进行编码，构造一个可学习投影矩阵W，使用L2归一化到单位超球面。
+用角度距离衡量语义相似度，加入margin构造角度对比损失。
+得到了一个适合粒球生成的空间。
+3.构造粒球时用平均角度衡量粒球质量。
+其中c_k是粒球中心，Dis_a是角度距离。
+AD_k越小，说明球内样本越靠近中心，粒球越紧凑，质量越高。
+分裂标准仍是分裂后的加权粒球质量大于之前。
+4.对每个粒球内部独立统计类别比例，并把该类别比例作为soft label。
+同一个粒球内的所有样本共享同一个soft label。
+这样可以用局部标签分布削弱少数噪声标签的影响。
+基于软标签训练分类器：
+使用KL divergence让模型预测分布学习粒球生成的soft label。
+同时使用symmetric KL consistency：对同一个样本采用不同mask策略输入BERT，得到两个预测分布，并约束二者保持一致，保存分类器稳定。
+最终训练目标由contrastive loss、KL soft label loss和symmetric KL loss共同组成，其权重在不同阶段调整。
+论文主要用人工注入的 Sym、Asym、IDN噪声。后续论文可以考虑用真实世界的噪声，会更有说服力。
+基于CGBC的猜想进行实验验证：
+猜想1：普通对比学习中的负样本排斥力可能会和粒球的局部聚合目标发生冲突吗。
+实验做法是：不直接改粒球算法，只改变表示学习方式，然后比较同一套粒球生成算法在不同表示空间上的质量。
+对照分成三类：
+1. raw_features（原始特征）：不训练encoder，直接用节点原始特征建球，作为最基础的参照。
+2. grace_infonce_h和grace_infonce_z：使用普通 GRACE/InfoNCE 训练。h是encoder输出，z是projector（投影头）输出。
+3. negfree_h和negfree_z：使用negative-free方式训练，同样分别观察encoder输出h和projector输出z。
+实验结果发现，negative-free方法确实能生成半径和平均角距离更小的粒球。它确实让样本在表示空间里更紧了。但是进一步发现，这不是语义结构更好，而是表示空间发生了过度压缩。也就是说，不同语义的节点可能被压到了一起，导致粒球虽然小，但并不纯。
+相对地，InfoNCE生成的粒球半径更大，看起来不够紧凑，但它保留了更好的全局语义可分性。再尝试加入BN（批归一化）后，negative-free 的纯度和分类效果可以接近 InfoNCE，但小半径优势也基本消失了。
+总的来说，负样本排斥确实会降低局部紧凑性，但它也有助于保持全局语义可分性。
+所以后续不能简单用negative-free替代InfoNCE，而应该设计一种同时考虑局部紧凑、全局可分、防止塌缩的粒球约束。
+猜想2：粒球损失能不能反向约束encoder，从而让表示空间更适合粒球生成？
+实验做法是：先用negative-free的图对比学习训练encoder，然后在训练过程中加入粒球compactness约束。也就是说，不只是训练完以后拿表示去构球，而是让粒球结构反过来影响encoder的表示空间。
+粒球生成依赖一个“距离能够反映语义相似性”的空间，如果encoder学到的表示空间更适合局部聚合，那么生成出来的粒球理论上应该更紧凑、更稳定，也可能更有语义一致性。
+对照分成几类：
+B0：只做 negative-free 表示学习，不加粒球约束，作为基础对照。
+B1：在 B0 的基础上加入真实粒球紧凑型约束，也就是用warmup后生成的粒球结构，把同一个粒球内部的样本进一步拉近。
+B2：B1的问题是粒球只生成一次。所以 B2 在训练过程中以定期epoch重新生成一次粒球。
+B3：使用打乱后的粒球，检查是不是“随便把一些样本压紧”也会有效。
+B4：使用大小分布相同的随机粒球，排除只是粒球大小分布带来效果的可能。
+实验结果：通过调整参数，B1的效果整体接近B0，有时超过，但方差很大，不稳定。B2也没有解决不稳定的问题。实验中loss确实被激活了，而且覆盖了大量节点，说明粒球结构确实可以反向约束 encoder。但是现在看来粒球约束不能稳定提升粒球生成质量。
+思考了一下失败原因，两篇论文确实也用了这种粒球反向约束表示空间的做法，但更重要是他们不止用了这一个方法。我只让球内的样本拉近了，但是没有考虑不同标签球要远离，以及那些球可信任。
+所以只做球内约束是不够，两篇论文又加了全局分离、标签纠错、置信度、软化约束这些保护机制。所以单纯的单模块验证实验也大概率是效果不好的。
+一篇论文的整个算法是一个整体，每个模块都是相辅相成的，所以如果要从中抽取某一个模块，那么在后续实验设计的其他模块也要与此相适应。
+GBmooer是文本分类任务，类别边界清晰很重要，所以有负样本+margin更直接，需要推开不同样本来形成清晰边界。
+CGBC是智能合约漏洞检测，而同漏洞样本可能形式差异极大，batch 负样本容易误伤，更需要稳定保留同漏洞语义，所以使用negative-free更好。
+其实并不是某一个模块就真的好，而是因为要适配什么样的任务，应该要先决定任务，再根据任务的目标，数据集对算法作出改变。
+下一步实验的核心思想和两篇论文一致：
+任务：图节点分类中的标签噪声鲁棒学习
+目标：使用图对比学习和粒球局部软标签进行去噪
+对比学习提升表示空间结构质量；粒球在表示空间中形成局部可信区域；用球内统计、球中心、球内一致性削弱噪声影响。
+然后在噪声任务场景，对比学习增强方式，构球空间的优化方式，对比学习机制的选择，loss的设置这些小模块上进行尝试和创新，有别于这两篇论文。 | GBmooer
+[表]存在问题及拟解决方案
+[表]下周计划 | 和老师讨论先寻找一个具体的图节点分类噪声任务，再进行模块创新。 | 和老师讨论先寻找一个具体的图节点分类噪声任务，再进行模块创新。 | 和老师讨论先寻找一个具体的图节点分类噪声任务，再进行模块创新。
+
+### NAUGRIN研究生周报-曹思磊26.5.29.docx
+NAUGRIN研究生工作周报
+[表]姓名 | 曹思磊 | 填表时间 | 5.29
+[表]有效工作
+时长 | 工作时段：35小时
+其他时段：5小时
+合计：40小时 | 研究主题 | 对比学习+粒球
+[表]任务目标 | 确定算法任务，设计大概算法流程。 | 确定算法任务，设计大概算法流程。 | 确定算法任务，设计大概算法流程。
+[表]工
+展 | 和两位老师主要讨论了任务选择问题。
+构造粒球的前提是粒球身处一个距离=语义相似度的空间
+而在深度学习和粒球结合的方向中，图神经网络是和粒球结合的比较多的。
+因为图数据本身具有拓扑局部一致性，GNN会把这种局部一致性转化为表示空间中的几何局部一致性，因此粒球可以在GNN表示空间中构造局部语义区域。
+也就是说图数据在经过GNN后得到了一个距离=语义相似度的空间。
+而对比学习也是一样的，都构建了一个更好的语义空间，只不过对比学习更适合无监督学习，而且对比学习的encoder刚好就是GNN。所以其中一定有一些关联。
+所以在没有较好的任务的情况下，我觉得可以考虑图节点分类去噪任务，因为图（数据）节点和粒球大概率是适配的，而且可以借鉴之前图神经网络论文中和粒球结合的方法。
+《Capturing local and global information: Multi-view graph convolutional network via granular-ball computing and collaborative matrix》
+《AW-GBGAE: An Adaptive Weighted Graph Autoencoder Based on Granular-Balls for General Data Clustering》
+阅读《图对比学习方法综述》：
+图对比学习多在三个模块进行更改：图数据增强策略，编码器encoder和loss。
+图数据增强策略：
+固定式图数据增强：固定数据增强方式，后续不再更新。如GRACE。
+复杂度低，但缺乏算法灵活性。
+可学习式图数据增强：训练中学习并更新图增强参数。
+额外复杂度开销。
+无图数据增强：不直接进行数据增强。将随机均匀噪声添加到原始嵌入表征或是
+对encoder的每一层网络参数添加随机噪声以获得差异性。
+为了防止节点表征坍塌，需要设计复杂的encoder。
+神经网络编码器encoder：
+使用对称编码器结构：两个通道上的编码器采用共享参数的形式。
+结构简单但无法支持无图数据增强的图对比学习算法
+非对称编码器结构：强大但设计复杂，复杂度高。
+不同对比损失：
+标准化温度交叉熵损失：最大化正样本对间的相似度并最小化负样本对间的相似度，如GRACE。
+杰森香农散度损失：最大化同一节点表征的互信息, 同时最小化不同节点表征的互信息
+三元组边缘损失：正样本对相似度要比负样本对相似度要高出一个阈值
+巴洛孪生损失：鼓励同一节点在不同图视图上的表征相似, 同时确保它们也是去相关或正交的。鼓励图对比学习算法只关注捕捉最相关和最有意义的信息，且具有可解释性。
+BYOL损失：通常与非对称的图神经网络编码器结构联合使用，通常包含在线编码器（保持两个encoder的一致性）和目标编码器（保持两个encoder的差异性）。
+二元交叉熵损失：简易高效。如GGD
+元学习损失：同时使用对比损失和分类损失, 在子任务中进行训练。
+典型相关分析损失：通过正则化鼓励不同特征维度捕捉不同语义。最大化两视图间的相关性。
+创新点思考：
+基于拉普拉斯矩阵完成数据增强的图对比学习方法。暂不考虑。
+encoder采用不同图神经网络模型，或采用非对称图神经网络编码器，或许生成的空间更适合粒球，但违反了不改encoder的原则，可以作为后续实验尝试。
+温度系数在标准化温度交叉熵损失是固定的，可以让温度系数参与训练过程，不断优化。如果用标准化温度交叉熵损失的对比学习算法，可以考虑加入。
+CGBC是粒球反过来优化表示空间，那么是否可以考虑可学习式图数据增强，让粒球反过来优化视图（之前的实验是粒球硬控制视图生成），让生成的视图更适合粒球？
+5.考虑从图神经网络+粒球的文章中寻找创新点。
+下一步实验：
+找一个图标签噪声任务里实验流程完整且结果较强的baseline。
+先跑通，然后在baseline上先加入粒球模块，如果效果好，
+（如果效果不好，但构球质量好，也往下进行）
+再加入对比学习模块，并使用同一种粒球生成算法，看效果会不会更好？
+同时比较哪个对比学习embedding空间构造的粒球质量最好。 | 和两位老师主要讨论了任务选择问题。
+同时比较哪个对比学习embedding空间构造的粒球质量最好。
+[表]存在问题及拟解决方案 | InfoNCE 的负样本排斥是否会让局部粒球变松，而 negative-free 是否更适合构球？这个问题后来实验证明负样本虽然推远了样本，但也提供了更多语义信息，所以也没有更适合。而综述中说巴洛孪生损失是无负样本对比的，他有没有可能更适合粒球？
+之前考虑GRACE是因为他简单好更改，但有没有可能其他对比学习有更好更适配粒球的？
+所以可以考虑做一个实验，在不同对比学习算法下构造粒球，看哪个空间构造的粒球质量最好？或许也可以作为一个实验部分。
+以及当前任务适配哪种类别的对比学习算法也是需要考虑的。 | InfoNCE 的负样本排斥是否会让局部粒球变松，而 negative-free 是否更适合构球？这个问题后来实验证明负样本虽然推远了样本，但也提供了更多语义信息，所以也没有更适合。而综述中说巴洛孪生损失是无负样本对比的，他有没有可能更适合粒球？
+以及当前任务适配哪种类别的对比学习算法也是需要考虑的。
+[表]下周计划 | 依据任务尝试设计具体算法。 | 依据任务尝试设计具体算法。 | 依据任务尝试设计具体算法。
+
+### NAUGRIN研究生周报-曹思磊26.5.8.docx
+NAUGRIN研究生工作周报
+[表]姓名 | 曹思磊 | 填表时间 | 5.8
+[表]有效工作
+时长 | 工作时段：35小时
+其他时段：5小时
+合计：40小时 | 研究主题 | 对比学习+粒球
+[表]任务目标 | 改进对比学习实验 | 改进对比学习实验 | 改进对比学习实验
+[表]工
+展 | 基于上周的x空间百分位方法（暂命名pct）
+和程老师交流后得出了以下结论：
+1.用标签的方式来对比 ，比如说人为添加了40%的边噪声，这个方法降权了噪声边的百分之多少？来查看方法上限和改进方向。（思想很重要）
+正类：noisy edge；负类：clean edge
+Precision衡量被降权边中真实噪声边的占比
+Recall衡量真实噪声边被成功降权的比例，和noisy down weight一致
+AUC 衡量方法的整体排序区分能力；
+AP衡量排在前面的那批边，是否真的富集 noisy。
+可以看到整体表现都不错，主要问题是误伤clean edge。
+2.对比实验，证明不是“随便删边/降边”都有效，pct 是选择性去噪。
+DropEdge Comparison：
+证明pct方法是有效的，比随机删边好很多。
+3.相似度向量和百分位排名 是否可以用注意力机制网络代替？
+4.边权重是否可以作为一个神经网络的参数自己学习出来？
+但和王老师交流后发现了一个原则性问题：对比学习算法在进行和其他文献算法的对比时都是不更改encoder的，而我的实验更改了encoder，所以严格来说不能算是对比学习的范畴，顶多算是神经网络类，而边降权这个方法已经用的非常多了。所以pct如果划分到这类，很难发论文。
+训练集可以改encoder，测试集不用，看看效果怎么样？
+在测试集不改encoder的情况下，效果很一般，所以很难成为一个对比学习方法。
+暂停本次pct实验。
+还是要考虑粒球，不然不好做。损失可尝试：A infonce+ B 粒球损失。
+3.找一到两个最新的文献（节点级别的），对比方法
+《Simplified Graph Contrastive Learning Model Without Augmentation》
+暂无源码，正在尝试复现
+4.考虑引入CLSA方法：强增广视图不直接进入普通对比损失，而是用弱增广视图的相似度分布去监督强增广视图。添加进去效果大概率好。
+如果做去噪声，人为噪声的加入要考虑真实世界里有没有类似的。
+在远程主机上配置好了相关实验环境，算力问题得到解决。
+现有参考文献，只有多视图学习和粒球结合的几篇文章，几乎没有严格符合节点级对比学习和粒球结合的文章，所以现在的实验可以说是逐步排除错误选项。
+只找到了两篇预印本，最符合现有的实验大方向：
+CGBC: Robust Smart Contract Vulnerability Detection via Contrastive Learning-Enhanced Granular-ball Training
+GBmooer: Granular-ball Text Label Smoothing with Hypersphere Contrastive Learning
+粗略看了一下，可以说启发性还是比较大的。
+两篇论文的共同点
+都是在去噪声方面作为收益场景，且多次实验也暂时证明了粒球不能真正意义上提升对比学习的精度，而且以粒球本身的特性来看，感觉走去噪这条线是真的可行的。
+之前纠结是用原始特征X构球还是表示空间Z构球，两篇文章用的都是Z，确定了Z作为粒球生成的空间。且需要warmup轮之后再构造球，和之前的实验也契合。
+粒球只做局部的软化，而不是硬划分。也就是说粒球不直接决定拉近正样本或推远负样本，而是做辅助。 | 基于上周的x空间百分位方法（暂命名pct）
+[表]存在问题及拟解决方案
+[表]下周计划 | 总结迄今为止做过的所有对比学习+粒球的实验，总结失败原因和经验。并仔细阅读这两篇文章，逐步缩小粒球可结合的范围，明确粒球能担任的角色，计划下一步实验。 | 总结迄今为止做过的所有对比学习+粒球的实验，总结失败原因和经验。并仔细阅读这两篇文章，逐步缩小粒球可结合的范围，明确粒球能担任的角色，计划下一步实验。 | 总结迄今为止做过的所有对比学习+粒球的实验，总结失败原因和经验。并仔细阅读这两篇文章，逐步缩小粒球可结合的范围，明确粒球能担任的角色，计划下一步实验。
+
+### NAUGRIN研究生周报-曹思磊26.6.12.docx
+NAUGRIN研究生工作周报
+[表]姓名 | 曹思磊 | 填表时间 | 6.12
+[表]有效工作
+时长 | 工作时段：35小时
+其他时段：5小时
+合计：40小时 | 研究主题 | 对比学习+粒球
+[表]任务目标
+[表]工
+展 | 图粒球实验：
+进行了多轮实验，在GRACE的下游空间中构造是失败的。
+个人觉得失败的几点原因：
+原数据是有噪声的，本身对比学习的优势就是无噪声影响，现在引入图结构，就相当于把噪声又引入了。
+GRACE的embedding本身已经吸收了图结构 ，这个embedding已经经过边结构和对比学习优化，又加入图拓扑，可以说是同质化了。
+所以认为图感知粒球和对比学习是一个类似平行的关系，并不适合在对比学习下游空间构造。但是思想（考虑原始图拓扑结构）是可以复用的。
+实验一：保持predictor是GCN，加入普通粒球
+GCN学到了原始图结构中的噪声信息，所以GCN下游空间本身就是不好的，在其基础上够球显然不行。
+从实验过程来看，是因为粒球在warmup（30）轮后才构造，但模型在第六轮之后
+已经过拟合了。
+实验二：保持GRACE不变，在下游空间构造粒球，
+经过多轮的实验，粒球无法贡献效果，最终去噪效果也很差。
+但最终找到原因了，Cora这类数据中用的是Planetoid 标准split的5.2%标签覆盖率，导致在后面的有监督学习中粒球没有足够的标签去支撑，因为粒球是通过识别用多数类达到去噪声的效果，而现在根本就识别不到多数类。
+实验了trian_ratio=0.1,0,2,0,6后算法效果随trian_ratio的增大得到显著增长。
+在训练标签增大的情况下，粒球优势明显增大，所以算法机制没有大问题。
+综合评估下，保持trian_ratio=0,2作为主线，进一步修改算法。
+在和其他算法对比时保持trian_ratio=0,2。
+trian_ratio=0.2 val_ratio=0.1 noise=0.4下的5seed实验：
+可以看到粒球稳定打败了：无粒球，topk和随机扰动。
+已经可以证明粒球的正面贡献。
+经过多轮尝试，本周最优算法的大致算法结构（SoftDist[X||H]）如下：
+给定图数据，用GRACE无监督训练下游空间H
+（无监督对比学习的优势：无噪声影响）
+将原始特征 X 和归一化后的 GRACE 表示 H 拼接，得到[X || H]，用于5。
+在H上用2-means构造粒球
+根据球内标签生成soft target（与原始节点按置信度融合，粒球构造鲁棒监督信号）
+（参考的GAdaBoost/GB-RVFL的purity加权思想 ）
+最后将[X || H]，A输入GCN做分类（原始GCN是输入X,A），GCN的监督标签不是原始noisy label 而是粒球生成的soft target。
+H既作为粒球的生成空间，也作为分类器特征。
+NoisyGL train=0.2  val=0.1  test=0.7  uniform noise=0.4  5 seeds
+SoftDist[X||H]自身消融实验：
+可以看到SoftDist [X||H] 方法已经超过NoisyGL下 Cora上的最强Baseline：NRGNN。
+（方差也更小）
+但CiteSeer还有一点差距。
+剩余的想法：
+尝试换对比学习方法，不只是在GRACE中。
+（如果不行，那么是否能尝试更改？）
+如果效果都不错，是否能做成一种通用去噪声框架?
+扩展多个数据集。
+温度系数在标准化温度交叉熵损失是固定的，可以让温度系数参与训练过程，不断优化。如果用标准化温度交叉熵损失的对比学习算法，可以考虑加入。 | 图粒球实验：
+[表]存在问题及拟解决方案
+[表]下周计划 | 优化实验。 | 优化实验。 | 优化实验。
+
+### NAUGRIN研究生周报-曹思磊26.6.19.docx
+NAUGRIN研究生工作周报
+[表]姓名 | 曹思磊 | 填表时间 | 6.12
+[表]有效工作
+时长 | 工作时段：35小时
+其他时段：5小时
+合计：40小时 | 研究主题 | 对比学习+粒球
+[表]任务目标
+[表]工
+展 | 剩余的想法：
+尝试换对比学习方法，不只是在GRACE中。
+（如果不行，那么是否能尝试更改？）
+GRACE 基于InfoNCE的均匀性（uniformity）使表示在超球面上均匀展开，天然适合距离聚类。
+其他对比学习方法都没有GRACE好，但是我不觉得GRACE一定是最适配这个任务的，所以我能否参照GRACE的思想去构造一个专门适合我的任务的对比学习方法？
+结果：失败，所有微调和修改GRACE的方法都没有原始冻结GRACE的效果好。
+为什么？？
+如果效果都不错，是否能做成一种通用去噪声框架?
+论文叙事问题，所有实验做完了再考虑。
+温度系数在标准化温度交叉熵损失是固定的，可以让温度系数参与训练过程，不断优化。如果用标准化温度交叉熵损失的对比学习算法，可以考虑加入。
+结论：失败。
+扩展多个数据集。
+在扩展多个数据集时发现一个问题。
+现有的算法只在小的引文图中效果好，一旦数据规模变大，算法就不起作用了。
+问题大概出在超参数的适配性上。
+在尝试生成粒球的多个超参数后，大图上可以构造粒球了
+而且反而纯度高于效果最好的Cora。
+但又有一个新问题，球纯度很高，但在下游任务中粒球没有贡献了。
+在大图下，加入粒球的效果和随机球几乎一致。
+因为在如PubMed和DBLP数据集下，他们在非常大的规模下，只有少数3到4个类别。类别越少，随机建一个粒球的纯度天然就高。所以粒球和随机球作用几乎一致了。
+而且样本量越多，GCN分类器越能学到[X||H]的好的特征表示，球本来提供的增量信息被GCN自己从H学习到了。所以粒球比起[X||H]是冗余了，他们的作用是正交的
+所以SoftDist[X||H]这个算法的边界是规模小，类别不少的图数据。
+想法：既然找到了原因，我是否可以在大图数据上做算法修改和适配？
+对于小规模图数据中，标签本身就少，所以能提供一些额外的监督信息就很有作用。
+所以构造粒球提供的软标签信息就有用。
+而在类别少的大图中造软标签就没什么效果了，如何选择干净的样本更重要。所以思考如何用粒球去寻找干净样本。
+---就算失败了，也可以尝试找规模小，类别较多的图数据做实验表。
+所以SoftDist[X||H]这个算法的边界是规模小，类别不少的图数据？
+如果再找一些规模大但是类别多的大图数据尝试呢？
+还有规模小类别少的数据呢？ | 剩余的想法：
+还有规模小类别少的数据呢？
+[表]存在问题及拟解决方案
+[表]下周计划 | 完善实验，继续寻找算法边界。 | 完善实验，继续寻找算法边界。 | 完善实验，继续寻找算法边界。
+
+### NAUGRIN研究生周报-曹思磊26.6.26.docx
+NAUGRIN研究生工作周报
+[表]姓名 | 曹思磊 | 填表时间 | 6.26
+[表]有效工作
+时长 | 工作时段：35小时
+其他时段：5小时
+合计：40小时 | 研究主题 | 对比学习+粒球
+[表]任务目标
+[表]工
+展 | 剩余的想法：
+尝试换对比学习方法，不只是在GRACE中。
+（如果不行，那么是否能尝试更改？）
+GRACE 基于InfoNCE的均匀性（uniformity）使表示在超球面上均匀展开，天然适合距离聚类。
+其他对比学习方法都没有GRACE好，但是我不觉得GRACE一定是最适配这个任务的，所以我能否参照GRACE的思想去构造一个专门适合我的任务的对比学习方法？
+结果：失败，所有微调和修改GRACE的方法都没有原始冻结GRACE的效果好。
+如果效果都不错，是否能做成一种通用去噪声框架?
+论文叙事问题，所有实验做完了再考虑。
+温度系数在标准化温度交叉熵损失是固定的，可以让温度系数参与训练过程，不断优化。如果用标准化温度交叉熵损失的对比学习算法，可以考虑加入。
+结论：失败。
+扩展多个数据集。
+在扩展多个数据集时发现一个问题。
+现有的算法只在小的引文图中效果好，一旦数据规模变大，算法就不起作用了。
+问题大概出在超参数的适配性上。
+在尝试生成粒球的多个超参数后，大图上可以构造粒球了
+而且反而纯度高于效果最好的Cora。
+但又有一个新问题，球纯度很高，但在下游任务中粒球没有贡献了。
+在大图下，加入粒球的效果和随机球几乎一致。
+因为在如PubMed和DBLP数据集下，他们在非常大的规模下，只有少数3到4个类别。类别越少，随机建一个粒球的纯度天然就高。所以粒球和随机球作用几乎一致了。
+而且样本量越多，GCN分类器越能学到[X||H]的好的特征表示，球本来提供的增量信息被GCN自己从H学习到了。所以粒球比起[X||H]是冗余了，他们的作用是正交的
+想法：既然找到了原因，我是否可以在大图数据上做算法修改和适配？
+对于小规模图数据中，标签本身就少，所以能提供一些额外的监督信息就很有作用。
+所以构造粒球提供的软标签信息就有用。
+而在类别少的大图中造软标签就没什么效果了，如何选择干净的样本更重要。所以思考如何用粒球去寻找干净样本。
+所以尝试设计大图专属的算法变体，更改粒球的作用：GBselect算法（相对于SoftDist）
+核心思想是通过粒球和一个短GCN，通过这两个视角分别选取各自认为的球内的干净节点，只取交集。在训练最后的GCN，只保留这些交集的train节点。
+但GBselect也只在一个大图数据集上稍微比SoftDist[X||H]好，但也不到Sota。
+0.4噪声率下
+低噪声率为什么不行？
+因为用球内多数样本的标签覆盖自己节点的标签
+但在低噪声的情况下，节点自己的标签是对的，但粒球多数类刚好偏离了，就把对的改错了。
+而且低噪声下GCN本身就很强了，所以从机制看几乎是无收益。
+高噪声率为什么也不行？
+算法机制的前提是球内多数节点标签正确，高噪声情况下多数类多能保证是正确的信息。
+pair噪声类型为什么不行？
+pair是随机定向的统一污染一种标签，对于粒球多数类机制来说是致命的，因为粒球内的多数类可能全是噪声标签类。
+思考：还是应该考虑多粒度，不能只依靠单一的多数类识别。
+实验表（有效区间：uniform  noise=0.4-0.5之间）
+train=0.2  val=0.1  test=0.7  uniform  noise=0.4  5 seeds  Uniform noisy
+基础方法对比（准确率%，mean±std）
+SoftDist 与最新方法(2025) TFR为官方实现；ProCon、GD²为论文复现。
+旧基线（准确率%，mean±std）
+noise=0.5 下的效果
+算法详情：
+给定图数据，用GRACE无监督训练下游空间H
+（任务匹配：节点级图对比学习框架。不使用标签：天然抗噪。InfoNCE损失天然适合距离聚类。）
+2.将原始节点特征X与经过L2归一化后的 GRACE 表示H进行拼接：
+3.定义球内平均离散度：
+在H上用2-means构造粒球，使用分裂后的子球加权平均紧凑度来判断是否要切分。
+如果满足就切分，是超参。
+4.根据球内标签生成soft target ：
+为原始标签onehot编码，为所在粒球标签分布（如[0.7,0.1,0.2]）。
+为粒球置信度，C为类别数，为粒球内多数标签占总标签的百分比。
+的设置是为了避免标签均匀分布的情况如[0.33,0,34,0,33],这时≈0
+最后将[X || H]，A输入GCN做分类（原始GCN是输入X,A）
+最后GCN的loss从普通交叉熵变成 soft cross-entropy；
+等价于让模型预测分布靠近粒球软标签分布，而不是原始的标签one-hot | 剩余的想法：
+等价于让模型预测分布靠近粒球软标签分布，而不是原始的标签one-hot
+[表]存在问题及拟解决方案 | 现在的算法只在单个指标下（固定 train，噪声率 噪声类型）下有效果但还不是Sota。可以不做sota但要在多个数据集上平均效果都要不错。
+如果还不行可以考虑换一个任务
+查找最新文献寻找解决方法，先列出所有疑问和待解决的问题，等通读八篇文献，了解主要思想后再一步一步解决。 | 现在的算法只在单个指标下（固定 train，噪声率 噪声类型）下有效果但还不是Sota。可以不做sota但要在多个数据集上平均效果都要不错。
+[表]下周计划 | 继续实验 | 继续实验 | 继续实验
+
+### NAUGRIN研究生周报-曹思磊26.6.5.docx
+NAUGRIN研究生工作周报
+[表]姓名 | 曹思磊 | 填表时间 | 6.5
+[表]有效工作
+时长 | 工作时段：35小时
+其他时段：5小时
+合计：40小时 | 研究主题 | 对比学习+粒球
+[表]任务目标
+[表]工
+展 | 图粒球实验：
+原粒球定义只考虑了数据点的特征，可以同时考虑数据节点的相邻关系。
+思想：不只考虑表示空间中的距离，也考虑两个节点在图上的远近。
+初步想法：
+图粒球候选节点分数：score = 0.7*embedding相似度 + 0.3*图上相似度
+1.先用GRACE给每个节点生成一个表示，并固定这个表示，不再改 GRACE
+2.生成图粒球
+3.找出图粒球中不同标签中高可疑的节点，修正标签
+4.看最终分类准确率有没有提升
+图粒球的生成算法：
+1. 未选择的度最大节点作为中心：
+2. 找K个最图上最的近的作为候选：
+3. 给候选节点打分：
+4. 所有分数达到阈值K的候选节点加入粒球
+5. 如果球小于阈值min：
+从候选节点里按分数从高到低加入
+直到达到阈值min或没有候选
+6. 如果球大于阈值max：
+只保留分数最高的前max个节点
+因为是从原始图上选择节点，所以不同于普通粒球的二分递归，而是贪心选择。优点是不会产生重叠，但超参数过多，且先选的中心会影响后面的球。
+v1:图粒球构造出来的局部区域确实比普通粒球更干净，但修正效果太弱
+v2:加大修正力度,但有些设置下准确率反而下降。
+发现它只改了少量节点，但这些少量改动影响了分类器的边界，导致某些类别整体分类变差。
+v3:缓解修正力度，但还没稳定超过普通粒球。
+这个实验暂时作为验证实验，这个图粒球构造算法感觉不是那么合理，但粒球去适配图数据感觉确实是有创新的可行性的。而且想仿照CGBC的算法而又不能照搬，图粒球就可以作为一个不同点。
+之前在做粒球增强视图的时候其实也有特征相似性+图结构这种思想，但是当时是先在GRACE的embdding空间中选择节点，再加入图上相似度。所以接下来也尝试一下反着修改一下。
+总实验：
+第一步：找到一个实验流程完整、代码可运行、结果相对较强的基础 baseline
+最后选择NoisyGL作为基础实验框架。因为它包含多种图标签噪声鲁棒训练方法，能够统一处理数据集、噪声注入、训练、评估、seed和mean/std汇总。
+NoisyGL的基本流程：
+选择数据集->选择噪声类型->选择噪声率->选择GNN模型（predictor）->训练/评估
+从各种predictor方法中做初步筛选：
+先做单seed和Cora数据集：
+单独对GCN和RNCGLN做完整5seed对比。
+初筛中只做Cora uniform 0.2 单seed确实不够可信，但从这轮完整实验来看RNCGLN
+可以作为Cora/CiteSeer上的baseline，大部分情况下效果比GCN好。
+但从NoisyGL官方表来看，CiteSeer 上不同噪声设置的最强方法不固定，现在阶段可以先用RNCGLN，最后再补NRGNN、UnionNet、PIGNN。
+pubmed数据集：
+RNCGLN直接跑不动。NoisyGL显示PIGNN效果最好，但是需要跑十几个小时，放在周末跑。
+实验一：保持predictor是GCN，加入普通粒球
+1.粒球给每个节点提供一个局部软标签，从而修正一部分错误标签。
+2.粒球对高可疑节点降低训练权重。
+普通粒球确实有能识别可疑节点的信号，但这个信号没有转化成最终分类效果。
+粒球信号太弱了。意料之中的失败，这一轮是用来和图粒球做对比。
+可以在算法上更改获得更好的效果，但是暂时没必要。
+后续实验：
+实验二：保持predictor是GCN，加入图粒球
+实验三：对比普通GCN和普通对比学习的空间（多种对比学习方法）哪种构造的粒球质量好/适合去噪。
+初步预测：大概率对比学习空间好。
+实验四：构造新predictor，加入对比学习和粒球/图粒球，（进一步在考虑粒球反向优化对比学习空间）
+实验五：保持当前最高baseline下的predictor，加入图粒球/粒球 | 图粒球实验：
+实验五：保持当前最高baseline下的predictor，加入图粒球/粒球
+[表]存在问题及拟解决方案
+[表]下周计划 | 优化图粒球的算法，先在图粒球实验上验证，然后移植到实验二。 | 优化图粒球的算法，先在图粒球实验上验证，然后移植到实验二。 | 优化图粒球的算法，先在图粒球实验上验证，然后移植到实验二。
+
+### NAUGRIN研究生周报-曹思磊26.7.3.docx
+NAUGRIN研究生工作周报
+[表]姓名 | 曹思磊 | 填表时间 | 6.26
+[表]有效工作
+时长 | 工作时段：35小时
+其他时段：5小时
+合计：40小时 | 研究主题 | 对比学习+粒球
+[表]任务目标 | 最大的问题是在图数据上GCN和KNN已经很强了，粒球到底有什么额外的作用？ | 最大的问题是在图数据上GCN和KNN已经很强了，粒球到底有什么额外的作用？ | 最大的问题是在图数据上GCN和KNN已经很强了，粒球到底有什么额外的作用？
+[表]工
+展 | 直接做噪声检测任务实验：
+问题是粒球确实识别噪声率高，但是比不过KNN和GCN confidence
+八篇文献全部做的都是在原始特征上构造粒球，KNN也弱，所以球显得很好
+一旦表示空间足够好，球就只能冗余。？？？
+用X空间构粒球 做对照
+之前的NRGNN实验是否也在H上构造粒球，还是完全不同的方法？
+8篇文章如何解决粒球没有KNN效果好的问题的？
+GGBC 有可能有用
+孙旭论文可能有用 直接放上去可能有效果 ， 去噪声方式有很多，用那种
+去噪声有几种思路：过滤，修正？了解一下
+《多粒度标签噪声过滤学习算法研究》
+《融合粒度划分的回归标签噪声过滤方法》
+MgCNL
+对比学习空间下构造粒球，再筛选高置信样本
+Three Level Noise Tolerance GBDM
+Granular Ball Denoising, GBD
+传统方法，粒球直接看纯度去噪声。
+BNO GB
+粒球用来区分噪声类型
+MgBIF
+G GBC  ----很相似，仔细看
+用粒球识别噪声，降低噪声对CNN的影响。
+能否用椭球？在高维空间下，粒球和椭球的优缺点分别是什么？
+初步试验了一下，发现椭球在大图数据集上表现很好，但小图上不好，那么是否可以刚好补足SoftDist方法的短板？
+现在的粒球生成算法有问题，无法自适应多个数据集，需要自己改超参数
+之前在大图上效果不好有没有可能是粒球划分不好的原因？
+2.考虑多粒度，同一粒球内的不同点应该有不同贡献。
+3.能否可视化H空间构造粒球的过程？？？ | 直接做噪声检测任务实验：
+3.能否可视化H空间构造粒球的过程？？？
+[表]存在问题及拟解决方案 | 总结八篇文章的核心创新
+（用的什么数据，做的什么任务，粒球的角色是什么，发表时间）
+能不能不用粒球？
+在深度学习的前沿文献中，尤其是图数据集，是用什么方法来去噪声的？
+我现在希望AI给我一个最新的文献综述。
+识别到噪声之后呢？一般是分类，有没有可能是聚类呢？
+5.我的train test split分布到底改如何设置？只在20%下有说服力吗，其他文献是划分的，是用的多少？
+做了一个划分敏感性实验： | 总结八篇文章的核心创新
+做了一个划分敏感性实验：
+[表]下周计划 | 继续实验 | 继续实验 | 继续实验

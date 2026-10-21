@@ -1,0 +1,23 @@
+\begin{table}[!htb]
+\centering
+\caption{Accuracy differences in the leave-one-out and clean-label checks.}\label{tab:D.1}
+\begingroup
+\fontsize{9}{11}\selectfont
+\renewcommand{\arraystretch}{1.15}
+\begin{tabular}{@{}lcc@{}}
+\toprule
+\textbf{Dataset} & \textbf{Excluding minus including self-vote} & \textbf{GB-LCSS minus MLP+CE} \\
+ & Five noise settings & Clean labels \\
+\midrule
+Cora & +0.96 & -0.24 \\
+CiteSeer & +1.03 & +2.00 \\
+CoraFull & +0.09 & -0.38 \\
+Coauthor-CS & +0.08 & -0.87 \\
+Amazon-Photo & +0.29 & -1.75 \\
+\bottomrule
+\end{tabular}
+\par\smallskip\noindent\begin{minipage}{\linewidth}\footnotesize
+Differences are in percentage points. The leave-one-out comparison averages paired differences over five seeds and five noise settings. The clean-label comparison averages paired differences over five seeds at zero training-label noise.
+\end{minipage}
+\endgroup
+\end{table}

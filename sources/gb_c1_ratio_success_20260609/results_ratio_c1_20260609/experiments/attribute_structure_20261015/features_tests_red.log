@@ -1,0 +1,67 @@
+test_features (unittest.loader._FailedTest.test_features) ... ERROR
+
+======================================================================
+ERROR: test_features (unittest.loader._FailedTest.test_features)
+----------------------------------------------------------------------
+ImportError: Failed to import test module: test_features
+Traceback (most recent call last):
+  File "C:\Users\Admin\AppData\Local\Programs\Python\Python312\Lib\unittest\loader.py", line 396, in _find_test_path
+    module = self._get_module_from_name(name)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Admin\AppData\Local\Programs\Python\Python312\Lib\unittest\loader.py", line 339, in _get_module_from_name
+    __import__(name)
+  File "C:\Users\Admin\Desktop\实验8去噪5.19-\gb_c1_ratio_success_20260609\results_ratio_c1_20260609\experiments\attribute_structure_20261015\test_features.py", line 9, in <module>
+    from features import structural_views
+ModuleNotFoundError: No module named 'features'
+
+
+----------------------------------------------------------------------
+Ran 1 test in 0.000s
+
+FAILED (errors=1)
+test_api_has_no_labels_or_masks (test_features.StructuralViewsTests.test_api_has_no_labels_or_masks) ... ok
+test_asymmetric_duplicate_edges_and_selfloops_do_not_change_graph (test_features.StructuralViewsTests.test_asymmetric_duplicate_edges_and_selfloops_do_not_change_graph) ... ok
+test_block_size_does_not_change_views (test_features.StructuralViewsTests.test_block_size_does_not_change_views) ... ok
+test_constant_attributes_with_three_neighbors_have_zero_residual (test_features.StructuralViewsTests.test_constant_attributes_with_three_neighbors_have_zero_residual) ... FAIL
+test_empty_graph_has_negative_normalized_features (test_features.StructuralViewsTests.test_empty_graph_has_negative_normalized_features) ... ok
+test_hand_calculated_chain_uses_raw_features_before_residual_normalization (test_features.StructuralViewsTests.test_hand_calculated_chain_uses_raw_features_before_residual_normalization) ... ok
+test_outputs_are_float32_and_permutation_is_int64 (test_features.StructuralViewsTests.test_outputs_are_float32_and_permutation_is_int64) ... ok
+test_rejects_invalid_block_size_and_shuffle_seed (test_features.StructuralViewsTests.test_rejects_invalid_block_size_and_shuffle_seed) ... ok
+test_rejects_invalid_edges (test_features.StructuralViewsTests.test_rejects_invalid_edges) ... ok
+test_rejects_invalid_features (test_features.StructuralViewsTests.test_rejects_invalid_features) ... ok
+test_shuffle_preserves_residual_rows_and_original_feature_alignment (test_features.StructuralViewsTests.test_shuffle_preserves_residual_rows_and_original_feature_alignment) ... ok
+test_torch_inputs_detach_without_mutating_inputs (test_features.StructuralViewsTests.test_torch_inputs_detach_without_mutating_inputs) ... ok
+test_zero_features_isolated_nodes_and_zero_residuals_stay_finite (test_features.StructuralViewsTests.test_zero_features_isolated_nodes_and_zero_residuals_stay_finite) ... ok
+
+======================================================================
+FAIL: test_constant_attributes_with_three_neighbors_have_zero_residual (test_features.StructuralViewsTests.test_constant_attributes_with_three_neighbors_have_zero_residual)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\Users\Admin\Desktop\实验8去噪5.19-\gb_c1_ratio_success_20260609\results_ratio_c1_20260609\experiments\attribute_structure_20261015\test_features.py", line 49, in test_constant_attributes_with_three_neighbors_have_zero_residual
+    np.testing.assert_array_equal(result['residual'], np.zeros_like(x))
+  File "C:\Users\Admin\AppData\Local\Programs\Python\Python312\Lib\site-packages\numpy\testing\_private\utils.py", line 1121, in assert_array_equal
+    assert_array_compare(operator.__eq__, actual, desired, err_msg=err_msg,
+  File "C:\Users\Admin\AppData\Local\Programs\Python\Python312\Lib\site-packages\numpy\testing\_private\utils.py", line 983, in assert_array_compare
+    raise AssertionError(msg)
+AssertionError: 
+Arrays are not equal
+
+Mismatched elements: 2 / 12 (16.7%)
+Mismatch at indices:
+ [0, 0]: 0.015623092651367188 (ACTUAL), 0.0 (DESIRED)
+ [0, 1]: 0.9998779296875 (ACTUAL), 0.0 (DESIRED)
+Max absolute difference among violations: 0.9998779
+Max relative difference among violations: inf
+ ACTUAL: array([[0.015623, 0.999878, 0.      ],
+       [0.      , 0.      , 0.      ],
+       [0.      , 0.      , 0.      ],
+       [0.      , 0.      , 0.      ]], dtype=float32)
+ DESIRED: array([[0., 0., 0.],
+       [0., 0., 0.],
+       [0., 0., 0.],
+       [0., 0., 0.]], dtype=float32)
+
+----------------------------------------------------------------------
+Ran 13 tests in 0.018s
+
+FAILED (failures=1)

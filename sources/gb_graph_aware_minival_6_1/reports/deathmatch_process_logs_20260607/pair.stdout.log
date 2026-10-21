@@ -1,0 +1,133 @@
+s0 | sel_dcgb           test=0.5306 sel_prec=0.6954 noise_excl=0.5438
+s0 | sel_topk           test=0.5739 sel_prec=0.6923 noise_excl=0.5392
+s0 | sel_shuffled       test=0.4868 sel_prec=0.6554 noise_excl=0.4839
+s0 | sel_random         test=0.4525 sel_prec=0.6223 noise_excl=0.1889
+s0 | sel_noball         test=0.4467 sel_prec=0.6180 noise_excl=0.1797
+s0 | sel_clean_oracle   test=0.8126 sel_prec=1.0000 noise_excl=1.0000
+s0 | ce                 test=0.5470
+s0 | coteaching         test=0.4456
+s1 | sel_dcgb           test=0.5723 sel_prec=0.6107 noise_excl=0.1244
+s1 | sel_topk           test=0.6088 sel_prec=0.6985 noise_excl=0.5484
+s1 | sel_shuffled       test=0.5839 sel_prec=0.6059 noise_excl=0.1336
+s1 | sel_random         test=0.5861 sel_prec=0.6137 noise_excl=0.1705
+s1 | sel_noball         test=0.5871 sel_prec=0.6009 noise_excl=0.1429
+s1 | sel_clean_oracle   test=0.8105 sel_prec=1.0000 noise_excl=1.0000
+s1 | ce                 test=0.6008
+s1 | coteaching         test=0.5729
+s2 | sel_dcgb           test=0.5903 sel_prec=0.6646 noise_excl=0.4977
+s2 | sel_topk           test=0.6589 sel_prec=0.7015 noise_excl=0.5530
+s2 | sel_shuffled       test=0.5887 sel_prec=0.6800 noise_excl=0.5207
+s2 | sel_random         test=0.6162 sel_prec=0.7138 noise_excl=0.5714
+s2 | sel_noball         test=0.5348 sel_prec=0.6862 noise_excl=0.5300
+s2 | sel_clean_oracle   test=0.8157 sel_prec=1.0000 noise_excl=1.0000
+s2 | ce                 test=0.6209
+s2 | coteaching         test=0.5348
+s3 | sel_dcgb           test=0.6294 sel_prec=0.6892 noise_excl=0.5346
+s3 | sel_topk           test=0.6230 sel_prec=0.7169 noise_excl=0.5760
+s3 | sel_shuffled       test=0.5824 sel_prec=0.6923 noise_excl=0.5392
+s3 | sel_random         test=0.6125 sel_prec=0.7015 noise_excl=0.5530
+s3 | sel_noball         test=0.5649 sel_prec=0.7077 noise_excl=0.5622
+s3 | sel_clean_oracle   test=0.8099 sel_prec=1.0000 noise_excl=1.0000
+s3 | ce                 test=0.6278
+s3 | coteaching         test=0.5649
+s4 | sel_dcgb           test=0.5945 sel_prec=0.7077 noise_excl=0.5622
+s4 | sel_topk           test=0.5766 sel_prec=0.6769 noise_excl=0.5161
+s4 | sel_shuffled       test=0.4731 sel_prec=0.6554 noise_excl=0.4839
+s4 | sel_random         test=0.5560 sel_prec=0.6831 noise_excl=0.5253
+s4 | sel_noball         test=0.4752 sel_prec=0.6288 noise_excl=0.2028
+s4 | sel_clean_oracle   test=0.8226 sel_prec=1.0000 noise_excl=1.0000
+s4 | ce                 test=0.5634
+s4 | coteaching         test=0.4942
+saved C:\Users\Admin\Desktop\สตั้8ศฅิ๋5.19-\gb_graph_aware_minival_6_1\reports\deathmatch_pair_20260607\deathmatch_rows.csv
+{
+  "gate_A_beats_coteaching": {
+    "passes": true,
+    "candidates": [
+      {
+        "method": "sel_topk",
+        "baseline": "coteaching",
+        "wins": 5,
+        "mean_delta": 0.08574445247650146,
+        "passes": true
+      },
+      {
+        "method": "sel_dcgb",
+        "baseline": "coteaching",
+        "wins": 4,
+        "mean_delta": 0.06092925071716308,
+        "passes": true
+      }
+    ]
+  },
+  "gate_B_beats_structure_controls": {
+    "passes": true,
+    "candidates": [
+      {
+        "method": "sel_topk",
+        "parts": [
+          {
+            "method": "sel_topk",
+            "baseline": "sel_noball",
+            "wins": 5,
+            "mean_delta": 0.08648362755775452,
+            "passes": true
+          },
+          {
+            "method": "sel_topk",
+            "baseline": "sel_shuffled",
+            "wins": 5,
+            "mean_delta": 0.06525870561599731,
+            "passes": true
+          },
+          {
+            "method": "sel_topk",
+            "baseline": "sel_random",
+            "wins": 5,
+            "mean_delta": 0.043611401319503786,
+            "passes": true
+          }
+        ],
+        "passes": true
+      },
+      {
+        "method": "sel_dcgb",
+        "parts": [
+          {
+            "method": "sel_dcgb",
+            "baseline": "sel_noball",
+            "wins": 4,
+            "mean_delta": 0.06166842579841614,
+            "passes": true
+          },
+          {
+            "method": "sel_dcgb",
+            "baseline": "sel_shuffled",
+            "wins": 4,
+            "mean_delta": 0.04044350385665894,
+            "passes": true
+          },
+          {
+            "method": "sel_dcgb",
+            "baseline": "sel_random",
+            "wins": 3,
+            "mean_delta": 0.018796199560165407,
+            "passes": false
+          }
+        ],
+        "passes": false
+      }
+    ]
+  },
+  "gate_C_beats_ce": {
+    "passes": true,
+    "mean_delta": 0.021119320392608644,
+    "threshold": 0.015,
+    "best_structured_by_seed": {
+      "0": 0.5739176273345947,
+      "1": 0.6087645292282104,
+      "2": 0.6589229106903076,
+      "3": 0.6293559074401855,
+      "4": 0.5945090055465698
+    }
+  }
+}

@@ -1,0 +1,98 @@
+{
+  "python": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]",
+  "torch": "2.9.1+rocm7.2.1",
+  "sklearn": "1.8.0",
+  "pyg": "2.7.0",
+  "platform": "Windows-10-10.0.19045-SP0",
+  "device": "cuda:0",
+  "hip": "7.2.53211-158bd99533",
+  "gpu": "AMD Radeon RX 7700 XT",
+  "threads": 4,
+  "config": {
+    "datasets": [
+      "cora",
+      "citeseer",
+      "corafull"
+    ],
+    "seeds": [
+      0,
+      1,
+      2,
+      3,
+      4
+    ],
+    "noise_type": "uniform",
+    "noise_rate": 0.4,
+    "epochs": 200,
+    "threads": 4,
+    "grouping_threads": 6,
+    "grids": {
+      "beta": [
+        0,
+        0.25,
+        0.75,
+        1
+      ],
+      "max_balls": [
+        32,
+        128
+      ],
+      "min_train_per_ball": [
+        5,
+        10
+      ],
+      "min_ball_size": [
+        1,
+        16,
+        64
+      ],
+      "split_improvement": [
+        0.01,
+        0.1
+      ]
+    }
+  },
+  "base_config": {
+    "method": {
+      "max_balls": 64,
+      "min_ball_size": 32,
+      "split_improvement": 0.05,
+      "min_train_per_ball": 2,
+      "beta": 0.5,
+      "leave_one_out": true,
+      "tie_mode": "distribution_only"
+    },
+    "model": {
+      "hidden": 64,
+      "layers": 2,
+      "dropout": 0.5
+    },
+    "training": {
+      "learning_rate": 0.01,
+      "weight_decay": 0.0005,
+      "epochs": 200,
+      "device": "cpu"
+    },
+    "distillation": {
+      "temperature": 1.0
+    },
+    "noise": {
+      "scope": "train",
+      "type": "uniform",
+      "rate": 0.4
+    },
+    "split": {
+      "type": "percent",
+      "train": 0.2,
+      "validation": 0.1,
+      "test": 0.7
+    },
+    "seeds": [
+      0,
+      1,
+      2,
+      3,
+      4
+    ]
+  }
+}

@@ -1,0 +1,106 @@
+Source: D:\我的文件夹\我的周报\NAUGRIN研究生周报-曹思磊26.3.6.docx
+
+NAUGRIN研生文献周报
+姓  名
+曹思磊
+填表时间
+2026.3.6
+本周有效
+工作时长
+合计： 35小时
+本周研读
+文献清单
+将之前阅读的文献重新熟悉一遍，做到能直接想出每一个文献的主要内容和创新点及大概过程，奠基文献可以做到，但深度学习文献还达不到。再以现有的知识重新思考创新点及可以改进的方向作为idea。
+任务目标
+（上周计划）
+看完鱼书的最后一部分，思考并尝试论文方向
+重点文献精读总结（主要包括研究目的、方法、实验、效果、贡献与创新等）
+粒球基础：
+《Granular ball computing classifiers for efficient, scalable and robust learning》
+《GBG++: A Fast and Stable Granular Ball Generation Method for Classification》
+《An Efficient and Adaptive Granular-Ball Generation Method in Classification Problem》
+《GEC: A novel and efficient classifier based on granular-ellipsoid model》
+《Synthetic Minority Oversampling Technique Based on Granular Ellipsoid Model for Imbalanced Data Classification》
+《Ball k-Means: Fast Adaptive Clustering With No Bounds》
+《A Fast Granular-Ball-Based Density Peaks Clustering Algorithm for Large-Scale Data》
+《基于网格自组织粒球模型的不平衡回归方法_胡峰》
+粒球+深度学习：
+《GB-RVFL--Fusion of randomized neural network and granular ball computing》
+随机神经网络+粒球（中心）。
+如何将粒球的其他特征糅合，让模型能获得更多信息？（以向量形式存储结合图神经网络。多模态？）
+修改损失函数，让模型理解（几何）关系。即图正则化（）
+《MGNR_A_Multi-Granularity_Neighbor_Relationship_and_Its_Application_in_KNN_Classification_and_Clustering_Methods-TPAMI》
+自然（双向）邻居思想+粒球自动识别不同密度区，可用于分类，聚类。
+相对密度（对比绝对密度），DM衡量粒球密度，归一化思想。
+1.不再看样本数量，而是去关注特征空间中的相对密度
+2.初步思路：目标是解决深度学习中长尾分布的数据问题。提取特征后，对数据进行粒球生成，然后计算每一个粒球中心的NARD值，修改模型的loss（比如说*1/NARD），强制让模型更多的学习到那些更稀疏的样本。
+《GAdaBoost: An efficient and robust AdaBoost algorithm based on granular-ball structure》
+集成学习+粒球。
+1.通过调整训练数据子集来关注难分样本（而非权重）
+2.数据量太大时先关注边界和中心样本
+《Enhancing graph convolutional networks with progressive granular ball sampling fusion: A novel approach to efficient and accurate GCN training》
+图神经网络+粒球（仅做采样）。单视图，对节点特征矩阵和邻接矩阵做变化。
+1.渐进式训练（粒球分裂的每一次过程都作为一个图输入，保留中间态。由粗到细）
+2.权重共享（上层作为下层初始权重）
+《Capturing local and global information: Multi-view graph convolutional network via granular-ball computing and collaborative matrix》
+图神经网络+粒球，解决多视图下构图问题。
+1.卷积中同时捕捉局部（平均池化+Conv1D）和全局信息（Conv2D）并进行外积
+2.解决GCN下特征同质化，可以在每个卷积层增加初始层的特征矩阵。
+3.多视图中使用特征数量最多的视图，计算其协同矩阵供其他视图使用。
+改进点：特征数量多不一定质量好，先让所有视图算出自己的协同矩阵，然后引入注意力机制打分（给权重），最后所有视图的矩阵加权求和，变成一个融合所有矩阵的协同矩阵。
+4.初步思路：粒球生成是作为一个预处理步骤，在输入到神经网络后就无法改变了。所以能否将粒球划分的过程融入神经网络，分类器一边分类，一边调整粒球的大小和位置？
+《AW-GBGAE: An Adaptive Weighted Graph Autoencoder Based on Granular-Balls for General Data Clustering》
+图神经网络+粒球。图自编码器（无监督学习），解决高维无标签数据的聚类问题
+加权粒球生成算法（高维）
+粒球构图策略：球内与球间连接
+动态图更新机制：K值逐渐减少（由广入微），能否设计一种自适应K值？
+粒球能否作为一种池化策略直接嵌入到GNN中？
+《Graph Coarsening via Supervised Granular-Ball for Scalable Graph Neural Network Training》
+图神经网络+粒球，优化图粗化方法。自适应，利用标签。
+1.先粗分粒球，然后再提纯
+2.论文中粗化图连接的边是非0即1的，可以引入加权边，权重为原图中球 A 与球 B 之间连边的数量(或乘一个归一化后的系数)。
+《Granular-ball Representation Learning for Deep CNN on Learning with Label Noise》
+由粒球设计GBC模块，嵌入到CNN的FLM和分类器之中。
+1.保留CNN前一部分（卷积，池化），用粒球代替了全连接分类器。由单对单变成多对单。降低了噪声对分离器的影响。
+2.粒神经网络或许在这篇文中可以找到一些灵感，包括反向传播（逆平均池化）和miniBatch导致的训练不稳定问题（经验回放，记忆池思想）。但这篇文章仅是嵌入在CNN中，说明CNN仍有不可代替的作用。在CNN构建好特征空间之后，粒球才能发挥作用。
+《GBRIP: Granular Ball Representation for Imbalanced Partial Label Learning》
+通过粒球，解决分类器在非平衡偏标记学习下效果不行的问题。无监督2NN聚类。
+和上一篇一样，都是在神经网络提取特征后，依据特征空间的距离构建粒球，将粒球作为一个嵌入层。
+在标签不可靠时，从几何角度思考。在loss中加上一个多中心损失 (MCL)，拉近同类样本的距离，提高鲁棒性。
+3.构图时，能否引入图注意力机制（语义+几何），让网络自动学习球与球之间的权重？
+《Graph-based Representation for Image based on Granular-ball》
+图神经网络+粒矩形。基于梯度构建粒矩形，基于重叠连接边。
+依旧是围绕如何构建，输入给GAT的节点特征矩阵和邻接矩阵进行的。
+文中基于基于单通道（灰度）处理，如果改成三通道，是否可以通过颜色本身的特性去决策边界？
+学习前面论文的思想，先进行CNN提取语义特征，再在这个特征图上生成粒矩形？
+VIT是固定的16*16，是否可以自适应地生成大小不一的Patch？
+思路：与粒计算结合，重新设计一个方法获取节点特征矩阵和边连接表。
+《Multi-Granularity Open Intent Classification via Adaptive Granular-Ball Decision Boundary》
+开放意图分类（构建边界）+粒球。（NLP方向）
+1.BERT提取特征后进行多球覆盖，修改loss（基于最近的粒球中心）。
+2.是否可以和粒椭球结合？最近子质心分类器可以修改为马氏距离，但如何反向传播是个问题。
+《深度学习基础》
+鱼书的最后一章大多为概括性说明以及展望，不再赘述。
+批判性思考与引申（优点与启发、局限与不足、展望等）
+之前看论文主要看创新点和方法，现在看来数据结构的流向也非常重要。
+原始数据是什么->通过哪些算法变成了什么形态->最后输出是什么样子。
+如果阅读论文最开始就往这个方向走，可以更快的理解文章的算法结构。
+论文额外要考虑的问题
+超参数越少越好
+高维稀疏数据上效果如何
+流形数据上的表现
+不规则粒是否可行（椭球，方球）
+不改权重，关注其他（几何特征；增加少数类粒球中的数据即增量采样；）
+边界信息很关键
+粒球生成算法并不固定，要依据目标具体分析
+粒神经网络的可行性（粒球独自构建特征空间；复杂度；反向传播），如果不行可以先做嵌入层。
+网络训练时能否考虑由粗到细的思想
+粒计算前提：身处一个“距离等于语义相似度”的空间。（高维特征空间）
+把新数据加上部分旧数据混合在一起训练，效果可能更好。（GCN同质化问题；minibath抖动问题）
+NLP方向是否还能结合
+GCN（A.有图->通过粒球，重新设计节点特征矩阵和邻接矩阵输入到GCN。
+B.无图（只有特征）->利用粒球设计构图算法（邻接矩阵），再输入到GCN学习。所以粒球+GCN就是在特征矩阵和邻接矩阵中做变化。）
+存在问题及
+拟解决方案
+下周计划
+继续思考idea及尝试。

@@ -1,0 +1,125 @@
+{
+  "executable": "D:\\codex_temp\\noisygl-rocm721\\Scripts\\python.exe",
+  "python": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]",
+  "platform": "Windows-10-10.0.19045-SP0",
+  "torch": "2.9.1+rocm7.2.1",
+  "hip": "7.2.53211-158bd99533",
+  "gpu": "AMD Radeon RX 7700 XT",
+  "teacher_checks": {
+    "cora/0.4": {
+      "exact_zeros": 0,
+      "minimum": 0.0013342828024178743,
+      "shape": [
+        2708,
+        7
+      ]
+    },
+    "cora/0.6": {
+      "exact_zeros": 0,
+      "minimum": 0.0026136499363929033,
+      "shape": [
+        2708,
+        7
+      ]
+    },
+    "citeseer/0.4": {
+      "exact_zeros": 0,
+      "minimum": 0.003786699380725622,
+      "shape": [
+        3327,
+        6
+      ]
+    },
+    "citeseer/0.6": {
+      "exact_zeros": 0,
+      "minimum": 0.003757746424525976,
+      "shape": [
+        3327,
+        6
+      ]
+    },
+    "corafull/0.4": {
+      "exact_zeros": 0,
+      "minimum": 0.0005795902688987553,
+      "shape": [
+        19793,
+        70
+      ]
+    },
+    "corafull/0.6": {
+      "exact_zeros": 0,
+      "minimum": 0.0008877197979018092,
+      "shape": [
+        19793,
+        70
+      ]
+    },
+    "coauthorcs/0.4": {
+      "exact_zeros": 0,
+      "minimum": 0.0001471830764785409,
+      "shape": [
+        18333,
+        15
+      ]
+    },
+    "coauthorcs/0.6": {
+      "exact_zeros": 0,
+      "minimum": 7.421482587233186e-05,
+      "shape": [
+        18333,
+        15
+      ]
+    },
+    "amazonpho/0.4": {
+      "exact_zeros": 0,
+      "minimum": 0.00043972706771455705,
+      "shape": [
+        7650,
+        8
+      ]
+    },
+    "amazonpho/0.6": {
+      "exact_zeros": 0,
+      "minimum": 0.0004337532736826688,
+      "shape": [
+        7650,
+        8
+      ]
+    }
+  },
+  "settings": {
+    "student_seed": 0,
+    "protocol_seed": 0,
+    "hidden": 64,
+    "layers": 2,
+    "dropout": 0.5,
+    "batch_norm": true,
+    "lr": 0.01,
+    "weight_decay": 0.0005,
+    "epochs": 200,
+    "region_strength": 1.0,
+    "candidates": {
+      "KD": [
+        1.0,
+        4.0
+      ],
+      "DIST": [
+        1.0,
+        4.0
+      ],
+      "DGKD-T": [
+        0.7,
+        1.0
+      ]
+    },
+    "scope": "all nodes",
+    "dgkd_alpha": 15.0,
+    "dgkd_beta": 3.0,
+    "dgkd_target": "frozen teacher argmax on ALL nodes",
+    "selection": "first strict maximum clean validation accuracy"
+  },
+  "source_commits": {
+    "DGKD": "ae8a495a054578d4b5e36aa5e7d3a3f4872037f6",
+    "DIST": "6f7a70a1dd57fd88413d83909d3d53243068f701"
+  }
+}

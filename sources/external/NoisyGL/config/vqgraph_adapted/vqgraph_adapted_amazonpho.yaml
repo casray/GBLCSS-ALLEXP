@@ -1,0 +1,39 @@
+model:
+  method: vqgraph_adapted
+  n_hidden: 64
+  n_layer: 2
+  act: F.relu
+  dropout: 0.5
+  norm_info: ~
+  input_layer: false
+  output_layer: false
+  teacher_hidden: 64
+  teacher_n_layer: 2
+  teacher_dropout: 0.5
+  teacher_epochs: 200
+  teacher_lr: 1e-2
+  teacher_weight_decay: 5e-4
+  distill_temperature: 1.0
+  token_temperature: 1.0
+  codebook_size: 128
+  lambda_kd: 1.0
+  lambda_ce: 0.0
+  lambda_token: 1.0
+  lambda_node: 0.001
+  lambda_edge: 0.03
+  vq_edge_sample: 4096
+
+training:
+  lr: 1e-2
+  weight_decay: 5e-4
+  n_epochs: 200
+  patience: ~
+  criterion: metric
+
+dataset:
+  sparse: true
+
+analysis:
+  flag: false
+  project: gnn-with-label-noise
+  save_graph: false

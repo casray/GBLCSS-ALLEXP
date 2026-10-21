@@ -1,0 +1,31 @@
+\subsection{Analysis of local-consensus supervision}\label{sec:3.4}
+
+Local consensus is useful when the other training nodes provide reliable evidence for the current node's true class. We first examine the reliability of their votes under independent symmetric label noise, then relate this evidence to the soft target in Eq.~\eqref{eq:12}. For this analysis, we fix the frozen representation, granular ball assignments, training-node set, and clean training labels.
+
+Consider a training node \(v\). Let \(y_v\) denote its clean label and \(s_v=|T_{j,-v}|\geq s_{\min}\) the number of remaining votes. The proportion of these nodes with clean label \(c\) and the margin of the current node's class are
+\begin{equation}\label{eq:14}
+p^{\mathrm{clean}}_{v,c}=\frac{1}{s_v}\sum_{u\in T_{j,-v}}\mathbb{I}(y_u=c),
+\qquad
+\Delta_v=p^{\mathrm{clean}}_{v,y_v}-\max_{c\ne y_v}p^{\mathrm{clean}}_{v,c}.
+\end{equation}
+
+\begin{proposition}\label{prop:local_vote}
+Suppose that \(C\geq2\), \(\Delta_v>0\), and each voting label is independently flipped with probability \(\eta\) to a uniformly chosen incorrect class. If \(0\leq\eta<(C-1)/C\), let \(\gamma=1-C\eta/(C-1)>0\). Then
+\begin{equation}\label{eq:15}
+\Pr\!\left(\max_{c\ne y_v}p_{j,-v,c}\geq p_{j,-v,y_v}\right)
+\leq \min\!\left\{1,(C-1)\exp\!\left(-\frac{s_v\gamma^2\Delta_v^2}{2}\right)\right\}.
+\end{equation}
+\end{proposition}
+
+The event includes a tie for the most votes. Equation~\eqref{eq:10} preserves the maximizing class set of \(p_{j,-v}\), so the same bound applies to \(q_{j,-v}\). For fixed class count, noise rate, and positive margin, the exponential term decreases with the number of independent votes. Adding nodes from competing classes can reduce \(\Delta_v\), weakening the evidence for the current node. Appendix~H.1 gives the proof.
+
+The final target combines this evidence with the observed label. Write \(z=e_{\widetilde y_v}\), \(q=q_{j,-v}\), \(\alpha=\alpha_{j,-v}\), and \(L_v(r)=\lVert r-e_{y_v}\rVert_2^2\) for the squared probability error of a target vector \(r\). The target \(t_v=(1-\alpha)z+\alpha q\) satisfies the exact identity
+\begin{equation}\label{eq:16}
+\begin{aligned}
+L_v(t_v)={}&(1-\alpha)L_v(z)+\alpha L_v(q)\\
+&-\alpha(1-\alpha)\lVert z-q\rVert_2^2.
+\end{aligned}
+\end{equation}
+
+Equation~\eqref{eq:16} expresses the soft target's squared probability error in terms of the errors of the observed label and local consensus, together with their disagreement. This identity holds for each node with the consensus weight and tie-handling rule in Eqs.~\eqref{eq:9}--\eqref{eq:12}. It separates the reduction in error on corrupted labels from the increase on initially correct labels. Appendix~H.2 derives the identity and a sufficient condition for lower conditional expected target error under symmetric noise. Section~\ref{sec:4.3.1} and Appendix~I.2 examine these effects empirically.
+

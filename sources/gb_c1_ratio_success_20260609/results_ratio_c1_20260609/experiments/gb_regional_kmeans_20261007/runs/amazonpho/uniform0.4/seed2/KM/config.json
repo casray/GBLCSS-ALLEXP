@@ -1,0 +1,62 @@
+{
+  "dataset": "amazonpho",
+  "noise_rate": 0.4,
+  "student_seed": 2,
+  "arm": "KM",
+  "settings": {
+    "strength": 1.0,
+    "shuffle_seed": 137,
+    "hidden": 64,
+    "layers": 2,
+    "batch_norm": true,
+    "dropout": 0.5,
+    "lr": 0.01,
+    "weight_decay": 0.0005,
+    "epochs": 200,
+    "temperature": 1,
+    "seed": null,
+    "scope": "all nodes",
+    "selection": "first strict improvement of clean validation accuracy",
+    "student_seeds": [
+      0,
+      1,
+      2
+    ],
+    "teacher_split_noise_seed": 0,
+    "trace_every": 10,
+    "snapshot_epochs": [
+      20,
+      50,
+      100,
+      200
+    ],
+    "regional_reduction": "fixed dense membership matrix multiplication",
+    "grouping": "kmeans",
+    "kmeans": {
+      "init": "k-means++",
+      "n_init": 10,
+      "random_state": 0,
+      "max_iter": 300,
+      "tol": 0.0001,
+      "algorithm": "lloyd"
+    },
+    "clustering_threads": 4
+  },
+  "protocol": {
+    "split_hash": "909e88db3e1b379b547fd41d9cf98915e96501a7c3bfbd98af7e86ed0ab94cbd",
+    "noise_hash": "4958b7861b8147a732813a5ba68f131e9bad29872b1cc3d552bc031e5472a77f",
+    "seed": 0,
+    "modified_train_count": 585,
+    "modified_val_count": 0,
+    "modified_test_count": 0,
+    "features": "raw main-experiment attributes",
+    "data_file": "C:\\Users\\Admin\\Desktop\\实验8去噪5.19-\\external\\NoisyGL\\data\\Photo\\processed\\data.pt",
+    "num_nodes": 7650,
+    "num_classes": 8
+  },
+  "initial_state_hash": "0866ac293edec1f804726fbdca68b03251174b2a31444c0521ad37f3ae7325b0",
+  "initial_rng_hash": "02de7cd01a197f0079223380c4698059ab95abf3f9e2a3f1325a2e4ded3adac3",
+  "input_cache": "C:\\Users\\Admin\\Desktop\\实验8去噪5.19-\\gb_c1_ratio_success_20260609\\results_ratio_c1_20260609\\experiments\\gb_regional_distillation_seed0_20261007\\cache\\amazonpho\\uniform0.4\\regional.pt",
+  "assignment_hash": "027275a5cbc0a03afe46cd677d700ea3ba121351c52a263326314d18f21ff190",
+  "teacher_source": "C:\\Users\\Admin\\Desktop\\实验8去噪5.19-\\gb_c1_ratio_success_20260609\\results_ratio_c1_20260609\\experiments\\robust_graph_seed0_20261006\\runs\\amazonpho\\uniform0.4\\erase"
+}

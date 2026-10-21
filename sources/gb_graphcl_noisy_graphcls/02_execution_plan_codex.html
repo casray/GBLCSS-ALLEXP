@@ -1,0 +1,514 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <title>执行计划 — 第一阶段图级 GB 去噪管线搭建（交 Codex 执行）</title>
+  <style>
+    body { font-family: "Segoe UI", "Microsoft YaHei", sans-serif; max-width: 1000px; margin: 0 auto; padding: 24px; line-height: 1.6; }
+    h1 { font-size: 24px; } h2 { font-size: 20px; color: #2457a6; } h3 { font-size: 17px; }
+    pre { background: #f0f2f5; padding: 12px; border-radius: 6px; overflow-x: auto; white-space: pre-wrap; border: 1px solid #d8dee6; }
+    code { background: #f0f2f5; padding: 2px 5px; border-radius: 3px; font-size: 0.94em; }
+    table { border-collapse: collapse; width: 100%; margin: 12px 0; font-size: 14px; }
+    th, td { border: 1px solid #d8dee6; padding: 8px; text-align: left; }
+    th { background: #eef2f7; }
+    .warn { background: #fff3dd; border: 1px solid #efd19d; border-radius: 6px; padding: 12px; margin: 12px 0; }
+    .bad { background: #fde7e7; border: 1px solid #f0b6b6; border-radius: 6px; padding: 12px; margin: 12px 0; }
+    .good { background: #e5f5ec; border: 1px solid #b9dfca; border-radius: 6px; padding: 12px; margin: 12px 0; }
+  </style>
+</head>
+<body>
+
+<h1>执行计划 — 图级 GB 去噪管线搭建 + NCI1 seed0 冒烟（交 Codex）</h1>
+
+<p>自包含执行说明。严格按步骤。不需要理解项目历史。</p>
+<p><strong>仓库根</strong>：<code>C:\Users\Admin\Desktop\实验8去噪5.19-\gb_graphcl_noisy_graphcls</code></p>
+<p><strong>Python</strong>：<code>C:\Users\Admin\Desktop\三论文融合\三论文融合\GRACE-master\.venv-rocm\Scripts\python.exe</code></p>
+<p><strong>已确认可用</strong>：torch 2.9.1+rocm7.2.1, torch_geometric 2.7.0, scikit-learn 1.8.0, pyyaml, matplotlib</p>
+
+<hr>
+
+<h2>0. 目标</h2>
+<p>搭建完整管线，在 NCI1 symmetric 0.4 seed0 上跑通以下 8 个方法并输出结果 CSV：</p>
+<pre>ce, sce, sel_topk, sel_kmeans, sel_gb, sel_shuffled, sel_random, sel_noball, clean_oracle</pre>
+<p>不做 5-seed gate（那是下一步）。不做 encoder coupling。不做 pair noise。</p>
+
+<hr>
+
+<h2>1. 项目结构（先创建目录）</h2>
+<pre>
+gb_graphcl_noisy_graphcls/
+├── src/
+│   └── gb_graphcl/
+│       ├── __init__.py
+│       ├── data.py
+│       ├── encoder.py
+│       ├── contrastive.py
+│       ├── granular_ball.py
+│       ├── reliability.py
+│       ├── selection.py
+│       └── evaluate.py
+├── scripts/
+│   ├── train_graphcl.py
+│   ├── extract_embeddings.py
+│   └── run_smoke.py
+├── tests/
+│   ├── test_data.py
+│   ├── test_granular_ball.py
+│   ├── test_reliability.py
+│   ├── test_selection.py
+│   └── run_unit_tests.py
+├── configs/
+│   └── default.yaml
+├── checkpoints/
+│   └── embeddings/
+└── reports/
+</pre>
+
+<hr>
+
+<h2>2. 各模块实现规格</h2>
+
+<h3>2.1 <code>src/gb_graphcl/data.py</code></h3>
+<p>数据加载、split、噪声注入。</p>
+<pre>
+def load_dataset(name: str, root: str = "data") -> InMemoryDataset:
+    """用 PyG TUDataset 加载。name in {"NCI1", "PROTEINS", "MUTAG"}。"""
+
+def stratified_split(dataset, train_ratio=0.8, val_ratio=0.1, seed=0):
+    """返回 (train_indices, val_indices, test_indices)。
+    用 sklearn.model_selection.StratifiedShuffleSplit 做 stratified。
+    seed 控制随机。"""
+
+def corrupt_symmetric_labels(labels: Tensor, train_indices: list, noise_rate: float, seed: int) -> Tensor:
+    """对 train_indices 中的标签，以 noise_rate 概率均匀随机替换为其他类。
+    返回 noisy_labels（全量，只有 train 部分被改）。
+    NCI1 二分类：symmetric 0.4 = 40% 翻转。"""
+
+def save_split_and_noise(path, train_idx, val_idx, test_idx, noisy_labels, clean_labels):
+    """保存到磁盘。路径格式: artifacts/{dataset}/seed{s}_noise{type}_{rate}/split.pt"""
+
+def load_split_and_noise(path):
+    """加载已缓存的 split + noise。"""
+</pre>
+
+<h3>2.2 <code>src/gb_graphcl/encoder.py</code></h3>
+<pre>
+class GINEncoder(nn.Module):
+    """5 层 GIN，hidden_dim=128。
+    forward(x, edge_index, batch) -> graph_embedding (shape: [num_graphs, 128])
+    用 global_mean_pool 聚合。
+    每层: GINConv(MLP(2层, hidden->hidden, ReLU, BatchNorm))。
+    """
+
+class ProjectionHead(nn.Module):
+    """2 层 MLP: 128 -> 128 -> 128, ReLU between layers。
+    仅用于对比学习训练，eval 时丢弃。"""
+</pre>
+
+<h3>2.3 <code>src/gb_graphcl/contrastive.py</code></h3>
+<pre>
+def augment_node_dropping(data, drop_ratio=0.2):
+    """随机丢弃 drop_ratio 比例的节点（及其边）。返回新 Data 对象。"""
+
+def augment_edge_perturbation(data, perturb_ratio=0.2):
+    """随机增删 perturb_ratio 比例的边。返回新 Data 对象。"""
+
+def nt_xent_loss(z1, z2, temperature=0.2):
+    """NT-Xent (InfoNCE) loss。z1, z2 shape: [batch_size, dim]。
+    正样本对 = 同图的两个视图。负样本 = batch 中其他图。
+    返回标量 loss。"""
+
+def train_graphcl_epoch(encoder, proj_head, loader, optimizer, device, aug1_fn, aug2_fn, temperature=0.2):
+    """一个 epoch 的 GraphCL 训练。
+    对每个 batch：
+      view1 = aug1_fn(batch) → encoder → proj_head → z1
+      view2 = aug2_fn(batch) → encoder → proj_head → z2
+      loss = nt_xent_loss(z1, z2)
+    返回 epoch mean loss。"""
+</pre>
+
+<h3>2.4 <code>src/gb_graphcl/granular_ball.py</code></h3>
+<pre>
+def build_granular_balls(embeddings: Tensor, noisy_labels: Tensor, train_indices: list,
+                         purity_threshold=0.7, min_samples=5, max_size=100):
+    """在 train_indices 对应的 L2-normalized embeddings 上构建密度引导粒球。
+
+    算法：
+    1. 初始：所有 train 样本在一个球中。
+    2. 递归分裂：
+       - 计算球内 noisy_label 多数票占比 = purity
+       - 如果 purity >= purity_threshold 且 len(ball) <= max_size → 停止
+       - 如果 len(ball) < min_samples → 停止（不再分裂太小的球）
+       - 否则：用 sklearn KMeans(n_clusters=2) 分成两个子球，递归
+    3. 返回:
+       - group_ids: Tensor[num_train], 每个 train 样本属于哪个球 (0, 1, ..., num_balls-1)
+       - ball_centers: Tensor[num_balls, dim], 每个球的成员均值（L2 归一化后）
+       - ball_sizes: list[int], 每个球的大小
+       - ball_purities: list[float], 每个球的 noisy-label purity
+
+    注意：只用 noisy_labels 计算 purity，绝不用 clean_labels。
+    """
+
+def shuffle_group_ids(group_ids: Tensor, seed: int) -> Tensor:
+    """打乱 group_ids（保持每个组的大小不变），破坏语义结构。"""
+
+def random_group_ids(num_samples: int, group_sizes: list, seed: int) -> Tensor:
+    """随机分配成员到与 GB 同大小的组中。"""
+</pre>
+
+<h3>2.5 <code>src/gb_graphcl/reliability.py</code></h3>
+<pre>
+def knn_consensus_reliability(embeddings: Tensor, noisy_labels: Tensor,
+                               train_indices: list, k: int) -> Tensor:
+    """对每个 train 样本，找 embedding 空间中 k 近邻（限 train），
+    计算邻居中与该样本同 noisy label 的比例。
+    返回 Tensor[num_train]，值域 [0, 1]。"""
+
+def kmeans_consensus_reliability(embeddings: Tensor, noisy_labels: Tensor,
+                                  train_indices: list, n_clusters: int) -> Tensor:
+    """对 train embedding 做 kmeans 聚类（n_clusters 个 cluster），
+    每个样本的 reliability = 其 cluster 内与该样本同 noisy label 的比例。
+    返回 Tensor[num_train]。"""
+
+def gb_consensus_reliability(group_ids: Tensor, noisy_labels: Tensor,
+                              train_indices: list) -> Tensor:
+    """每个样本的 reliability = 其所在球内与该样本同 noisy label 的比例。
+    返回 Tensor[num_train]。"""
+
+def compute_reliability(method: str, embeddings, noisy_labels, train_indices, **kwargs) -> Tensor:
+    """统一入口。method in {"topk", "kmeans", "gb", "shuffled", "random", "none"}.
+    - "topk": 调 knn_consensus_reliability, k=kwargs["k"]
+    - "kmeans": 调 kmeans_consensus_reliability, n_clusters=kwargs["n_clusters"]
+    - "gb": 调 gb_consensus_reliability, group_ids=kwargs["group_ids"]
+    - "shuffled": 调 gb_consensus_reliability, group_ids=shuffle_group_ids(kwargs["group_ids"], kwargs["seed"])
+    - "random": 调 gb_consensus_reliability, group_ids=random_group_ids(...)
+    - "none": 返回全零（纯 small-loss，不用 reliability）
+    """
+</pre>
+
+<h3>2.6 <code>src/gb_graphcl/selection.py</code></h3>
+<pre>
+def keep_ratio_at_epoch(epoch: int, warmup: int = 20, ramp: int = 20, rho: float = 0.6) -> float:
+    """epoch < warmup: return 1.0
+    warmup <= epoch < warmup+ramp: 线性从 1.0 降到 rho
+    epoch >= warmup+ramp: return rho"""
+
+def train_with_selection(embeddings, noisy_labels, clean_labels, train_idx, val_idx, test_idx,
+                          reliability, num_classes, device,
+                          epochs=200, lr=0.01, wd=5e-4, patience=30,
+                          warmup=20, ramp=20, rho=0.6, seed=0):
+    """在 frozen embeddings 上训练线性分类器 + commit-style sample selection。
+
+    每 epoch:
+      1. 前向：logits = Linear(embeddings[train_idx])
+      2. 算 per-sample CE loss
+      3. trust_score = z_score(-loss) + z_score(reliability)   # reliability 是预计算的固定值
+         如果 reliability 全零（sel_noball），trust_score = z_score(-loss)
+      4. keep_ratio = keep_ratio_at_epoch(epoch, warmup, ramp, rho)
+      5. 选 trust_score 前 keep_ratio 比例的样本
+      6. 只对选中样本的 loss 求均值，反向传播
+      7. val accuracy early stopping (patience)
+
+    返回 dict:
+      test_acc_at_best_val: float
+      selection_precision: float  # 最后一个 epoch 选中样本中 clean 的比例（用 clean_labels 事后算）
+      noise_exclusion_recall: float  # 最后一个 epoch noisy 样本被排除的比例
+      loss_history: list
+    """
+
+def train_ce_baseline(embeddings, noisy_labels, clean_labels, train_idx, val_idx, test_idx,
+                       num_classes, device, epochs=200, lr=0.01, wd=5e-4, patience=30, seed=0):
+    """标准 CE，不做 selection。返回同结构 dict。"""
+
+def train_sce_baseline(embeddings, noisy_labels, clean_labels, train_idx, val_idx, test_idx,
+                        num_classes, device, alpha=1.0, beta=1.0,
+                        epochs=200, lr=0.01, wd=5e-4, patience=30, seed=0):
+    """Symmetric Cross Entropy: L = alpha * CE + beta * RCE。
+    RCE = -sum(p * log(q)) 其中 p 是模型预测概率，q 是 one-hot label。
+    返回同结构 dict。"""
+
+def train_clean_oracle(embeddings, noisy_labels, clean_labels, train_idx, val_idx, test_idx,
+                        num_classes, device, epochs=200, lr=0.01, wd=5e-4, patience=30, seed=0):
+    """只选 clean 样本（noisy_labels == clean_labels 的 train 样本）做 CE。
+    返回同结构 dict。"""
+</pre>
+
+<h3>2.7 <code>src/gb_graphcl/evaluate.py</code></h3>
+<pre>
+def paired_delta(scores_a: list, scores_b: list):
+    """5-seed paired t-test。
+    返回 dict: {mean_delta, t_value, p_value, sig_label, wins}
+    sig_label = "SIG" if |t| > 2.78 (df=4, p<0.05 two-tailed) else "ns"
+    wins = sum(a > b for a, b in zip(scores_a, scores_b))"""
+
+def format_smoke_report(results: dict, gb_stats: dict, dataset: str, noise: str, seed: int):
+    """格式化 seed0 冒烟报告为 markdown 字符串。
+    results: {method_name: {test_acc_at_best_val, selection_precision, ...}}
+    gb_stats: {num_balls, mean_size, min_size, max_size, mean_purity}
+    """
+</pre>
+
+<hr>
+
+<h2>3. 脚本实现规格</h2>
+
+<h3>3.1 <code>scripts/train_graphcl.py</code></h3>
+<pre>
+用法: python scripts/train_graphcl.py --dataset NCI1 --seed 0
+
+流程:
+1. 加载数据集
+2. 做 stratified split（8:1:1）
+3. 只用 train+val 图（不用 test）做 GraphCL 训练
+   - GIN 5层, hidden=128
+   - aug1 = node_dropping(0.2), aug2 = edge_perturbation(0.2)
+   - NT-Xent, temperature=0.2
+   - Adam lr=0.001, 100 epochs, batch_size=128
+4. 保存 encoder 权重到 checkpoints/{dataset}/pretrain{seed}/encoder.pt
+5. 打印最终 loss
+</pre>
+
+<h3>3.2 <code>scripts/extract_embeddings.py</code></h3>
+<pre>
+用法: python scripts/extract_embeddings.py --dataset NCI1 --seed 0
+
+流程:
+1. 加载 encoder 权重
+2. 对所有图提取 embedding（不含 projection head）
+3. L2 归一化
+4. 保存到 checkpoints/embeddings/{dataset}/pretrain{seed}/H.pt
+   格式: {"embeddings": Tensor[N, 128], "labels": Tensor[N], "num_classes": int}
+</pre>
+
+<h3>3.3 <code>scripts/run_smoke.py</code></h3>
+<pre>
+用法: python scripts/run_smoke.py --dataset NCI1 --noise-type symmetric --noise-rate 0.4 --seed 0
+
+流程:
+1. 加载 embeddings 和 labels
+2. 加载或创建 split + noisy labels（缓存）
+3. 构建 granular balls → 记录 gb_stats（球数、大小、purity）
+4. 计算各方法的 reliability:
+   - topk: k = GB 的平均球大小（matched）
+   - kmeans: n_clusters = GB 的球数（matched）
+   - gb: 直接用 group_ids
+   - shuffled: shuffle_group_ids
+   - random: random_group_ids
+   - none: 全零
+5. 跑全部方法:
+   ce, sce, sel_topk, sel_kmeans, sel_gb, sel_shuffled, sel_random, sel_noball, clean_oracle
+6. 保存结果到 reports/smoke_{dataset}_{noise}_{rate}_seed{s}/results.csv
+   CSV 列: method, test_acc, selection_precision, noise_exclusion_recall
+7. 保存 gb_stats 到同目录 gb_stats.json
+8. 打印格式化报告
+
+报告必须包含:
+- 各方法 test_acc（排序）
+- clean_oracle - ce = headroom
+- sel_gb - sel_topk = GB vs kNN delta
+- sel_gb - sel_kmeans = GB vs kmeans delta
+- sel_gb - sel_shuffled = 结构有效性
+- GB 统计：球数、平均/最小/最大球大小、平均 purity
+</pre>
+
+<hr>
+
+<h2>4. 单元测试</h2>
+
+<h3>4.1 <code>tests/test_data.py</code></h3>
+<pre>
+test_stratified_split_is_disjoint_and_covers_all:
+    split = stratified_split(dataset, seed=0)
+    assert 三个 set 不相交
+    assert 三个 set 并集 = 全集
+    assert 每个 split 内各类比例与全集接近（±5%）
+
+test_symmetric_noise_only_changes_train:
+    noisy = corrupt_symmetric_labels(labels, train_idx, 0.4, seed=0)
+    assert noisy[val_idx] == labels[val_idx]
+    assert noisy[test_idx] == labels[test_idx]
+    changed = (noisy[train_idx] != labels[train_idx]).sum()
+    assert 0.3 * len(train_idx) < changed < 0.5 * len(train_idx)
+
+test_zero_noise_keeps_all:
+    noisy = corrupt_symmetric_labels(labels, train_idx, 0.0, seed=0)
+    assert (noisy == labels).all()
+</pre>
+
+<h3>4.2 <code>tests/test_granular_ball.py</code></h3>
+<pre>
+test_all_train_samples_assigned:
+    group_ids, ... = build_granular_balls(emb, labels, train_idx)
+    assert len(group_ids) == len(train_idx)
+    assert group_ids.min() >= 0
+
+test_ball_sizes_respect_bounds:
+    _, _, sizes, _ = build_granular_balls(emb, labels, train_idx, min_samples=5, max_size=100)
+    for s in sizes:
+        assert s >= 1  # 允许分裂后略小于 min_samples
+    assert max(sizes) <= 100 + 10  # 容忍边界
+
+test_shuffle_preserves_group_sizes:
+    shuffled = shuffle_group_ids(group_ids, seed=42)
+    original_sizes = sorted(Counter(group_ids.tolist()).values())
+    shuffled_sizes = sorted(Counter(shuffled.tolist()).values())
+    assert original_sizes == shuffled_sizes
+
+test_gb_does_not_use_clean_labels:
+    # 检查函数签名不含 clean_labels 参数
+    import inspect
+    sig = inspect.signature(build_granular_balls)
+    assert "clean" not in str(sig).lower()
+</pre>
+
+<h3>4.3 <code>tests/test_reliability.py</code></h3>
+<pre>
+test_knn_reliability_is_unit_range:
+    rel = knn_consensus_reliability(emb, labels, train_idx, k=10)
+    assert rel.min() >= 0 and rel.max() <= 1
+
+test_gb_reliability_matches_manual:
+    # 构造简单 2 球 case，手动算 reliability，对比
+    group_ids = tensor([0, 0, 0, 1, 1])
+    labels = tensor([0, 0, 1, 1, 1])
+    rel = gb_consensus_reliability(group_ids, labels, list(range(5)))
+    # ball 0: 样本0(label=0, majority=0, rel=2/3), 样本1(label=0, rel=2/3), 样本2(label=1, rel=1/3)
+    # ball 1: 样本3(label=1, rel=1.0), 样本4(label=1, rel=1.0)
+    assert abs(rel[0] - 2/3) < 1e-5
+    assert abs(rel[2] - 1/3) < 1e-5
+    assert abs(rel[3] - 1.0) < 1e-5
+
+test_reliability_no_clean_label_in_signatures:
+    for fn in [knn_consensus_reliability, kmeans_consensus_reliability, gb_consensus_reliability]:
+        sig = inspect.signature(fn)
+        assert "clean" not in str(sig).lower()
+</pre>
+
+<h3>4.4 <code>tests/test_selection.py</code></h3>
+<pre>
+test_keep_ratio_schedule:
+    assert keep_ratio_at_epoch(0, 20, 20, 0.6) == 1.0
+    assert keep_ratio_at_epoch(19, 20, 20, 0.6) == 1.0
+    assert abs(keep_ratio_at_epoch(30, 20, 20, 0.6) - 0.8) < 1e-5  # 中间点
+    assert keep_ratio_at_epoch(40, 20, 20, 0.6) == 0.6
+    assert keep_ratio_at_epoch(100, 20, 20, 0.6) == 0.6
+
+test_clean_oracle_precision_is_one:
+    # clean oracle 的 selection_precision 应该 = 1.0
+    # 用小玩具数据测试
+</pre>
+
+<h3>4.5 <code>tests/run_unit_tests.py</code></h3>
+<pre>
+# 导入所有 test 函数，逐个调用，打印 PASS/FAIL
+# 与旧项目 run_unit_tests.py 风格一致
+</pre>
+
+<hr>
+
+<h2>5. 配置文件</h2>
+
+<h3><code>configs/default.yaml</code></h3>
+<pre>
+# ============ 对比学习 ============
+encoder:
+  type: GIN
+  num_layers: 5
+  hidden_dim: 128
+  pooling: mean
+
+contrastive:
+  aug1: node_dropping
+  aug2: edge_perturbation
+  drop_ratio: 0.2
+  perturb_ratio: 0.2
+  temperature: 0.2
+  epochs: 100
+  lr: 0.001
+  batch_size: 128
+
+# ============ 分类器 ============
+classifier:
+  epochs: 200
+  lr: 0.01
+  weight_decay: 0.0005
+  patience: 30
+
+# ============ 选择机制 ============
+selection:
+  warmup: 20
+  ramp: 20
+  # rho = 1 - noise_rate，由脚本计算
+
+# ============ 粒球 ============
+granular_ball:
+  purity_threshold: 0.7
+  min_samples: 5
+  max_size: 100
+
+# ============ SCE ============
+sce:
+  alpha: 1.0
+  beta: 1.0
+</pre>
+
+<hr>
+
+<h2>6. 执行顺序</h2>
+
+<ol>
+  <li><strong>创建目录结构</strong>（§1）。</li>
+  <li><strong>实现 src/ 全部模块</strong>（§2，按 data → encoder → contrastive → granular_ball → reliability → selection → evaluate 顺序）。</li>
+  <li><strong>写 configs/default.yaml</strong>（§5）。</li>
+  <li><strong>写 tests/ 全部测试</strong>（§4）。</li>
+  <li><strong>跑测试全绿</strong>：
+    <pre>cd C:\Users\Admin\Desktop\实验8去噪5.19-\gb_graphcl_noisy_graphcls
+C:\Users\Admin\Desktop\三论文融合\三论文融合\GRACE-master\.venv-rocm\Scripts\python.exe tests/run_unit_tests.py</pre>
+    全绿才继续。</li>
+  <li><strong>写 scripts/</strong>（§3）。</li>
+  <li><strong>MUTAG 管线 debug</strong>：
+    <pre>python scripts/train_graphcl.py --dataset MUTAG --seed 0
+python scripts/extract_embeddings.py --dataset MUTAG --seed 0
+python scripts/run_smoke.py --dataset MUTAG --noise-type symmetric --noise-rate 0.4 --seed 0</pre>
+    只检查不崩，不看结果。</li>
+  <li><strong>NCI1 seed0 冒烟</strong>：
+    <pre>python scripts/train_graphcl.py --dataset NCI1 --seed 0
+python scripts/extract_embeddings.py --dataset NCI1 --seed 0
+python scripts/run_smoke.py --dataset NCI1 --noise-type symmetric --noise-rate 0.4 --seed 0</pre>
+    输出报告到 <code>reports/smoke_NCI1_symmetric_0p4_seed0/</code>。</li>
+  <li><strong>停在这里</strong>，交回用户。不要自行扩 5 seed 或其他数据集。</li>
+</ol>
+
+<hr>
+
+<h2>7. 冒烟验收标准</h2>
+<div class="good">
+<ul>
+  <li>所有 9 个方法都跑完，results.csv 有 9 行。</li>
+  <li>clean_oracle test_acc 明显高于 ce test_acc（headroom ≥ 3pp 为佳）。</li>
+  <li>sel_gb 的 selection_precision > 0.6（random clean rate for symmetric 0.4）。</li>
+  <li>sel_shuffled 和 sel_random 的 test_acc 低于 sel_gb。</li>
+</ul>
+</div>
+<div class="warn">
+<strong>如果 headroom < 2pp</strong>：说明 GraphCL 表示太好或噪声影响太小，需要排查。记录数字但继续。
+<br><strong>如果 sel_gb < sel_topk</strong>：正常，seed0 不做结论，但如实记录。
+</div>
+
+<hr>
+
+<h2>8. 护栏（硬约束，违反即作废）</h2>
+<div class="bad">
+<ol>
+  <li>Clean labels 只用于 val/test 评估 + selection_precision/noise_exclusion 事后诊断。<strong>绝不进入 reliability / selection / loss / target / 构球</strong>。</li>
+  <li>所有 sel_* 方法同 frozen embedding、同 split、同噪声实例、同 schedule、同 epochs/lr/patience。</li>
+  <li>不 threshold-shopping：所有超参来自 configs/default.yaml，不为通过冒烟调参。</li>
+  <li>不做 hard same-ball positive、prototype pulling、hard inter-ball negative。</li>
+  <li>test 一律 test_acc_at_best_val；数字来自 CSV。</li>
+  <li>不碰 pair noise、encoder coupling、5 seed gate——那是下一阶段。</li>
+  <li>新增代码必须补单测并保持全绿。</li>
+</ol>
+</div>
+
+</body>
+</html>

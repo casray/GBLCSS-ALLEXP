@@ -1,0 +1,1334 @@
+% !TeX program = xelatex
+\documentclass[preprint,12pt]{elsarticle}
+\usepackage[a4paper,margin=22mm]{geometry}
+\usepackage[T1]{fontenc}
+\usepackage{lmodern}
+\usepackage{amsmath,amssymb}
+\usepackage{graphicx}
+\usepackage{booktabs,array,longtable}
+\usepackage{enumitem}
+\usepackage{placeins}
+\usepackage{needspace}
+\usepackage[font=small,labelfont=bf,labelsep=period]{caption}
+\usepackage[ruled,linesnumbered,vlined]{algorithm2e}
+\usepackage{xurl}
+\usepackage[hidelinks,unicode]{hyperref}
+\journal{Information Sciences}
+\biboptions{numbers,sort&compress}
+\setcounter{secnumdepth}{3}
+\setlength{\emergencystretch}{2em}
+\setlength{\LTpre}{9pt}
+\setlength{\LTpost}{9pt}
+\setlength{\LTcapwidth}{\textwidth}
+\newlength{\TableWidth}
+\setlist{itemsep=3pt,topsep=5pt,parsep=0pt,leftmargin=*}
+\SetAlgoNoEnd
+\DontPrintSemicolon
+\SetAlgorithmName{Algorithm}{Algorithm}{List of Algorithms}
+\SetKwInput{KwIn}{Input}
+\SetKwInput{KwOut}{Output}
+\SetKw{KwBreak}{break}
+\SetKw{KwRet}{return}
+\SetAlFnt{\small}
+\SetAlCapFnt{\small\bfseries}
+\SetAlCapNameFnt{\small\bfseries}
+\SetNlSty{textnormal}{}{\hspace{0.45em}}
+\setlength{\textfloatsep}{14pt plus 3pt minus 3pt}
+\renewcommand{\topfraction}{0.9}
+\renewcommand{\bottomfraction}{0.85}
+\renewcommand{\textfraction}{0.08}
+\renewcommand{\floatpagefraction}{0.7}
+\hyphenation{Coauthor CiteSeer CoraFull GB-LCSS Graph-MLP}
+
+\begin{document}
+\begin{frontmatter}
+\title{Granular-Ball Local-Consensus Soft Supervision for Noisy-Label Transductive Node Classification with Graph-Free Inference}
+% Author and affiliation information can be added here.
+\begin{abstract}
+In many deployment scenarios, graph structure is available during training, whereas inference must rely only on node attributes because relations are missing or online graph processing is constrained. Methods for learning with noisy labels on graphs generally retain graph-dependent inference, while graph-free node classification has largely been studied with clean supervision. We propose Granular-Ball Local-Consensus Soft Supervision (GB-LCSS) for transductive node classification with noisy labels and graph-free inference. GB-LCSS first learns label-free node representations from attributes and graph connectivity and recursively partitions the resulting space into a bounded set of disjoint granular balls. For each training node, GB-LCSS aggregates the labels of the other training nodes in the same ball and adaptively blends their consensus with the node's observed label to form a soft target. Label-free region construction prevents noisy annotations from shaping the partition, while the adaptive target reduces the influence of isolated label errors when local evidence is consistent. Across five datasets and five noise settings, GB-LCSS achieves the highest or tied-highest five-seed mean accuracy in 24 of 25 settings among seven noisy-label baselines using the same deployed MLP architecture, while requiring only node attributes at inference.
+\end{abstract}
+\begin{keyword}
+label noise \sep node classification \sep graph-free inference \sep graph contrastive learning \sep granular-ball computing \sep knowledge distillation
+\end{keyword}
+\end{frontmatter}
+
+\section*{Highlights}
+\begin{itemize}
+\item Studies noisy-label transductive node classification with graph-free inference.
+\item GB-LCSS constructs granular balls in a label-free graph representation space.
+\item Leave-one-out local consensus provides node-specific soft supervision.
+\item Graph structure is used during training; inference uses node attributes only.
+\item GB-LCSS leads or ties in 24/25 settings against seven noisy-label MLP baselines.
+\end{itemize}
+
+\FloatBarrier
+
+\section{Introduction}\label{sec:1}
+
+Graph neural networks (GNNs) are effective for node classification because message passing combines node attributes with relational context \cite{ref1,ref2}. This dependency also complicates deployment: prediction requires access to the graph and repeated neighborhood aggregation, which may be costly or infeasible when relations are unavailable or online graph processing is restricted. Graph-free approaches such as Graph-MLP and GLNN exploit graph structure during training but deploy an MLP that predicts directly from node attributes \cite{ref3,ref4}. This removes graph access and neighborhood aggregation from online prediction.
+
+Noisy training labels introduce a second challenge. Labels collected through manual annotation, automated rules, or multiple sources can contain errors, and deep models may eventually memorize corrupted supervision \cite{ref8}. On graphs, message passing can further spread the effect of mislabeled nodes \cite{ref13}. Noise-robust graph methods use topology for label correction, pseudo-labeling, sample selection, or robust representation learning \cite{ref9,ref10,ref11,ref12,ref47}, but their predictions generally remain graph dependent. Existing graph-free studies, by contrast, have largely focused on structural knowledge transfer with clean supervision. Robustness to noisy training labels remains insufficiently studied in graph-free node classification.
+
+To improve supervision without introducing graph dependence at inference, GB-LCSS uses the training graph to construct soft targets for the deployed MLP. The method first learns label-free node representations with a graph contrastive encoder instantiated by GRACE \cite{ref16}, so label noise does not alter the geometry used for partitioning. It then recursively divides this representation space into a bounded set of disjoint granular balls \cite{ref34}. For each training node, GB-LCSS counts the observed labels of the other training nodes in the same ball to form a local consensus. Greater agreement among these labels gives the consensus more weight, helping counter isolated label errors, whereas weak agreement retains more of the node's observed label. The resulting node-specific soft targets train an MLP that receives only node attributes at inference.
+
+We evaluate GB-LCSS on Cora, CiteSeer, CoraFull, Coauthor-CS, and Amazon-Photo under uniform, pair, and instance-dependent label noise. Across five noise settings, it achieves the highest or tied-highest five-seed mean accuracy in 24 of 25 settings among seven noise-robust baselines using the same deployed MLP architecture. A secondary graph-teacher extension trains on the same consensus targets and supplies predictions over all nodes, improving the MLP student's mean accuracy without changing its inference inputs.
+
+The main contributions are as follows:
+
+\begin{enumerate}
+\item We study noisy-label transductive node classification with graph-free inference, using training-time graph structure to improve supervision while the deployed classifier uses only node attributes at inference.
+\item We introduce GB-LCSS, which partitions a label-free graph contrastive representation into disjoint granular balls and uses label agreement among the other training nodes in each ball to refine each node's observed label into a soft target.
+\item We evaluate GB-LCSS against noise-robust and structure-assisted graph-free methods across five datasets and five noise settings. Controlled grouping and target analyses identify the contribution of local consensus, and a secondary graph-teacher extension examines whether node-wise predictions over all nodes can further improve the MLP student.
+\end{enumerate}
+
+\FloatBarrier
+
+\section{Related work}\label{sec:2}
+
+\subsection{Learning with noisy labels}\label{sec:2.1}
+
+Learning with noisy labels reduces the influence of corrupted annotations by controlling which samples are trusted, how supervision is represented, or how strongly a model fits uncertain targets. Sample-selection methods exploit the tendency of deep networks to fit clean patterns before memorizing noise. Co-teaching exchanges small-loss samples between two networks, while JoCoR also enforces agreement between their predictions \cite{ref17,ref18}. DivideMix treats the separated clean and noisy samples as a semi-supervised learning problem, whereas FINE and CT estimate sample reliability from class-wise feature directions and confidence trajectories \cite{ref23,ref24,ref25}.
+
+A complementary family modifies the training objective. SCE combines cross-entropy with reverse cross-entropy, ELR suppresses late-stage memorization, and ANL and LogitClip reduce sensitivity to corrupted targets through negative learning and logit-norm control \cite{ref19,ref20,ref21,ref22}. These methods provide general strategies for learning with noisy labels but do not explicitly model graph relations between samples.
+
+\subsection{Noise-robust learning on graphs}\label{sec:2.2}
+
+Graph learning under label noise introduces an additional effect: message passing can propagate erroneous supervision through connected nodes. One line of work therefore uses graph structure as evidence for estimating label reliability. UnionNET, NRGNN, and RTGNN derive neighborhood evidence, augment reliable supervision, or coordinate dual networks \cite{ref9,ref10,ref46}. Topology-guided selection and disagreement methods, including TSS, TFR, ProCon, GD\textsuperscript{2}, and GNN-CFGD, identify unreliable nodes from reconstruction, consistency, predictive discrepancy, or training history \cite{ref40,ref41,ref42,ref44,ref47}.
+
+A second line of work uses graph structure to generate or propagate more reliable supervision. DND-NET constructs robust pseudo-labels from neighborhood uncertainty, while RNCGLN combines graph contrastive representation learning with label self-correction under label and structure perturbations \cite{ref11,ref12}. Prototype-Guided Supervision aggregates noisy labels into class-level prototypes, graph-teacher methods such as BO-NNC and SAMTD improve the source of supervision, and GTA, MILAB, and HALF adjust topology or aggregation to reduce the influence of unreliable neighborhoods \cite{ref45,ref50,ref51,ref58,ref59,ref63}. NoisyGL \cite{ref13} provides a unified benchmark for this family of methods.
+
+These methods establish graph structure as useful evidence for identifying unreliable labels and refining supervision. Their inference pipelines, however, generally continue to depend on the graph, leaving the graph-free deployment problem unresolved.
+
+\subsection{Graph-free node classification}\label{sec:2.3}
+
+Graph-free methods avoid graph-dependent online prediction by exploiting graph structure during training. Graph-MLP incorporates adjacency through a neighborhood-contrastive objective, whereas GLNN distills predictions from a GNN teacher into an MLP; both deploy an attribute-only MLP \cite{ref3,ref4}. Other methods transfer graph information through self-distillation, representation alignment, or precomputed structural signals \cite{ref5,ref14,ref15,ref27,ref33}. They mainly differ in how graph information is transferred during training and whether graph-derived inputs are retained at inference.
+
+Teacher-based methods broaden the knowledge transferred to an MLP. FF-G2M separates low- and high-frequency components, KRD selects reliable teacher knowledge according to prediction stability, and VQGraph represents local structures with discrete codes \cite{ref6,ref7,ref26}. PGKD and TINED transfer class prototypes or combine parameter injection with Dirichlet-energy distillation \cite{ref28,ref43}, while AdaGMLP, ProGMLP, and SALE-MLP study adaptive transfer, accuracy--cost trade-offs, and structure-aware latent representations \cite{ref29,ref30,ref31}. Yu et al. \cite{ref32} theoretically explain how GNN soft labels convey graph-induced low-frequency bias to an MLP.
+
+Graph-based label smoothing is closely related to GB-LCSS because it also modifies the training targets. PosteL estimates posterior soft labels from neighboring labels and graph-wide label co-occurrence statistics, ALS adjusts label-smoothing strength during graph training, and SALS incorporates neighborhood information into the target \cite{ref60,ref61,ref62}. GB-LCSS also modifies the training targets, but defines its voting groups by geometry in a frozen, label-free graph representation rather than directly by graph adjacency. Each training node combines its observed label with the label consensus of the other training nodes in the same granular ball.
+
+\subsection{Graph contrastive learning and granular-ball learning}\label{sec:2.4}
+
+Graph contrastive learning provides graph-aware representations without node labels by enforcing consistency between augmented graph views. GRACE constructs stochastic views through edge dropping and feature masking and aligns the representations of corresponding nodes across those views \cite{ref16}. In GB-LCSS, this representation-learning stage is instantiated with GRACE and completed before labels are aggregated. The resulting geometry captures graph context while keeping regional partitioning independent of noisy labels.
+
+Granular-ball computing represents samples with coarse-grained hyperspherical regions for multi-granularity learning \cite{ref34}. GBkNN classifies queries over granular balls, while granular-ball sampling uses ball purity and boundary structure to select representative samples \cite{ref34,ref37}. Noise-oriented extensions employ granular regions for coarse representation and classification, reliable-sample selection, pseudo-label construction, or adaptive error correction \cite{ref35,ref36,ref52,ref53}. In deep learning, GBRAIN, G-GBC, and BNO-GB use granular regions as coarse training units or as regions for distinguishing different forms of noisy samples \cite{ref48,ref49,ref57}. Granular balls have also served as supernodes or hierarchical regions in supervised graph coarsening, GBGC, and MGGR \cite{ref54,ref55,ref56}.
+
+Prior studies mainly use granular balls as classifiers, sample-selection structures, coarse training units, pseudo-label regions, or graph-coarsening units. GB-LCSS instead uses them as a regional interface for supervision construction: the balls are formed without labels, their statistics are reused to build node-specific targets, and classification remains with an MLP operating on individual node attributes. Within this design, graph contrastive learning supplies the geometry and granular balls organize the local evidence.
+
+\FloatBarrier
+
+\section{Method}\label{sec:3}
+
+\subsection{Problem setting and notation}\label{sec:3.1}
+
+Consider a transductive attributed graph \(G = (\mathcal{V},\mathcal{E},X)\), where \(\mathcal{V} = \{ v_{1},\ldots,v_{N}\}\) is the node set and \(\mathcal{E}\) is the edge set. Let \(A \in \{ 0,1\}^{N \times N}\) be the adjacency matrix and \(X = \lbrack x_{1},\ldots,x_{N}\rbrack^{\top} \in \mathbb{R}^{N \times d}\) the node-attribute matrix. Each node belongs to one of \(C\) classes. Let \(\mathcal{V}_{L}\) denote the set of training nodes. The observed label \({\widetilde{y}}_{v} \in \{ 1,\ldots,C\}\) of a training node may be corrupted by an unknown noise process. GB-LCSS does not require prior knowledge of the noise type, noise rate, or label transition matrix.
+
+We consider transductive graph-free inference on a fixed graph. During training, the full node-attribute matrix \(X\) and adjacency matrix \(A\), including the test nodes, are available for representation learning and target construction, while test labels remain hidden. Only the classifier \(f_{\theta}\) is retained after training. For a node \(v\), its predictive distribution is
+
+\begin{equation}\label{eq:1}
+p_{\theta}( \cdot \mid x_{v}) = \operatorname{softmax}\left( f_{\theta}(x_{v}) \right),
+\end{equation}
+
+where \(x_{v}\) is the classifier's only input at inference; the adjacency matrix \(A\), neighboring nodes, the frozen representation, and the graph encoder are unavailable to the classifier.
+
+Let \(\mathcal{B} = \{ B_{j}\}_{j = 1}^{K}\) be a granular-ball partition covering all nodes, and let \(T_{j} = B_{j} \cap \mathcal{V}_{L}\) be the training nodes in ball \(B_{j}\). For \(v \in T_{j}\), the subscript \(- v\) indicates that the label of node \(v\) is removed when local consensus is constructed. Other symbols are defined at first use.
+
+\subsection{Overview of GB-LCSS}\label{sec:3.2}
+
+Figure 1 summarizes the four stages of GB-LCSS. First, the method learns a label-free node representation from attributes and graph connectivity, providing geometry for regional partitioning without using noisy labels. Second, recursive 2-means splitting partitions the frozen representation into a bounded set of disjoint granular balls. Third, GB-LCSS computes one label histogram per ball and subtracts each training node's own vote to construct its local consensus. Agreement among the remaining labels determines how much weight this consensus receives relative to the node's observed label. Finally, these node-specific targets train an MLP, and only this MLP is retained for graph-free inference.
+
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=\linewidth]{figures/fig1_method_overview.png}
+\caption{Overview of GB-LCSS. Stage 1 learns a label-free representation, and Stage 2 constructs granular balls in that representation space. Stage 3 enlarges a representative ball to show how a leave-one-out local-consensus target is formed. Stage 4 trains the deployed MLP with the resulting soft targets. Hollow nodes do not vote. Ball outlines are schematic, and each node belongs to exactly one ball. Graph structure and the learned representation are used only during training, whereas the classifier receives only node attributes at inference.}\label{fig:1}
+\end{figure}
+
+\subsection{Label-agnostic granular-ball construction}\label{sec:3.3}
+
+\subsubsection{Graph contrastive representation}\label{sec:3.3.1}
+
+To construct local regions that reflect node attributes and graph connectivity without using noisy labels, we instantiate the representation-learning component with GRACE \cite{ref16}. The component forms two stochastic graph views through edge dropping and feature masking, then aligns the representations of the same node across views. Pretraining uses \(X\) and \(A\) but no node labels. After pretraining, we use the encoder output before the GRACE projection head as the representation
+
+\begin{equation}\label{eq:2}
+H = g_{\psi}(X,A) \in \mathbb{R}^{N \times d_{h}},
+\end{equation}
+
+which we store in node order after freezing \(\psi\). Before constructing the balls, each node representation is L2-normalized with \(\varepsilon = 10^{- 12}\) as a numerical safeguard:
+
+\begin{equation}\label{eq:3}
+{\bar{h}}_{v} = \frac{h_{v}}{\max(\left\| h_{v} \right\|_{2},\varepsilon)}.
+\end{equation}
+
+The normalized representation matrix is denoted by \(\bar{H} = \lbrack{\bar{h}}_{1},\ldots,{\bar{h}}_{N}\rbrack^{\top}\). Throughout the main experiments, the frozen GRACE representation defines the label-free geometry used for granular-ball construction. The partition is determined entirely by this geometry. Training labels are introduced only afterward to construct local-consensus targets. Appendix D.3 examines alternative representation sources and variation across GRACE pretraining seeds.
+
+\subsubsection{Granular-ball construction}\label{sec:3.3.2}
+
+The partitioning stage converts the frozen representation into a bounded set of compact, disjoint regions. Starting from one ball containing all nodes, GB-LCSS considers the most dispersed current regions first and accepts a split only when it sufficiently reduces within-region dispersion. The granular-ball set is initialized as \(\mathcal{B} = \{\mathcal{V}\}\). For a ball \(B \subseteq \mathcal{V}\), its center and mean distance to the center are defined as
+
+\begin{equation}\label{eq:4}
+\mu_{B} = \frac{1}{|B|}\sum_{v \in B}{\bar{h}}_{v},\quad\quad D(B) = \frac{1}{|B|}\sum_{v \in B}\left\| {\bar{h}}_{v} - \mu_{B} \right\|_{2}.
+\end{equation}
+
+Each granular ball is represented by its member set and center, while \(D(B)\) is its mean radial dispersion for evaluating candidate splits. A smaller \(D(B)\) indicates a more compact region in the representation space. At each iteration, we collect candidate balls satisfying \(|B| \geq 2n_{\min}\) and attempt 2-means splits in descending order of \(D(B)\). The finite split budget is therefore allocated first to geometrically diffuse regions. If a candidate ball \(B\) is partitioned into \(B^{(1)}\) and \(B^{(2)}\), the size-weighted dispersion after splitting is
+
+\begin{equation}\label{eq:5}
+D_{\mathrm{split}}(B) = \frac{|B^{(1)}|D(B^{(1)}) + |B^{(2)}|D(B^{(2)})}{|B|}.
+\end{equation}
+
+In each iteration, we accept the first candidate split for which both child balls contain at least \(n_{\min}\) nodes and
+
+\begin{equation}\label{eq:6}
+D_{\mathrm{split}}(B) \leq (1 - \delta)D(B).
+\end{equation}
+
+Here, \(n_{\min}\) is a positive integer and \(0 < \delta < 1\). Equation (6) requires the weighted dispersion to decrease by at least a fraction \(\delta\), while the child-size constraint prevents very small regions. After each accepted split, the candidates and their ordering are recomputed. Recursion stops when an iteration contains no valid split or the number of balls reaches the prescribed ball budget \(B_{\max}\), where \(B_{\max}\) is a positive integer. The final partition contains at most \(B_{\max}\) disjoint granular balls, covers all nodes, and assigns each node to exactly one ball. Section 4.4 gives the experimental parameters.
+
+\subsection{Granular-ball local-consensus soft supervision}\label{sec:3.4}
+
+\subsubsection{Leave-one-out consensus target}\label{sec:3.4.1}
+
+After the label-free partition has been fixed, GB-LCSS uses the observed labels of the training nodes within each ball to construct local supervision. One label histogram is computed per ball and reused across its training nodes. For each training node \(v\), the node-specific leave-one-out counts are obtained by subtracting \(v\)'s own vote.
+
+For a granular ball \(B_{j}\), let \(T_{j} = B_{j} \cap \mathcal{V}_{L}\) denote its training nodes. To prevent a node's observed label from contributing to the local evidence used to adjust that same label, GB-LCSS excludes the node from the within-ball vote and defines the voting set for each \(v \in T_{j}\) as
+
+\begin{equation}\label{eq:7}
+T_{j, - v} = T_{j}\backslash\{ v\}.
+\end{equation}
+
+When \(|T_{j, - v}| \geq s_{\min}\), the noisy labels of the other training nodes in the ball define the empirical label distribution
+
+\begin{equation}\label{eq:8}
+p_{j, - v,c} = \frac{1}{|T_{j, - v}|}\sum_{u \in T_{j, - v}}\mathbb{I}({\widetilde{y}}_{u} = c),\quad\quad c = 1,\ldots,C.
+\end{equation}
+
+Let
+
+\begin{equation}\label{eq:9}
+M_{j, - v} = \{ c:p_{j, - v,c} = r_{j, - v}\},\quad\quad r_{j, - v} = \max_{c}p_{j, - v,c}.
+\end{equation}
+
+\(M_{j, - v}\) is the set of classes tied for the largest number of votes after node \(v\) has been removed. Ties are determined directly from integer vote counts. If the most-voted class is unique, denote it by \(m_{j, - v}\) and mix its one-hot vector with the empirical distribution. If multiple classes are tied, retain the empirical distribution:
+
+\begin{equation}\label{eq:10}
+q_{j, - v} = \begin{cases}
+(1 - \beta)p_{j, - v} + \beta e_{m_{j, - v}}, & |M_{j, - v}| = 1, \\
+p_{j, - v}, & |M_{j, - v}| > 1.
+\end{cases}
+\end{equation}
+
+Here, \(e_{c}\) is the one-hot vector for class \(c\), and \(\beta \in \lbrack 0,1\rbrack\) controls the mixture of the empirical distribution and the one-hot vector of the most-voted class. Under a tie, no class is selected by its index. Because a different node is removed each time, nodes in the same granular ball may have different \(p_{j, - v}\) and \(q_{j, - v}\).
+
+\subsubsection{Normalized consensus weight and node target}\label{sec:3.4.2}
+
+The weight controls how strongly local consensus changes the observed label. We assign more weight to the consensus when a larger proportion of the remaining labels agree on one class. We therefore normalize the largest vote proportion against the uniform class probability \(1/C\):
+
+\begin{equation}\label{eq:11}
+\alpha_{j, - v} = \max\left( 0,\frac{r_{j, - v} - 1/C}{1 - 1/C} \right).
+\end{equation}
+
+\(\alpha_{j, - v}\) measures the concentration of the leave-one-out label distribution relative to a uniform distribution, whereas the positive integer \(s_{\min}\) specifies the minimum number of leave-one-out votes required to use local consensus. The two quantities therefore describe distributional concentration and effective vote count, respectively. For \(v \in T_{j}\), the final training target is
+
+\begin{equation}\label{eq:12}
+t_{v} = \begin{cases}
+(1 - \alpha_{j, - v})e_{{\widetilde{y}}_{v}} + \alpha_{j, - v}q_{j, - v}, & |T_{j, - v}| \geq s_{\min}, \\
+e_{{\widetilde{y}}_{v}}, & |T_{j, - v}| < s_{\min}.
+\end{cases}
+\end{equation}
+
+When the leave-one-out vote is close to uniform, \(\alpha_{j, - v}\) is small and the target remains close to the node's observed label. As the label distribution becomes more concentrated, the supervision shifts toward the local consensus \(q_{j, - v}\). The second branch retains the observed label when too few votes remain. If at least \(s_{\min}\) votes remain and all agree, the target becomes the one-hot label of their shared class.
+
+Equations (7)--(12) use only the observed labels of training nodes; validation and test labels do not enter target construction or the training loss.
+
+\subsubsection{Graph-free MLP training}\label{sec:3.4.3}
+
+The student \(f_{\theta}\) is a two-layer MLP. Its hidden linear layer is followed by ReLU, batch normalization, and dropout, and its output layer produces the class logits. Its predictive distribution is given by Eq. (1), and it minimizes the soft cross-entropy over the training nodes:
+
+\begin{equation}\label{eq:13}
+\mathcal{L}_{\mathrm{LCSS}} = - \frac{1}{|\mathcal{V}_{L}|}\sum_{v \in \mathcal{V}_{L}}{\sum_{c = 1}^{C}t_{vc}}\log p_{\theta}(c \mid x_{v}).
+\end{equation}
+
+\begin{algorithm}[htbp]
+\caption{Recursive granular-ball partitioning in the frozen representation space}
+\label{alg:1}
+\KwIn{Normalized frozen representation $\bar H$, node set $\mathcal V$, parameters $B_{\max},n_{\min},\delta$}
+\KwOut{Set of disjoint granular balls $\mathcal B$}
+$\mathcal B\gets\{\mathcal V\}$\;
+\While{$|\mathcal B|<B_{\max}$}{
+  $\mathcal B_{\mathrm{cand}}\gets\{B\in\mathcal B:|B|\ge 2n_{\min}\}$, sorted by $D(B)$ in descending order\;
+  $\mathrm{accepted}\gets\mathrm{false}$\;
+  \ForEach{$B\in\mathcal B_{\mathrm{cand}}$}{
+    Partition $B$ into $B^{(1)}$ and $B^{(2)}$ using 2-means\;
+    \If{$\min(|B^{(1)}|,|B^{(2)}|)\ge n_{\min}$ and $D_{\mathrm{split}}(B)\le(1-\delta)D(B)$}{
+      $\mathcal B\gets(\mathcal B\setminus\{B\})\cup\{B^{(1)},B^{(2)}\}$\;
+      $\mathrm{accepted}\gets\mathrm{true}$\;
+      \KwBreak\;
+    }
+  }
+  \If{$\mathrm{accepted}=\mathrm{false}$}{\KwBreak\;}
+}
+\KwRet $\mathcal B$\;
+\end{algorithm}
+
+\begin{algorithm}[htbp]
+\caption{Leave-one-out granular-ball soft-target construction}
+\label{alg:2}
+\KwIn{Granular-ball set $\mathcal B$, noisy labels $\{\tilde y_v\mid v\in\mathcal V_L\}$, number of classes $C$, parameters $s_{\min},\beta$}
+\KwOut{Soft targets for training nodes $\{t_v\mid v\in\mathcal V_L\}$}
+Initialize $t_v\gets e_{\tilde y_v}$ for every $v\in\mathcal V_L$\;
+\ForEach{$B_j\in\mathcal B$}{
+  $T_j\gets B_j\cap\mathcal V_L$\;
+  $n_j\gets\sum_{u\in T_j}e_{\tilde y_u}$\;
+  \ForEach{$v\in T_j$}{
+    $n_{j,-v}\gets n_j-e_{\tilde y_v}$\;
+    \If{$\sum_c n_{j,-v,c}<s_{\min}$}{continue\;}
+    $p_{j,-v}\gets n_{j,-v}/\sum_c n_{j,-v,c}$\;
+    $r_{j,-v}\gets\max_c p_{j,-v,c}$\;
+    $M_{j,-v}\gets\{c:p_{j,-v,c}=r_{j,-v}\}$\;
+    \eIf{$|M_{j,-v}|=1$}{
+      $q_{j,-v}\gets(1-\beta)p_{j,-v}+\beta e_m$, where $m\in M_{j,-v}$\;
+    }{
+      $q_{j,-v}\gets p_{j,-v}$\;
+    }
+    $\alpha_{j,-v}\gets\max\!\left(0,\frac{r_{j,-v}-1/C}{1-1/C}\right)$\;
+    $t_v\gets(1-\alpha_{j,-v})e_{\tilde y_v}+\alpha_{j,-v}q_{j,-v}$\;
+  }
+}
+\KwRet $\{t_v\mid v\in\mathcal V_L\}$\;
+\end{algorithm}
+
+\subsection{Consensus-teacher distillation extension}\label{sec:3.5}
+
+Basic GB-LCSS provides direct consensus targets only for training nodes. To extend this supervision across the complete graph, the distillation variant trains a graph teacher on the same targets and then trains the MLP student to match the teacher's node-wise predictions for all nodes. The teacher therefore serves as a graph-based intermediary during training, while the deployed model remains the same MLP.
+
+The teacher is trained directly with the GB-LCSS targets defined in Section 3.4. For each training node \(v \in T_{j}\), target construction follows the same leave-one-out vote and low-support fallback as basic GB-LCSS. The teacher target is
+
+\begin{equation}\label{eq:14}
+t_{v}^{T} = t_{v},v \in \mathcal{V}_{L}.
+\end{equation}
+
+Here, \(t_{v}\) is defined in Eq. (12). In the extension, this target supervises a graph-structured teacher. The teacher \(g_{\phi}\) is a two-layer GCN that takes the original node attributes \(X\) and adjacency matrix \(A\) as input:
+
+\begin{equation}\label{eq:15}
+Z^{T} = g_{\phi}(X,A).
+\end{equation}
+
+The frozen representation \(\bar{H}\) determines the granular balls and their consensus targets but is not used as a teacher input. The teacher minimizes the following objective over training nodes:
+
+\begin{equation}\label{eq:16}
+\mathcal{L}_{T} = - \frac{1}{|\mathcal{V}_{L}|}\sum_{v \in \mathcal{V}_{L}}{\sum_{c = 1}^{C}t_{vc}^{T}}\log\operatorname{softmax}\left( Z_{v}^{T} \right)_{c}.
+\end{equation}
+
+After selecting a teacher checkpoint, we freeze \(g_{\phi}\) and compute temperature-scaled soft predictions for all nodes, where \(\tau > 0\) is the distillation temperature:
+
+\begin{equation}\label{eq:17}
+\pi_{v} = \operatorname{softmax}\left( \frac{Z_{v}^{T}}{\tau} \right).
+\end{equation}
+
+The MLP student then fits these predictions on all \(N\) nodes:
+
+\begin{equation}\label{eq:18}
+\mathcal{L}_{\mathrm{KD}} = - \frac{\tau^{2}}{N}\sum_{v \in \mathcal{V}}{\sum_{c = 1}^{C}\pi_{vc}}\log\operatorname{softmax}\left( \frac{f_{\theta}(x_{v})}{\tau} \right)_{c}.
+\end{equation}
+
+The basic method applies local-consensus targets only to \(\mathcal{V}_{L}\), whereas Eq. (18) fits teacher predictions on every node. The student loss consists solely of cross-entropy against the teacher's soft predictions. After training, only the student MLP is retained; the teacher, adjacency matrix, and frozen representation are not used for inference.
+
+\subsection{Computational complexity and inference resources}\label{sec:3.6}
+
+Before training the MLP, basic GB-LCSS performs graph contrastive pretraining followed by granular-ball construction and soft-target generation. The frozen representation requires \(O(Nd_{h})\) storage and can be reused across noise settings and downstream seeds on the same dataset. Because the cost of GRACE depends on the encoder configuration and pretraining schedule, Section 5.5 reports its measured runtime and peak GPU memory; the analysis below focuses on post-pretraining ball construction and target generation.
+
+On the frozen representation, running 2-means for \(I\) iterations on a node subset \(S\) costs \(O(I|S|d_{h})\). Candidate balls processed within the same iteration are disjoint, so their total number of nodes is at most \(N\). Because at most \(B_{\max} - 1\) splits can be accepted, a conservative upper bound for granular-ball construction is
+
+\begin{equation}\label{eq:19}
+O(IB_{\max}Nd_{h}).
+\end{equation}
+
+For fixed \(I\) and \(B_{\max}\), Eq. (19) is linear in the number of nodes \(N\) and the representation dimension \(d_{h}\). During construction, the frozen representation requires \(O(Nd_{h})\) space, while node assignments, ball centers, and class histograms add \(O(N + B_{\max}(d_{h} + C))\). Once the ball-level histograms are available, all training targets can be generated in \(O(|\mathcal{V}_{L}|C)\) time by subtracting each node's vote from its ball histogram. The current implementation stores the targets in an \(N \times C\) matrix, adding \(O(NC)\) space.
+
+After target construction, student optimization is the same as for the standard two-layer MLP. Let \(F\) denote the hidden width. With full-batch training, each epoch evaluates the MLP for all \(N\) nodes and applies the loss on the training-node mask; over \(T_{S}\) epochs, this costs \(O(T_{S}N(dF + FC))\). The per-node inference cost is
+
+\begin{equation}\label{eq:20}
+O(dF + FC),
+\end{equation}
+
+At deployment, only the student parameters, of order \(O(dF + FC)\), are retained. The adjacency matrix, frozen GRACE representation, and granular-ball partition are not required, so the per-node inference cost in Eq. (20) is independent of the number of edges \(|\mathcal{E}|\). The distillation extension adds the training cost of a two-layer GCN teacher, which is also removed after training. Section 5.5 further reports measured GRACE pretraining time and memory together with grouping-construction time and storage.
+
+\Needspace{397pt}
+
+\FloatBarrier
+
+\section{Experimental setup}\label{sec:4}
+
+\Needspace{397pt}
+
+\subsection{Datasets and evaluation scope}\label{sec:4.1}
+
+Cora, CiteSeer, CoraFull, Coauthor-CS, and Amazon-Photo were evaluated under the full noise spectrum: uniform 0.2/0.4/0.6, pair 0.4, and instance-dependent 0.4. Six additional datasets were evaluated under uniform 0.4, and Appendix H reports the supplementary results.
+
+Cora and CiteSeer were taken from the standard citation-network benchmarks \cite{ref38}, and the remaining datasets are public benchmarks commonly used in graph learning \cite{ref39}. Table 1 summarizes the five full-spectrum datasets. For reporting Table 1, self-loops were removed and reciprocal directed entries were counted as one undirected edge. Edge homophily is the proportion of these undirected edges whose endpoints share the same class and is reported only as a graph characteristic.
+
+\Needspace{247pt}
+\begingroup
+\fontsize{9}{11}\selectfont
+\setlength{\tabcolsep}{3pt}
+\renewcommand{\arraystretch}{1.18}
+\setlength{\TableWidth}{\dimexpr\linewidth-12\tabcolsep\relax}
+\begin{longtable}{@{}>{\raggedright\arraybackslash}p{\dimexpr 0.190000\TableWidth\relax}>{\centering\arraybackslash}p{\dimexpr 0.120000\TableWidth\relax}>{\centering\arraybackslash}p{\dimexpr 0.150000\TableWidth\relax}>{\centering\arraybackslash}p{\dimexpr 0.120000\TableWidth\relax}>{\centering\arraybackslash}p{\dimexpr 0.100000\TableWidth\relax}>{\centering\arraybackslash}p{\dimexpr 0.150000\TableWidth\relax}>{\centering\arraybackslash}p{\dimexpr 0.170000\TableWidth\relax}@{}}
+\caption{Dataset statistics. Edges are unique undirected pairs after self-loop removal, and the number of training nodes is based on the 20\% split.}\label{tab:1}\\
+\toprule
+\textbf{Dataset} & \textbf{Nodes} & \textbf{Undirected edges} & \textbf{Features} & \textbf{Classes} & \textbf{Training nodes} & \textbf{Edge homophily} \\
+\midrule\endfirsthead
+\multicolumn{7}{l}{\small\itshape Table \thetable{} (continued)}\\
+\toprule
+\textbf{Dataset} & \textbf{Nodes} & \textbf{Undirected edges} & \textbf{Features} & \textbf{Classes} & \textbf{Training nodes} & \textbf{Edge homophily} \\
+\midrule\endhead
+\midrule\multicolumn{7}{r}{\small\itshape Continued on the next page}\\\endfoot
+\bottomrule\endlastfoot
+Cora & 2,708 & 5,278 & 1,433 & 7 & 541 & 0.810 \\
+CiteSeer & 3,327 & 4,552 & 3,703 & 6 & 665 & 0.736 \\
+CoraFull & 19,793 & 63,421 & 8,710 & 70 & 3,958 & 0.567 \\
+Coauthor-CS & 18,333 & 81,894 & 6,805 & 15 & 3,666 & 0.808 \\
+Amazon-Photo & 7,650 & 119,081 & 745 & 8 & 1,530 & 0.827 \\
+\end{longtable}
+\endgroup
+
+\subsection{Data splits and label noise}\label{sec:4.2}
+
+We used a transductive node-classification protocol on a fixed graph. The node attributes and adjacency of the complete graph were available during training, so the attributes and topology of test nodes provided unlabeled context for GRACE pretraining and granular-ball partitioning. For seeds 0--4, nodes were randomly sampled without class stratification using the NoisyGL percentage-split routine, with target sizes \(\lfloor 0.2N\rfloor\), \(\lfloor 0.1N\rfloor\), and \(\lfloor 0.7N\rfloor\) for training, validation, and testing, respectively. All methods shared the same split for a given dataset and seed. Under the default protocol, noise was injected only into training labels. Clean validation labels were used for checkpoint selection, and test labels were used only for final evaluation. Test-node classification accuracy was the primary evaluation metric. Appendix C additionally examines checkpoint selection when validation labels are corrupted.
+
+Uniform noise satisfies \(P_{ii} = 1 - \rho\) and \(P_{ij} = \rho/(C - 1)\), with \(\rho \in \{ 0.2,0.4,0.6\}\). Pair noise uses \(\rho = 0.4\) and flips class \(i\) to \(((i - 2)\bmod C) + 1\) with probability \(\rho\), leaving it unchanged with probability \(1 - \rho\). Instance-dependent noise was generated with the NoisyGL routine at a configured mean flip rate of 0.4 and \(\text{norm\_std} = 0.1\). For each dataset and seed, all methods shared the same noisy training-label realization.
+
+\subsection{Compared methods and comparison groups}\label{sec:4.3}
+
+The first group consists of noisy-label methods implemented under a common two-layer MLP backbone: MLP+CE, Small-loss, Co-teaching, JoCoR, SCE, ELR, LogitClip, and GB-LCSS. All methods use the same labeled training nodes and receive only node attributes at inference. Small-loss ranks samples by per-sample cross-entropy and retains the small-loss subset according to the forget-rate schedule. GB-LCSS uses training-time graph information to construct supervision under our problem setting. Co-teaching and JoCoR retain two independently initialized two-layer MLPs during training; evaluation uses one network without ensembling their predictions.
+
+The second group comprises structure-assisted methods evaluated under the graph-free inference protocol of this study: PosteL, ALS, SALS \cite{ref60,ref61,ref62}, Graph-MLP \cite{ref4}, and GSDN \cite{ref14}. These methods may use graph information during training but use only node attributes at inference. PosteL integrates its official posterior-target construction path with iterative pseudo-labeling disabled; the remaining methods retain their published core objectives or mechanisms under our data splits, noise realizations, and common MLP student. Appendix G reports the implementation provenance, protocol alignment, and method-specific parameters.
+
+The graph-teacher extension compares graph-to-MLP knowledge-transfer routes under a common teacher--student protocol. The basic response-distillation baseline follows the GNN-to-MLP framework of GLNN \cite{ref3}. We additionally compare FF-G2M, KRD, VQGraph, and the granular-ball consensus teacher \cite{ref6,ref7,ref26}. FF-G2M is reimplemented with common teacher and student backbones while retaining its low- and high-frequency distillation objectives; KRD and VQGraph retain their reliable-knowledge selection and soft-codebook mechanisms. Both teacher and student are retrained for every seed, and the final student uses only node attributes.
+
+\subsection{Implementation details}\label{sec:4.4}
+
+All datasets were loaded through PyTorch Geometric using the NoisyGL data interface. GRACE pretraining used row-normalized node attributes. Downstream models used the node attributes supplied by NoisyGL. Graph-convolutional models additionally used its adjacency matrix, with normalization and self-loops handled within the graph-convolution layers.
+
+All basic methods used the same two-layer MLP backbone with a hidden width of 64 and a dropout rate of 0.5. Dual-network methods used two independently initialized copies of this backbone. Models in this comparison group were trained for 200 epochs with Adam, a learning rate of 0.01, and weight decay of \(5 \times 10^{- 4}\). The checkpoint with the highest validation accuracy was retained, and no patience-based early stopping was used. The same validation-accuracy criterion was used for teacher checkpoint selection. Small-loss, Co-teaching, and JoCoR set their forget-rate schedules from the known synthetic noise rate; the other basic methods did not use this information.
+
+GB-LCSS used \(B_{\max} = 64\), \(n_{\min} = 32\), \(\delta = 0.05\), \(s_{\min} = 2\), and \(\beta = 0.5\) in all experiments. The 2-means procedure used Euclidean distance and k-means++ initialization. The downstream seed also controlled the 2-means initialization, and each candidate split used 10 initializations. GRACE used label-free, dataset-level configurations, and its encoder was frozen after pretraining. The distillation temperature was \(\tau = 1\). Appendix G gives the complete parameters and their sources.
+
+\subsection{Statistical analysis}\label{sec:4.5}
+
+We report the mean test accuracy and sample standard deviation over five paired seeds. The main experiments used one pretrained representation \(H\) for each dataset. The five paired runs varied the data split, noise realization, downstream initialization, and, for GB-based methods, the 2-means initialization. Appendix D.3 provides a diagnostic across GRACE pretraining seeds. For each dataset and noise setting, we used a two-sided paired \(t\)-test, implemented as a one-sample \(t\)-test on the five same-seed accuracy differences, and computed 95\% confidence intervals from a \(t\) distribution with four degrees of freedom. Holm correction was applied separately to three families of 25 comparisons: GB-LCSS versus random size-matched grouping, MLP+CE, and JoCoR. These families represent the grouping mechanism control, the standard MLP baseline, and a strong noisy-label baseline, respectively. These tests quantify the stability of paired differences across the five downstream seeds. Appendix B reports the complete paired results.
+
+\Needspace{418pt}
+
+\FloatBarrier
+
+\section{Results and analysis}\label{sec:5}
+
+\Needspace{403pt}
+
+\subsection{Comparison with noise-robust methods using the same deployed MLP architecture}\label{sec:5.1}
+
+Table 2 compares GB-LCSS with seven noisy-label baselines under a common two-layer deployed MLP. All methods use the same labeled training nodes and receive only node attributes at inference. Values are test accuracy (\%; mean \ensuremath{\pm} sample standard deviation over five paired seeds), with the highest mean in each column shown in bold. Section 4.3 and Appendix G describe the comparison groups and implementation provenance.
+
+\Needspace{313pt}
+\begingroup
+\fontsize{9}{11}\selectfont
+\setlength{\tabcolsep}{3pt}
+\renewcommand{\arraystretch}{1.18}
+\setlength{\TableWidth}{\dimexpr\linewidth-10\tabcolsep\relax}
+\begin{longtable}{@{}>{\raggedright\arraybackslash}p{\dimexpr 0.280000\TableWidth\relax}>{\centering\arraybackslash}p{\dimexpr 0.144000\TableWidth\relax}>{\centering\arraybackslash}p{\dimexpr 0.144000\TableWidth\relax}>{\centering\arraybackslash}p{\dimexpr 0.144000\TableWidth\relax}>{\centering\arraybackslash}p{\dimexpr 0.144000\TableWidth\relax}>{\centering\arraybackslash}p{\dimexpr 0.144000\TableWidth\relax}@{}}
+\caption{Test accuracy under uniform 0.4 label noise for methods sharing the same deployed MLP and graph-free inference protocol.}\label{tab:2}\\
+\toprule
+\textbf{Method} & \textbf{Cora} & \textbf{CiteSeer} & \textbf{CoraFull} & \textbf{Coauthor-CS} & \textbf{Amazon-Photo} \\
+\midrule\endfirsthead
+\multicolumn{6}{l}{\small\itshape Table \thetable{} (continued)}\\
+\toprule
+\textbf{Method} & \textbf{Cora} & \textbf{CiteSeer} & \textbf{CoraFull} & \textbf{Coauthor-CS} & \textbf{Amazon-Photo} \\
+\midrule\endhead
+\midrule\multicolumn{6}{r}{\small\itshape Continued on the next page}\\\endfoot
+\bottomrule\endlastfoot
+MLP+CE & 44.24\ensuremath{\pm}2.62 & 43.50\ensuremath{\pm}3.02 & 31.98\ensuremath{\pm}0.98 & 88.42\ensuremath{\pm}0.62 & 73.90\ensuremath{\pm}1.80 \\
+Small-loss & 51.95\ensuremath{\pm}1.97 & 49.70\ensuremath{\pm}3.07 & 33.04\ensuremath{\pm}0.50 & 89.06\ensuremath{\pm}0.88 & 77.25\ensuremath{\pm}1.62 \\
+Co-teaching & 46.83\ensuremath{\pm}1.78 & 46.24\ensuremath{\pm}2.89 & 34.39\ensuremath{\pm}0.24 & 88.80\ensuremath{\pm}0.97 & 78.21\ensuremath{\pm}1.00 \\
+JoCoR & 51.72\ensuremath{\pm}1.30 & 49.91\ensuremath{\pm}3.37 & 35.70\ensuremath{\pm}0.32 & 89.38\ensuremath{\pm}0.61 & 79.57\ensuremath{\pm}0.53 \\
+SCE & 43.60\ensuremath{\pm}1.86 & 42.09\ensuremath{\pm}3.47 & 29.29\ensuremath{\pm}0.45 & 88.37\ensuremath{\pm}0.53 & 76.08\ensuremath{\pm}3.11 \\
+ELR & 44.28\ensuremath{\pm}1.38 & 43.17\ensuremath{\pm}3.95 & 32.14\ensuremath{\pm}0.67 & 88.29\ensuremath{\pm}0.73 & 73.93\ensuremath{\pm}2.12 \\
+LogitClip & 47.50\ensuremath{\pm}1.50 & 46.57\ensuremath{\pm}3.52 & 34.69\ensuremath{\pm}1.17 & 88.40\ensuremath{\pm}0.21 & 74.98\ensuremath{\pm}2.38 \\
+GB-LCSS & \textbf{57.49\ensuremath{\pm}0.76} & \textbf{55.24\ensuremath{\pm}2.04} & \textbf{37.39\ensuremath{\pm}0.51} & \textbf{90.71\ensuremath{\pm}0.59} & \textbf{82.12\ensuremath{\pm}1.08} \\
+\end{longtable}
+\endgroup
+
+Under uniform 0.4 noise, GB-LCSS attains the highest mean accuracy on all five datasets, exceeding the strongest baseline on each dataset by 1.33--5.54 percentage points.
+
+Across the full noise spectrum, GB-LCSS achieves the highest or tied-highest mean among the seven baselines in 24 of 25 settings. Its mean gains over MLP+CE and JoCoR are 7.74 and 3.46 percentage points, respectively. The only exception is Coauthor-CS under uniform 0.2 noise, where GB-LCSS trails the strongest baseline by 0.27 points (Fig. 2; Appendices A and B provide the full results and paired tests).
+
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=\linewidth]{figures/fig2_accuracy_gain_heatmap.png}
+\caption{Accuracy gain of GB-LCSS over the strongest noise-robust baseline with the same deployment architecture. Each cell is the five-seed mean accuracy of GB-LCSS minus the highest mean among the seven baselines under the same dataset and noise setting, in percentage points. Blue and red denote positive and negative gains, respectively.}\label{fig:2}
+\end{figure}
+
+Figure 3 complements these relative gains with absolute accuracy trajectories under increasing uniform noise. GB-LCSS leads the three comparison methods in 14 of the 15 dataset--noise combinations. As \(\rho\) increases from 0.2 to 0.6, its accuracy declines less than those of MLP+CE and JoCoR on four of the five datasets, with CiteSeer as the exception. Thus, the advantage is not confined to one noise rate and is accompanied by slower degradation on most datasets.
+
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=\linewidth]{figures/fig3_uniform_noise_robustness.png}
+\caption{Test accuracy under uniform label noise. Solid lines show the means over five paired seeds, and shaded regions show sample standard deviations; the vertical scale is set independently in each panel. Random size-matched grouping randomizes node membership while preserving the number and size distribution of granular balls.}\label{fig:3}
+\end{figure}
+
+On the six supplementary datasets, GB-LCSS has a higher five-seed mean than the strongest same-architecture baseline on three datasets and than random size-matched grouping on all six. Appendix H gives the complete results.
+
+\Needspace{344pt}
+
+\subsection{Structure-assisted methods for graph-free inference}\label{sec:5.2}
+
+Table 3 compares alternative ways of using graph structure during training while retaining node-attribute-only inference. Values are test accuracy (\%; mean \ensuremath{\pm} sample standard deviation over five seeds), with the highest mean in each column shown in bold. Section 4.3 and Appendix G describe the comparison protocol and implementation provenance.
+
+\Needspace{269pt}
+\begingroup
+\fontsize{9}{11}\selectfont
+\setlength{\tabcolsep}{3pt}
+\renewcommand{\arraystretch}{1.18}
+\setlength{\TableWidth}{\dimexpr\linewidth-12\tabcolsep\relax}
+\begin{longtable}{@{}>{\raggedright\arraybackslash}p{\dimexpr 0.150000\TableWidth\relax}>{\raggedright\arraybackslash}p{\dimexpr 0.240000\TableWidth\relax}>{\centering\arraybackslash}p{\dimexpr 0.122000\TableWidth\relax}>{\centering\arraybackslash}p{\dimexpr 0.122000\TableWidth\relax}>{\centering\arraybackslash}p{\dimexpr 0.122000\TableWidth\relax}>{\centering\arraybackslash}p{\dimexpr 0.122000\TableWidth\relax}>{\centering\arraybackslash}p{\dimexpr 0.122000\TableWidth\relax}@{}}
+\caption{Test accuracy of structure-assisted methods with graph-free inference under uniform 0.4 label noise.}\label{tab:3}\\
+\toprule
+\textbf{Method} & \textbf{Graph information used in training} & \textbf{Cora} & \textbf{CiteSeer} & \textbf{CoraFull} & \textbf{Coauthor-CS} & \textbf{Amazon-Photo} \\
+\midrule\endfirsthead
+\multicolumn{7}{l}{\small\itshape Table \thetable{} (continued)}\\
+\toprule
+\textbf{Method} & \textbf{Graph information used in training} & \textbf{Cora} & \textbf{CiteSeer} & \textbf{CoraFull} & \textbf{Coauthor-CS} & \textbf{Amazon-Photo} \\
+\midrule\endhead
+\midrule\multicolumn{7}{r}{\small\itshape Continued on the next page}\\\endfoot
+\bottomrule\endlastfoot
+PosteL & Structure-assisted soft labels & 47.09\ensuremath{\pm}1.81 & 45.84\ensuremath{\pm}2.48 & 36.51\ensuremath{\pm}1.01 & 84.74\ensuremath{\pm}1.51 & 80.59\ensuremath{\pm}0.94 \\
+ALS & Neighborhood label smoothing & 45.20\ensuremath{\pm}1.24 & 43.77\ensuremath{\pm}2.76 & 31.91\ensuremath{\pm}1.05 & 88.55\ensuremath{\pm}0.86 & 73.41\ensuremath{\pm}2.75 \\
+SALS & Structure-aware label smoothing & 48.27\ensuremath{\pm}2.50 & 47.20\ensuremath{\pm}1.69 & 37.06\ensuremath{\pm}0.78 & 88.85\ensuremath{\pm}0.82 & 77.86\ensuremath{\pm}0.79 \\
+Graph-MLP & Multi-hop structural supervision & \textbf{63.23\ensuremath{\pm}3.07} & \textbf{57.23\ensuremath{\pm}1.85} & 37.05\ensuremath{\pm}0.91 & 88.95\ensuremath{\pm}0.43 & 77.05\ensuremath{\pm}1.24 \\
+GSDN & Neighborhood self-distillation & 55.97\ensuremath{\pm}4.29 & 50.36\ensuremath{\pm}3.39 & 35.80\ensuremath{\pm}0.66 & 86.55\ensuremath{\pm}0.78 & 73.31\ensuremath{\pm}2.00 \\
+GB-LCSS & Frozen-representation granular-ball consensus & 57.49\ensuremath{\pm}0.76 & 55.24\ensuremath{\pm}2.04 & \textbf{37.39\ensuremath{\pm}0.51} & \textbf{90.71\ensuremath{\pm}0.59} & \textbf{82.12\ensuremath{\pm}1.08} \\
+\end{longtable}
+\endgroup
+
+Across the 25 settings evaluated under the common protocol, GB-LCSS exceeds PosteL, ALS, and SALS by 5.69, 7.71, and 4.69 percentage points in mean accuracy, respectively. The corresponding differences are positive in 24 of 25, all 25, and 24 of 25 settings. Appendix F reports the complete results.
+
+The comparison with Graph-MLP is dataset dependent. Graph-MLP leads by 5.74 and 1.99 percentage points on Cora and CiteSeer, whereas GB-LCSS leads by 0.34, 1.76, and 5.07 points on CoraFull, Coauthor-CS, and Amazon-Photo.
+
+\subsection{Ablation and mechanism analysis}\label{sec:5.3}
+
+\subsubsection{Role of the local-consensus target}\label{sec:5.3.1}
+
+The random size-matched and self-vote controls isolate the contributions of local membership and leave-one-out target construction. Replacing the true partition with random membership lowers accuracy in all 25 settings, by 8.69 percentage points on average. Removing the current node's vote adds a smaller but consistently positive refinement of 0.08--1.03 points when averaged over the five noise settings of each dataset. Under uniform 0.4, GB-LCSS also outperforms uniform smoothing and training-prior smoothing on every dataset; Appendix D provides the complete results.
+
+Figure 4 evaluates the probability error of the soft targets using the multiclass Brier score, with clean training labels as a post-hoc reference. For a target matrix \(Y^{\mathrm{tar}}\), we use
+
+\[
+\operatorname{BS}(Y^{\mathrm{tar}}) = \frac{1}{|\mathcal{V}_{L}|}\sum_{v \in \mathcal{V}_{L}}{\sum_{c = 1}^{C}\left( Y_{vc}^{\mathrm{tar}} - \mathbf{1}\lbrack y_{v} = c\rbrack \right)^{2}},
+\]
+
+where \(y_{v}\) is the clean label of training node \(v\). Across all 25 dataset--noise settings, the five-seed mean lies below the equality line. Relative to the original noisy one-hot targets, the GB-LCSS targets reduce the mean Brier score by 0.06--0.51, with the largest improvements on Coauthor-CS and Amazon-Photo.
+
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=\linewidth]{figures/fig4_soft_target_quality.png}
+\caption{Post-hoc quality diagnostic for the GB-LCSS soft targets. (a) The horizontal and vertical axes show the multiclass Brier scores of the original noisy one-hot targets and the GB-LCSS targets, respectively. Each marker is the five-seed mean for one dataset--noise setting; colors identify datasets, and circles, squares, and triangles denote uniform, pair, and instance-dependent noise. The dashed line denotes equality. (b) Each cell is the original-target score minus the soft-target score; positive values indicate lower squared probabilistic error for the soft targets.}\label{fig:4}
+\end{figure}
+
+\subsubsection{Role of the granular-ball partition}\label{sec:5.3.2}
+
+The kNN and k-means alternatives use the same leave-one-out target as the main method. For each seed, kNN matches its neighborhood size to the mean number of training votes per ball and excludes the query node. The number of k-means clusters matches the number of granular balls for that seed, and the current node is likewise removed from its cluster target. Relative to the better of the two alternatives, granular balls differ by \(+ 0.27\), \(- 0.94\), \(- 3.11\), \(- 0.29\), and \(- 0.11\) percentage points on the five full-spectrum datasets. Except on CoraFull, the gap among the three grouping implementations remains below one percentage point. Local-consensus supervision therefore does not depend on a unique grouping rule.
+
+We retain granular balls as the default regional interface in GB-LCSS because the budgeted recursive partition automatically determines a bounded set of disjoint regions and supports shared regional statistics. In the matched k-means control, by contrast, the cluster count is supplied by the number of granular balls produced for the same seed. kNN maintains overlapping and potentially asymmetric neighborhoods for individual training nodes and aggregates their labels separately.
+
+\subsection{Clean-label control}\label{sec:5.4}
+
+We also test whether GB-LCSS improves classification with clean training labels by setting \ensuremath{\rho}=0 and keeping the data splits and other training settings unchanged. The accuracy differences between GB-LCSS and MLP+CE on Cora, CiteSeer, CoraFull, Coauthor-CS, and Amazon-Photo are \(- 0.24\), \(+ 2.00\), \(- 0.38\), \(- 0.87\), and \(- 1.75\) percentage points, respectively. Except on CiteSeer, GB-LCSS does not improve accuracy with clean labels.
+
+This pattern indicates that the observed advantage of GB-LCSS over MLP+CE is concentrated in the noisy-label settings evaluated here.
+
+\subsection{Training-time representation and grouping costs}\label{sec:5.5}
+
+All timing and GPU-memory measurements were collected on the same workstation with an AMD Radeon RX 7700 XT, using Python 3.12.10 and PyTorch 2.9.1+rocm7.2.1. GB-LCSS and MLP+CE use the same student and therefore have the same parameter count, inference input, and forward complexity. The additional cost comes from GRACE representation learning and granular-ball construction before student training. To illustrate the one-time representation-learning cost, we report the recorded GRACE pretraining time and peak GPU memory for Cora, CiteSeer, and CoraFull. Pretraining times are averaged over three pretraining seeds, and memory values are the largest recorded peaks across the three runs. Pretraining takes 0.07, 0.13, and 74.48 minutes, and peak GPU memory usage is 0.40, 0.67, and 12.73 GiB, respectively. The frozen representation can be reused for every noise setting and downstream seed on the same dataset.
+
+Figure 5 quantifies the engineering trade-off among granular balls, exact kNN, and k-means. In the seed-0 implementation profile, granular balls have lower end-to-end construction time on three of the five datasets and require less grouping storage than exact kNN on CoraFull, Coauthor-CS, and Amazon-Photo. Together with the accuracy results in Section 5.3.2, these measurements motivate the granular-ball interface through its disjoint, reusable, fixed-budget regions; the alternative interfaces remain competitive and can be cheaper on individual datasets.
+
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=\linewidth]{figures/fig5_grouping_tradeoff.png}
+\caption{Accuracy and cost of granular-ball, exact-kNN, and k-means grouping. (a) End-to-end construction time. (b) Stored grouping structure. (c) Test-accuracy differences of exact kNN and k-means relative to granular balls; positive values favor the alternative, and the blue region denotes \(\pm 1\) percentage point. Time and storage are seed-0 measurements; accuracy is the five-seed mean under uniform 0.4 noise.}\label{fig:5}
+\end{figure}
+
+\subsection{Discussion}\label{sec:5.6}
+
+Across the full-spectrum and supplementary evaluations, geometry-derived grouping is more effective than random size-matched grouping. Gains over strong noisy-label classifiers and alternative grouping interfaces vary across datasets, and clean-label training shows no consistent additional benefit. These results support local-consensus soft-target construction for noisy-label learning, while showing that the choice of grouping interface remains dataset dependent.
+
+\FloatBarrier
+
+\section{Graph-teacher distillation extension}\label{sec:6}
+
+\subsection{From training-node targets to distillation over all nodes}\label{sec:6.1}
+
+Basic GB-LCSS directly supervises only the training nodes. The distillation extension broadens this coverage by training a GCN teacher on the same targets and using its predictions over all nodes to supervise the MLP student. The teacher is used only during training, so the deployed model remains the same attribute-only MLP.
+
+We evaluated the extension on Cora, CiteSeer, CoraFull, Coauthor-CS, and Amazon-Photo under uniform 0.4 and 0.6 to compare different forms of teacher supervision and knowledge transfer.
+
+\subsection{Comparison of graph-knowledge transfer routes}\label{sec:6.2}
+
+To compare different knowledge-transfer mechanisms, Table 4 evaluates the routes under the common teacher--student protocol defined in Section 4.3. FF-G2M transfers low-frequency neighborhood knowledge and high-frequency edge-difference knowledge; KRD selects reliable knowledge according to the teacher's stability under feature perturbations; and VQGraph represents local structure through a soft codebook \cite{ref6,ref7,ref26}. The granular-ball consensus route trains a GCN(X) teacher with the GB-LCSS target in Eq. (14). All routes use the same data splits and noise realizations, and each route independently trains its teacher and an identically configured two-layer MLP student for every seed.
+
+Values are test accuracy (\%; mean \ensuremath{\pm} standard deviation over five seeds), with the highest mean in each column shown in bold. All distillation routes use the same two-layer student, which reads only node attributes at inference. Appendix G reports the implementation provenance and protocol alignment of each route.
+
+\begin{table}[htbp]
+\centering
+\caption{Test accuracy of basic GB-LCSS and graph-to-MLP knowledge-transfer routes under a common teacher--student protocol and uniform label-noise rates of 0.4 and 0.6.}\label{tab:4}
+{\small\textbf{(a) Uniform 0.4}}\par\smallskip
+
+\begingroup
+\fontsize{9}{11}\selectfont
+\setlength{\tabcolsep}{3pt}
+\renewcommand{\arraystretch}{1.18}
+\setlength{\TableWidth}{\dimexpr\linewidth-10\tabcolsep\relax}
+\begin{tabular}{@{}>{\raggedright\arraybackslash}p{\dimexpr 0.300000\TableWidth\relax}>{\centering\arraybackslash}p{\dimexpr 0.140000\TableWidth\relax}>{\centering\arraybackslash}p{\dimexpr 0.140000\TableWidth\relax}>{\centering\arraybackslash}p{\dimexpr 0.140000\TableWidth\relax}>{\centering\arraybackslash}p{\dimexpr 0.140000\TableWidth\relax}>{\centering\arraybackslash}p{\dimexpr 0.140000\TableWidth\relax}@{}}
+\toprule
+\textbf{Training route} & \textbf{Cora} & \textbf{CiteSeer} & \textbf{CoraFull} & \textbf{Coauthor-CS} & \textbf{Amazon-Photo} \\
+\midrule
+Basic GB-LCSS (without distillation) & 57.49\ensuremath{\pm}0.76 & 55.24\ensuremath{\pm}2.04 & 37.39\ensuremath{\pm}0.51 & 90.71\ensuremath{\pm}0.59 & 82.12\ensuremath{\pm}1.08 \\
+GCN(X)+CE teacher & 77.95\ensuremath{\pm}2.62 & 66.09\ensuremath{\pm}1.38 & \textbf{58.74\ensuremath{\pm}0.82} & 93.20\ensuremath{\pm}0.09 & 89.86\ensuremath{\pm}0.77 \\
+FF-G2M & 77.65\ensuremath{\pm}2.97 & 65.80\ensuremath{\pm}0.49 & 56.58\ensuremath{\pm}0.93 & 91.58\ensuremath{\pm}0.24 & 84.82\ensuremath{\pm}0.84 \\
+KRD & 71.77\ensuremath{\pm}2.20 & 64.96\ensuremath{\pm}1.03 & 47.12\ensuremath{\pm}0.95 & 91.39\ensuremath{\pm}0.49 & 85.17\ensuremath{\pm}0.94 \\
+VQGraph & 78.89\ensuremath{\pm}2.34 & 65.64\ensuremath{\pm}1.72 & 58.52\ensuremath{\pm}0.77 & 93.25\ensuremath{\pm}0.09 & \textbf{90.54\ensuremath{\pm}0.85} \\
+Granular-ball consensus teacher & \textbf{81.35\ensuremath{\pm}1.05} & \textbf{69.27\ensuremath{\pm}1.57} & 57.29\ensuremath{\pm}0.24 & \textbf{93.83\ensuremath{\pm}0.21} & 90.40\ensuremath{\pm}0.77 \\
+\bottomrule
+\end{tabular}
+\endgroup
+
+\par\medskip{\small\textbf{(b) Uniform 0.6}}\par\smallskip
+
+\begingroup
+\fontsize{9}{11}\selectfont
+\setlength{\tabcolsep}{3pt}
+\renewcommand{\arraystretch}{1.18}
+\setlength{\TableWidth}{\dimexpr\linewidth-10\tabcolsep\relax}
+\begin{tabular}{@{}>{\raggedright\arraybackslash}p{\dimexpr 0.300000\TableWidth\relax}>{\centering\arraybackslash}p{\dimexpr 0.140000\TableWidth\relax}>{\centering\arraybackslash}p{\dimexpr 0.140000\TableWidth\relax}>{\centering\arraybackslash}p{\dimexpr 0.140000\TableWidth\relax}>{\centering\arraybackslash}p{\dimexpr 0.140000\TableWidth\relax}>{\centering\arraybackslash}p{\dimexpr 0.140000\TableWidth\relax}@{}}
+\toprule
+\textbf{Training route} & \textbf{Cora} & \textbf{CiteSeer} & \textbf{CoraFull} & \textbf{Coauthor-CS} & \textbf{Amazon-Photo} \\
+\midrule
+Basic GB-LCSS (without distillation) & 41.86\ensuremath{\pm}2.30 & 42.02\ensuremath{\pm}3.14 & 27.43\ensuremath{\pm}0.89 & 87.19\ensuremath{\pm}0.69 & 71.45\ensuremath{\pm}3.75 \\
+GCN(X)+CE teacher & 65.50\ensuremath{\pm}3.28 & 53.30\ensuremath{\pm}4.42 & 51.63\ensuremath{\pm}2.02 & 91.13\ensuremath{\pm}0.58 & 84.80\ensuremath{\pm}1.48 \\
+FF-G2M & 63.63\ensuremath{\pm}2.16 & 52.32\ensuremath{\pm}4.20 & 45.78\ensuremath{\pm}2.90 & 86.50\ensuremath{\pm}1.01 & 73.08\ensuremath{\pm}2.82 \\
+KRD & 61.28\ensuremath{\pm}1.17 & 54.17\ensuremath{\pm}3.14 & 41.61\ensuremath{\pm}2.43 & 89.80\ensuremath{\pm}0.29 & 80.30\ensuremath{\pm}0.51 \\
+VQGraph & 65.75\ensuremath{\pm}2.72 & 53.34\ensuremath{\pm}4.47 & 52.01\ensuremath{\pm}0.65 & 90.71\ensuremath{\pm}1.24 & 84.77\ensuremath{\pm}2.19 \\
+Granular-ball consensus teacher & \textbf{71.34\ensuremath{\pm}3.91} & \textbf{58.93\ensuremath{\pm}4.62} & \textbf{52.32\ensuremath{\pm}1.26} & \textbf{92.40\ensuremath{\pm}0.65} & \textbf{86.81\ensuremath{\pm}1.94} \\
+\bottomrule
+\end{tabular}
+\endgroup
+
+\end{table}
+
+Training the GCN with GB-LCSS targets yields higher mean student accuracy than training it with cross-entropy in nine of the ten settings. The distilled student also improves on basic GB-LCSS in all ten settings, by 3.12--23.86 percentage points under uniform 0.4 and 5.21--29.48 points under uniform 0.6, and achieves the highest mean among the six routes in Table 4 in eight settings. The two settings in which the consensus-teacher student does not achieve the highest mean both occur under uniform 0.4: it trails GCN(X)+CE by 1.45 points on CoraFull and VQGraph by 0.14 points on Amazon-Photo. The teacher is discarded after training, so every deployed student still reads only node attributes.
+
+\FloatBarrier
+
+\section{Conclusion}\label{sec:7}
+
+This study addresses transductive node classification with noisy training labels when graph structure is available during training but inference is limited to node attributes. GB-LCSS forms disjoint, label-agnostic regions in a graph contrastive representation and converts leave-one-out local consensus into node-specific targets for the deployed MLP. Across five datasets and five noise settings, it achieves the highest or tied-highest five-seed mean in 24 of 25 settings among seven noise-robust baselines using the same deployed MLP architecture. Averaged over these settings, GB-LCSS also has higher mean accuracy than PosteL, ALS, and SALS under the common protocol.
+
+Granular balls organize supervision into a bounded set of disjoint regions. Within each ball, a single label histogram is reused by subtracting each training node's own vote. Alternative neighborhood and clustering rules also support local consensus. As a secondary extension, a graph teacher trained on the same targets supplies predictions over all nodes and improves the MLP student's mean accuracy under the evaluated protocol without changing the deployment interface.
+
+The experiments use synthetic label noise, clean validation labels, and transductive evaluation on fixed graphs; target construction also depends on a pretrained and frozen graph representation. Future work should examine real annotation noise, model selection without clean validation labels, inductive inference for new nodes, and robustness across representation-pretraining runs.
+
+\FloatBarrier
+
+\section{Data and code availability}\label{sec:8}
+
+All graph datasets used in this study are public benchmarks. The anonymous supplementary materials submitted with the manuscript provide runnable code for GB-LCSS, the same-architecture baselines, random size-matched grouping, and the granular-ball consensus teacher, together with the configurations, frozen representations, seed-wise results, table snapshots, verification scripts, final figure files, and GRACE settings used in the reported experiments. For protocol-adapted comparison methods, the supplementary materials provide the configurations, implementation notes, and seed-wise results used in this study.
+
+\FloatBarrier
+\input{references}
+
+\clearpage
+\appendix
+\section*{Supplementary material}
+\addcontentsline{toc}{section}{Supplementary material}
+\renewcommand{\thetable}{\Alph{section}.\arabic{table}}
+\renewcommand{\theHtable}{\Alph{section}.\arabic{table}}
+
+
+\Needspace{395pt}
+
+\FloatBarrier
+\setcounter{table}{0}
+\section{Full noise spectrum for the principal comparisons}\label{sec:A}
+
+\Needspace{395pt}
+
+\subsection{Cora}\label{sec:A.1}
+
+\Needspace{335pt}
+\begingroup
+\fontsize{9}{11}\selectfont
+\setlength{\tabcolsep}{3pt}
+\renewcommand{\arraystretch}{1.18}
+\setlength{\TableWidth}{\dimexpr\linewidth-10\tabcolsep\relax}
+\begin{longtable}{@{}>{\raggedright\arraybackslash}p{\dimexpr 0.240000\TableWidth\relax}>{\centering\arraybackslash}p{\dimexpr 0.152000\TableWidth\relax}>{\centering\arraybackslash}p{\dimexpr 0.152000\TableWidth\relax}>{\centering\arraybackslash}p{\dimexpr 0.152000\TableWidth\relax}>{\centering\arraybackslash}p{\dimexpr 0.152000\TableWidth\relax}>{\centering\arraybackslash}p{\dimexpr 0.152000\TableWidth\relax}@{}}
+\caption{Full noise-spectrum results for the principal methods on Cora. Values are test accuracy (\%; mean \ensuremath{\pm} standard deviation over five seeds). Bold indicates the highest mean under each noise setting.}\label{tab:A.1}\\
+\toprule
+\textbf{Method} & \textbf{Uniform 0.2} & \textbf{Uniform 0.4} & \textbf{Uniform 0.6} & \textbf{Pair 0.4} & \textbf{Instance 0.4} \\
+\midrule\endfirsthead
+\multicolumn{6}{l}{\small\itshape Table \thetable{} (continued)}\\
+\toprule
+\textbf{Method} & \textbf{Uniform 0.2} & \textbf{Uniform 0.4} & \textbf{Uniform 0.6} & \textbf{Pair 0.4} & \textbf{Instance 0.4} \\
+\midrule\endhead
+\midrule\multicolumn{6}{r}{\small\itshape Continued on the next page}\\\endfoot
+\bottomrule\endlastfoot
+MLP+CE & 54.96\ensuremath{\pm}2.22 & 44.24\ensuremath{\pm}2.62 & 32.51\ensuremath{\pm}3.38 & 42.83\ensuremath{\pm}2.19 & 45.33\ensuremath{\pm}2.22 \\
+Small-loss & 59.84\ensuremath{\pm}1.29 & 51.95\ensuremath{\pm}1.97 & 36.72\ensuremath{\pm}1.09 & 46.99\ensuremath{\pm}2.77 & 51.82\ensuremath{\pm}0.94 \\
+Co-teaching & 58.62\ensuremath{\pm}1.97 & 46.83\ensuremath{\pm}1.78 & 33.29\ensuremath{\pm}3.48 & 44.26\ensuremath{\pm}2.30 & 47.35\ensuremath{\pm}2.24 \\
+JoCoR & 60.12\ensuremath{\pm}2.25 & 51.72\ensuremath{\pm}1.30 & 36.92\ensuremath{\pm}2.14 & 45.91\ensuremath{\pm}2.38 & 52.26\ensuremath{\pm}1.01 \\
+SCE & 53.57\ensuremath{\pm}2.17 & 43.60\ensuremath{\pm}1.86 & 32.66\ensuremath{\pm}3.78 & 41.40\ensuremath{\pm}2.04 & 43.29\ensuremath{\pm}4.35 \\
+ELR & 52.95\ensuremath{\pm}2.38 & 44.28\ensuremath{\pm}1.38 & 32.82\ensuremath{\pm}3.51 & 41.83\ensuremath{\pm}1.75 & 45.93\ensuremath{\pm}2.26 \\
+LogitClip & 58.63\ensuremath{\pm}1.35 & 47.50\ensuremath{\pm}1.50 & 34.44\ensuremath{\pm}2.67 & 44.90\ensuremath{\pm}1.21 & 48.09\ensuremath{\pm}1.73 \\
+Random size-matched grouping & 53.57\ensuremath{\pm}1.99 & 43.31\ensuremath{\pm}1.40 & 32.18\ensuremath{\pm}2.54 & 39.28\ensuremath{\pm}1.34 & 43.34\ensuremath{\pm}1.70 \\
+GB-LCSS & \textbf{63.25\ensuremath{\pm}2.46} & \textbf{57.49\ensuremath{\pm}0.76} & \textbf{41.86\ensuremath{\pm}2.30} & \textbf{51.45\ensuremath{\pm}2.80} & \textbf{56.84\ensuremath{\pm}1.67} \\
+\end{longtable}
+\endgroup
+
+\Needspace{395pt}
+
+\subsection{CiteSeer}\label{sec:A.2}
+
+\Needspace{335pt}
+\begingroup
+\fontsize{9}{11}\selectfont
+\setlength{\tabcolsep}{3pt}
+\renewcommand{\arraystretch}{1.18}
+\setlength{\TableWidth}{\dimexpr\linewidth-10\tabcolsep\relax}
+\begin{longtable}{@{}>{\raggedright\arraybackslash}p{\dimexpr 0.240000\TableWidth\relax}>{\centering\arraybackslash}p{\dimexpr 0.152000\TableWidth\relax}>{\centering\arraybackslash}p{\dimexpr 0.152000\TableWidth\relax}>{\centering\arraybackslash}p{\dimexpr 0.152000\TableWidth\relax}>{\centering\arraybackslash}p{\dimexpr 0.152000\TableWidth\relax}>{\centering\arraybackslash}p{\dimexpr 0.152000\TableWidth\relax}@{}}
+\caption{Full noise-spectrum results for the principal methods on CiteSeer. Values are test accuracy (\%; mean \ensuremath{\pm} standard deviation over five seeds). Bold indicates the highest mean under each noise setting.}\label{tab:A.2}\\
+\toprule
+\textbf{Method} & \textbf{Uniform 0.2} & \textbf{Uniform 0.4} & \textbf{Uniform 0.6} & \textbf{Pair 0.4} & \textbf{Instance 0.4} \\
+\midrule\endfirsthead
+\multicolumn{6}{l}{\small\itshape Table \thetable{} (continued)}\\
+\toprule
+\textbf{Method} & \textbf{Uniform 0.2} & \textbf{Uniform 0.4} & \textbf{Uniform 0.6} & \textbf{Pair 0.4} & \textbf{Instance 0.4} \\
+\midrule\endhead
+\midrule\multicolumn{6}{r}{\small\itshape Continued on the next page}\\\endfoot
+\bottomrule\endlastfoot
+MLP+CE & 55.10\ensuremath{\pm}1.17 & 43.50\ensuremath{\pm}3.02 & 33.35\ensuremath{\pm}1.36 & 45.15\ensuremath{\pm}1.67 & 44.33\ensuremath{\pm}2.04 \\
+Small-loss & 59.26\ensuremath{\pm}1.94 & 49.70\ensuremath{\pm}3.07 & 37.73\ensuremath{\pm}2.86 & 48.16\ensuremath{\pm}2.56 & 50.75\ensuremath{\pm}3.33 \\
+Co-teaching & 57.05\ensuremath{\pm}0.82 & 46.24\ensuremath{\pm}2.89 & 34.19\ensuremath{\pm}2.92 & 46.25\ensuremath{\pm}2.29 & 46.81\ensuremath{\pm}1.68 \\
+JoCoR & 59.36\ensuremath{\pm}1.43 & 49.91\ensuremath{\pm}3.37 & 39.07\ensuremath{\pm}2.47 & 48.63\ensuremath{\pm}2.35 & 50.86\ensuremath{\pm}2.45 \\
+SCE & 52.12\ensuremath{\pm}3.28 & 42.09\ensuremath{\pm}3.47 & 30.59\ensuremath{\pm}2.83 & 42.22\ensuremath{\pm}1.56 & 40.92\ensuremath{\pm}4.23 \\
+ELR & 53.62\ensuremath{\pm}1.48 & 43.17\ensuremath{\pm}3.95 & 30.80\ensuremath{\pm}2.70 & 42.69\ensuremath{\pm}2.43 & 41.94\ensuremath{\pm}3.27 \\
+LogitClip & 58.75\ensuremath{\pm}1.44 & 46.57\ensuremath{\pm}3.52 & 34.47\ensuremath{\pm}1.69 & 45.78\ensuremath{\pm}1.06 & 47.41\ensuremath{\pm}2.64 \\
+Random size-matched grouping & 55.13\ensuremath{\pm}1.85 & 42.08\ensuremath{\pm}2.88 & 30.36\ensuremath{\pm}1.88 & 43.92\ensuremath{\pm}1.67 & 43.07\ensuremath{\pm}2.00 \\
+GB-LCSS & \textbf{63.92\ensuremath{\pm}1.12} & \textbf{55.24\ensuremath{\pm}2.04} & \textbf{42.02\ensuremath{\pm}3.14} & \textbf{51.70\ensuremath{\pm}2.14} & \textbf{55.58\ensuremath{\pm}2.54} \\
+\end{longtable}
+\endgroup
+
+\Needspace{395pt}
+
+\subsection{CoraFull}\label{sec:A.3}
+
+\Needspace{335pt}
+\begingroup
+\fontsize{9}{11}\selectfont
+\setlength{\tabcolsep}{3pt}
+\renewcommand{\arraystretch}{1.18}
+\setlength{\TableWidth}{\dimexpr\linewidth-10\tabcolsep\relax}
+\begin{longtable}{@{}>{\raggedright\arraybackslash}p{\dimexpr 0.240000\TableWidth\relax}>{\centering\arraybackslash}p{\dimexpr 0.152000\TableWidth\relax}>{\centering\arraybackslash}p{\dimexpr 0.152000\TableWidth\relax}>{\centering\arraybackslash}p{\dimexpr 0.152000\TableWidth\relax}>{\centering\arraybackslash}p{\dimexpr 0.152000\TableWidth\relax}>{\centering\arraybackslash}p{\dimexpr 0.152000\TableWidth\relax}@{}}
+\caption{Full noise-spectrum results for the principal methods on CoraFull. Values are test accuracy (\%; mean \ensuremath{\pm} standard deviation over five seeds). Bold indicates the highest mean under each noise setting.}\label{tab:A.3}\\
+\toprule
+\textbf{Method} & \textbf{Uniform 0.2} & \textbf{Uniform 0.4} & \textbf{Uniform 0.6} & \textbf{Pair 0.4} & \textbf{Instance 0.4} \\
+\midrule\endfirsthead
+\multicolumn{6}{l}{\small\itshape Table \thetable{} (continued)}\\
+\toprule
+\textbf{Method} & \textbf{Uniform 0.2} & \textbf{Uniform 0.4} & \textbf{Uniform 0.6} & \textbf{Pair 0.4} & \textbf{Instance 0.4} \\
+\midrule\endhead
+\midrule\multicolumn{6}{r}{\small\itshape Continued on the next page}\\\endfoot
+\bottomrule\endlastfoot
+MLP+CE & 41.11\ensuremath{\pm}0.46 & 31.98\ensuremath{\pm}0.98 & 21.16\ensuremath{\pm}0.81 & 28.14\ensuremath{\pm}1.17 & 31.33\ensuremath{\pm}0.85 \\
+Small-loss & 41.58\ensuremath{\pm}0.94 & 33.04\ensuremath{\pm}0.50 & 21.51\ensuremath{\pm}0.98 & 30.15\ensuremath{\pm}1.11 & 32.90\ensuremath{\pm}0.87 \\
+Co-teaching & 41.70\ensuremath{\pm}1.05 & 34.39\ensuremath{\pm}0.24 & 22.84\ensuremath{\pm}1.38 & 30.28\ensuremath{\pm}0.52 & 33.39\ensuremath{\pm}0.90 \\
+JoCoR & 43.33\ensuremath{\pm}0.70 & 35.70\ensuremath{\pm}0.32 & 24.20\ensuremath{\pm}0.98 & 31.45\ensuremath{\pm}0.80 & 35.17\ensuremath{\pm}0.51 \\
+SCE & 37.93\ensuremath{\pm}0.72 & 29.29\ensuremath{\pm}0.45 & 17.79\ensuremath{\pm}1.33 & 26.98\ensuremath{\pm}0.51 & 29.68\ensuremath{\pm}1.06 \\
+ELR & 41.08\ensuremath{\pm}0.53 & 32.14\ensuremath{\pm}0.67 & 21.32\ensuremath{\pm}0.98 & 28.91\ensuremath{\pm}1.44 & 31.52\ensuremath{\pm}0.83 \\
+LogitClip & 41.24\ensuremath{\pm}0.78 & 34.69\ensuremath{\pm}1.17 & 24.62\ensuremath{\pm}0.72 & 31.23\ensuremath{\pm}1.84 & 34.19\ensuremath{\pm}0.17 \\
+Random size-matched grouping & 41.02\ensuremath{\pm}0.92 & 32.30\ensuremath{\pm}0.85 & 21.41\ensuremath{\pm}0.84 & 28.49\ensuremath{\pm}0.78 & 31.43\ensuremath{\pm}0.79 \\
+GB-LCSS & \textbf{43.46\ensuremath{\pm}0.57} & \textbf{37.39\ensuremath{\pm}0.51} & \textbf{27.43\ensuremath{\pm}0.89} & \textbf{34.46\ensuremath{\pm}1.23} & \textbf{36.95\ensuremath{\pm}0.53} \\
+\end{longtable}
+\endgroup
+
+\Needspace{395pt}
+
+\subsection{Coauthor-CS}\label{sec:A.4}
+
+\Needspace{335pt}
+\begingroup
+\fontsize{9}{11}\selectfont
+\setlength{\tabcolsep}{3pt}
+\renewcommand{\arraystretch}{1.18}
+\setlength{\TableWidth}{\dimexpr\linewidth-10\tabcolsep\relax}
+\begin{longtable}{@{}>{\raggedright\arraybackslash}p{\dimexpr 0.240000\TableWidth\relax}>{\centering\arraybackslash}p{\dimexpr 0.152000\TableWidth\relax}>{\centering\arraybackslash}p{\dimexpr 0.152000\TableWidth\relax}>{\centering\arraybackslash}p{\dimexpr 0.152000\TableWidth\relax}>{\centering\arraybackslash}p{\dimexpr 0.152000\TableWidth\relax}>{\centering\arraybackslash}p{\dimexpr 0.152000\TableWidth\relax}@{}}
+\caption{Full noise-spectrum results for the principal methods on Coauthor-CS. Values are test accuracy (\%; mean \ensuremath{\pm} standard deviation over five seeds). Bold indicates the highest mean under each noise setting.}\label{tab:A.4}\\
+\toprule
+\textbf{Method} & \textbf{Uniform 0.2} & \textbf{Uniform 0.4} & \textbf{Uniform 0.6} & \textbf{Pair 0.4} & \textbf{Instance 0.4} \\
+\midrule\endfirsthead
+\multicolumn{6}{l}{\small\itshape Table \thetable{} (continued)}\\
+\toprule
+\textbf{Method} & \textbf{Uniform 0.2} & \textbf{Uniform 0.4} & \textbf{Uniform 0.6} & \textbf{Pair 0.4} & \textbf{Instance 0.4} \\
+\midrule\endhead
+\midrule\multicolumn{6}{r}{\small\itshape Continued on the next page}\\\endfoot
+\bottomrule\endlastfoot
+MLP+CE & 91.38\ensuremath{\pm}0.54 & 88.42\ensuremath{\pm}0.62 & 80.03\ensuremath{\pm}1.91 & 75.91\ensuremath{\pm}1.34 & 87.44\ensuremath{\pm}1.15 \\
+Small-loss & 91.50\ensuremath{\pm}0.49 & 89.06\ensuremath{\pm}0.88 & 81.65\ensuremath{\pm}0.91 & 80.13\ensuremath{\pm}1.50 & 88.97\ensuremath{\pm}1.02 \\
+Co-teaching & 91.70\ensuremath{\pm}0.29 & 88.80\ensuremath{\pm}0.97 & 81.88\ensuremath{\pm}0.72 & 79.06\ensuremath{\pm}1.30 & 88.95\ensuremath{\pm}0.97 \\
+JoCoR & \textbf{91.81\ensuremath{\pm}0.25} & 89.38\ensuremath{\pm}0.61 & 82.58\ensuremath{\pm}0.41 & 81.02\ensuremath{\pm}1.62 & 89.17\ensuremath{\pm}0.85 \\
+SCE & 90.63\ensuremath{\pm}0.47 & 88.37\ensuremath{\pm}0.53 & 79.43\ensuremath{\pm}1.45 & 79.77\ensuremath{\pm}2.51 & 87.99\ensuremath{\pm}0.56 \\
+ELR & 91.21\ensuremath{\pm}0.60 & 88.29\ensuremath{\pm}0.73 & 80.54\ensuremath{\pm}1.28 & 78.03\ensuremath{\pm}1.48 & 87.78\ensuremath{\pm}0.94 \\
+LogitClip & 91.32\ensuremath{\pm}0.43 & 88.40\ensuremath{\pm}0.21 & 79.96\ensuremath{\pm}1.64 & 81.57\ensuremath{\pm}0.53 & 88.60\ensuremath{\pm}0.75 \\
+Random size-matched grouping & 90.26\ensuremath{\pm}0.70 & 87.46\ensuremath{\pm}1.07 & 78.78\ensuremath{\pm}1.82 & 75.99\ensuremath{\pm}0.60 & 86.87\ensuremath{\pm}1.56 \\
+GB-LCSS & 91.54\ensuremath{\pm}0.26 & \textbf{90.71\ensuremath{\pm}0.59} & \textbf{87.19\ensuremath{\pm}0.69} & \textbf{86.24\ensuremath{\pm}1.18} & \textbf{90.51\ensuremath{\pm}0.43} \\
+\end{longtable}
+\endgroup
+
+\Needspace{395pt}
+
+\subsection{Amazon-Photo}\label{sec:A.5}
+
+\Needspace{335pt}
+\begingroup
+\fontsize{9}{11}\selectfont
+\setlength{\tabcolsep}{3pt}
+\renewcommand{\arraystretch}{1.18}
+\setlength{\TableWidth}{\dimexpr\linewidth-10\tabcolsep\relax}
+\begin{longtable}{@{}>{\raggedright\arraybackslash}p{\dimexpr 0.240000\TableWidth\relax}>{\centering\arraybackslash}p{\dimexpr 0.152000\TableWidth\relax}>{\centering\arraybackslash}p{\dimexpr 0.152000\TableWidth\relax}>{\centering\arraybackslash}p{\dimexpr 0.152000\TableWidth\relax}>{\centering\arraybackslash}p{\dimexpr 0.152000\TableWidth\relax}>{\centering\arraybackslash}p{\dimexpr 0.152000\TableWidth\relax}@{}}
+\caption{Full noise-spectrum results for the principal methods on Amazon-Photo. Values are test accuracy (\%; mean \ensuremath{\pm} standard deviation over five seeds). Bold indicates the highest mean under each noise setting.}\label{tab:A.5}\\
+\toprule
+\textbf{Method} & \textbf{Uniform 0.2} & \textbf{Uniform 0.4} & \textbf{Uniform 0.6} & \textbf{Pair 0.4} & \textbf{Instance 0.4} \\
+\midrule\endfirsthead
+\multicolumn{6}{l}{\small\itshape Table \thetable{} (continued)}\\
+\toprule
+\textbf{Method} & \textbf{Uniform 0.2} & \textbf{Uniform 0.4} & \textbf{Uniform 0.6} & \textbf{Pair 0.4} & \textbf{Instance 0.4} \\
+\midrule\endhead
+\midrule\multicolumn{6}{r}{\small\itshape Continued on the next page}\\\endfoot
+\bottomrule\endlastfoot
+MLP+CE & 82.34\ensuremath{\pm}1.39 & 73.90\ensuremath{\pm}1.80 & 58.60\ensuremath{\pm}3.77 & 62.61\ensuremath{\pm}4.31 & 69.13\ensuremath{\pm}3.00 \\
+Small-loss & 84.96\ensuremath{\pm}0.58 & 77.25\ensuremath{\pm}1.62 & 61.40\ensuremath{\pm}3.72 & 66.70\ensuremath{\pm}5.73 & 73.00\ensuremath{\pm}1.25 \\
+Co-teaching & 85.21\ensuremath{\pm}0.51 & 78.21\ensuremath{\pm}1.00 & 63.29\ensuremath{\pm}5.00 & 67.24\ensuremath{\pm}6.97 & 73.59\ensuremath{\pm}1.19 \\
+JoCoR & 85.60\ensuremath{\pm}1.26 & 79.57\ensuremath{\pm}0.53 & 66.48\ensuremath{\pm}4.43 & 66.94\ensuremath{\pm}6.36 & 74.80\ensuremath{\pm}1.79 \\
+SCE & 84.74\ensuremath{\pm}0.94 & 76.08\ensuremath{\pm}3.11 & 57.82\ensuremath{\pm}4.07 & 66.51\ensuremath{\pm}6.96 & 73.08\ensuremath{\pm}2.54 \\
+ELR & 82.31\ensuremath{\pm}1.98 & 73.93\ensuremath{\pm}2.12 & 59.32\ensuremath{\pm}4.53 & 66.07\ensuremath{\pm}5.25 & 69.41\ensuremath{\pm}2.70 \\
+LogitClip & 83.78\ensuremath{\pm}1.02 & 74.98\ensuremath{\pm}2.38 & 62.42\ensuremath{\pm}4.37 & 68.52\ensuremath{\pm}4.20 & 72.90\ensuremath{\pm}1.05 \\
+Random size-matched grouping & 81.03\ensuremath{\pm}1.23 & 71.45\ensuremath{\pm}3.29 & 58.30\ensuremath{\pm}4.17 & 62.56\ensuremath{\pm}4.24 & 67.56\ensuremath{\pm}2.89 \\
+GB-LCSS & \textbf{86.07\ensuremath{\pm}1.05} & \textbf{82.12\ensuremath{\pm}1.08} & \textbf{71.45\ensuremath{\pm}3.75} & \textbf{73.89\ensuremath{\pm}3.73} & \textbf{79.59\ensuremath{\pm}0.88} \\
+\end{longtable}
+\endgroup
+
+\FloatBarrier
+\setcounter{table}{0}
+\section{Paired statistical tests}\label{sec:B}
+
+Mean differences and 95\% confidence intervals are expressed in percentage points. Each setting uses a two-sided paired \(t\)-test, implemented as a one-sample \(t\)-test on the five same-seed accuracy differences; confidence intervals are computed from a \(t\) distribution with four degrees of freedom. Holm correction is applied separately within three comparison families of 25 tests each.
+
+\begingroup
+\fontsize{9}{11}\selectfont
+\setlength{\tabcolsep}{3pt}
+\renewcommand{\arraystretch}{1.18}
+\setlength{\TableWidth}{\dimexpr\linewidth-12\tabcolsep\relax}
+\begin{longtable}{@{}>{\raggedright\arraybackslash}p{\dimexpr 0.130000\TableWidth\relax}>{\centering\arraybackslash}p{\dimexpr 0.130000\TableWidth\relax}>{\raggedright\arraybackslash}p{\dimexpr 0.265000\TableWidth\relax}>{\centering\arraybackslash}p{\dimexpr 0.100000\TableWidth\relax}>{\centering\arraybackslash}p{\dimexpr 0.160000\TableWidth\relax}>{\centering\arraybackslash}p{\dimexpr 0.100000\TableWidth\relax}>{\centering\arraybackslash}p{\dimexpr 0.115000\TableWidth\relax}@{}}
+\caption{Setting-wise paired statistics for GB-LCSS versus random size-matched grouping, MLP+CE, and JoCoR.}\label{tab:B.1}\\
+\toprule
+\textbf{Dataset} & \textbf{Noise} & \textbf{Comparison} & \textbf{Mean difference} & \textbf{95\% CI} & \textbf{Positive seeds} & \textbf{Holm-adjusted} \(p\) \\
+\midrule\endfirsthead
+\multicolumn{7}{l}{\small\itshape Table \thetable{} (continued)}\\
+\toprule
+\textbf{Dataset} & \textbf{Noise} & \textbf{Comparison} & \textbf{Mean difference} & \textbf{95\% CI} & \textbf{Positive seeds} & \textbf{Holm-adjusted} \(p\) \\
+\midrule\endhead
+\midrule\multicolumn{7}{r}{\small\itshape Continued on the next page}\\\endfoot
+\bottomrule\endlastfoot
+Cora & Uniform 0.2 & GB-LCSS\ensuremath{-}random size-matched grouping & +9.68 & [+7.16, +12.20] & 5/5 & 0.006 \\
+Cora & Uniform 0.2 & GB-LCSS\ensuremath{-}MLP+CE & +8.30 & [+5.59, +11.00] & 5/5 & 0.011 \\
+Cora & Uniform 0.2 & GB-LCSS\ensuremath{-}JoCoR & +3.13 & [+0.55, +5.72] & 5/5 & 0.112 \\
+Cora & Uniform 0.4 & GB-LCSS\ensuremath{-}random size-matched grouping & +14.17 & [+12.71, +15.63] & 5/5 & <0.001 \\
+Cora & Uniform 0.4 & GB-LCSS\ensuremath{-}MLP+CE & +13.25 & [+10.81, +15.68] & 5/5 & 0.002 \\
+Cora & Uniform 0.4 & GB-LCSS\ensuremath{-}JoCoR & +5.77 & [+3.60, +7.95] & 5/5 & 0.031 \\
+Cora & Uniform 0.6 & GB-LCSS\ensuremath{-}random size-matched grouping & +9.68 & [+6.39, +12.96] & 5/5 & 0.010 \\
+Cora & Uniform 0.6 & GB-LCSS\ensuremath{-}MLP+CE & +9.35 & [+4.54, +14.16] & 5/5 & 0.011 \\
+Cora & Uniform 0.6 & GB-LCSS\ensuremath{-}JoCoR & +4.94 & [+1.79, +8.09] & 5/5 & 0.082 \\
+Cora & Pair 0.4 & GB-LCSS\ensuremath{-}random size-matched grouping & +12.17 & [+7.23, +17.11] & 5/5 & 0.012 \\
+Cora & Pair 0.4 & GB-LCSS\ensuremath{-}MLP+CE & +8.62 & [+5.74, +11.50] & 5/5 & 0.011 \\
+Cora & Pair 0.4 & GB-LCSS\ensuremath{-}JoCoR & +5.54 & [+2.90, +8.18] & 5/5 & 0.060 \\
+Cora & Instance 0.4 & GB-LCSS\ensuremath{-}random size-matched grouping & +13.51 & [+12.08, +14.94] & 5/5 & <0.001 \\
+Cora & Instance 0.4 & GB-LCSS\ensuremath{-}MLP+CE & +11.51 & [+9.50, +13.53] & 5/5 & 0.002 \\
+Cora & Instance 0.4 & GB-LCSS\ensuremath{-}JoCoR & +4.58 & [+2.27, +6.89] & 5/5 & 0.062 \\
+CiteSeer & Uniform 0.2 & GB-LCSS\ensuremath{-}random size-matched grouping & +8.79 & [+6.87, +10.71] & 5/5 & 0.004 \\
+CiteSeer & Uniform 0.2 & GB-LCSS\ensuremath{-}MLP+CE & +8.81 & [+7.00, +10.63] & 5/5 & 0.003 \\
+CiteSeer & Uniform 0.2 & GB-LCSS\ensuremath{-}JoCoR & +4.56 & [+2.87, +6.26] & 5/5 & 0.031 \\
+CiteSeer & Uniform 0.4 & GB-LCSS\ensuremath{-}random size-matched grouping & +13.16 & [+11.26, +15.06] & 5/5 & <0.001 \\
+CiteSeer & Uniform 0.4 & GB-LCSS\ensuremath{-}MLP+CE & +11.74 & [+9.99, +13.50] & 5/5 & 0.001 \\
+CiteSeer & Uniform 0.4 & GB-LCSS\ensuremath{-}JoCoR & +5.34 & [+2.51, +8.16] & 5/5 & 0.062 \\
+CiteSeer & Uniform 0.6 & GB-LCSS\ensuremath{-}random size-matched grouping & +11.66 & [+9.60, +13.72] & 5/5 & 0.002 \\
+CiteSeer & Uniform 0.6 & GB-LCSS\ensuremath{-}MLP+CE & +8.67 & [+4.92, +12.42] & 5/5 & 0.011 \\
+CiteSeer & Uniform 0.6 & GB-LCSS\ensuremath{-}JoCoR & +2.95 & [+1.09, +4.81] & 5/5 & 0.082 \\
+CiteSeer & Pair 0.4 & GB-LCSS\ensuremath{-}random size-matched grouping & +7.78 & [+5.04, +10.53] & 5/5 & 0.010 \\
+CiteSeer & Pair 0.4 & GB-LCSS\ensuremath{-}MLP+CE & +6.55 & [+3.98, +9.13] & 5/5 & 0.011 \\
+CiteSeer & Pair 0.4 & GB-LCSS\ensuremath{-}JoCoR & +3.07 & [+2.06, +4.07] & 5/5 & 0.020 \\
+CiteSeer & Instance 0.4 & GB-LCSS\ensuremath{-}random size-matched grouping & +12.51 & [+9.97, +15.05] & 5/5 & 0.003 \\
+CiteSeer & Instance 0.4 & GB-LCSS\ensuremath{-}MLP+CE & +11.25 & [+8.48, +14.01] & 5/5 & 0.006 \\
+CiteSeer & Instance 0.4 & GB-LCSS\ensuremath{-}JoCoR & +4.72 & [+3.63, +5.80] & 5/5 & 0.007 \\
+CoraFull & Uniform 0.2 & GB-LCSS\ensuremath{-}random size-matched grouping & +2.44 & [+1.48, +3.40] & 5/5 & 0.012 \\
+CoraFull & Uniform 0.2 & GB-LCSS\ensuremath{-}MLP+CE & +2.35 & [+1.46, +3.25] & 5/5 & 0.011 \\
+CoraFull & Uniform 0.2 & GB-LCSS\ensuremath{-}JoCoR & +0.13 & [-0.86, +1.12] & 3/5 & 0.852 \\
+CoraFull & Uniform 0.4 & GB-LCSS\ensuremath{-}random size-matched grouping & +5.09 & [+4.32, +5.87] & 5/5 & 0.001 \\
+CoraFull & Uniform 0.4 & GB-LCSS\ensuremath{-}MLP+CE & +5.41 & [+4.51, +6.32] & 5/5 & 0.002 \\
+CoraFull & Uniform 0.4 & GB-LCSS\ensuremath{-}JoCoR & +1.69 & [+0.86, +2.52] & 5/5 & 0.062 \\
+CoraFull & Uniform 0.6 & GB-LCSS\ensuremath{-}random size-matched grouping & +6.02 & [+5.16, +6.89] & 5/5 & <0.001 \\
+CoraFull & Uniform 0.6 & GB-LCSS\ensuremath{-}MLP+CE & +6.27 & [+5.52, +7.03] & 5/5 & <0.001 \\
+CoraFull & Uniform 0.6 & GB-LCSS\ensuremath{-}JoCoR & +3.23 & [+1.89, +4.57] & 5/5 & 0.042 \\
+CoraFull & Pair 0.4 & GB-LCSS\ensuremath{-}random size-matched grouping & +5.98 & [+4.75, +7.20] & 5/5 & 0.003 \\
+CoraFull & Pair 0.4 & GB-LCSS\ensuremath{-}MLP+CE & +6.32 & [+4.66, +7.98] & 5/5 & 0.007 \\
+CoraFull & Pair 0.4 & GB-LCSS\ensuremath{-}JoCoR & +3.02 & [+2.10, +3.93] & 5/5 & 0.017 \\
+CoraFull & Instance 0.4 & GB-LCSS\ensuremath{-}random size-matched grouping & +5.52 & [+4.23, +6.80] & 5/5 & 0.004 \\
+CoraFull & Instance 0.4 & GB-LCSS\ensuremath{-}MLP+CE & +5.62 & [+4.37, +6.86] & 5/5 & 0.004 \\
+CoraFull & Instance 0.4 & GB-LCSS\ensuremath{-}JoCoR & +1.78 & [+1.22, +2.34] & 5/5 & 0.018 \\
+Coauthor-CS & Uniform 0.2 & GB-LCSS\ensuremath{-}random size-matched grouping & +1.28 & [+0.70, +1.85] & 5/5 & 0.012 \\
+Coauthor-CS & Uniform 0.2 & GB-LCSS\ensuremath{-}MLP+CE & +0.16 & [-0.33, +0.65] & 3/5 & 0.418 \\
+Coauthor-CS & Uniform 0.2 & GB-LCSS\ensuremath{-}JoCoR & -0.27 & [-0.41, -0.13] & 0/5 & 0.062 \\
+Coauthor-CS & Uniform 0.4 & GB-LCSS\ensuremath{-}random size-matched grouping & +3.25 & [+1.96, +4.55] & 5/5 & 0.012 \\
+Coauthor-CS & Uniform 0.4 & GB-LCSS\ensuremath{-}MLP+CE & +2.29 & [+1.66, +2.93] & 5/5 & 0.008 \\
+Coauthor-CS & Uniform 0.4 & GB-LCSS\ensuremath{-}JoCoR & +1.33 & [+1.07, +1.59] & 5/5 & 0.004 \\
+Coauthor-CS & Uniform 0.6 & GB-LCSS\ensuremath{-}random size-matched grouping & +8.41 & [+5.72, +11.10] & 5/5 & 0.009 \\
+Coauthor-CS & Uniform 0.6 & GB-LCSS\ensuremath{-}MLP+CE & +7.16 & [+4.58, +9.75] & 5/5 & 0.011 \\
+Coauthor-CS & Uniform 0.6 & GB-LCSS\ensuremath{-}JoCoR & +4.61 & [+3.37, +5.85] & 5/5 & 0.011 \\
+Coauthor-CS & Pair 0.4 & GB-LCSS\ensuremath{-}random size-matched grouping & +10.25 & [+8.67, +11.83] & 5/5 & 0.001 \\
+Coauthor-CS & Pair 0.4 & GB-LCSS\ensuremath{-}MLP+CE & +10.32 & [+8.97, +11.67] & 5/5 & <0.001 \\
+Coauthor-CS & Pair 0.4 & GB-LCSS\ensuremath{-}JoCoR & +5.22 & [+3.82, +6.62] & 5/5 & 0.011 \\
+Coauthor-CS & Instance 0.4 & GB-LCSS\ensuremath{-}random size-matched grouping & +3.65 & [+2.12, +5.17] & 5/5 & 0.012 \\
+Coauthor-CS & Instance 0.4 & GB-LCSS\ensuremath{-}MLP+CE & +3.07 & [+2.15, +4.00] & 5/5 & 0.009 \\
+Coauthor-CS & Instance 0.4 & GB-LCSS\ensuremath{-}JoCoR & +1.34 & [+0.76, +1.92] & 5/5 & 0.045 \\
+Amazon-Photo & Uniform 0.2 & GB-LCSS\ensuremath{-}random size-matched grouping & +5.03 & [+3.82, +6.25] & 5/5 & 0.005 \\
+Amazon-Photo & Uniform 0.2 & GB-LCSS\ensuremath{-}MLP+CE & +3.72 & [+2.63, +4.81] & 5/5 & 0.009 \\
+Amazon-Photo & Uniform 0.2 & GB-LCSS\ensuremath{-}JoCoR & +0.46 & [-0.99, +1.92] & 3/5 & 0.852 \\
+Amazon-Photo & Uniform 0.4 & GB-LCSS\ensuremath{-}random size-matched grouping & +10.66 & [+6.55, +14.78] & 5/5 & 0.012 \\
+Amazon-Photo & Uniform 0.4 & GB-LCSS\ensuremath{-}MLP+CE & +8.22 & [+5.17, +11.26] & 5/5 & 0.011 \\
+Amazon-Photo & Uniform 0.4 & GB-LCSS\ensuremath{-}JoCoR & +2.55 & [+1.02, +4.07] & 5/5 & 0.078 \\
+Amazon-Photo & Uniform 0.6 & GB-LCSS\ensuremath{-}random size-matched grouping & +13.15 & [+9.63, +16.67] & 5/5 & 0.006 \\
+Amazon-Photo & Uniform 0.6 & GB-LCSS\ensuremath{-}MLP+CE & +12.85 & [+8.39, +17.31] & 5/5 & 0.011 \\
+Amazon-Photo & Uniform 0.6 & GB-LCSS\ensuremath{-}JoCoR & +4.96 & [+0.60, +9.32] & 5/5 & 0.112 \\
+Amazon-Photo & Pair 0.4 & GB-LCSS\ensuremath{-}random size-matched grouping & +11.32 & [+8.02, +14.63] & 5/5 & 0.008 \\
+Amazon-Photo & Pair 0.4 & GB-LCSS\ensuremath{-}MLP+CE & +11.28 & [+9.10, +13.46] & 5/5 & 0.003 \\
+Amazon-Photo & Pair 0.4 & GB-LCSS\ensuremath{-}JoCoR & +6.95 & [+1.90, +12.00] & 5/5 & 0.094 \\
+Amazon-Photo & Instance 0.4 & GB-LCSS\ensuremath{-}random size-matched grouping & +12.03 & [+8.45, +15.61] & 5/5 & 0.008 \\
+Amazon-Photo & Instance 0.4 & GB-LCSS\ensuremath{-}MLP+CE & +10.46 & [+6.95, +13.98] & 5/5 & 0.011 \\
+Amazon-Photo & Instance 0.4 & GB-LCSS\ensuremath{-}JoCoR & +4.79 & [+2.43, +7.15] & 5/5 & 0.062 \\
+\end{longtable}
+\endgroup
+
+\FloatBarrier
+\setcounter{table}{0}
+\section{Sensitivity to noisy validation labels}\label{sec:C}
+
+This experiment examines the effect of validation-label corruption on model selection under uniform 0.4 noise. The noisy-validation protocol keeps the training-noise realization fixed and independently corrupts validation nodes with the same uniform transition mechanism and noise rate, using \(\text{seed} + 1{,}000{,}003\). Test labels remain unchanged. GB-LCSS and the random size-matched grouping control use the leave-one-out consensus target defined in the main text; the protocol-adapted GSDN and PosteL implementations follow Section 4.3 and Appendix G.
+
+\begingroup
+\fontsize{9}{11}\selectfont
+\setlength{\tabcolsep}{3pt}
+\renewcommand{\arraystretch}{1.18}
+\setlength{\TableWidth}{\dimexpr\linewidth-6\tabcolsep\relax}
+\begin{longtable}{@{}>{\raggedright\arraybackslash}p{\dimexpr 0.250000\TableWidth\relax}>{\raggedright\arraybackslash}p{\dimexpr 0.160000\TableWidth\relax}>{\raggedright\arraybackslash}p{\dimexpr 0.400000\TableWidth\relax}>{\centering\arraybackslash}p{\dimexpr 0.190000\TableWidth\relax}@{}}
+\caption{Test accuracy under clean- and noisy-validation protocols (\%; mean \ensuremath{\pm} standard deviation over five seeds). Bold indicates the highest mean within each validation-protocol and dataset block.}\label{tab:C.1}\\
+\toprule
+\textbf{Validation protocol} & \textbf{Dataset} & \textbf{Method} & \textbf{Test accuracy} \\
+\midrule\endfirsthead
+\multicolumn{4}{l}{\small\itshape Table \thetable{} (continued)}\\
+\toprule
+\textbf{Validation protocol} & \textbf{Dataset} & \textbf{Method} & \textbf{Test accuracy} \\
+\midrule\endhead
+\midrule\multicolumn{4}{r}{\small\itshape Continued on the next page}\\\endfoot
+\bottomrule\endlastfoot
+Clean validation labels & CiteSeer & GB-LCSS & \textbf{55.24\ensuremath{\pm}2.04} \\
+Clean validation labels & CiteSeer & Random size-matched grouping & 42.08\ensuremath{\pm}2.88 \\
+Clean validation labels & CiteSeer & GSDN (protocol adaptation) & 50.36\ensuremath{\pm}3.39 \\
+Clean validation labels & CiteSeer & MLP+CE & 43.50\ensuremath{\pm}3.02 \\
+Clean validation labels & CiteSeer & JoCoR & 49.91\ensuremath{\pm}3.37 \\
+Clean validation labels & CiteSeer & PosteL (protocol adaptation) & 45.84\ensuremath{\pm}2.48 \\
+Clean validation labels & Cora & GB-LCSS & \textbf{57.49\ensuremath{\pm}0.76} \\
+Clean validation labels & Cora & Random size-matched grouping & 43.31\ensuremath{\pm}1.40 \\
+Clean validation labels & Cora & GSDN (protocol adaptation) & 55.97\ensuremath{\pm}4.29 \\
+Clean validation labels & Cora & MLP+CE & 44.24\ensuremath{\pm}2.62 \\
+Clean validation labels & Cora & JoCoR & 51.72\ensuremath{\pm}1.30 \\
+Clean validation labels & Cora & PosteL (protocol adaptation) & 47.09\ensuremath{\pm}1.81 \\
+Clean validation labels & CoraFull & GB-LCSS & \textbf{37.39\ensuremath{\pm}0.51} \\
+Clean validation labels & CoraFull & Random size-matched grouping & 32.30\ensuremath{\pm}0.85 \\
+Clean validation labels & CoraFull & GSDN (protocol adaptation) & 35.80\ensuremath{\pm}0.66 \\
+Clean validation labels & CoraFull & MLP+CE & 31.98\ensuremath{\pm}0.98 \\
+Clean validation labels & CoraFull & JoCoR & 35.70\ensuremath{\pm}0.32 \\
+Clean validation labels & CoraFull & PosteL (protocol adaptation) & 36.51\ensuremath{\pm}1.01 \\
+Noisy validation labels & CiteSeer & GB-LCSS & \textbf{54.99\ensuremath{\pm}2.18} \\
+Noisy validation labels & CiteSeer & Random size-matched grouping & 42.65\ensuremath{\pm}2.49 \\
+Noisy validation labels & CiteSeer & GSDN (protocol adaptation) & 50.60\ensuremath{\pm}1.84 \\
+Noisy validation labels & CiteSeer & MLP+CE & 43.06\ensuremath{\pm}2.96 \\
+Noisy validation labels & CiteSeer & JoCoR & 50.67\ensuremath{\pm}1.07 \\
+Noisy validation labels & CiteSeer & PosteL (protocol adaptation) & 46.27\ensuremath{\pm}1.76 \\
+Noisy validation labels & Cora & GB-LCSS & \textbf{56.81\ensuremath{\pm}1.55} \\
+Noisy validation labels & Cora & Random size-matched grouping & 43.12\ensuremath{\pm}2.07 \\
+Noisy validation labels & Cora & GSDN (protocol adaptation) & 54.81\ensuremath{\pm}4.70 \\
+Noisy validation labels & Cora & MLP+CE & 43.30\ensuremath{\pm}3.65 \\
+Noisy validation labels & Cora & JoCoR & 50.77\ensuremath{\pm}1.98 \\
+Noisy validation labels & Cora & PosteL (protocol adaptation) & 46.81\ensuremath{\pm}1.94 \\
+Noisy validation labels & CoraFull & GB-LCSS & \textbf{36.90\ensuremath{\pm}0.81} \\
+Noisy validation labels & CoraFull & Random size-matched grouping & 32.03\ensuremath{\pm}0.77 \\
+Noisy validation labels & CoraFull & GSDN (protocol adaptation) & 36.13\ensuremath{\pm}0.69 \\
+Noisy validation labels & CoraFull & MLP+CE & 31.99\ensuremath{\pm}0.85 \\
+Noisy validation labels & CoraFull & JoCoR & 35.57\ensuremath{\pm}1.04 \\
+Noisy validation labels & CoraFull & PosteL (protocol adaptation) & 35.74\ensuremath{\pm}1.14 \\
+\end{longtable}
+\endgroup
+
+Under noisy validation labels, GB-LCSS leads random size-matched grouping by 13.69, 12.35, and 4.87 percentage points on Cora, CiteSeer, and CoraFull, respectively, and leads MLP+CE by 13.51, 11.93, and 4.91 points. The Kendall \(\tau\) between the rankings of the six methods under the two validation protocols is 1.000 on Cora and 0.867 on both CiteSeer and CoraFull, indicating similar method rankings under the two validation protocols.
+
+\Needspace{307pt}
+
+\FloatBarrier
+\setcounter{table}{0}
+\section{Additional mechanism analyses}\label{sec:D}
+
+\Needspace{307pt}
+
+\subsection{Leave-one-out voting and explicit label smoothing}\label{sec:D.1}
+
+\Needspace{247pt}
+\begingroup
+\fontsize{9}{11}\selectfont
+\setlength{\tabcolsep}{3pt}
+\renewcommand{\arraystretch}{1.18}
+\setlength{\TableWidth}{\dimexpr\linewidth-12\tabcolsep\relax}
+\begin{longtable}{@{}>{\raggedright\arraybackslash}p{\dimexpr 0.160000\TableWidth\relax}>{\centering\arraybackslash}p{\dimexpr 0.135000\TableWidth\relax}>{\centering\arraybackslash}p{\dimexpr 0.135000\TableWidth\relax}>{\centering\arraybackslash}p{\dimexpr 0.165000\TableWidth\relax}>{\centering\arraybackslash}p{\dimexpr 0.135000\TableWidth\relax}>{\centering\arraybackslash}p{\dimexpr 0.135000\TableWidth\relax}>{\centering\arraybackslash}p{\dimexpr 0.135000\TableWidth\relax}@{}}
+\caption{Test accuracy for leave-one-out voting and explicit label-smoothing ablations under uniform 0.4 noise (\%; mean \ensuremath{\pm} standard deviation over five seeds). Bold indicates the highest mean for each dataset.}\label{tab:D.1}\\
+\toprule
+\textbf{Dataset} & \textbf{Self-vote ablation} & \textbf{GB-LCSS} & \textbf{Random size-matched grouping} & \textbf{Uniform smoothing} & \textbf{Prior smoothing} & \textbf{Leave-one-out gain} \\
+\midrule\endfirsthead
+\multicolumn{7}{l}{\small\itshape Table \thetable{} (continued)}\\
+\toprule
+\textbf{Dataset} & \textbf{Self-vote ablation} & \textbf{GB-LCSS} & \textbf{Random size-matched grouping} & \textbf{Uniform smoothing} & \textbf{Prior smoothing} & \textbf{Leave-one-out gain} \\
+\midrule\endhead
+\midrule\multicolumn{7}{r}{\small\itshape Continued on the next page}\\\endfoot
+\bottomrule\endlastfoot
+Cora & 56.28\ensuremath{\pm}1.54 & \textbf{57.49\ensuremath{\pm}0.76} & 43.31\ensuremath{\pm}1.40 & 44.69\ensuremath{\pm}2.90 & 44.89\ensuremath{\pm}2.38 & +1.21 \\
+CiteSeer & 53.52\ensuremath{\pm}2.71 & \textbf{55.24\ensuremath{\pm}2.04} & 42.08\ensuremath{\pm}2.88 & 43.69\ensuremath{\pm}3.31 & 43.43\ensuremath{\pm}2.99 & +1.72 \\
+CoraFull & 37.30\ensuremath{\pm}0.57 & \textbf{37.39\ensuremath{\pm}0.51} & 32.30\ensuremath{\pm}0.85 & 32.59\ensuremath{\pm}1.12 & 32.63\ensuremath{\pm}0.84 & +0.09 \\
+Coauthor-CS & 90.62\ensuremath{\pm}0.47 & \textbf{90.71\ensuremath{\pm}0.59} & 87.46\ensuremath{\pm}1.07 & 88.25\ensuremath{\pm}0.80 & 88.04\ensuremath{\pm}0.73 & +0.09 \\
+Amazon-Photo & 81.33\ensuremath{\pm}0.70 & \textbf{82.12\ensuremath{\pm}1.08} & 71.45\ensuremath{\pm}3.29 & 74.18\ensuremath{\pm}1.72 & 74.72\ensuremath{\pm}1.44 & +0.79 \\
+\end{longtable}
+\endgroup
+
+The self-vote ablation uses the same tie-handling rule as the main method; its only difference is that the current node's label remains in the local statistics. Across the full noise spectrum, the smallest setting-wise difference between the leave-one-out target and this ablation is \(- 0.49\) percentage points. Uniform and prior smoothing modify only the target construction and do not use granular-ball membership.
+
+When the most-voted class is unique, the target mixes the within-ball distribution with the one-hot vector of the most-voted class. When a tie occurs, the empirical distribution is retained. Effective ties occur in 123 of the 125 dataset--noise--seed runs, yielding 911 tied-ball instances that affect 12,788 of 259,000 training-node target instances (4.94\%). This treatment makes the target permutation-equivariant under class relabeling.
+
+\Needspace{352pt}
+
+\subsection{Alternative grouping interfaces}\label{sec:D.2}
+
+Table D.2 reports the grouping-interface comparison under the leave-one-out consensus target. kNN excludes the query node itself and matches the mean number of training votes per ball for each seed, whereas k-means matches the number of granular balls for that seed. Bold indicates the highest mean for each dataset.
+
+\Needspace{247pt}
+\begingroup
+\fontsize{9}{11}\selectfont
+\setlength{\tabcolsep}{3pt}
+\renewcommand{\arraystretch}{1.18}
+\setlength{\TableWidth}{\dimexpr\linewidth-10\tabcolsep\relax}
+\begin{longtable}{@{}>{\raggedright\arraybackslash}p{\dimexpr 0.160000\TableWidth\relax}>{\centering\arraybackslash}p{\dimexpr 0.160000\TableWidth\relax}>{\centering\arraybackslash}p{\dimexpr 0.160000\TableWidth\relax}>{\centering\arraybackslash}p{\dimexpr 0.180000\TableWidth\relax}>{\centering\arraybackslash}p{\dimexpr 0.160000\TableWidth\relax}>{\centering\arraybackslash}p{\dimexpr 0.180000\TableWidth\relax}@{}}
+\caption{Test accuracy of granular-ball, kNN, and k-means grouping under uniform 0.4 noise (\%; mean \ensuremath{\pm} standard deviation over five seeds).}\label{tab:D.2}\\
+\toprule
+\textbf{Dataset} & \textbf{Granular ball} & \textbf{kNN} & \textbf{kNN \ensuremath{-} granular ball} & \textbf{k-means} & \textbf{k-means \ensuremath{-} granular ball} \\
+\midrule\endfirsthead
+\multicolumn{6}{l}{\small\itshape Table \thetable{} (continued)}\\
+\toprule
+\textbf{Dataset} & \textbf{Granular ball} & \textbf{kNN} & \textbf{kNN \ensuremath{-} granular ball} & \textbf{k-means} & \textbf{k-means \ensuremath{-} granular ball} \\
+\midrule\endhead
+\midrule\multicolumn{6}{r}{\small\itshape Continued on the next page}\\\endfoot
+\bottomrule\endlastfoot
+Cora & \textbf{57.49\ensuremath{\pm}0.76} & 57.21\ensuremath{\pm}1.19 & \ensuremath{-}0.27 & 56.58\ensuremath{\pm}1.23 & \ensuremath{-}0.91 \\
+CiteSeer & 55.24\ensuremath{\pm}2.04 & 56.17\ensuremath{\pm}3.24 & +0.94 & \textbf{56.18\ensuremath{\pm}1.78} & +0.94 \\
+CoraFull & 37.39\ensuremath{\pm}0.51 & \textbf{40.50\ensuremath{\pm}0.51} & +3.11 & 39.26\ensuremath{\pm}0.48 & +1.87 \\
+Coauthor-CS & 90.71\ensuremath{\pm}0.59 & 90.83\ensuremath{\pm}0.57 & +0.12 & \textbf{91.01\ensuremath{\pm}0.64} & +0.29 \\
+Amazon-Photo & 82.12\ensuremath{\pm}1.08 & \textbf{82.23\ensuremath{\pm}1.20} & +0.11 & 81.68\ensuremath{\pm}0.66 & \ensuremath{-}0.44 \\
+\end{longtable}
+\endgroup
+
+\Needspace{308pt}
+
+\subsection{Representation-source comparison}\label{sec:D.3}
+
+\Needspace{203pt}
+\begingroup
+\fontsize{9}{11}\selectfont
+\setlength{\tabcolsep}{3pt}
+\renewcommand{\arraystretch}{1.18}
+\setlength{\TableWidth}{\dimexpr\linewidth-10\tabcolsep\relax}
+\begin{longtable}{@{}>{\raggedright\arraybackslash}p{\dimexpr 0.160000\TableWidth\relax}>{\centering\arraybackslash}p{\dimexpr 0.170000\TableWidth\relax}>{\centering\arraybackslash}p{\dimexpr 0.170000\TableWidth\relax}>{\centering\arraybackslash}p{\dimexpr 0.170000\TableWidth\relax}>{\centering\arraybackslash}p{\dimexpr 0.165000\TableWidth\relax}>{\centering\arraybackslash}p{\dimexpr 0.165000\TableWidth\relax}@{}}
+\caption{Representation-source diagnostic: classification accuracy and number of granular balls.}\label{tab:D.3}\\
+\toprule
+\textbf{Dataset} & \textbf{GRACE} \(H\) & \textbf{Raw} \(X\) & \(A^{2}X\)\textbf{} & \textbf{No.~of balls for raw} \(X\) & \textbf{No.~of balls for} \(A^{2}X\) \\
+\midrule\endfirsthead
+\multicolumn{6}{l}{\small\itshape Table \thetable{} (continued)}\\
+\toprule
+\textbf{Dataset} & \textbf{GRACE} \(H\) & \textbf{Raw} \(X\) & \(A^{2}X\)\textbf{} & \textbf{No.~of balls for raw} \(X\) & \textbf{No.~of balls for} \(A^{2}X\) \\
+\midrule\endhead
+\midrule\multicolumn{6}{r}{\small\itshape Continued on the next page}\\\endfoot
+\bottomrule\endlastfoot
+Cora & 57.49\ensuremath{\pm}0.76 & 42.69 (seed 0) & 42.69 (seed 0) & 1 & 1 \\
+CiteSeer & 55.24\ensuremath{\pm}2.04 & 43.08 (seed 0) & 43.08 (seed 0) & 1 & 1 \\
+CoraFull & 37.39\ensuremath{\pm}0.51 & 31.87 (seed 0) & 31.87 (seed 0) & 1 & 1 \\
+\end{longtable}
+\endgroup
+
+Under the fixed ball-construction rule on these three datasets, neither the raw attributes nor their adjacency-propagated representation yields a usable multi-ball structure, whereas the GRACE representation produces a non-degenerate partition. A further diagnostic with \(3\) GRACE seeds \(\times 3\) downstream seeds gives cross-pretraining-seed standard deviations of 0.13, 0.45, and 0.60 percentage points on Cora, CiteSeer, and CoraFull, respectively; the gain of GB-LCSS over MLP+CE remains positive for every pretraining seed. The mean ARI between partitions obtained from different pretraining seeds is 0.300, with a range of 0.247--0.365.
+
+\FloatBarrier
+\setcounter{table}{0}
+\section{Additional protocol details}\label{sec:E}
+
+Split sizes are obtained by integer flooring of \(0.2N\), \(0.1N\), and \(0.7N\). When these values do not sum to \(N\), the remaining one or two nodes are left outside the three subsets. The principal comparisons use paired data splits, training-label noise realizations, and downstream seeds.
+
+\FloatBarrier
+\setcounter{table}{0}
+\section{Full noise spectrum for structure-assisted soft-target methods}\label{sec:F}
+
+Table F.1 reports the five-seed means and sample standard deviations of GB-LCSS and the protocol-adapted implementations of PosteL, ALS, and SALS on the five full-spectrum datasets and five noise settings. All four methods share the same data splits, training-label noise realizations, and graph-free inference protocol.
+
+\begingroup
+\fontsize{9}{11}\selectfont
+\setlength{\tabcolsep}{3pt}
+\renewcommand{\arraystretch}{1.18}
+\setlength{\TableWidth}{\dimexpr\linewidth-10\tabcolsep\relax}
+\begin{longtable}{@{}>{\raggedright\arraybackslash}p{\dimexpr 0.160000\TableWidth\relax}>{\centering\arraybackslash}p{\dimexpr 0.160000\TableWidth\relax}>{\centering\arraybackslash}p{\dimexpr 0.170000\TableWidth\relax}>{\centering\arraybackslash}p{\dimexpr 0.170000\TableWidth\relax}>{\centering\arraybackslash}p{\dimexpr 0.170000\TableWidth\relax}>{\centering\arraybackslash}p{\dimexpr 0.170000\TableWidth\relax}@{}}
+\caption{Full noise-spectrum results for structure-assisted soft-target methods (test accuracy, \%; mean \ensuremath{\pm} standard deviation over five seeds). Bold indicates the highest mean for each dataset-noise setting.}\label{tab:F.1}\\
+\toprule
+\textbf{Dataset} & \textbf{Noise setting} & \textbf{GB-LCSS} & \textbf{PosteL (protocol adaptation)} & \textbf{ALS (protocol adaptation)} & \textbf{SALS (protocol adaptation)} \\
+\midrule\endfirsthead
+\multicolumn{6}{l}{\small\itshape Table \thetable{} (continued)}\\
+\toprule
+\textbf{Dataset} & \textbf{Noise setting} & \textbf{GB-LCSS} & \textbf{PosteL (protocol adaptation)} & \textbf{ALS (protocol adaptation)} & \textbf{SALS (protocol adaptation)} \\
+\midrule\endhead
+\midrule\multicolumn{6}{r}{\small\itshape Continued on the next page}\\\endfoot
+\bottomrule\endlastfoot
+Cora & Uniform 0.2 & \textbf{63.25\ensuremath{\pm}2.46} & 58.36\ensuremath{\pm}1.64 & 55.98\ensuremath{\pm}1.42 & 58.23\ensuremath{\pm}1.67 \\
+Cora & Uniform 0.4 & \textbf{57.49\ensuremath{\pm}0.76} & 47.09\ensuremath{\pm}1.81 & 45.20\ensuremath{\pm}1.24 & 48.27\ensuremath{\pm}2.50 \\
+Cora & Uniform 0.6 & \textbf{41.86\ensuremath{\pm}2.30} & 32.33\ensuremath{\pm}2.37 & 32.72\ensuremath{\pm}2.54 & 35.34\ensuremath{\pm}1.74 \\
+Cora & Pair 0.4 & \textbf{51.45\ensuremath{\pm}2.80} & 44.36\ensuremath{\pm}0.65 & 41.63\ensuremath{\pm}3.61 & 44.16\ensuremath{\pm}1.52 \\
+Cora & Instance 0.4 & \textbf{56.84\ensuremath{\pm}1.67} & 46.62\ensuremath{\pm}2.17 & 45.73\ensuremath{\pm}1.34 & 48.54\ensuremath{\pm}1.17 \\
+CiteSeer & Uniform 0.2 & \textbf{63.92\ensuremath{\pm}1.12} & 58.11\ensuremath{\pm}1.11 & 56.58\ensuremath{\pm}2.04 & 58.36\ensuremath{\pm}1.07 \\
+CiteSeer & Uniform 0.4 & \textbf{55.24\ensuremath{\pm}2.04} & 45.84\ensuremath{\pm}2.48 & 43.77\ensuremath{\pm}2.76 & 47.20\ensuremath{\pm}1.69 \\
+CiteSeer & Uniform 0.6 & \textbf{42.02\ensuremath{\pm}3.14} & 31.88\ensuremath{\pm}0.86 & 32.00\ensuremath{\pm}1.57 & 35.16\ensuremath{\pm}2.58 \\
+CiteSeer & Pair 0.4 & \textbf{51.70\ensuremath{\pm}2.14} & 45.06\ensuremath{\pm}1.60 & 45.72\ensuremath{\pm}2.41 & 45.63\ensuremath{\pm}2.70 \\
+CiteSeer & Instance 0.4 & \textbf{55.58\ensuremath{\pm}2.54} & 46.02\ensuremath{\pm}2.54 & 43.75\ensuremath{\pm}2.18 & 47.51\ensuremath{\pm}2.50 \\
+CoraFull & Uniform 0.2 & 43.46\ensuremath{\pm}0.57 & \textbf{44.54\ensuremath{\pm}0.31} & 41.72\ensuremath{\pm}0.22 & 44.43\ensuremath{\pm}0.75 \\
+CoraFull & Uniform 0.4 & \textbf{37.39\ensuremath{\pm}0.51} & 36.51\ensuremath{\pm}1.01 & 31.91\ensuremath{\pm}1.05 & 37.06\ensuremath{\pm}0.78 \\
+CoraFull & Uniform 0.6 & \textbf{27.43\ensuremath{\pm}0.89} & 23.90\ensuremath{\pm}1.16 & 20.64\ensuremath{\pm}0.61 & 26.10\ensuremath{\pm}1.07 \\
+CoraFull & Pair 0.4 & \textbf{34.46\ensuremath{\pm}1.23} & 32.62\ensuremath{\pm}1.71 & 29.83\ensuremath{\pm}0.92 & 32.85\ensuremath{\pm}1.68 \\
+CoraFull & Instance 0.4 & \textbf{36.95\ensuremath{\pm}0.53} & 35.99\ensuremath{\pm}0.51 & 31.15\ensuremath{\pm}1.18 & 36.58\ensuremath{\pm}0.74 \\
+Coauthor-CS & Uniform 0.2 & \textbf{91.54\ensuremath{\pm}0.26} & 89.01\ensuremath{\pm}0.40 & 91.13\ensuremath{\pm}0.57 & 91.08\ensuremath{\pm}0.49 \\
+Coauthor-CS & Uniform 0.4 & \textbf{90.71\ensuremath{\pm}0.59} & 84.74\ensuremath{\pm}1.51 & 88.55\ensuremath{\pm}0.86 & 88.85\ensuremath{\pm}0.82 \\
+Coauthor-CS & Uniform 0.6 & \textbf{87.19\ensuremath{\pm}0.69} & 74.61\ensuremath{\pm}1.95 & 79.36\ensuremath{\pm}1.67 & 82.99\ensuremath{\pm}0.95 \\
+Coauthor-CS & Pair 0.4 & \textbf{86.24\ensuremath{\pm}1.18} & 78.45\ensuremath{\pm}2.28 & 74.99\ensuremath{\pm}2.24 & 77.85\ensuremath{\pm}1.51 \\
+Coauthor-CS & Instance 0.4 & \textbf{90.51\ensuremath{\pm}0.43} & 85.72\ensuremath{\pm}1.35 & 87.53\ensuremath{\pm}1.27 & 88.33\ensuremath{\pm}0.66 \\
+Amazon-Photo & Uniform 0.2 & \textbf{86.07\ensuremath{\pm}1.05} & 84.37\ensuremath{\pm}0.96 & 82.63\ensuremath{\pm}1.27 & 84.81\ensuremath{\pm}1.20 \\
+Amazon-Photo & Uniform 0.4 & \textbf{82.12\ensuremath{\pm}1.08} & 80.59\ensuremath{\pm}0.94 & 73.41\ensuremath{\pm}2.75 & 77.86\ensuremath{\pm}0.79 \\
+Amazon-Photo & Uniform 0.6 & \textbf{71.45\ensuremath{\pm}3.75} & 64.49\ensuremath{\pm}2.99 & 58.14\ensuremath{\pm}1.78 & 66.29\ensuremath{\pm}3.62 \\
+Amazon-Photo & Pair 0.4 & \textbf{73.89\ensuremath{\pm}3.73} & 67.56\ensuremath{\pm}3.57 & 62.82\ensuremath{\pm}6.11 & 64.83\ensuremath{\pm}3.54 \\
+Amazon-Photo & Instance 0.4 & \textbf{79.59\ensuremath{\pm}0.88} & 77.23\ensuremath{\pm}2.77 & 68.81\ensuremath{\pm}2.81 & 72.73\ensuremath{\pm}1.78 \\
+\end{longtable}
+\endgroup
+
+\Needspace{455pt}
+
+\FloatBarrier
+\setcounter{table}{0}
+\section{Implementation provenance and key parameters}\label{sec:G}
+
+\Needspace{335pt}
+\begingroup
+\fontsize{9.5}{12}\selectfont
+\setlength{\tabcolsep}{3pt}
+\renewcommand{\arraystretch}{1.18}
+\setlength{\TableWidth}{\dimexpr\linewidth-6\tabcolsep\relax}
+\begin{longtable}{@{}>{\raggedright\arraybackslash}p{\dimexpr 0.180000\TableWidth\relax}>{\raggedright\arraybackslash}p{\dimexpr 0.220000\TableWidth\relax}>{\raggedright\arraybackslash}p{\dimexpr 0.240000\TableWidth\relax}>{\raggedright\arraybackslash}p{\dimexpr 0.360000\TableWidth\relax}@{}}
+\caption{Implementation provenance of the external structure-assisted and distillation methods.}\label{tab:G.1}\\
+\toprule
+\textbf{Method} & \textbf{Implementation provenance} & \textbf{Retained core mechanism} & \textbf{Protocol alignment} \\
+\midrule\endfirsthead
+\multicolumn{4}{l}{\small\itshape Table \thetable{} (continued)}\\
+\toprule
+\textbf{Method} & \textbf{Implementation provenance} & \textbf{Retained core mechanism} & \textbf{Protocol alignment} \\
+\midrule\endhead
+\midrule\multicolumn{4}{r}{\small\itshape Continued on the next page}\\\endfoot
+\bottomrule\endlastfoot
+PosteL & Official-code integration & Posterior-based target construction & Integrated with our MLP, data splits, and noise protocol; iterative pseudo-labeling disabled \\
+ALS & Mechanism adaptation & Adaptive label smoothing, pacing, and KL constraint & Uses our data splits, noise realizations, and MLP student \\
+SALS & Mechanism adaptation & Neighborhood structure-aware label smoothing & Uses our data splits, noise realizations, and MLP student \\
+Graph-MLP & Protocol port & Multi-hop adjacency-based NContrast objective & Uses our noise protocol and a matched MLP classifier \\
+GSDN & Mechanism adaptation & Feature-level and label-level neighborhood self-distillation & Uses our noise protocol and MLP student \\
+GCN(X)+CE teacher & Project implementation based on GLNN response distillation & GCN response distillation & Uses the common teacher and student configurations and our noise protocol \\
+FF-G2M & Common-backbone reimplementation & Low- and high-frequency knowledge distillation & Uses the common GCN teacher, MLP student, and our noise protocol \\
+KRD & Mechanism adaptation & Reliable-knowledge selection based on stability to feature perturbations & Uses the common teacher and student configurations and our noise protocol \\
+VQGraph & Mechanism adaptation & Soft codebook and token-, node-, and edge-level distillation & Uses the common teacher and student configurations and our noise protocol \\
+\end{longtable}
+\endgroup
+
+\begingroup
+\fontsize{9.5}{12}\selectfont
+\setlength{\tabcolsep}{3pt}
+\renewcommand{\arraystretch}{1.18}
+\setlength{\TableWidth}{\dimexpr\linewidth-4\tabcolsep\relax}
+\begin{longtable}{@{}>{\raggedright\arraybackslash}p{\dimexpr 0.200000\TableWidth\relax}>{\raggedright\arraybackslash}p{\dimexpr 0.440000\TableWidth\relax}>{\raggedright\arraybackslash}p{\dimexpr 0.360000\TableWidth\relax}@{}}
+\caption{Method-specific parameters and their sources for the principal comparisons in the main text.}\label{tab:G.2}\\
+\toprule
+\textbf{Method} & \textbf{Method-specific settings} & \textbf{Parameter source or selection rule} \\
+\midrule\endfirsthead
+\multicolumn{3}{l}{\small\itshape Table \thetable{} (continued)}\\
+\toprule
+\textbf{Method} & \textbf{Method-specific settings} & \textbf{Parameter source or selection rule} \\
+\midrule\endhead
+\midrule\multicolumn{3}{r}{\small\itshape Continued on the next page}\\\endfoot
+\bottomrule\endlastfoot
+Small-loss & Forget rate equal to the known synthetic noise rate; linear ramp-up over 10 epochs with exponent 1.0 & Unified project implementation; the forget rate is set from the synthetic noise rate \\
+Co-teaching & Two independent MLPs; forget-rate setting identical to Small-loss & Ported from the NoisyGL configuration; the ramp-up schedule is standardized according to the noise rate used here \\
+JoCoR & Two independent MLPs; forget-rate setting identical to Small-loss; consistency weight 0.1 & Ported from the NoisyGL configuration; the ramp-up schedule is standardized according to the noise rate used here \\
+SCE & Cross-entropy weight 0.1 and reverse-cross-entropy weight 1.0 & Ported from the NoisyGL configuration with the original method weights retained \\
+ELR & Exponential moving-average coefficient 0.7 and regularization weight 1.0 & Implemented according to the original objective; method-specific parameters were fixed before the full grid \\
+LogitClip & Logit-clipping threshold 1.0 & Implemented according to the original objective; method-specific parameters were fixed before the full grid \\
+PosteL (protocol adaptation) & Soft-label ratio 0.8, smoothing ratio 0.4, degree cutoff 1, temperature 1.0; iterative pseudo-labeling disabled & Official no-IPL target construction with the unified project training configuration \\
+ALS (protocol adaptation) & 2 propagation steps, residual coefficient 0.5, KL weight \(10^{- 3}\), exponential pacing, and maximum smoothing weight 0.1 & Mechanism adaptation using a project-fixed configuration shared across datasets \\
+SALS (protocol adaptation) & \(\epsilon = 0.4\), \(\gamma = 0.8\); unlabeled neighborhoods fall back to the uniform distribution & Mechanism adaptation using a project-fixed configuration shared across datasets \\
+Graph-MLP (protocol adaptation) & Graph batch size 512, neighborhood-contrastive weight 0.5, and temperature 0.5 & Protocol adaptation using a project-fixed configuration with a matched MLP backbone \\
+GSDN (mechanism adaptation) & Graph batch size 512; feature-level and label-level loss weights both 0.8; negative-constraint weight 0.1; initial mixup coefficient 0.5 & Mechanism adaptation using a project-fixed configuration shared across datasets \\
+GB-LCSS & \(B_{\max} = 64,n_{\min} = 32,\delta = 0.05,s_{\min} = 2,\beta = 0.5\); leave-one-out voting; empirical distribution retained under ties; 2-means uses Euclidean distance, k-means++ initialization, and 10 independent initializations; candidate random state is the downstream seed plus the split iteration and candidate position & Construction parameters were fixed during preliminary development on Cora and CiteSeer and then held unchanged for the full experimental grid; \(s_{\min} = 2\) requires at least two other training-node votes \\
+GCN(X)+CE teacher & Two-layer GCN teacher of width 64 and two-layer MLP student of width 64; teacher and student both trained for 200 epochs; temperature 1.0 & Common response-distillation configuration based on GLNN \cite{ref3} \\
+FF-G2M (reimplementation with a common student backbone) & Two-layer GCN teacher of width 64; low- and high-frequency distillation weights 0.4; temperature 1.5 & Public core objective retained and fixed under the common teacher and student configurations \\
+KRD (mechanism adaptation) & 4 feature perturbations with standard deviation 0.01; top 50\% of nodes by reliability retained; distillation temperature 1.0 & Public core mechanism retained and fixed under the common teacher and student configurations \\
+VQGraph (mechanism adaptation) & 128 soft codes; codebook temperature 1.0; token/node/edge loss weights \(1.0/0.001/0.03\); 4096 edges sampled per epoch & Public core mechanism retained and fixed under the common teacher and student configurations \\
+Granular-ball consensus teacher & Two-layer GCN(X) teacher of width 64 using the leave-one-out consensus target in Eq. (14); student temperature 1.0; student fits only the teacher predictions over all nodes & Proposed distillation extension under the common teacher and student configurations \\
+\end{longtable}
+\endgroup
+
+Parameters labeled as project-fixed were selected before the complete comparison grid and then held constant across datasets. Complete configurations are provided in the supplementary repository.
+
+\Needspace{247pt}
+\begingroup
+\fontsize{8.5}{10.5}\selectfont
+\setlength{\tabcolsep}{3pt}
+\renewcommand{\arraystretch}{1.18}
+\setlength{\TableWidth}{\dimexpr\linewidth-14\tabcolsep\relax}
+\begin{longtable}{@{}>{\raggedright\arraybackslash}p{\dimexpr 0.150000\TableWidth\relax}>{\raggedright\arraybackslash}p{\dimexpr 0.200000\TableWidth\relax}>{\raggedright\arraybackslash}p{\dimexpr 0.100000\TableWidth\relax}>{\raggedright\arraybackslash}p{\dimexpr 0.100000\TableWidth\relax}>{\raggedright\arraybackslash}p{\dimexpr 0.075000\TableWidth\relax}>{\raggedright\arraybackslash}p{\dimexpr 0.120000\TableWidth\relax}>{\raggedright\arraybackslash}p{\dimexpr 0.135000\TableWidth\relax}>{\raggedright\arraybackslash}p{\dimexpr 0.120000\TableWidth\relax}@{}}
+\caption{GRACE configurations used for the five full-spectrum datasets.}\label{tab:G.3}\\
+\toprule
+\textbf{Dataset} & \textbf{Configuration source} & \(d_{h}/d_{p}\)\textbf{} & \textbf{Learning rate} & \textbf{Epochs} & \textbf{Edge-drop rates} & \textbf{Feature-mask rates} & \textbf{Tempe\-rature} \\
+\midrule\endfirsthead
+\multicolumn{8}{l}{\small\itshape Table \thetable{} (continued)}\\
+\toprule
+\textbf{Dataset} & \textbf{Configuration source} & \(d_{h}/d_{p}\)\textbf{} & \textbf{Learning rate} & \textbf{Epochs} & \textbf{Edge-drop rates} & \textbf{Feature-mask rates} & \textbf{Tempe\-rature} \\
+\midrule\endhead
+\midrule\multicolumn{8}{r}{\small\itshape Continued on the next page}\\\endfoot
+\bottomrule\endlastfoot
+Cora & Public GRACE configuration & 128/128 & \(5 \times 10^{- 4}\) & 200 & 0.2/0.4 & 0.3/0.4 & 0.4 \\
+CiteSeer & Public GRACE configuration & 256/256 & \(10^{- 3}\) & 200 & 0.2/0.0 & 0.3/0.2 & 0.9 \\
+CoraFull & Fixed transfer of the DBLP configuration & 256/256 & \(10^{- 3}\) & 1000 & 0.1/0.4 & 0.1/0.0 & 0.7 \\
+Coauthor-CS & Fixed transfer of the DBLP configuration & 256/256 & \(10^{- 3}\) & 1000 & 0.1/0.4 & 0.1/0.0 & 0.7 \\
+Amazon-Photo & Fixed transfer of the PubMed configuration & 256/256 & \(10^{- 3}\) & 1500 & 0.4/0.1 & 0.0/0.2 & 0.7 \\
+\end{longtable}
+\endgroup
+
+These pretraining configurations were fixed before the label-noise experiments. GRACE training does not access labels or data-split masks.
+
+\Needspace{374pt}
+
+\FloatBarrier
+\setcounter{table}{0}
+\section{Results on additional datasets}\label{sec:H}
+
+The six additional datasets were first evaluated under uniform 0.4 noise. CiteSeerFull was subsequently examined under the other four noise settings as an exploratory follow-up. Table H.1 summarizes the basic statistics of these datasets; data processing and the definition of edge homophily follow Table 1.
+
+\Needspace{269pt}
+\begingroup
+\fontsize{9}{11}\selectfont
+\setlength{\tabcolsep}{3pt}
+\renewcommand{\arraystretch}{1.18}
+\setlength{\TableWidth}{\dimexpr\linewidth-12\tabcolsep\relax}
+\begin{longtable}{@{}>{\raggedright\arraybackslash}p{\dimexpr 0.210000\TableWidth\relax}>{\centering\arraybackslash}p{\dimexpr 0.115000\TableWidth\relax}>{\centering\arraybackslash}p{\dimexpr 0.150000\TableWidth\relax}>{\centering\arraybackslash}p{\dimexpr 0.110000\TableWidth\relax}>{\centering\arraybackslash}p{\dimexpr 0.090000\TableWidth\relax}>{\centering\arraybackslash}p{\dimexpr 0.150000\TableWidth\relax}>{\centering\arraybackslash}p{\dimexpr 0.175000\TableWidth\relax}@{}}
+\caption{Basic statistics of the six additional datasets. Edges are unique undirected pairs after self-loop removal, and the number of training nodes is based on the 20\% split.}\label{tab:H.1}\\
+\toprule
+\textbf{Dataset} & \textbf{Nodes} & \textbf{Undirected edges} & \textbf{Features} & \textbf{Classes} & \textbf{Training nodes} & \textbf{Edge homophily} \\
+\midrule\endfirsthead
+\multicolumn{7}{l}{\small\itshape Table \thetable{} (continued)}\\
+\toprule
+\textbf{Dataset} & \textbf{Nodes} & \textbf{Undirected edges} & \textbf{Features} & \textbf{Classes} & \textbf{Training nodes} & \textbf{Edge homophily} \\
+\midrule\endhead
+\midrule\multicolumn{7}{r}{\small\itshape Continued on the next page}\\\endfoot
+\bottomrule\endlastfoot
+PubMed & 19,717 & 44,324 & 500 & 3 & 3,943 & 0.802 \\
+Amazon-Computers & 13,752 & 245,861 & 767 & 10 & 2,750 & 0.777 \\
+Cora\_ML & 2,995 & 8,158 & 2,879 & 7 & 599 & 0.789 \\
+Attributed-Wiki & 2,405 & 11,596 & 4,973 & 17 & 481 & 0.610 \\
+CiteSeerFull & 4,230 & 5,337 & 602 & 6 & 846 & 0.949 \\
+Coauthor-Physics & 34,493 & 247,962 & 8,415 & 5 & 6,898 & 0.931 \\
+\end{longtable}
+\endgroup
+
+\Needspace{269pt}
+\begingroup
+\fontsize{8.5}{10.5}\selectfont
+\setlength{\tabcolsep}{3pt}
+\renewcommand{\arraystretch}{1.18}
+\setlength{\TableWidth}{\dimexpr\linewidth-14\tabcolsep\relax}
+\begin{longtable}{@{}>{\raggedright\arraybackslash}p{\dimexpr 0.153846\TableWidth\relax}>{\centering\arraybackslash}p{\dimexpr 0.134615\TableWidth\relax}>{\centering\arraybackslash}p{\dimexpr 0.125000\TableWidth\relax}>{\centering\arraybackslash}p{\dimexpr 0.134615\TableWidth\relax}>{\centering\arraybackslash}p{\dimexpr 0.110577\TableWidth\relax}>{\centering\arraybackslash}p{\dimexpr 0.086538\TableWidth\relax}>{\centering\arraybackslash}p{\dimexpr 0.134615\TableWidth\relax}>{\centering\arraybackslash}p{\dimexpr 0.120192\TableWidth\relax}@{}}
+\caption{Uniform 0.4 results on the six additional datasets (test accuracy, \%; mean \ensuremath{\pm} standard deviation over five seeds). Bold indicates the highest mean among GB-LCSS, the strongest baseline, and random size-matched grouping for each dataset.}\label{tab:H.2}\\
+\toprule
+\textbf{Dataset} & \textbf{GB-LCSS} & \textbf{Strongest baseline} & \textbf{Baseline accuracy} & \textbf{GB-LCSS \ensuremath{-} baseline} & \textbf{Positive seeds} & \textbf{Random size-matched grouping} & \textbf{GB-LCSS \ensuremath{-} random size-matched grouping} \\
+\midrule\endfirsthead
+\multicolumn{8}{l}{\small\itshape Table \thetable{} (continued)}\\
+\toprule
+\textbf{Dataset} & \textbf{GB-LCSS} & \textbf{Strongest baseline} & \textbf{Baseline accuracy} & \textbf{GB-LCSS \ensuremath{-} baseline} & \textbf{Positive seeds} & \textbf{Random size-matched grouping} & \textbf{GB-LCSS \ensuremath{-} random size-matched grouping} \\
+\midrule\endhead
+\midrule\multicolumn{8}{r}{\small\itshape Continued on the next page}\\\endfoot
+\bottomrule\endlastfoot
+PubMed & 72.60\ensuremath{\pm}0.66 & JoCoR & \textbf{77.84\ensuremath{\pm}1.10} & -5.24 & 0/5 & 63.04\ensuremath{\pm}4.49 & +9.56 \\
+Amazon-Computers & 76.20\ensuremath{\pm}0.56 & JoCoR & \textbf{76.81\ensuremath{\pm}0.85} & -0.60 & 1/5 & 70.49\ensuremath{\pm}1.08 & +5.71 \\
+Cora\_ML & \textbf{56.26\ensuremath{\pm}2.61} & Small-loss & 55.56\ensuremath{\pm}3.42 & +0.70 & 3/5 & 47.81\ensuremath{\pm}3.34 & +8.45 \\
+Attributed-Wiki & 65.17\ensuremath{\pm}1.42 & LogitClip & \textbf{67.83\ensuremath{\pm}1.51} & -2.66 & 0/5 & 59.83\ensuremath{\pm}2.13 & +5.34 \\
+CiteSeerFull & \textbf{60.94\ensuremath{\pm}1.08} & JoCoR & 59.48\ensuremath{\pm}1.60 & +1.46 & 4/5 & 46.69\ensuremath{\pm}2.74 & +14.25 \\
+Coauthor-Physics & \textbf{93.13\ensuremath{\pm}0.25} & JoCoR & 93.09\ensuremath{\pm}0.28 & +0.04 & 3/5 & 88.80\ensuremath{\pm}2.12 & +4.33 \\
+\end{longtable}
+\endgroup
+
+GB-LCSS with the actual granular-ball partition achieves a higher five-seed mean than the random size-matched control on all six datasets, consistent with the interpretation that local membership contributes to soft-target construction. Gains over the strongest noise-robust baseline vary substantially across datasets; on CiteSeerFull, the gain is 1.46 percentage points under uniform 0.4 noise. Table H.3 further reports the full noise spectrum for this dataset.
+
+\Needspace{247pt}
+\begingroup
+\fontsize{9}{11}\selectfont
+\setlength{\tabcolsep}{3pt}
+\renewcommand{\arraystretch}{1.18}
+\setlength{\TableWidth}{\dimexpr\linewidth-12\tabcolsep\relax}
+\begin{longtable}{@{}>{\raggedright\arraybackslash}p{\dimexpr 0.150000\TableWidth\relax}>{\centering\arraybackslash}p{\dimexpr 0.150000\TableWidth\relax}>{\centering\arraybackslash}p{\dimexpr 0.150000\TableWidth\relax}>{\centering\arraybackslash}p{\dimexpr 0.150000\TableWidth\relax}>{\centering\arraybackslash}p{\dimexpr 0.130000\TableWidth\relax}>{\centering\arraybackslash}p{\dimexpr 0.100000\TableWidth\relax}>{\centering\arraybackslash}p{\dimexpr 0.170000\TableWidth\relax}@{}}
+\caption{Full noise-spectrum results on CiteSeerFull (test accuracy, \%; mean \ensuremath{\pm} standard deviation over five seeds). Bold indicates the highest mean among GB-LCSS, the strongest baseline, and random size-matched grouping for each noise setting.}\label{tab:H.3}\\
+\toprule
+\textbf{Noise setting} & \textbf{GB-LCSS} & \textbf{Strongest baseline} & \textbf{Baseline accuracy} & \textbf{GB-LCSS \ensuremath{-} baseline} & \textbf{Positive seeds} & \textbf{Random size-matched grouping} \\
+\midrule\endfirsthead
+\multicolumn{7}{l}{\small\itshape Table \thetable{} (continued)}\\
+\toprule
+\textbf{Noise setting} & \textbf{GB-LCSS} & \textbf{Strongest baseline} & \textbf{Baseline accuracy} & \textbf{GB-LCSS \ensuremath{-} baseline} & \textbf{Positive seeds} & \textbf{Random size-matched grouping} \\
+\midrule\endhead
+\midrule\multicolumn{7}{r}{\small\itshape Continued on the next page}\\\endfoot
+\bottomrule\endlastfoot
+Uniform 0.2 & \textbf{70.71\ensuremath{\pm}0.65} & Small-loss & 67.47\ensuremath{\pm}1.98 & +3.24 & 5/5 & 58.70\ensuremath{\pm}1.88 \\
+Uniform 0.4 & \textbf{60.94\ensuremath{\pm}1.08} & JoCoR & 59.48\ensuremath{\pm}1.60 & +1.46 & 4/5 & 46.69\ensuremath{\pm}2.74 \\
+Uniform 0.6 & 42.45\ensuremath{\pm}3.08 & JoCoR & \textbf{46.65\ensuremath{\pm}3.70} & -4.20 & 0/5 & 33.13\ensuremath{\pm}3.53 \\
+Pair 0.4 & \textbf{55.02\ensuremath{\pm}4.07} & JoCoR & 51.12\ensuremath{\pm}5.88 & +3.89 & 4/5 & 43.86\ensuremath{\pm}3.51 \\
+Instance 0.4 & \textbf{61.49\ensuremath{\pm}3.01} & JoCoR & 59.92\ensuremath{\pm}4.19 & +1.57 & 3/5 & 47.51\ensuremath{\pm}2.21 \\
+\end{longtable}
+\endgroup
+
+CiteSeerFull matches or exceeds the strongest baseline in four settings but falls short by 4.20 percentage points under uniform 0.6 noise. Its gains under low- and moderate-rate uniform noise and under pair and instance-dependent noise do not extend to high-rate uniform noise.
+
+\end{document}

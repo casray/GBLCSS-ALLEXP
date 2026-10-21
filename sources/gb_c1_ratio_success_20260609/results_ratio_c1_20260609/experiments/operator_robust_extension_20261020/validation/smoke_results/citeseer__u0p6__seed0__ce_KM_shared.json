@@ -1,0 +1,115 @@
+{
+  "status": "completed",
+  "job": {
+    "id": "citeseer__u0p6__seed0__ce_KM_shared",
+    "dataset": "citeseer",
+    "noise": "u0.6",
+    "seed": 0,
+    "variant": "ce_KM_shared"
+  },
+  "variant_spec": {
+    "family": "ce",
+    "rho": 1.0,
+    "mask": "shared",
+    "partition": "kmeans",
+    "target": "A"
+  },
+  "config_sha256": "b30c33a5d6f8d0d69a667255fb27ec38b6f58c1b2eb0ee1f7b7c9eb3605c10b2",
+  "source_sha256": "f8a32d33c1c53c92fddab77e3bf300599af061a7c06a6ba2caa6b28516c651c4",
+  "split_sha256": "b8e9619a1eeecaec2992c247a0efd225a0e4ab3a28ee799cf099c09c0f02fe9b",
+  "noise_sha256": "55c63a9c72afe1529819193ea9bd8ae514d46d77c94a7f0c3ed04d106f1ad9c3",
+  "assignment_sha256": "12b8bd60d7b67eeeea675ca0ca7d7bd0a0f7fb370a0e51f806b0c4e97ae4dc76",
+  "targets_sha256": "f4c7f78c41c36243a6008c7d2b68d13fcd873933857ed29dcee97ffb85e148b9",
+  "initial_parameter_sha256": "30e65672754081837f83601fd042ae5a815e1370f79d0aecbe09de0422731f87",
+  "source_data_sha256": "f1b1b207fbc88b74dd41c594bcd3d8b884961db791542afb2815d3702912435b",
+  "initial_decoder_parameter_sha256": null,
+  "initial_encoder_parameter_sha256": null,
+  "source_cache_metadata_sha256": "df1aa38cf887ca958dca99f8f64a1768d141754193f5f2b89166a74b1b0d7d4c",
+  "N": 3327,
+  "C": 6,
+  "L": 665,
+  "M": 333,
+  "M_plus": 279,
+  "coarse_edges": null,
+  "target_diagnostics": {
+    "target": "own_noisy_label"
+  },
+  "actual_noise_rate": 0.5864661654135338,
+  "test_accuracy": 0.5734536082474226,
+  "macro_f1": 0.5241684377358182,
+  "per_class_recall": [
+    0.0972972972972973,
+    0.6590330788804071,
+    0.7046413502109705,
+    0.6424242424242425,
+    0.5502392344497608,
+    0.48484848484848486
+  ],
+  "train_clean_accuracy": 0.6030075187969924,
+  "train_noisy_accuracy": 0.4496240601503759,
+  "same_checkpoint_train_view_accuracy": 0.6013745704467354,
+  "best_primary_val": 0.5512048192771084,
+  "best_primary_epoch": 3,
+  "epochs": 3,
+  "validation_history": [
+    {
+      "epoch": 1,
+      "primary_val": 0.39156626506024095,
+      "val": 0.39156626506024095,
+      "train_loss": 1.791892647743225
+    },
+    {
+      "epoch": 2,
+      "primary_val": 0.4939759036144578,
+      "val": 0.4939759036144578,
+      "train_loss": 1.7209278345108032
+    },
+    {
+      "epoch": 3,
+      "primary_val": 0.5512048192771084,
+      "val": 0.5512048192771084,
+      "train_loss": 1.6085222959518433
+    }
+  ],
+  "times": {
+    "load_cache_s": 0.0064131999970413744,
+    "targets_s": 0.003539799989084713,
+    "materialize_s": 1.1316064999991795,
+    "validation_s": 0.03382029999920633,
+    "training_trace_s": 0.026378900001873262,
+    "training_s": 1.9143237000098452,
+    "primary_inference_s": 0.003801200000452809,
+    "train_view_diagnostic_s": 0.004459499992663041
+  },
+  "worker_wall_s": 3.2664942999981577,
+  "required_historical_preparation_s": 5.330693100011558,
+  "reconstructed_cold_s": 8.597187400009716,
+  "central_preparation_wall_s": 3.728963000001386,
+  "cost_scope": "Worker process and trace costs; reconstructed historical preparation is not a measured cold repeat; no efficiency claim.",
+  "gpu_training_peak_gib": 0.18183183670043945,
+  "gpu_primary_inference_peak_gib": 0.1679682731628418,
+  "gpu_complete_peak_gib": 0.18183183670043945,
+  "gpu_total_gib": 11.984375,
+  "gpu_free_before_gib": 11.8424072265625,
+  "gpu": "AMD Radeon RX 7700 XT",
+  "torch_version": "2.9.1+rocm7.2.1",
+  "host_rss_peak_gib": 1.1251182556152344,
+  "prediction_file": "citeseer__u0p6__seed0__ce_KM_shared_predictions.npz",
+  "prediction_sha256": "f6c014414cbd24977a9509f0b96b6caed07e63ba4546d9219904e0363f2f2717",
+  "checkpoint_file": "checkpoints\\citeseer__u0p6__seed0__ce_KM_shared.pt",
+  "checkpoint_sha256": "2453aaca6f341f3b658eba39895851e3461b56c6256efafdb11f7778555989ea",
+  "trace_file": "traces/citeseer__u0p6__seed0__ce_KM_shared.json",
+  "trace_sha256": "8af3a13d4540932a91f89bdf3a4186c005aa21a7407357166823530579789710",
+  "interpretation": "Local fixed-feature protocol adaptation; original-P selection and test; own noisy-label supervision; train-view diagnostic at same selected checkpoint.",
+  "training_settings": {
+    "hidden": 256,
+    "dropout": 0.5,
+    "lr": 0.01,
+    "weight_decay": 0.0005,
+    "epochs": 3,
+    "eval_every": 1,
+    "patience_checks": 10
+  },
+  "process_wall_s": 6.901926599995932,
+  "reconstructed_cold_process_s": 12.23261970000749
+}

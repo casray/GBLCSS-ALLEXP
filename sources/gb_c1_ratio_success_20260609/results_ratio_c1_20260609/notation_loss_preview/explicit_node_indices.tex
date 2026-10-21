@@ -1,0 +1,57 @@
+\RequirePackage{fix-cm}
+\documentclass[10pt]{article}
+\usepackage[margin=0.78in]{geometry}
+\usepackage{amsmath,amssymb}
+\usepackage[OT1]{fontenc}
+\renewcommand{\rmdefault}{cmr}
+\renewcommand{\sfdefault}{cmss}
+\renewcommand{\ttdefault}{cmtt}
+\setlength{\parindent}{1.2em}
+\setlength{\parskip}{3pt}
+\begin{document}
+\begin{center}\large\bfseries Loss Functions with Explicit Node Indices\end{center}
+
+Here, \(v\) indexes a node and \(i\) indexes a class. Every node-specific quantity carries the node index explicitly. Thus, the target, prediction, teacher output, and input appearing in a summand all belong to the same node \(v\).
+
+\paragraph{Direct MLP training.}
+For a labeled node \(v\), let \(\mathbf{x}_v\) be its attributes, \(\mathbf{t}_v\) its soft target, and \(\mathbf{p}_v\) the MLP prediction:
+\begin{equation}
+\mathbf{p}_v=\operatorname{softmax}\bigl(f(\mathbf{x}_v)\bigr),
+\qquad v\in\mathcal{V}_L.
+\end{equation}
+The cross-entropy objective is
+\begin{equation}
+\mathcal{L}
+=-\frac{1}{|\mathcal{V}_L|}
+\sum_{v\in\mathcal{V}_L}\sum_{i=1}^{C}
+t_{v,i}\log p_{v,i},
+\end{equation}
+where \(t_{v,i}\) and \(p_{v,i}\) are the class-\(i\) components of \(\mathbf{t}_v\) and \(\mathbf{p}_v\).
+
+\paragraph{Graph-teacher distillation.}
+Let \(\mathbf{o}_v\) denote the GCN teacher's logit vector for node \(v\). The teacher is trained on labeled nodes using the same soft targets:
+\begin{equation}
+\mathcal{L}_1
+=-\frac{1}{|\mathcal{V}_L|}
+\sum_{v\in\mathcal{V}_L}\sum_{i=1}^{C}
+t_{v,i}\log\left[\operatorname{softmax}(\mathbf{o}_v)\right]_i.
+\end{equation}
+After the teacher is frozen, it produces a distillation distribution for every node:
+\begin{equation}
+\boldsymbol{\pi}_v
+=\operatorname{softmax}\left(\frac{\mathbf{o}_v}{\tau}\right),
+\qquad v\in\mathcal{V}.
+\end{equation}
+The MLP student is trained on all nodes by minimizing
+\begin{equation}
+\mathcal{L}_2
+=-\frac{\tau^2}{N}
+\sum_{v\in\mathcal{V}}\sum_{i=1}^{C}
+\pi_{v,i}
+\log\left[
+\operatorname{softmax}\left(\frac{f(\mathbf{x}_v)}{\tau}\right)
+\right]_i.
+\end{equation}
+Here, \(\pi_{v,i}\) is the class-\(i\) component of the teacher distribution for node \(v\). The explicit subscripts make the node-to-term correspondence visible, at the cost of longer formulas.
+
+\end{document}

@@ -1,0 +1,614 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SoftDist [X‖H] 论文初稿雏形</title>
+<style>
+  :root{--ink:#1a1a2e;--accent:#c0392b;--accent2:#2c5f8a;--ok:#1e7e34;--bad:#a11;--gray:#666;--soft:#f5f6f8;}
+  body{font-family:-apple-system,"Segoe UI","Microsoft YaHei",sans-serif;max-width:1080px;margin:0 auto;padding:28px 40px;color:#222;line-height:1.65;background:#fff;}
+  h1{color:var(--ink);border-bottom:3px solid var(--accent);padding-bottom:12px;font-size:1.85em;}
+  h2{color:var(--ink);margin-top:2.2em;border-left:5px solid var(--accent);padding-left:14px;font-size:1.4em;}
+  h3{color:var(--accent2);margin-top:1.6em;font-size:1.15em;}
+  h4{color:#333;margin-top:1.2em;font-size:1.02em;}
+  table{border-collapse:collapse;width:100%;margin:14px 0;font-size:0.9em;}
+  th,td{border:1px solid #d4d8dd;padding:7px 11px;text-align:center;}
+  th{background:var(--ink);color:#fff;font-weight:600;}
+  td:first-child{text-align:left;}
+  tr:nth-child(even){background:var(--soft);}
+  .best{font-weight:700;color:var(--ok);}
+  .ours{background:#eaf4ea !important;}
+  .win{color:var(--ok);font-weight:600;}
+  .loss{color:var(--bad);}
+  .tie{color:#b8860b;}
+  code{background:#eef0f2;padding:1px 6px;border-radius:3px;font-size:0.92em;color:#a3324a;}
+  .formula{background:#fafbfc;border:1px solid #e0e3e7;border-left:4px solid var(--accent2);padding:14px 18px;margin:14px 0;font-family:"Cambria Math",Georgia,serif;font-size:1.05em;text-align:center;}
+  .claim{background:#eef5fb;border-left:4px solid var(--accent2);padding:12px 18px;margin:14px 0;font-style:italic;}
+  .neg{background:#fdf3f3;border-left:4px solid var(--accent);padding:12px 18px;margin:14px 0;}
+  .note{background:#fffbe8;border-left:4px solid #d9a500;padding:10px 16px;margin:12px 0;font-size:0.92em;}
+  .todo{background:#f0ebfa;border-left:4px solid #6f42c1;padding:12px 18px;margin:12px 0;}
+  .meta{color:var(--gray);font-size:0.86em;}
+  ul.tight li{margin:3px 0;}
+  .sec-tag{display:inline-block;background:var(--accent2);color:#fff;font-size:0.7em;padding:2px 8px;border-radius:10px;vertical-align:middle;margin-left:8px;}
+  .figbox{border:1.5px dashed #aab;background:#fafbfc;padding:18px;margin:14px 0;text-align:center;color:var(--gray);border-radius:6px;}
+  .pipeline{font-family:Consolas,monospace;background:#1e2230;color:#e8eaf0;padding:18px 22px;border-radius:8px;font-size:0.86em;line-height:1.5;overflow-x:auto;}
+  .pipeline .hl{color:#7fd1c8;}
+  .pipeline .hl2{color:#f0c674;}
+</style>
+</head>
+<body>
+
+<h1>SoftDist [X‖H]：基于冻结图对比表示的粒球软标签分布校正<br><span class="meta">图节点噪声标签鲁棒分类 · 论文初稿雏形 · 2026-06-23</span></h1>
+
+<div class="note">
+<b>本文件性质</b>：论文写作脚手架，不是终稿。每节包含 (1) <b>可直接写入论文的论述</b>（已按最新证据降级强 claim）；(2) <b>支撑的实验数据表格</b>（正式主表来自 train-only 修正协议，旧全图污染结果仅作 legacy/附录参考）；(3) <b>图片占位框</b>（标注需要从哪个 CSV 生成什么图）。正式主表协议：percent split 0.2/0.1/0.7，仅污染 train，uniform noise=0.4，ROCm GPU，5 seeds。
+</div>
+
+<!-- ============ 标题与摘要 ============ -->
+<h2>0. 标题候选 / 摘要 <span class="sec-tag">Abstract</span></h2>
+
+<h4>标题候选</h4>
+<ul class="tight">
+<li><b>A</b>：Granular-Ball Soft-Label Distribution Correction over Frozen Graph-Contrastive Representations for Noisy-Label Node Classification</li>
+<li><b>B</b>：SoftDist：A Simple Non-Iterative Pipeline for Robust Node Classification under Label Noise</li>
+<li><b>C</b>（强调简洁性卖点）：Frozen Contrastive Embeddings + Granular-Ball Soft Targets as a Non-Iterative Alternative for Noisy-Label Node Classification</li>
+</ul>
+
+<h4>摘要（草稿）</h4>
+<p>图节点分类在训练标签含噪时容易受到错误监督的影响。现有图噪声标签方法（如 NRGNN、RTGNN）多采用<b>迭代式</b>机制——在线伪标签、动态加边、图结构重估——通常带来额外计算和超参耦合。我们提出 <b>SoftDist [X‖H]</b>，一个<b>非迭代、单遍预处理</b>的框架：(1) 用标签无关（label-free）的图对比学习（GRACE）预训练得到冻结表示 <code>H</code>；(2) 在 <code>H</code> 空间用几何分裂构造粒球，作为局部语义单元；(3) 每个粒球内仅统计训练节点的噪声标签分布，经多类别校准的置信度 <code>α</code> 生成软标签目标；(4) 一个全新的 GCN 以 <code>[X‖H]</code> 拼接特征和软目标训练。该设计把标签噪声处理拆成两个相对独立的部分：<code>H</code> 由无标签目标学习得到，粒球只在下游阶段读取 train noisy labels。在修正后的 train-only 噪声协议下，SoftDist [X‖H] 相对 GCN [X‖H] 在 Cora/CiteSeer/Coauthor-CS 上分别取得 +0.72/+1.06/+0.25pp 的配对增量，相对随机球取得 +1.13/+1.62/+0.43pp 的配对增量。与强迭代基线相比，SoftDist 在 Cora 上接近 NRGNN [X‖H]（−0.05pp），但在 CiteSeer 和 Coauthor-CS 上落后；因此本文不主张全面 SOTA，而主张一种更简单、非迭代、可解释且具有明确适用边界的替代方案。我们进一步报告负结果和适用域诊断，显示粒球信号能否转化为下游增益取决于 ball-clusterability、图 regime 与强基线吸收能力的共同作用。</p>
+
+<!-- ============ 引言 ============ -->
+<h2>1. 引言与动机 <span class="sec-tag">Introduction</span></h2>
+
+<h3>1.1 可写入论文的论述</h3>
+<p><b>问题。</b>图半监督节点分类依赖少量标注节点。当这些标注被噪声污染（标注错误、众包噪声、自动标注），GNN 会在训练后期记忆噪声标签，导致泛化下降。在修正后的 train-only 噪声协议下（20%/10%/70% split，仅污染 train，uniform noise=0.4），朴素 GCN+CE 在 Cora、CiteSeer 和 Coauthor-CS 上分别为 78.97%、64.53% 和 92.06%。</p>
+
+<p><b>现有方法的共性与代价。</b>主流图噪声标签方法是<b>迭代耦合</b>的：NRGNN 在线预测伪标签并向图中加边连接可靠节点；RTGNN 联合估计标签与图结构鲁棒训练。这类方法在多个数据集上仍是强基线，但 (i) 训练中需要维护额外的伪标签或图结构状态；(ii) 方法效果往往与早停、阈值和伪标签选择策略耦合；(iii) 伪标签在图上传播时可能放大局部错误（已有理论分析支持，见 Deep Insights into Noisy Pseudo Labeling, NeurIPS 2023）。</p>
+
+<p><b>核心观察：把一部分噪声处理负担前移到无标签表示阶段。</b>图对比学习（GRACE 等）的预训练目标<b>完全不使用标签</b>。因此其表示 <code>H</code> 不直接暴露于训练标签噪声，同一份冻结 <code>H</code> 可以在不同噪声设置下复用。与迭代式方法相比，这种拆分减少了伪标签和图结构更新对噪声标签的反馈依赖。消融结果显示，<code>H</code> 对 Cora/CiteSeer 的纯 CE 分类器有明确帮助，但在 Coauthor-CS 上几乎不带来额外提升；因此本文把 <code>H</code> 写作有用但非充分的表示先验，而不是噪声问题的完整解法。</p>
+
+<p><b>本文方法。</b>我们不去微调或在线更新表示，而是<b>冻结</b> <code>H</code>，把它用作两件事：(a) 构造粒球以提供局部语义邻域，(b) 作为分类器的附加输入特征。粒球只读取训练节点的噪声标签来生成<b>软</b>目标分布，校正强度由球内投票置信度连续调制。整条管线是<b>单遍、非迭代</b>的。</p>
+
+<h3>1.2 贡献列表</h3>
+<ul class="tight">
+<li><b>C1</b>：提出 SoftDist [X‖H]，一种将粒球软标签分布与冻结图对比表示结合的非迭代框架，以冻结表示同时服务于球构造与分类器输入。</li>
+<li><b>C2（受控增量，非 SOTA 声明）</b>：在<b>控制冻结表示 <code>H</code> 这一共同变量</b>后，粒球软目标相对「同样用 H 的纯 CE 分类器」取得 +0.72/+1.06/+0.25pp（Cora/CiteSeer/Coauthor-CS）的配对增量，相对「同样用 H 的随机球」取得 +1.13/+1.62/+0.43pp 的配对增量。与强迭代方法 NRGNN 相比，本文在 Cora 上接近 NRGNN [X‖H]（−0.05pp），在 CiteSeer 和 Coauthor-CS 上不及 NRGNN [X‖H]；因此本文<b>不声称全面超越 SOTA</b>，而以更简单、非迭代、可解释的方式提供竞争性但有边界的替代方案。</li>
+<li><b>C3</b>：揭示「表示质量的二维性」——线性可分性 ≠ 可聚类性。更强 probe 的 SSL 表示（CCA-SSG）反而使粒球塌缩，这一结果提示 GRACE 在 alignment、uniformity 与 local clusterability 之间提供了当前管线可用的平衡。</li>
+<li><b>C4</b>：系统性机制边界研究——多类增强方向未能在预注册标准下超过 SoftDist 基础形态；在 Cora/CiteSeer 的软标签校正框架内，球校正候选集内部「干净 vs 噪声」在票数、时间、尺度三类信号维度上缺乏可部署的清晰分界。同时，Coauthor-CS、Amazon-Computers 与 LastFM-Asia 的结果提示，大图规模或类数本身都不是充分解释，任务标签与 <code>H</code> 几何是否对齐更接近关键调节变量。</li>
+</ul>
+
+<!-- ============ 方法 ============ -->
+<h2>2. 方法 <span class="sec-tag">Method</span></h2>
+
+<h3>2.1 管线总览（可写入论文）</h3>
+<div class="pipeline">
+<span class="hl">Stage 1 — Label-free 表示预训练</span>（一次性，与噪声无关）
+  GRACE 对比学习 (X, A) ───► 冻结表示 H ∈ ℝ^{N×d}
+<span class="hl">Stage 2 — 粒球构造</span>（几何，标签盲）
+  在 L2 归一化的 H 上 2-means 递归分裂 ───► ~64 个球 {B_k}
+<span class="hl">Stage 3 — 软标签分布校正</span>（仅用 train 噪声标签）
+  每球 B 内 train 节点投票 ──► 分布 dist_B + 置信 α_B(margin)
+  soft_target_i = (1−α_B)·onehot(y~_i) + α_B·dist_B
+<span class="hl">Stage 4 — 端到端分类器</span>（全新初始化，单遍训练）
+  GCN( <span class="hl2">[X ‖ H]</span> , A ) ──软交叉熵──► soft_target
+</div>
+
+<h3>2.2 软标签分布目标（核心，可写入论文）</h3>
+<p>设节点 <code>i</code> 属于粒球 <code>B</code>，<code>T_B = B ∩ train</code> 为球内训练节点集合。统计噪声标签计数 <code>c_B</code>，多数票占比 <code>margin_B = max(c_B)/|T_B|</code>。<b>多类别校准</b>的置信度为：</p>
+<div class="formula">
+α<sub>B</sub> = clamp<sub>[0,1]</sub>( (margin<sub>B</sub> − 1/C) / (1 − 1/C) )
+</div>
+<p>其中 <code>C</code> 为类别数，<code>1/C</code> 是随机多数票的期望基线。软目标为原噪声 one-hot 与球内分布的凸组合：</p>
+<div class="formula">
+soft_target<sub>i</sub> = (1 − α<sub>B</sub>) · onehot(ỹ<sub>i</sub>) + α<sub>B</sub> · dist<sub>B</sub>,&nbsp;&nbsp; dist<sub>B</sub> = c<sub>B</sub> / |T<sub>B</sub>|
+</div>
+<p>分类器以软交叉熵 <code>−Σ soft_target·log softmax(z)</code> 在 train 节点上训练。</p>
+
+<div class="note"><b>设计要点（论文应强调）</b>：(1) <code>1/C</code> 校准——若用二分类零点 0.5，多类别下 margin 普遍落在 0.3–0.5，α≈0，校正失效（我们的消融显示）。(2) 用<b>完整分布</b> <code>dist_B</code> 而非 one-hot 多数票，保留不确定性，避免硬校正的高误伤。(3) 软组合而非硬替换——这是控制 CDR（干净标签误伤率）的关键。</div>
+
+<h3>2.3 为何用 [X‖H]（可写入论文）</h3>
+<p><code>H</code> 在管线中扮演<b>双重角色</b>：除提供球的几何外，将其 L2 归一化后与原始特征 <code>X</code> 拼接作为分类器输入。这一步把 label-free 对比表示的判别力直接注入分类器。最新 train-only 消融显示，<code>H</code> 对纯 CE 分类器在 Cora/CiteSeer 上分别带来 +1.73/+2.96pp，但在 Coauthor-CS 上几乎为 0；在此基础上，真实粒球软目标相对 GCN [X‖H] 仍提供 +0.72/+1.06/+0.25pp 的配对增量。</p>
+
+<!-- ============ 实验：主结果 ============ -->
+<h2>3. 主实验结果 <span class="sec-tag">Main Results</span></h2>
+
+<h3>3.1 主表：Cora / CiteSeer / Coauthor-CS（5 seeds, train-only uniform 0.4）</h3>
+<p class="meta">数据来源：<code>results_ratio_c1_20260609/latest_baselines_trainonly_20260622_continuation/summary.csv</code>。协议为 20%/10%/70%，仅污染 train 标签，validation/test 保持 clean；旧的全图污染结果均标记为 legacy，不进入本主表。</p>
+<table>
+<tr><th>方法</th><th>类型</th><th>Cora</th><th>CiteSeer</th><th>Coauthor-CS</th></tr>
+<tr><td>GCN + CE</td><td>无去噪</td><td>0.7897 ± 0.0163</td><td>0.6453 ± 0.0154</td><td>0.9206 ± 0.0034</td></tr>
+<tr><td>GCN [X‖H]</td><td>H 特征公平性对照</td><td>0.8070 ± 0.0154</td><td>0.6748 ± 0.0139</td><td>0.9205 ± 0.0019</td></tr>
+<tr><td>NRGNN</td><td>迭代加边伪标签</td><td><span class="best">0.8176 ± 0.0128</span></td><td><span class="best">0.7103 ± 0.0101</span></td><td>0.9356 ± 0.0011</td></tr>
+<tr><td>NRGNN [X‖H]</td><td>NRGNN 同样使用 H</td><td>0.8147 ± 0.0128</td><td>0.7074 ± 0.0104</td><td><span class="best">0.9372 ± 0.0018</span></td></tr>
+<tr><td>SoftDist [X‖H] shuffled</td><td>随机球结构对照</td><td>0.8028 ± 0.0232</td><td>0.6692 ± 0.0120</td><td>0.9187 ± 0.0023</td></tr>
+<tr class="ours"><td><b>SoftDist [X‖H]（本文）</b></td><td>非迭代软校正</td><td>0.8141 ± 0.0189</td><td>0.6854 ± 0.0099</td><td>0.9230 ± 0.0014</td></tr>
+<tr><td>TFR (CIKM 2025)</td><td>官方实现，seed0 validation 调参</td><td>0.7784 ± 0.0073</td><td>0.7005 ± 0.0064</td><td>0.9064 ± 0.0056</td></tr>
+<tr><td>ProCon (IJCAI 2025)</td><td>paper reimplementation</td><td>0.7612 ± 0.0166</td><td>0.6241 ± 0.0346</td><td>0.8542 ± 0.0721</td></tr>
+<tr><td>GD² (NeurIPS 2025)</td><td>paper reimplementation</td><td>0.7780 ± 0.0216</td><td>0.6296 ± 0.0216</td><td>0.9204 ± 0.0024</td></tr>
+<tr><td>UnionNET</td><td>节点级 support 校正</td><td>0.7928 ± 0.0131</td><td>0.6794 ± 0.0257</td><td>—</td></tr>
+<tr><td>CRGNN</td><td>对比鲁棒</td><td>0.7661 ± 0.0170</td><td>0.6386 ± 0.0114</td><td>—</td></tr>
+<tr><td>CGNN</td><td>对比+同质选择</td><td>0.7604 ± 0.0548</td><td>0.5943 ± 0.0364</td><td>—</td></tr>
+<tr><td>TSS</td><td>拓扑采样选择</td><td>0.6023 ± 0.0256</td><td>OOM / incomplete</td><td>—</td></tr>
+<tr><td>R2LP</td><td>标签传播（train-only 修正）</td><td>0.6095 ± 0.0340</td><td>0.3431 ± 0.0532</td><td>—</td></tr>
+</table>
+<p><b>可写入论文的论述</b>：在修正协议下，SoftDist [X‖H] 的主要证据不是全面超过强迭代基线，而是相对同输入的 GCN [X‖H] 与 shuffled 结构对照均有受控增量。SoftDist 在 Cora 上接近 NRGNN [X‖H]（81.41% vs 81.47%），但在 CiteSeer 和 Coauthor-CS 上低于 NRGNN [X‖H]。与 2025 方法相比，SoftDist 高于 TFR 的 Cora/Coauthor-CS 和 ProCon/GD² 的三个数据集，但 CiteSeer 上 TFR 仍更强。Coauthor-CS 的价值应写成“真实球结构在大图多类别设置下仍优于随机球和 GCN [X‖H]”，而不是写成超过最强 baseline。</p>
+<p class="meta">R2LP 审计说明：旧 R2LP 适配器曾从自然节点索引初始化 label pool，导致 clean val/test label 泄漏；本表仅使用修正后的 train-only R2LP。CiteSeer TSS 和 Coauthor-CS 旧基线因 OOM 或缺少官方配置保持 incomplete，不迁移其他数据集超参。</p>
+
+<div class="claim">关键 claim：SoftDist 不应写成全面 SOTA。更稳妥的主张是：一个非迭代的「冻结表示 + 粒球软校正」管线在 Cora 上接近 H-augmented 迭代式去噪器；在 Cora/CiteSeer/Coauthor-CS 上相对 GCN [X‖H] 与随机球均有受控增量；Coauthor-CS 说明该结构增量不局限于小图，但不支持“超过所有强基线”的说法。</div>
+
+<div class="figbox">
+【图 1 占位】方法对比柱状图（带误差棒）。x 轴=方法，y 轴=test acc，Cora/CiteSeer 双子图，本文方法高亮。<br>
+数据源：<code>latest_baselines_trainonly_20260622_continuation/summary.csv</code>
+</div>
+
+<h3>3.2 逐 seed 数据（附录用，配对比较）</h3>
+<p class="meta">数据来源：<code>latest_baselines_trainonly_20260622_continuation/formal_main_raw.csv</code></p>
+<table>
+<tr><th>方法 / seed</th><th>0</th><th>1</th><th>2</th><th>3</th><th>4</th></tr>
+<tr><td>Cora SoftDist [X‖H]</td><td>0.8211</td><td>0.7968</td><td>0.8201</td><td>0.8391</td><td>0.7937</td></tr>
+<tr><td>Cora NRGNN [X‖H]</td><td>0.8285</td><td>0.8011</td><td>0.8021</td><td>0.8253</td><td>0.8164</td></tr>
+<tr><td>CiteSeer SoftDist [X‖H]</td><td>0.6877</td><td>0.6847</td><td>0.6731</td><td>0.7002</td><td>0.6813</td></tr>
+<tr><td>CiteSeer NRGNN [X‖H]</td><td>0.7195</td><td>0.6954</td><td>0.7045</td><td>0.7006</td><td>0.7169</td></tr>
+<tr><td>Coauthor-CS SoftDist [X‖H]</td><td>0.9208</td><td>0.9239</td><td>0.9232</td><td>0.9246</td><td>0.9228</td></tr>
+<tr><td>Coauthor-CS NRGNN [X‖H]</td><td>0.9380</td><td>0.9362</td><td>0.9354</td><td>0.9366</td><td>0.9399</td></tr>
+</table>
+<p class="meta">本表只用于展示配对比较，不再作为“SoftDist 方差更低”的证据。最新修正协议下，SoftDist 在 Cora 与 NRGNN [X‖H] 接近，但正向 seed 数仅为 2/5；CiteSeer 与 Coauthor-CS 上 NRGNN [X‖H] 全部 seed 更高。</p>
+
+<!-- ============ 消融 ============ -->
+<h2>4. 消融研究 <span class="sec-tag">Ablation</span></h2>
+
+<h3>4.1 归因链：H 贡献 / 球贡献 / 真实-随机对照（论文 Table 2）</h3>
+<p class="meta">数据来源：<code>latest_baselines_trainonly_20260622_continuation/formal_main_raw.csv</code>，全部 5 seeds。该表只保留修正协议下已复核的配置；旧的“SoftDist 无 [X‖H]”结果不与本表混用。</p>
+<table>
+<tr><th>配置</th><th>Cora</th><th>CiteSeer</th><th>Coauthor-CS</th><th>说明</th></tr>
+<tr><td>GCN + CE（无 H 无球）</td><td>0.7897</td><td>0.6453</td><td>0.9206</td><td>基线</td></tr>
+<tr><td>GCN + CE [X‖H]（H，无球）</td><td>0.8070</td><td>0.6748</td><td>0.9205</td><td>仅 H 拼接</td></tr>
+<tr><td>SoftDist [X‖H] shuffled（H + 随机球）</td><td>0.8028</td><td>0.6692</td><td>0.9187</td><td>结构对照</td></tr>
+<tr class="ours"><td>SoftDist [X‖H]（完整）</td><td><b>0.8141</b></td><td><b>0.6854</b></td><td><b>0.9230</b></td><td>H + 真实球</td></tr>
+</table>
+
+<h4>逐 seed 配对增量（论文应报告，避免单 seed 误读）</h4>
+<table>
+<tr><th>配对 delta</th><th>Cora</th><th>CiteSeer</th><th>Coauthor-CS</th></tr>
+<tr><td>H 贡献 (gcn_xh_ce − GCN+CE)</td><td>+1.73pp, 5/5</td><td>+2.96pp, 5/5</td><td>-0.00pp, 2/5</td></tr>
+<tr><td>球贡献 (softdist_xh − gcn_xh_ce)</td><td>+0.72pp, 5/5</td><td>+1.06pp, 4/5</td><td>+0.25pp, 5/5</td></tr>
+<tr><td>真实-随机球 (softdist_xh − shuffled)</td><td>+1.13pp, 4/5</td><td>+1.62pp, 5/5</td><td>+0.43pp, 5/5</td></tr>
+</table>
+<p><b>可写入论文的论述</b>：球贡献与真实-随机球对照在三个数据集上均为正，其中 Coauthor-CS 双 5/5 说明真实球结构的受控增量不局限于小图。<code>H</code> 贡献在 Coauthor-CS 上几乎为零，说明该数据集的核心证据不是“拼接 H 提升分类器”，而是“真实球结构相对随机球和 GCN [X‖H] 仍有额外增量”。</p>
+<div class="note">写作提醒：这里不使用“显著性”措辞，除非后续补充 p-value 或置信区间。当前可报告的是 paired delta、positive seed count 和 mean±std。</div>
+
+<h3>4.2 公平性对照：给 NRGNN 同样的 [X‖H]</h3>
+<p class="meta">数据来源：<code>latest_baselines_trainonly_20260622_continuation/formal_main_raw.csv</code>。目的：回应「SoftDist 只是多用了 H」的公平性质疑。</p>
+<table>
+<tr><th>方法</th><th>用 H?</th><th>用球?</th><th>Cora</th><th>CiteSeer</th><th>Coauthor-CS</th></tr>
+<tr><td>NRGNN</td><td>否</td><td>否</td><td><b>0.8176 ± 0.0128</b></td><td><b>0.7103 ± 0.0101</b></td><td>0.9356 ± 0.0011</td></tr>
+<tr><td>NRGNN [X‖H]</td><td>是</td><td>否</td><td>0.8147 ± 0.0128</td><td>0.7074 ± 0.0104</td><td><b>0.9372 ± 0.0018</b></td></tr>
+<tr><td>GCN + CE [X‖H]</td><td>是</td><td>否</td><td>0.8070 ± 0.0154</td><td>0.6748 ± 0.0139</td><td>0.9205 ± 0.0019</td></tr>
+<tr class="ours"><td>SoftDist [X‖H]</td><td>是</td><td>是</td><td>0.8141 ± 0.0189</td><td>0.6854 ± 0.0099</td><td>0.9230 ± 0.0014</td></tr>
+</table>
+<table>
+<tr><th>配对 delta</th><th>Cora</th><th>CiteSeer</th><th>Coauthor-CS</th></tr>
+<tr><td>NRGNN [X‖H] − NRGNN</td><td>-0.30pp, 2/5</td><td>-0.29pp, 2/5</td><td>+0.16pp, 4/5</td></tr>
+<tr><td>SoftDist [X‖H] − NRGNN [X‖H]</td><td>-0.05pp, 2/5</td><td>-2.20pp, 0/5</td><td>-1.42pp, 0/5</td></tr>
+</table>
+<p><b>可写入论文的论述（降级后）</b>：公平性对照显示，冻结表示 <code>H</code> 不是 SoftDist 独占资产；它对 NRGNN 的影响在不同数据集上并不一致。SoftDist 在 Cora 上接近 NRGNN [X‖H]，但 CiteSeer 与 Coauthor-CS 上 NRGNN [X‖H] 明显更强。本文不能把「球校正全面优于强 baseline」作为 claim。更稳妥的 claim 是：<b>粒球软校正在 GCN [X‖H] 分类器上提供受控额外增量；与 NRGNN 相比，本文以更简单、非迭代、可解释的方式取得竞争性但非全面最优的结果。</b></p>
+
+<h3>4.3 球数超参敏感性（论文 Figure / Appendix）</h3>
+<p class="meta">数据来源：<code>runs/ball_count_sensitivity_20260615/</code>。该节是旧补充实验，用于说明球数敏感性，不与 §3 的 train-only 修正主表混合作为正式排名。仅在内存中 override <code>gb.max_balls</code>，<code>min_ball_size=32</code> 固定，SoftDist [X‖H] 机制与 anchor 配置不变。</p>
+<table>
+<tr><th>max_balls</th><th>Cora real</th><th>Cora shuffled</th><th>CiteSeer real</th><th>CiteSeer shuffled</th></tr>
+<tr><td>16</td><td>0.8132 ± 0.0065</td><td>0.7987 ± 0.0042</td><td>0.6892 ± 0.0142</td><td>0.6723 ± 0.0184</td></tr>
+<tr><td>32</td><td>0.8132 ± 0.0109</td><td>0.7954 ± 0.0087</td><td><b>0.6923 ± 0.0129</b></td><td>0.6688 ± 0.0200</td></tr>
+<tr class="ours"><td>64（默认）</td><td><b>0.8137 ± 0.0067</b></td><td>0.7921 ± 0.0097</td><td>0.6891 ± 0.0160</td><td>0.6696 ± 0.0234</td></tr>
+<tr><td>128</td><td><b>0.8137 ± 0.0067</b></td><td>0.7921 ± 0.0097</td><td>0.6901 ± 0.0150</td><td>0.6698 ± 0.0235</td></tr>
+</table>
+<p><b>可写入论文的论述</b>：默认 <code>max_balls=64</code> 落在较平坦的平台区而非孤立最优点。Cora 在 16–128 间仅 0.05pp 波动，CiteSeer 仅 0.32pp 波动；真实球在所有设置下均超过 shuffled。由于 <code>min_ball_size=32</code> 固定，128 会在几何分裂条件下自然饱和到约 52/65 个实际球，这也说明不是靠无限细分取得收益。</p>
+<div class="figbox">
+<img src="external/NoisyGL/runs/ball_count_sensitivity_20260615/ball_count_sensitivity.png" alt="Ball count sensitivity" style="max-width:100%;border:1px solid #ddd;border-radius:6px;">
+</div>
+
+<!-- ============ 噪声谱 ============ -->
+<h2>5. 噪声谱与适用边界 <span class="sec-tag">Robustness Regime</span></h2>
+
+<h3>5.1 噪声率 × 类型网格（论文 Table 3）</h3>
+<p class="meta">数据来源：<code>runs/noise_grid_rocm_20260611/</code>，5 seeds。同一份 label-free H 复用于所有噪声设置。</p>
+
+<h4>SoftDist [X‖H] vs NRGNN 胜负矩阵</h4>
+<table>
+<tr><th>噪声设置</th><th>Cora</th><th>CiteSeer</th></tr>
+<tr><td>uniform 0.2</td><td class="tie">tie (+1.05pp)</td><td class="loss">loss (−0.81pp)</td></tr>
+<tr><td>uniform 0.4</td><td class="tie">tie (+0.31pp)</td><td class="loss">loss (−1.36pp)</td></tr>
+<tr><td>uniform 0.6</td><td class="loss">loss (−11.20pp)</td><td class="loss">loss (−7.12pp)</td></tr>
+<tr><td>pair 0.2</td><td class="tie">tie (−0.32pp)</td><td class="loss">loss (−3.56pp)</td></tr>
+<tr><td>pair 0.4</td><td class="tie">tie (+0.52pp)</td><td class="loss">loss (−4.23pp)</td></tr>
+</table>
+<p class="meta">win 定义：均值 delta &gt;0 且 ≥4/5 seeds 正；loss 对称；其余 tie。</p>
+
+<h4>球贡献随噪声率的趋势（softdist_xh − gcn_xh_ce）——倒 U 钟形曲线</h4>
+<table>
+<tr><th>噪声设置</th><th>Cora</th><th>CiteSeer</th><th>Coauthor-CS</th></tr>
+<tr><td>uniform 0.2</td><td>−0.37pp (2/5)</td><td>+0.54pp (3/5)</td><td>+0.26pp (4/5)</td></tr>
+<tr><td>uniform 0.4</td><td>+1.10pp (4/5)</td><td>+1.30pp (5/5)</td><td>+0.53pp (5/5)</td></tr>
+<tr><td>uniform 0.5</td><td><b>+1.52pp (5/5)</b></td><td>+0.83pp (4/5)</td><td>—</td></tr>
+<tr><td>uniform 0.6</td><td>+0.66pp (2/5，real&lt;shuffled)</td><td>+2.22pp (4/5)</td><td>+0.08pp (3/5)</td></tr>
+<tr><td>pair 0.4</td><td>+1.84pp (4/5)</td><td>+1.32pp (3/5)</td><td>+1.66pp (3/5)</td></tr>
+<tr><td>instance 0.4</td><td>+1.71pp (5/5)</td><td>+1.53pp (4/5)</td><td>+0.65pp (5/5)</td></tr>
+</table>
+<p><b>可写入论文的论述（钟形曲线，核心机理）</b>：球增量随噪声率呈清晰的<b>倒 U 钟形</b>——Cora uniform 全谱 −0.37 → +1.10 → <b>+1.52(0.5，峰值)</b> → +0.66pp(0.6)。机理统一：方法本质是<b>用球内集体共识覆盖个体标签</b>，其价值取决于"集体共识 vs 个体标签谁更可信"。<b>低噪声(0.2)</b>个体标签已大多正确，覆盖反而是干扰（Cora 甚至负）；<b>中高噪声(0.4-0.5)</b>个体不可信、集体共识相对价值最大，达峰值；<b>极高噪声(0.6)</b>球内多数票本身被噪声系统性带翻，离线校正崩溃（Cora real&lt;shuffled），此时 NRGNN 的在线机制更强。这是一个清晰、可解释、有峰值有崩溃点的适用条件。</p>
+<p><b>pair 噪声的系统性弱势（写入 limitations + future work）</b>：pair 噪声下球增量跨三数据集普遍弱于 uniform/instance（pair 0.2 处处不稳；pair 0.4 仅 Cora 保住）。机理：pair 把类 A 系统性翻成固定的 B，球内出现<b>伪多数</b>，集体投票被一致地带偏（uniform 的随机错误可被多数票平均掉，pair 的系统错误压不过）。<b>future work</b>：用 label-free 的 <code>H</code> 几何校验投票——<code>H</code> 对标签翻转免疫，被翻转节点在 <code>H</code> 空间仍靠近真类簇，可据此识别并降权伪多数。</p>
+
+<div class="figbox">
+【图 2 占位】球贡献 vs 噪声率折线图（双数据集双曲线）+ 胜负矩阵热力图。<br>
+数据源：<code>noise_grid_ball_increment_trend_20260611.csv</code> + <code>noise_grid_regime_win_matrix_20260611.csv</code>
+</div>
+
+<!-- ============ 表示分析 ============ -->
+<h2>6. 表示分析：可分性 ≠ 可聚类性 <span class="sec-tag">Analysis · 新颖点</span></h2>
+
+<h3>6.1 SSL 表示替换实验（论文 Table 4 + 重要分析）</h3>
+<p class="meta">数据来源：<code>runs/ssl_probe_20260612/</code> + <code>runs/ssl_swap_seed0_20260612/</code></p>
+
+<h4>linear probe（表示可分性）vs 下游球质量</h4>
+<table>
+<tr><th>SSL 表示</th><th>Cora clean probe</th><th>下游球数</th><th>下游球 real−shuffled</th></tr>
+<tr class="ours"><td>GRACE（本文用）</td><td>0.8294</td><td>52</td><td>+0.0253</td></tr>
+<tr><td>CCA-SSG</td><td><b>0.8566</b> <span class="meta">(probe 更强)</span></td><td><span class="loss">1（塌缩）</span></td><td>+0.0000</td></tr>
+<tr><td>GraphMAE</td><td>0.8396</td><td><span class="loss">1（塌缩）</span></td><td>+0.0000</td></tr>
+<tr><td>BGRL</td><td>0.8007</td><td>—</td><td>—</td></tr>
+</table>
+
+<div class="claim">新颖分析点（C3）：表示质量是<b>二维</b>的——线性可分性与可聚类性并不等价。CCA-SSG 的 probe 准确率高于 GRACE（85.7% vs 82.9%），但其表示在 H 空间无法被 2-means 有意义地分裂（塌缩为单个球），导致粒球机制完全失效。GRACE 基于 InfoNCE 的<b>均匀性（uniformity）</b>使表示在超球面上均匀展开，天然适合距离聚类——这是 SoftDist 框架对 SSL 方法的隐含要求。</div>
+
+<h4>Phase 20：显式增强 uniformity 的反例</h4>
+<p class="meta">数据来源：<code>runs/phase20_custom_ssl_20260615/</code>。预训练严格 label-free；下游只做几何诊断，不进入训练。</p>
+<table>
+<tr><th>表示</th><th>Cora 球数 / purity</th><th>CiteSeer 球数 / purity</th><th>判定</th></tr>
+<tr class="ours"><td>GRACE anchor</td><td>52.3 / 0.787</td><td>64.0 / 0.699</td><td>保留主线 anchor</td></tr>
+<tr><td>GRACE + uniformity λ=0.1</td><td><span class="loss">1 / 0.302</span></td><td><span class="loss">1 / 0.211</span></td><td>不过门</td></tr>
+<tr><td>GRACE + uniformity λ=0.5</td><td><span class="loss">1 / 0.302</span></td><td><span class="loss">1 / 0.211</span></td><td>不过门</td></tr>
+<tr><td>GRACE + uniformity λ=1.0</td><td><span class="loss">1 / 0.302</span></td><td><span class="loss">1 / 0.211</span></td><td>不过门</td></tr>
+</table>
+
+<div class="claim">补充结论：不是「uniformity 越强越好」，而是 GRACE 在 alignment / uniformity / local clusterability 之间给出了当前 SoftDist 管线可用的平衡。显式 uniformity 正则确实让 uniformity 指标更强，但把普通 2-means 粒球构造压成单球，说明本文需要的是<b>可被局部几何划分的均匀表示</b>，不是单一几何指标的最大化。</div>
+
+<p class="meta">写作提醒：这个发现把「为什么是 GRACE」从工程选择上升为有原理的分析，是审稿人会欣赏的点。可配一张 t-SNE 对比图（GRACE 可分球簇 vs CCA-SSG 弥散）。</p>
+
+<div class="figbox">
+<img src="external/NoisyGL/runs/figures_20260615/tsne_cora_grace_vs_ccassg.png" alt="GRACE vs CCA-SSG t-SNE" style="max-width:100%;border:1px solid #ddd;border-radius:6px;">
+<br>数据源：<code>runs/figures_20260615/tsne_class_distance_summary.csv</code>。
+</div>
+<table>
+<tr><th>表示</th><th>类内平均距离</th><th>类间平均距离</th><th>类间/类内比</th></tr>
+<tr class="ours"><td>GRACE</td><td>0.539</td><td>0.740</td><td>1.372</td></tr>
+<tr><td>CCA-SSG</td><td>1.059</td><td>1.378</td><td>1.301</td></tr>
+</table>
+
+<!-- ============ 负结果 ============ -->
+<h2>7. 机制边界：为何保留软分布校正 <span class="sec-tag">Analysis · 负结果</span></h2>
+
+<h3>7.1 可写入论文的论述</h3>
+<p>我们系统性地探索了在 SoftDist 之上的多类增强，但这些增强未能在预注册标准下超过基础软分布校正。这些负结果并非随意试错，而是<b>预注册门槛 + 诊断先行</b>的受控实验，共同刻画了该框架的能力边界。核心观察是：<b>在低标签覆盖（20%）、高噪声（40%）下，球校正候选集内部「干净 vs 噪声」标签缺少可部署的清晰分界</b>——我们在三类相互独立的信号维度上检查了这一点。</p>
+
+<h3>7.2 三类独立置信信号的系统否定（论文 Table 5）</h3>
+<table>
+<tr><th>信号维度</th><th>实验</th><th>结果</th><th>失败机理</th></tr>
+<tr><td>票数统计</td><td>gated hard correction</td><td>两数据集需相反松紧</td><td>不存在通用阈值</td></tr>
+<tr><td>时间维度</td><td>early-learning 裁决 (4a/4a-2)</td><td>保护精度 ≤0.69 &lt; 0.70</td><td>早期置信不可靠</td></tr>
+<tr><td>尺度维度</td><td>多粒度一致性裁决</td><td>保护精度 0.52 &lt; 0.70</td><td>跨尺度分歧≠干净边界</td></tr>
+<tr><td>逐节点分辨率</td><td>相似度加权 / 距离调制 α</td><td>CDR 与 NCR 同步崩塌</td><td>球内仅 5–10 票，无分辨率</td></tr>
+</table>
+
+<div class="neg"><b>可写入论文的关键论证</b>：上述四类机制都试图在球校正候选中区分「该翻的噪声标签」与「不该动的干净标签」。它们分别依据票数置信、训练动态、跨尺度一致、节点级相似度——但<b>没有一个能将 CDR 相对降低 30% 而保持 NCR 损失低于 10%</b>。这提示在该数据稀疏度下，<b>硬性二分（保护/校正）容易在误伤干净标签与放过噪声标签之间失衡</b>。SoftDist 的连续 α 软组合不强行做二分，而是按票面置信度平滑缩放；因此它更适合作为当前框架的保守默认形态。</div>
+
+<h4>CDR 空间分布：误伤更集中在球边缘</h4>
+<p class="meta">数据来源：<code>runs/nodewise_diag_20260612/distance_bins.csv</code>，出图：<code>runs/figures_20260615/cdr_distance_bins.png</code>。</p>
+<div class="figbox">
+<img src="external/NoisyGL/runs/figures_20260615/cdr_distance_bins.png" alt="CDR and NCR by distance-to-center bins" style="max-width:100%;border:1px solid #ddd;border-radius:6px;">
+</div>
+<p><b>可写入论文的论述</b>：Cora 的 CDR 从中心分桶的 0 上升到边缘分桶的 0.0153，CiteSeer 从 0.0057 上升到 0.0203。该趋势支持一个机制解释：硬性校正最容易误伤球边界附近的干净标签，因此 SoftDist 选择软分布而不是 hard replacement。</p>
+
+<h3>7.3 其他被排除的方向（附录表，附判负证据）</h3>
+<table>
+<tr><th>方向</th><th>判负原因</th></tr>
+<tr><td>标签驱动自适应球粒度 (E1)</td><td>20% 覆盖下票密度不足，纯度估计 std±0.15</td></tr>
+<tr><td>球级无标签伪监督扩展</td><td>球内恒定 target 无逐节点分辨率，诊断 precision 0.87 仍训练判负</td></tr>
+<tr><td>动态 α / 模型预测反馈</td><td>自强化 confirmation bias</td></tr>
+<tr><td>ball consistency 正则</td><td>零增量</td></tr>
+<tr><td>与 NRGNN 杂交 (BallAux)</td><td>球信号与图传播冗余</td></tr>
+<tr><td>GRACE encoder 微调</td><td>noisy CE 微调破坏冻结表示可分性 (0.80→0.57)</td></tr>
+</table>
+<p class="meta">写作提醒：负结果章节是本文的差异化优势。多数论文藏负结果，而系统化的边界刻画恰好展示方法论严谨度，适合期刊版（KBS/Neural Networks）。会议版可压缩到一段 + 附录表。</p>
+
+<!-- ============ 泛化 ============ -->
+<h2>8. 泛化性 <span class="sec-tag">Generalization</span></h2>
+
+<h3>8.1 数据集泛化：PubMed（论文 Table 6 / limitations）</h3>
+<p class="meta">数据来源：<code>runs/phase10_pubmed_20260612/</code>，5 seeds。</p>
+<table>
+<tr><th>方法</th><th>PubMed</th><th>vs SoftDist</th></tr>
+<tr><td>GCN + CE</td><td><b>0.8392 ± 0.0057</b></td><td>+0.72pp</td></tr>
+<tr class="ours"><td>SoftDist [X‖H]</td><td>0.8320 ± 0.0078</td><td>—</td></tr>
+<tr><td>SoftDist [X‖H] shuffled</td><td>0.8303 ± 0.0057</td><td>−0.17pp</td></tr>
+<tr><td>NRGNN</td><td>0.8080 ± 0.0088</td><td>−2.40pp</td></tr>
+</table>
+<p><b>可写入论文的论述（双面）</b>：PubMed 上 SoftDist <b>超过 NRGNN 2.4pp</b>，但<b>不及朴素 GCN+CE</b>（−0.72pp）。诊断显示球本身健康（64 球、加权纯度 0.81、NCR 0.79），失败原因是 PubMed 在该协议下 GCN+CE 基线本就极强（3 类、同质性高），软校正的 CDR 成本超过收益。值得注意 NRGNN 在 PubMed 也输给 GCN+CE 3.1pp——说明这是<b>所有去噪方法在该 regime 的共同边界</b>，而非本文独有缺陷。</p>
+
+<h3>8.1b 数据集广度探针：DBLP（Phase 28 / 32 no-go）</h3>
+<p class="meta">数据来源：<code>runs/dblp_20260616/</code>、<code>runs/ball_scaling_diag_20260616/</code>、<code>runs/bigball_downstream_20260616/</code>。GRACE 预训练使用上游 DBLP 官方配置；下游仍为 percent 0.2/0.1/0.7、uniform 0.4。</p>
+<table>
+<tr><th>方法 / 诊断</th><th>DBLP</th><th>判定</th></tr>
+<tr><td>num_balls</td><td><span class="loss">1.0 ± 0.0</span></td><td>球塌缩，触发 no-go</td></tr>
+<tr><td>true_all_purity_weighted</td><td>0.4471 ± 0.0000</td><td>单球接近全局类分布</td></tr>
+<tr><td>soft_pseudo_cdr</td><td><span class="loss">0.5545 ± 0.0082</span></td><td>全局分布会严重误伤干净标签</td></tr>
+<tr><td>GCN + CE seed0</td><td>0.8160</td><td>下载/loader smoke</td></tr>
+<tr><td>GCN [X‖H] seed0</td><td>0.8300</td><td>H 特征有用</td></tr>
+<tr><td>SoftDist [X‖H] seed0</td><td>0.8307</td><td>与 shuffled 相同</td></tr>
+<tr><td>SoftDist shuffled seed0</td><td>0.8307</td><td>真实球无独立贡献</td></tr>
+<tr><td>NRGNN [X‖H] seed0</td><td><b>0.8340</b></td><td>强基线更高</td></tr>
+<tr><td>Phase 32 scaled balls</td><td>256 球 / purity 0.8377</td><td>构造参数可救</td></tr>
+<tr><td>Scaled SoftDist / GCN / shuffled seed0</td><td>0.8300 / 0.8300 / 0.8383</td><td>下游仍不过 shuffled</td></tr>
+</table>
+<p><b>可写入论文的论述</b>：DBLP 不能作为第三个成功数据集。Phase 32 细化了最初判断：默认小图参数确实会让 DBLP 粒球塌缩为单球，但放宽 <code>split_improvement</code> 并增加 <code>max_balls</code> 后，几何上可以得到高纯度球。关键问题在下游：缩放参数后的 SoftDist 仍未超过 shuffled。这个负结果强化了更准确的机制边界：<b>表示可用于分类，也可被几何划分，但球诱导的 noisy-label target 未必对更大图提供独立增量</b>。因此 DBLP 应放入 limitations / boundary analysis，而不是主成功表。</p>
+
+<h3>8.1c 大图适配诊断：球作为样本选择视角（Phase 33）</h3>
+<p class="meta">数据来源：<code>runs/biggraph_orthogonality_diag_20260616/</code>。本节不训练新模型，只用 clean label 做离线诊断，检验球嫌疑分是否在 GCN 认为干净的节点中仍能识别真噪声。</p>
+<table>
+<tr><th>数据集</th><th>ball AUC</th><th>GCN AUC</th><th>ball AUC in GCN-clean50</th><th>判定</th></tr>
+<tr><td>Cora</td><td>0.8957</td><td>0.9296</td><td>0.8460</td><td>小图正对照</td></tr>
+<tr><td>CiteSeer</td><td>0.8383</td><td>0.7651</td><td>0.8286</td><td>小图正对照</td></tr>
+<tr><td>DBLP</td><td>0.9059</td><td>0.9598</td><td><span class="win">0.6955</span></td><td>过 0.6 门槛</td></tr>
+<tr><td>PubMed</td><td>0.8703</td><td>0.9405</td><td><span class="win">0.6633</span></td><td>过 0.6 门槛</td></tr>
+<tr><td>Amazon-Photo</td><td>0.9467</td><td>0.7581</td><td><span class="win">0.9483</span></td><td>强正交信号</td></tr>
+</table>
+<table>
+<tr><th>大图</th><th>原 train 噪声率</th><th>co-teaching keep 0.6 后噪声率</th><th>保留样本比例</th></tr>
+<tr><td>DBLP</td><td>0.3932</td><td><span class="win">0.0572</span></td><td>0.5382</td></tr>
+<tr><td>PubMed</td><td>0.3975</td><td><span class="win">0.0695</span></td><td>0.5245</td></tr>
+<tr><td>Amazon-Photo</td><td>0.4039</td><td><span class="win">0.0640</span></td><td>0.4353</td></tr>
+</table>
+<p><b>阶段结论</b>：Phase 32 的 no-go 只否定了大图上的 <b>soft-target 校正形态</b>，并没有否定球信号本身。Phase 33 显示，球嫌疑分在 GCN-clean 子集内仍有条件正交噪声判别力；离线评估中，球视角与 GCN 视角的 co-teaching 交集能把大图 train 噪声率从约 40% 压到 6%-7%，同时保留约 44%-54% 样本。但 Phase 34 的真实下游训练表明，离线强信号不能自动转化为 test acc 增益，因此该方向应写作边界分析而非第三成功数据集。</p>
+
+<h3>8.1d 大图样本选择下游验证：GBSelect（Phase 34）</h3>
+<p class="meta">数据来源：<code>external/NoisyGL/runs/gbselect_20260616/</code>，5 seeds，uniform 0.4。GBSelect 用球嫌疑分与 warmup GCN 嫌疑分取 clean-sample 交集；命门对照是 <code>gbselect_gcn_only</code>，检验球第二视角是否提供 GCN 单视角之外的下游增量。</p>
+<table>
+<tr><th>数据集 / 设置</th><th>GBSelect</th><th>GCN-only selection</th><th>Shuffled</th><th>GCN [X‖H]</th><th>判定</th></tr>
+<tr><td>DBLP keep=0.6</td><td>0.8403±0.0036</td><td>0.8407±0.0026</td><td>0.7935±0.0198</td><td>0.8348±0.0076</td><td>命门不过（-0.04pp, 1/5）</td></tr>
+<tr><td>DBLP keep=0.7</td><td>0.8394±0.0046</td><td>0.8358±0.0092</td><td>0.8087±0.0055</td><td>0.8348±0.0076</td><td>弱正（+0.35pp, 3/5），未达预注册门槛</td></tr>
+<tr><td>PubMed keep=0.7</td><td>0.8326±0.0066</td><td>0.8319±0.0047</td><td>0.8163±0.0055</td><td>0.8296±0.0046</td><td>命门不过（+0.06pp, 2/5）</td></tr>
+<tr><td>Amazon-Photo keep=0.7</td><td>0.7818±0.0590</td><td>0.7506±0.0660</td><td>0.7334±0.0846</td><td><span class="best">0.9049±0.0130</span></td><td>双视角有效，但 selection 大幅低于全 train</td></tr>
+</table>
+<p><b>可写入论文的论述</b>：GBSelect 说明球视角确实能筛出更干净的训练子集（DBLP/PubMed/Amazon-Photo selected noise 均明显低于 GCN-only 或 shuffled），但这不足以保证下游收益。DBLP 只有弱正信号，PubMed 被 GCN 单视角吸收，Amazon-Photo 则因丢弃监督量而远低于全 train 的 <code>GCN [X‖H]</code>。因此大图部分不能作为主方法成功表，只能作为机制边界：<b>离线噪声可分性 ≠ 下游分类增益</b>。</p>
+
+<h3>8.1e 规模×类数边界：Coauthor-CS 与 Amazon-Computers（Phase 35-36）</h3>
+<p class="meta">数据来源：Coauthor-CS 主结果以 <code>latest_baselines_trainonly_20260622_continuation/summary.csv</code> 为准；Amazon-Computers 仍来自 <code>external/NoisyGL/runs/amazoncom_20260616/</code>、<code>external/NoisyGL/runs/amazoncom_baseline_20260617/</code> 和 <code>external/NoisyGL/runs/figures_20260617/</code>，作为边界分析附录。Coauthor-CS 使用 DBLP GRACE config fallback；Amazon-Computers 使用 PubMed fallback；二者均为 label-free 预训练。</p>
+<table>
+<tr><th>数据集</th><th>节点 / 类数</th><th>诊断：ball AUC in GCN-clean50</th><th>SoftDist</th><th>GCN [X‖H]</th><th>Shuffled</th><th>球增量判定</th></tr>
+<tr><td>Coauthor-CS</td><td>18.3k / 15</td><td><span class="win">0.8533</span></td><td><span class="best">0.9230±0.0014</span></td><td>0.9205±0.0019</td><td>0.9187±0.0023</td><td><span class="win">+0.25pp vs GCN [X‖H], +0.43pp vs shuffled，双 5/5</span></td></tr>
+<tr><td>Amazon-Computers</td><td>13.8k / 10</td><td><span class="win">0.9219</span></td><td>0.8625±0.0063</td><td><span class="best">0.8695±0.0092</span></td><td>0.8443±0.0196</td><td>real &gt; shuffled (+1.82pp, 5/5)，但低于 GCN [X‖H]</td></tr>
+</table>
+<table>
+<tr><th>数据集</th><th>GCN + CE</th><th>NRGNN</th><th>NRGNN [X‖H]</th><th>SoftDist [X‖H]</th><th>SoftDist − NRGNN [X‖H]</th></tr>
+<tr><td>Coauthor-CS</td><td>0.9206±0.0034</td><td>0.9356±0.0011</td><td><span class="best">0.9372±0.0018</span></td><td>0.9230±0.0014</td><td><span class="loss">-1.42pp, 0/5</span></td></tr>
+<tr><td>Amazon-Computers</td><td><span class="best">0.8682±0.0061</span></td><td>0.7923±0.0614</td><td>0.8230±0.0150</td><td>0.8625±0.0063</td><td><span class="win">+3.95pp, 5/5</span></td></tr>
+</table>
+<table>
+<tr><th>数据集</th><th>GBSelect</th><th>GCN-only selection</th><th>Shuffled selection</th><th>相对全 train GCN [X‖H]</th><th>判定</th></tr>
+<tr><td>Coauthor-CS</td><td><span class="best">0.9257±0.0011</span></td><td>0.9187±0.0053</td><td>0.9042±0.0096</td><td><span class="win">+0.67pp, 5/5</span></td><td>selection 也成功</td></tr>
+<tr><td>Amazon-Computers</td><td>0.7178±0.0234</td><td>0.6923±0.0213</td><td>0.6696±0.0215</td><td><span class="loss">-15.17pp, 0/5</span></td><td>球视角有效但丢弃监督量代价过高</td></tr>
+</table>
+<div class="figbox">
+<img src="external/NoisyGL/runs/figures_20260617/size_class_boundary.png" alt="Size by class-count boundary of ball gains" style="max-width:100%; border:1px solid #ddd;">
+<br>图源：<code>external/NoisyGL/scripts/plot_size_class_boundary.py</code>，数据点见 <code>runs/figures_20260617/size_class_boundary_points.csv</code>。
+</div>
+<p><b>边界结论</b>：Coauthor-CS 与 DBLP 节点规模几乎同档，但类数从 4 增至 15 后，SoftDist 和 GBSelect 都观察到下游增益，这削弱了“图规模大必败”的解释。更准确的说法是：<b>规模不是单独死因，类别复杂度/标签噪声可分性是关键调节变量</b>。但 Amazon-Computers 又说明类数不是充分条件；当全样本 <code>GCN [X‖H]</code> 已经很强时，真实球结构仍能胜过 shuffled，却可能被分类器吸收或被样本选择的监督量损失抵消。本轮外部 baseline 进一步细化边界：Coauthor-CS 上 NRGNN [X‖H] 仍是最强，说明第三成功数据集支撑的是“球有受控增量与适用域扩展”，不是“SOTA 超越”；Amazon-Computers 上 SoftDist 虽输 GCN [X‖H]，但高于 NRGNN [X‖H]，说明 NRGNN 的在线机制在强同质商品图上也可能失效。</p>
+
+<h3>8.1f 适用域刻画：球可聚类性是真变量（Phase 37-38）<span class="sec-tag">Analysis · 新颖点</span></h3>
+<p class="meta">数据来源：<code>runs/applicability_grid_20260617/</code> + <code>runs/evidence_matrix_20260617/</code>。9 数据集 × 5 候选变量网格 + 可部署 proxy 相关性。</p>
+
+<p><b>动机</b>：§8.1e 的 size×class 边界是描述性的——为什么 Coauthor-CS(大+多类) 成功而 DBLP(大+少类) 失败？我们把 9 个数据集铺在五个候选解释变量（规模 N、类数 C、同质性 h、噪声伤害 noise-harm、球条件正交 AUC）上，用数据指出真正决定球增量的变量。</p>
+
+<h4>球增量 vs 各候选变量的相关性（论文 Table 8）</h4>
+<table>
+<tr><th>被解释量</th><th>球纯度 / 正交AUC<br>(诊断量)</th><th>类数 C</th><th>规模 N</th><th>同质性 h</th><th>noise-harm</th></tr>
+<tr><td>SoftDist 增量 (Pearson)</td><td><span class="best">0.97 / 0.99</span></td><td>−0.38</td><td>−0.60</td><td>0.51</td><td>0.60</td></tr>
+<tr><td>GBSelect 增量 (Spearman)</td><td><span class="best">1.00 (n=4)</span></td><td>0.20</td><td>−0.37</td><td>0.43</td><td>0.31</td></tr>
+</table>
+
+<div class="claim">新颖分析点：决定球有没有用的真变量是 <b>ball-clusterability（球纯度 / 球条件正交 AUC）</b>，相关性 Pearson 0.97-0.99，远超表面的规模(−0.60)、类数(−0.38)、同质性(0.51)。<b>规模与类数只是代理变量</b>——它们碰巧与球可聚类性相关，但因果变量是"H 能否在该数据集上形成语义纯净的球"。WikiCS（同质性 0.65、正交 AUC 0.528 ≈ 随机抛硬币）球处处负增量，是干净的反例确认。这把 §8.1e 的描述性边界升级为有机制的预测性刻画。</div>
+
+<h4>可部署 proxy（只用 H + noisy 标签，不碰 clean）</h4>
+<p class="meta">上表的高相关变量是 clean-label 诊断量（true purity 用 clean、正交 AUC 的标签是"是否被污染"也需 clean），<b>部署期拿不到</b>，只能解释、不能做触发器。我们另测只依赖 H 几何 + noisy 训练标签的可部署 proxy。</p>
+<table>
+<tr><th>可部署 proxy</th><th>vs GBSelect 增量 (Spearman)</th><th>n</th><th>说明</th></tr>
+<tr><td>mean_vote_entropy_weighted</td><td>−0.79</td><td>8</td><td>方向对（球越纯增量越大）</td></tr>
+<tr><td>mean_vote_margin_weighted</td><td>+0.67</td><td>8</td><td>方向对</td></tr>
+<tr><td>ball_gcn_disagree_confident</td><td>−0.54</td><td>7</td><td>早期 n=5 时曾达 −1.00，扩样本后塌缩——小样本假象</td></tr>
+</table>
+<div class="note"><b>诚实边界（写入论文）</b>：可部署 proxy 方向正确（球内投票越纯/熵越低/margin 越高 → 球增量越大），但最大样本 n=8 未达预注册的 n≥10 门槛，且早期"完美相关"被证实为小样本假象。因此现阶段只写 <b>"evidence suggests ball-clusterability mediates ball gains"</b>，<b>不</b>声称找到决定性因果变量；基于 proxy 的自适应开关（proxy 高→启用球、低→退化 GCN[X‖H]）作为 <b>future work</b>，需扩到 ≥10 数据集坐实。这种诚实的预注册纪律（冻结候选 proxy、不 cherry-pick、声明样本量）本身是方法论严谨度的体现。</div>
+
+<h3>8.1g LastFM-Asia：多类别但球语义不对齐（Phase 39）</h3>
+<p class="meta">数据来源：<code>runs/lastfmasia_20260618/phase39_result.md</code>。uniform 0.4，诊断 seeds 0/1/2；预注册规定只有正交 AUC≥0.70、球数≥8、true purity≥0.65 同时满足才进入下游。</p>
+<table>
+<tr><th>节点 / 类数</th><th>同质性</th><th>球数</th><th>true purity</th><th>正交 AUC</th><th>early GCN AUC</th><th>决策</th></tr>
+<tr><td>7,624 / 18</td><td>0.8739</td><td>145.33±1.15</td><td><span class="loss">0.2542±0.0006</span></td><td><span class="loss">0.5995±0.0498</span></td><td>0.9514±0.0032</td><td><span class="loss">停止 39b</span></td></tr>
+</table>
+<p><b>边界结论</b>：LastFM-Asia 的球没有塌缩，但 artist-interest 表示与 country 标签只弱对齐，导致语义纯度远低于门槛；同时高同质图上的早期 GCN 已有极强噪声判别力，球分数在 GCN-clean 子集内缺少足够独立信息。该结果是一个有价值的 18 类反例：<b>多类别能增加球机制的潜在空间，但不是成功的充分条件；真正门槛仍是 H 几何与任务标签的 ball-clusterability</b>。由于门控失败，本文不报告 LastFM 下游精度，也不将其加入主成功表。</p>
+<div class="note"><b>数据可追溯 caveat</b>：PyG 原始 <code>graphmining.ai</code> NPZ 已不可用。本实验从官方 SNAP 用户-artist 原始数据按 FEATHER 论文披露的 Scikit-Learn TruncatedSVD(128) 预处理族做固定 seed 重建，并记录源 zip、数组与 NPZ SHA256；协议同类，但不声称与失效 NPZ 字节一致。</div>
+
+<h3>8.2 分类器泛化：GAT / APPNP（附录 Table 7）</h3>
+<p class="meta">数据来源：<code>runs/phase11_backbone_20260612/</code>，3 seeds。球增量 = SoftDist − 同 backbone 的 CE。</p>
+<table>
+<tr><th>数据集</th><th>backbone</th><th>球增量</th><th>正 seed</th></tr>
+<tr><td>Cora</td><td>GAT</td><td><span class="win">+0.58pp</span></td><td>3/3</td></tr>
+<tr><td>Cora</td><td>APPNP</td><td><span class="win">+0.95pp</span></td><td>3/3</td></tr>
+<tr><td>CiteSeer</td><td>GAT</td><td><span class="loss">−1.22pp</span></td><td>1/3</td></tr>
+<tr><td>CiteSeer</td><td>APPNP</td><td><span class="tie">−0.16pp</span></td><td>2/3</td></tr>
+</table>
+<p><b>可写入论文的论述（保守）</b>：球软目标可迁移到非 GCN 分类器，但仅在部分数据集上为正。主表保持 GCN（与 NoisyGL baseline 公平对齐），backbone 泛化作为<b>条件性</b>附录证据，不主张「分类器无关」的强 claim。</p>
+
+<h3>8.2b 机制变体：SoftDist-MLP(X)——球软目标脱离 H 输入与图传播 <span class="sec-tag">Analysis · 双层定位</span></h3>
+<p class="meta">数据来源：<code>runs/softdist_mlp_noise_spectrum_20260618/</code> + <code>runs/softdist_mlp_efficiency_20260618/</code> + <code>runs/featuregb_mlp_diagnostic_20260618/</code>。分类器只输入原始 X、用普通两层 MLP（无图消息传播）；球仍建在冻结 H 上。</p>
+
+<p><b>动机（归因问题）</b>：SoftDist [X‖H] 的增量可能来自三处——球软目标、把 H 拼进分类器输入、GCN 图传播。本节主动移除后两者（分类器不输入 H、不用图卷积），隔离"球软目标本身是否有独立抗噪价值"。</p>
+
+<h4>球增量随下游强度变化（论文定位证据）</h4>
+<table>
+<tr><th>下游分类器</th><th>是否输入 H</th><th>图传播</th><th>球增量 (Cora/CiteSeer)</th></tr>
+<tr><td>GCN [X‖H]</td><td>是</td><td>是</td><td>+1.10 / +1.30pp（易被强表示吸收）</td></tr>
+<tr><td>GCN(X)</td><td>否</td><td>是</td><td>+1.13 / +2.07pp</td></tr>
+<tr><td><b>MLP(X)</b></td><td>否</td><td>否</td><td><b>+6 ~ +9pp</b></td></tr>
+</table>
+<p>下游越缺乏 H 与图传播，球软目标的边际贡献越明显。<b>注意（诚实边界）</b>：这是一个与结果一致的<b>解释</b>，不是受控因果规律——MLP/GCN、输入特征、优化过程同时改变，不能断言"下游越弱球价值必然越大"。</p>
+
+<h4>SoftDist-MLP(X) 噪声谱（5 seeds，6 噪声条件）</h4>
+<table>
+<tr><th>噪声设置</th><th>Cora 球增量 (vs CE / vs shuffled)</th><th>CiteSeer 球增量</th></tr>
+<tr><td>clean 0.0</td><td>+0.4 / +2.8pp</td><td>+2.1 / +2.1pp</td></tr>
+<tr><td>uniform 0.2</td><td>+6.3 / +5.9pp</td><td>+6.7 / +5.9pp</td></tr>
+<tr><td>uniform 0.4</td><td>+8.8 / +8.1pp</td><td>+7.8 / +7.4pp</td></tr>
+<tr><td>uniform 0.5</td><td>+5.4 / +5.9pp</td><td>+7.7 / +6.3pp</td></tr>
+<tr><td>uniform 0.6</td><td>+6.8 / +7.1pp</td><td>+3.5 / +3.8pp</td></tr>
+<tr><td>pair 0.4</td><td>+6.6 / +6.6pp</td><td>+2.5 / +2.7pp</td></tr>
+<tr><td>instance 0.4</td><td>+9.1 / +8.4pp</td><td>+7.8 / +6.5pp</td></tr>
+</table>
+<p><b>可写入论文的论述</b>：在 Cora/CiteSeer 和<b>已测的 6 个噪声条件内</b>，SoftDist-MLP(X) 相对 CE 与 shuffled 均为正增量（两数据集 6/6，多数 5/5），uniform 0.4 并非孤立甜点区。clean 设置下未观察到精度伤害（注：soft target 仍改变标签分布，此处仅指未见下游精度下降）。<b>claim 边界</b>：只能写"可迁移到 X-only MLP"，<b>不能</b>写"模型无关"——§8.2 的 GAT/APPNP CiteSeer 负结果（−1.22/−0.16pp）必须保留。</p>
+
+<h4>效率（下游，GRACE 预训练单列不计入）</h4>
+<table>
+<tr><th>方法</th><th>参数</th><th>下游总时间(Cora)</th><th>峰值显存</th></tr>
+<tr><td>SoftDist-MLP(X)</td><td>92k</td><td>5.68s</td><td>140MiB</td></tr>
+<tr><td>SoftDist-GCN [X‖H]</td><td>100k</td><td>4.86s</td><td>194MiB</td></tr>
+<tr><td>NRGNN</td><td>465k</td><td>29.5s</td><td>406MiB</td></tr>
+</table>
+<p><b>可写入论文的论述（严格收紧）</b>：SoftDist-MLP <b>分类器训练更快、推理不需图传播、显存低于 GCN/NRGNN</b>；但<b>含球目标构建的下游总时间不占优</b>（5.68s vs SoftDist-GCN 4.86s——球目标构建本身约 2.5-5.7s 是主要开销），且参数量不低于 X-only GCN。<b>不写"下游轻量"或"端到端碾压"</b>——GRACE 预训练成本真实存在，只列为"可跨 seed/噪声复用的预处理"。</p>
+
+<h4>完全无 H 诊断：固定 raw-X 几何建球（负结果）</h4>
+<p class="meta">尝试连建球都不用 H（用原始 X 建球），固定 max_balls=64/min_ball_size=32/split_improvement=0.05。</p>
+<p><b>结果</b>：raw-X 空间建球在 Cora/CiteSeer 均退化为<b>单球</b>（true 纯度 0.30/0.21，CDR 0.68/0.78，real==shuffled），未通过预注册离线门槛，按停止规则未运行下游。</p>
+<div class="claim">核心定调句（论文应采用，强结论但不越证据）：<b>SoftDist 的作用不依赖将 H 输入分类器，也不依赖 GCN 消息传播；但当前有效的软目标仍依赖由冻结 H 构造的粒球，固定 raw-X 几何尚不能提供可用替代。</b><br>
+<span class="meta">不可写："H 理论上必不可少 / 原始 X 不可聚类 / 彻底封死无 H 路线"——该实验只说明"固定几何 + 预注册参数下 raw-X 退化为单球"，未验证所有 X-space 聚类都会失败，也未运行下游。topology-aware 等标签无关建球留作独立预注册，本文不下结论。</span></div>
+
+<p><b>双层定位总结</b>：<b>主性能方法 = SoftDist-GCN [X‖H]</b>（§3 主表）；<b>机制与轻量变体 = SoftDist-MLP(X)</b>（本节支持球软目标具有独立抗噪作用，分类器训练轻、推理无图传播）。X-ball 记为负结果，topology-ball 低优先级独立预注册。</p>
+
+<h3>8.3 2026-06-15 补充实验：噪声谱、覆盖率、效率、上界与 Amazon-Photo</h3>
+<p class="meta">数据来源：<code>external/NoisyGL/runs/instance_noise_20260612/</code>、<code>coverage_sensitivity_20260612/</code>、<code>efficiency_20260612/</code>、<code>oracle_20260612/</code>、<code>amazonphoto_20260612/</code>。这些实验补齐执行计划 <code>execution_plan_paper_gaps_20260612.md</code> 的 P0/P1 缺口。</p>
+
+<h4>Instance-dependent 噪声（论文 Table 3 增列）</h4>
+<table>
+<tr><th>数据集</th><th>噪声率</th><th>GCN</th><th>GCN [X‖H]</th><th>SoftDist [X‖H]</th><th>Shuffled</th><th>NRGNN</th><th>结论</th></tr>
+<tr><td>Cora</td><td>0.2</td><td>0.8347±0.0052</td><td>0.8409±0.0112</td><td>0.8412±0.0125</td><td>0.8387±0.0100</td><td>0.8357±0.0084</td><td>弱正，未达 win 标准</td></tr>
+<tr><td>Cora</td><td>0.4</td><td>0.7893±0.0198</td><td>0.7961±0.0250</td><td><span class="best">0.8132±0.0143</span></td><td>0.7938±0.0223</td><td>0.8108±0.0119</td><td>对 XH/shuffled 明确为正</td></tr>
+<tr><td>CiteSeer</td><td>0.2</td><td>0.6976±0.0123</td><td>0.7089±0.0145</td><td>0.7046±0.0255</td><td>0.7127±0.0119</td><td><span class="best">0.7241±0.0038</span></td><td>负结果</td></tr>
+<tr><td>CiteSeer</td><td>0.4</td><td>0.6391±0.0135</td><td>0.6601±0.0304</td><td>0.6753±0.0312</td><td>0.6526±0.0300</td><td><span class="best">0.7074±0.0129</span></td><td>球有贡献但输 NRGNN</td></tr>
+</table>
+<p><b>写作边界</b>：instance 噪声支持“高噪声下球软目标更有价值”的 regime claim，但不支持“所有 instance 噪声下优于 NRGNN”的强 claim。</p>
+
+<h4>当前 SoftDist [X‖H] 管线的覆盖率曲线（替换旧 C1 数据）</h4>
+<table>
+<tr><th>数据集</th><th>train ratio</th><th>SoftDist-GCN[X‖H]</th><th>正 seed</th><th>NCR</th><th>CDR</th></tr>
+<tr><td>Cora</td><td>0.05</td><td>+1.48pp</td><td>5/5</td><td>0.373</td><td>0.223</td></tr>
+<tr><td>Cora</td><td>0.10</td><td>+1.32pp</td><td>4/5</td><td>0.582</td><td>0.217</td></tr>
+<tr><td>Cora</td><td>0.20</td><td>+1.10pp</td><td>4/5</td><td>0.687</td><td>0.202</td></tr>
+<tr><td>Cora</td><td>0.40</td><td><span class="loss">-0.99pp</span></td><td>1/5</td><td>0.746</td><td>0.214</td></tr>
+<tr><td>CiteSeer</td><td>0.05</td><td>+1.83pp</td><td>4/5</td><td>0.287</td><td>0.285</td></tr>
+<tr><td>CiteSeer</td><td>0.10</td><td>+1.59pp</td><td>4/5</td><td>0.449</td><td>0.309</td></tr>
+<tr><td>CiteSeer</td><td>0.20</td><td>+1.30pp</td><td>5/5</td><td>0.583</td><td>0.300</td></tr>
+<tr><td>CiteSeer</td><td>0.40</td><td>+0.59pp</td><td>4/5</td><td>0.664</td><td>0.291</td></tr>
+</table>
+<p><b>修正结论</b>：当前管线不复现旧 C1 的“覆盖率越高球增量越大”。NCR 随覆盖率上升，但 CDR 不同步下降，且 [X‖H] 分类器已吸收一部分 H 空间信息。更准确的说法是：球软目标最适合低/中标签覆盖，高覆盖下增量会饱和甚至转负。</p>
+
+<h4>效率与 clean-label oracle</h4>
+<table>
+<tr><th>方法</th><th>是否迭代</th><th>参数量</th><th>Cora seed0 wall time</th><th>备注</th></tr>
+<tr><td>GCN [X‖H]</td><td>否</td><td>100,423</td><td>2.17s</td><td>CE baseline</td></tr>
+<tr class="ours"><td>SoftDist [X‖H]</td><td>否，单次建球</td><td>100,423</td><td>7.89s</td><td>H 预训练成本需单独披露，可摊销</td></tr>
+<tr><td>NRGNN</td><td>是</td><td>464,846</td><td>24.74s</td><td>约 4.6x 参数、3.1x wall time</td></tr>
+<tr><td>UnionNET</td><td>是</td><td>92,231</td><td>&gt;1200s</td><td>统一计时超时</td></tr>
+</table>
+<table>
+<tr><th>数据集</th><th>Clean GCN [X‖H] oracle</th><th>SoftDist noisy</th><th>GCN noisy</th><th>gap closure</th></tr>
+<tr><td>Cora</td><td>0.8623</td><td>0.8137</td><td>0.7842</td><td>37.8%</td></tr>
+<tr><td>CiteSeer</td><td>0.7291</td><td>0.6891</td><td>0.6530</td><td>47.4%</td></tr>
+<tr><td>PubMed</td><td>0.8614</td><td>0.8320</td><td>0.8392</td><td><span class="loss">-32.6%</span></td></tr>
+</table>
+
+<h4>Amazon-Photo 跨域泛化</h4>
+<table>
+<tr><th>方法</th><th>Amazon-Photo</th><th>相对 SoftDist</th></tr>
+<tr><td>GCN + CE</td><td><b>0.9072±0.0141</b></td><td>+0.21pp</td></tr>
+<tr><td>GCN [X‖H]</td><td>0.9049±0.0145</td><td>-0.01pp</td></tr>
+<tr class="ours"><td>SoftDist [X‖H]</td><td>0.9051±0.0174</td><td>—</td></tr>
+<tr><td>SoftDist shuffled</td><td>0.9066±0.0121</td><td>+0.16pp</td></tr>
+<tr><td>NRGNN</td><td>0.8954±0.0153</td><td>-0.97pp</td></tr>
+</table>
+<p><b>结论</b>：Amazon-Photo 不是第三个成功数据集，因为 SoftDist 没有超过 GCN，也没有超过 shuffled；但它超过 NRGNN。球诊断未塌缩（64 球、weighted purity 0.861、NCR 0.834、CDR 0.142），说明失败不是球构造崩坏，而是跨域/共购图 regime 中 plain GCN 已很强，球特异性贡献不足。Phase 32 的 scaled-ball 复查（256/32/0.001）同样不改变结论：SoftDist 为 0.9085±0.0123，GCN [X‖H] 为 0.9049±0.0145，shuffled 为 0.9089±0.0140；real 相对 shuffled 为 -0.04pp。</p>
+
+<h3>8.4 Limitations and Future Work：pair 噪声的“伪多数”</h3>
+<p><b>已观察边界</b>：pair 噪声下的球增量弱于部分 uniform 设置，且跨数据集不稳定。一个合理但尚未验证的解释是：uniform 噪声在球内较分散，随机错误票可能被多数投票平均；pair 噪声则系统性地执行类别 <code>A→B</code> 翻转，可能在局部球内制造一致的<b>伪多数</b>，使集体投票被同方向带偏。</p>
+<p><b>候选方向（future work，不是本文结果）</b>：利用完全 label-free 的冻结 <code>H</code> 几何校验 noisy-label 多数，例如比较球内多数与局部 H 模态/中心的一致性，识别“标签多数但几何不一致”的球，并降低其软目标权重。该机制会改变当前方法，必须重新执行诊断、预注册门槛、real/shuffled/no-ball 对照和多 seed 验证；本轮不新增实验，也不把“伪多数”解释写成已证实结论。</p>
+
+<!-- ============ 相关工作 ============ -->
+<h2>9. 相关工作（写作骨架）<span class="sec-tag">Related Work</span></h2>
+<ul class="tight">
+<li><b>图噪声标签学习</b>：NoisyGL 基准 (NeurIPS 2024) 仍是协议锚点；NRGNN (KDD 2021)、RTGNN 等方法通过迭代加边、伪标签或结构重估缓解训练标签噪声。公平性对照显示，给 NRGNN 同样输入 <code>[X‖H]</code> 后，SoftDist 在 Cora 上接近 NRGNN [X‖H]，但 CiteSeer 和 Coauthor-CS 上落后，因此本文应主张“非迭代、可解释、受控增量”，而非全面击败迭代式方法。</li>
+<li><b>2025 图噪声标签方法</b>：TFR (CIKM 2025) 通过拓扑特征重构约束 noisy-label 训练，本文使用官方实现并按 seed0 clean validation 重新调参。ProCon (IJCAI 2025) 构造 semantic peers 并结合原型与 GMM clean selection；GD² (NeurIPS 2025) 用 ego/structure/mixed 三视图差异进行样本净化。ProCon 与 GD² 在本文中明确标记为 paper reimplementation，不冒充官方实现。</li>
+<li><b>节点级标签校正（最近邻，须重点区分）</b>：UnionNET (PAKDD 2021) 用 attention support set 做节点级分布估计；SoftDist 用<b>冻结 SSL 语义划分 + 简单软预处理</b>替代逐节点 attention。最新修正协议下，UnionNET 在 Cora/CiteSeer 可作为附录对比，但 Coauthor-CS 因缺少配置不迁移超参；本文只比较可复核协议内的结果。</li>
+<li><b>拓扑/课程选择</b>：TSS (ICML 2024)、CLNode (KDD 2022)——支撑我们对边界节点/球纯度瓶颈的解释。</li>
+<li><b>对比学习抗噪</b>：CGNN (ICASSP 2023)、CR-GNN (Neural Networks 2024)——区分点：我们的 H 是<b>冻结、不进入动态反馈</b>。</li>
+<li><b>伪标签传播风险</b>：Deep Insights into Noisy Pseudo Labeling (NeurIPS 2023)——为我们的「无标签扩展」负结果提供理论解释。</li>
+<li><b>图对比表示</b>：GRACE / GCA / SimGRACE——作为 H 的来源背景，不主张新 GCL 方法。</li>
+<li><b>粒球计算</b>：MGBCC (AAAI 2025)、GFSAF (AAAI 2026)、SGBGC (AAAI 2025)——粒球作为局部关系/模糊去噪单元的背景，不承担主 claim。</li>
+</ul>
+
+<!-- ============ 缺失实验 ============ -->
+<h2>10. 投稿前待处理清单 <span class="sec-tag">TODO</span></h2>
+
+<div class="note">
+<b>2026-06-23 更新</b>：正式主表已切换到 train-only 修正协议（20%/10%/70%，仅污染 train，uniform 0.4，seeds 0-4）。TFR 已使用官方实现并重新调参；ProCon 与 GD² 已完成 paper reimplementation；R2LP 旧高分经审计确认为 clean val/test label 泄漏，修正后只进入附录。旧的全图污染结果与非 0.4 噪声谱均需标记为 legacy，不能进入正式主结论。当前 claim 应改为：SoftDist 在 Cora/CiteSeer/Coauthor-CS 上相对 GCN [X‖H] 和 shuffled 有受控增量，但不是全面 SOTA；NRGNN 在 CiteSeer/Coauthor-CS 上仍更强，TFR 在 CiteSeer 上也更强。
+</div>
+
+<div class="todo">
+<b>已完成：修正协议主表与最新基线</b>
+<ul class="tight">
+<li><b>主表完成</b>：GCN(X)、GCN [X‖H]、NRGNN(X)、NRGNN [X‖H]、SoftDist [X‖H]、SoftDist shuffled、TFR、ProCon、GD² 已按同一 split/noise 协议汇总到 §3。</li>
+<li><b>旧基线附录完成</b>：UnionNET、CRGNN、CGNN、TSS、R2LP 已按修正协议审计；CiteSeer TSS 为 OOM/incomplete，Coauthor-CS 旧基线不迁移缺失配置。</li>
+<li><b>R2LP 审计完成</b>：旧 Cora 88.74% 为无效泄漏结果，修正后 Cora/CiteSeer 为 60.95%/34.31%，正式写作中不得再引用旧高分。</li>
+</ul>
+</div>
+
+<div class="todo">
+<b>仍需整理：正式论文表格与统计表达</b>
+<ul class="tight">
+<li><b>表格冻结</b>：将 §3 主表、配对 delta、positive seed 数和参数/时间列导出为论文最终 CSV，保证 split_hash/noise_hash 在同一 dataset/seed 下完全一致。</li>
+<li><b>统计措辞</b>：若正文使用“显著”，必须补 paired test 或置信区间；否则只写 mean±std、paired delta 和正向 seed 数。</li>
+<li><b>非 0.4 噪声谱</b>：目前多噪声率结果来自旧补充实验。若要进入正式 robustness 表，需要按 train-only 协议重跑；否则只能作为 legacy appendix 并明确不可直接比较。</li>
+</ul>
+</div>
+
+<div class="todo">
+<b>已完成但需降级写法：边界与附录实验</b>
+<ul class="tight">
+<li><b>instance/coverage/ball count/oracle/efficiency</b>：可保留为机制与附录证据，但需在表注中说明是否属于 train-only 修正协议。</li>
+<li><b>大图边界</b>：DBLP、PubMed、Amazon-Photo、Amazon-Computers、LastFM-Asia 支撑的是适用域分析，不支撑“广泛泛化”或“类数充分条件”。</li>
+<li><b>gate 与节点级增强负结果</b>：写作重点应是“硬二分信号不足”，不是“SoftDist 已被证明最优”。</li>
+</ul>
+</div>
+
+<div class="todo">
+<b>图表资产</b>
+<ul class="tight">
+<li><b>保留</b>：CDR 空间分布图见 §7.2，图源 <code>runs/figures_20260615/cdr_distance_bins.png</code>。</li>
+<li><b>保留</b>：t-SNE 表示可视化见 §6，图源 <code>runs/figures_20260615/tsne_cora_grace_vs_ccassg.png</code>。</li>
+<li><b>需重画</b>：主结果柱状图应使用 <code>latest_baselines_trainonly_20260622_continuation/summary.csv</code>，不要复用 6 月 16-18 日旧图。</li>
+</ul>
+</div>
+
+<div class="note">
+<b>论文实验完整性总结（2026-06-23）</b>：主线已进入“修正协议后的最新基线阶段”。当前最稳妥的论文定位是：SoftDist [X‖H] 是一个简单、非迭代、可解释的粒球软目标管线；它在三个主数据集上相对 GCN [X‖H] 与 shuffled 均有受控增量，但不应写成全面 SOTA。Cora 上它接近 NRGNN [X‖H]，CiteSeer/Coauthor-CS 上 NRGNN 更强，CiteSeer 上 TFR 也更强。论文贡献应落在“冻结表示 + 真实粒球结构提供可复核增量”和“ball-clusterability × 图 regime × 强基线吸收能力共同决定适用域”这两点上。
+</div>
+
+<hr>
+<p class="meta">本初稿数据全部来自实测报告，路径见各表的「数据来源」标注。经验文档全文：<code>C:\Users\Admin\Desktop\实验8去噪5.19-\02_experiment_history_and_lessons 11.md</code>；跨方向复盘：<code>03_cross_direction_meta_review.md</code>；执行计划：<code>external/NoisyGL/docs/execution_plan_*.md</code>。</p>
+
+</body>
+</html>

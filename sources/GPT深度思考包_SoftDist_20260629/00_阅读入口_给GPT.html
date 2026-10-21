@@ -1,0 +1,89 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <title>SoftDist / GB-GCL 深度思考包：阅读入口</title>
+  <style>
+    body{font-family:Segoe UI,Microsoft YaHei,Arial,sans-serif;line-height:1.65;margin:0;background:#f6f7f9;color:#20242a}
+    main{max-width:1100px;margin:0 auto;padding:36px 24px 64px}
+    h1{font-size:30px;margin:0 0 8px}
+    h2{font-size:22px;margin-top:34px;border-left:5px solid #2f6fed;padding-left:10px}
+    h3{font-size:18px;margin-top:24px}
+    .card{background:#fff;border:1px solid #d8dde6;border-radius:8px;padding:18px 22px;margin:16px 0}
+    .warn{border-left:5px solid #d97706;background:#fff7ed}
+    .ok{border-left:5px solid #15803d;background:#f0fdf4}
+    .stop{border-left:5px solid #b91c1c;background:#fef2f2}
+    code,pre{font-family:Consolas,Menlo,monospace}
+    code{background:#eef2f7;padding:2px 5px;border-radius:4px}
+    pre{white-space:pre-wrap;background:#111827;color:#f9fafb;padding:16px;border-radius:8px;overflow:auto}
+    table{border-collapse:collapse;width:100%;background:#fff;margin:12px 0}
+    th,td{border:1px solid #d8dde6;padding:8px 10px;text-align:left;vertical-align:top}
+    th{background:#eef2ff}
+    a{color:#1d4ed8}
+    ul{padding-left:22px}
+  </style>
+</head>
+<body>
+<main>
+  <h1>SoftDist / GB-GCL 深度思考包：阅读入口</h1>
+  <p>用途：把本地 GB-GCL / SoftDist 项目截至 2026-06-29 的主线、最近一周实验、负结果和下一步问题，压缩成给网页版 GPT 可读的自包含材料。</p>
+
+  <div class="card warn">
+    <strong>给 GPT 的阅读约束：</strong>
+    这些文件已经把本地路径中的核心事实、数值和结论直接摘出。GPT 不应假设自己能访问本地目录、CSV 或代码；如果需要更多证据，应明确指出缺失的信息类型，而不是臆测。
+  </div>
+
+  <h2>推荐阅读顺序</h2>
+  <table>
+    <tr><th>顺序</th><th>文件</th><th>用途</th></tr>
+    <tr><td>1</td><td><a href="00_阅读入口_给GPT.html">00_阅读入口_给GPT.html</a></td><td>告诉 GPT 怎么读、项目当前定位、要回答的问题。</td></tr>
+    <tr><td>2</td><td><a href="01_SoftDist主线_方法与证据.html">01_SoftDist主线_方法与证据.html</a></td><td>主方法 SoftDist [X‖H]、主表、fairness、机制证据和论文 claim 边界。</td></tr>
+    <tr><td>3</td><td><a href="02_最近一周实验复盘_椭球_GEAF_标签率.html">02_最近一周实验复盘_椭球_GEAF_标签率.html</a></td><td>最近一周的椭球、参数网格、downstream、GEAF bridge、标签率实验。</td></tr>
+    <tr><td>4</td><td><a href="03_实验边界_负结果_下一步问题.html">03_实验边界_负结果_下一步问题.html</a></td><td>禁止重复方向、负结果、下一步最小可做实验、给 GPT 的深度问题。</td></tr>
+  </table>
+
+  <h2>当前项目一句话</h2>
+  <div class="card ok">
+    主线仍是 <strong>SoftDist [X‖H]</strong>：冻结 GRACE 表征 H，在 H 空间构造粒球，用 train noisy labels 的球内分布生成 soft targets，再训练 GCN 输入 <code>[X‖L2norm(H)]</code>。论文定位是“简单非迭代粒球软标签去噪 + 适用域/边界刻画”，不声称 SOTA。
+  </div>
+
+  <h2>最重要的结论边界</h2>
+  <ul>
+    <li>SoftDist [X‖H] 的可防守 claim：在 Cora/CiteSeer/Coauthor-CS 的 uniform 0.4、percent 0.2/0.1/0.7、5 seeds 下，真实球软目标优于同 H 的 CE 和 shuffled ball。</li>
+    <li>不能 claim 超 SOTA：Phase24 中给 NRGNN 同样的 [X‖H] 后，SoftDist 不再领先。</li>
+    <li>椭球、GMM、GEAF 都没有替代主方法：它们提供边界分析和负结果，但还不能升级为稳定 downstream 方法。</li>
+    <li>最近最大教训：offline target diagnostic 变好不等于 downstream accuracy 变好，尤其当 downstream 已输入同源 H 时。</li>
+  </ul>
+
+  <h2>给网页版 GPT 的完整提示词</h2>
+  <pre>你看不到我的本地项目、代码、CSV、日志和图片。我会上传几个 HTML 文件，它们已经把我的 GB-GCL / SoftDist 项目截至 2026-06-29 的核心事实整理出来。请只根据这些 HTML 中的自包含信息做科研判断，不要假设你能访问本地路径。
+
+我的目标是写一篇研一阶段可投稿论文，方向是 Granular Ball Computing 与 Graph Contrastive Learning 结合，用于图节点噪声标签鲁棒分类。当前主方法是 SoftDist [X‖H]，不是 SOTA 宣称，而是受控粒球增量和适用域边界刻画。
+
+请你重点回答：
+1. 这些实验真正支持了什么结论？哪些只是合理猜测？
+2. 哪些方向已经被负结果削弱，不应该继续烧实验？
+3. 当前论文最稳的贡献边界应该怎么写？
+4. 最近的椭球、参数网格、GEAF bridge、标签率实验说明了什么问题？
+5. 如果还要做一个最小实验，应该是什么？如果不该做实验，应该怎么转向写论文？
+
+请特别注意：
+- 不要把 seed0 当成稳定结论。
+- 不要把 offline diagnostic 当成 downstream accuracy claim。
+- 不要比较不同 split、不同 seed 或不同训练协议的结果。
+- 不要建议复活已经判负的方向，除非你能说明新的正交信号、强 baseline、成功标准和失败标准。
+- 请显式区分：已被实验支持的结论、合理猜测、尚未验证的假设、已被负结果削弱的方向。</pre>
+
+  <h2>本 HTML 包的本地证据来源</h2>
+  <ul>
+    <li><code>项目核心总结_新窗口上下文.md</code></li>
+    <li><code>99_session_handoff.md</code></li>
+    <li><code>02_experiment_history_and_lessons 13.md</code> 到 <code>17.md</code></li>
+    <li><code>external/NoisyGL/runs/ellipsoid_param_grid_20260628/</code></li>
+    <li><code>external/NoisyGL/runs/ellipsoid_selected_downstream_seed0_20260629/</code></li>
+    <li><code>external/NoisyGL/runs/geaf_bridge_20260629_gpu/</code> 及 downstream 目录</li>
+    <li><code>external/NoisyGL/runs/label_rate_sensitivity_20260626/</code></li>
+  </ul>
+</main>
+</body>
+</html>

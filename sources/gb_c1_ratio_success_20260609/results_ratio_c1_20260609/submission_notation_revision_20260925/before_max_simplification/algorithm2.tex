@@ -1,0 +1,22 @@
+\begin{algorithm}[htbp]
+\caption{Granular ball soft-target construction}\label{alg:2}
+\KwIn{Granular ball partition $\mathcal B$, training nodes $\mathcal V_L$, observed labels $\{z_n:v_n\in\mathcal V_L\}$, number of classes $C$, parameters $s_{\min},\beta$}
+\KwOut{One stored soft target for each node in $\mathcal V_L$}
+Initialize $\mathbf t_n\gets\mathbf e_{z_n}$ for every training node $v_n\in\mathcal V_L$\;
+\ForEach{$B_j\in\mathcal B$}{
+  $\mathbf w_j\gets\sum_{v_\ell\in B_j\cap\mathcal V_L}\mathbf e_{z_\ell}$\;
+  \ForEach{$v_n\in B_j\cap\mathcal V_L$}{
+    $U_n\gets(B_j\cap\mathcal V_L)\setminus\{v_n\}$\;
+    \If{$|U_n|<s_{\min}$}{continue\;}
+    $\mathbf r_n\gets(\mathbf w_j-\mathbf e_{z_n})/|U_n|$\;
+    \eIf{one class $i_n^\star$ has a strictly larger vote count than every other class}{
+      $\mathbf q_n\gets(1-\beta)\mathbf r_n+\beta\mathbf e_{i_n^\star}$\;
+    }{
+      $\mathbf q_n\gets\mathbf r_n$\;
+    }
+    $\alpha_n\gets(C\max_{1\le i\le C}\{r_{n,i}\}-1)/(C-1)$\;
+    $\mathbf t_n\gets(1-\alpha_n)\mathbf e_{z_n}+\alpha_n\mathbf q_n$\;
+  }
+}
+\KwRet Stored targets for all nodes in $\mathcal V_L$\;
+\end{algorithm}

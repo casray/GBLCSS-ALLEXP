@@ -1,0 +1,2492 @@
+Graph Transductive Sharpening: Leveraging Unlabeled Predictions in Node Classification
+Report GitHub Issue
+×
+Title:
+Content selection saved. Describe the issue below:
+Description:
+Submit without GitHub
+Submit in GitHub
+arXiv is now an independent nonprofit!
+Learn more
+×
+Back to arXiv
+Why HTML?
+Report Issue
+Back to Abstract
+Download PDF
+Abstract
+1 Introduction
+Contributions.
+2 Background and Setup
+Notation.
+3 Transductive Sharpening for Graph Learning
+3.1 Transductive Sharpening Objective
+3.2 Implementing an Uncertainty Function
+4 Experiments
+Baselines.
+4.1 Node Classification Results
+4.2 On the Effect of the Sharpening Coefficient
+4.3 Ablation Studies
+Removing the labeled-node correction.
+Symmetry of λ\lambda.
+Choice of entropy.
+Meta-learned sharpening coefficient.
+5 A Mechanistic Analysis of Transductive Sharpening
+6 Related Work
+7 Conclusions and Future Work
+Future work.
+References
+A Datasets and Experimental Details
+A.1 Computing Environment
+A.2 Declaration of Hyperparameters
+TS variants.
+TS with retune.
+MLP baselines.
+Meta-learned lambda.
+A.3 Declaration of Splits
+B Additional Results
+B.1 Results on ogbn-arxiv
+B.2 Hyperparameter retuning
+C Further Ablations
+Sharpen only on test nodes.
+D Further Visualizations
+E Comparison with competitive architectures
+F Proof of Lemma
+G Broader Impacts
+License: CC BY 4.0
+arXiv:2605.20248v1 [cs.LG] 18 May 2026
+Graph Transductive Sharpening: Leveraging
+Unlabeled Predictions in Node Classification
+Brown Zaz
+††thanks: Equal contribution.
+Affiliation: University of Cambridge
+Email: jb2650@cl.cam.ac.uk
+Mar Gonzàlez I Català11footnotemark:
+1
+Affiliation: University of Cambridge
+Email: mg2211@cl.cam.ac.uk
+Ferran Hernandez Caralt
+Affiliation: University of Cambridge
+Email: fh455@cl.cam.ac.uk
+Moshe Eliasof
+Affiliation: University of Cambridge
+Email: me532@cl.cam.ac.uk
+Pietro Liò
+Affiliation: University of Cambridge
+Email: pl219@cl.cam.ac.uk
+Abstract
+In the transductive setting, where the full graph is observed but node labels are only partially available, progress in semi-supervised node classification has largely focused on architectural innovation. In this paper, we revisit an orthogonal axis: the training objective. We start from a simple observation: transductive models produce predictions for every node during training, including nodes without labels. These unlabeled-node predictions may contain useful training signal, but standard supervised objectives discard them because no ground-truth labels are available. Inspired by the decomposition of cross-entropy into a label-dependent alignment term and a label-independent entropy term, we propose prediction confidence as a natural way to extract this signal in the absence of labels. This motivates Transductive Sharpening (TS): a loss-level modification that minimizes prediction entropy on unlabeled nodes while counterbalancing this effect on labeled nodes. We evaluate Transductive Sharpening across a wide range of node-classification benchmarks and observe consistent performance improvements without requiring any changes to the backbone architecture. Code is available at https://github.com/transductive-sharpening/tunedGNN.
+1 Introduction
+Graph neural networks (GNNs) [13, 14, 4, 7, 21, 42, 17, 12] have become the dominant approach for node classification tasks, particularly in the transductive setting [3], where the full graph is observed but only a subset of node labels is available. Over the past years, progress in this area has been driven largely by architectural innovation, with increasingly sophisticated message-passing schemes [16, 57, 1, 31, 24] and transformer-based models [19]. In contrast, the design of training objectives has received comparatively little attention, despite its central role in shaping model performance.
+In the transductive setting, models produce predictions for all nodes in the graph at every training step, including those without labels, yet the training objective is applied only to labeled nodes, as standard supervised losses require ground-truth labels. However, once a model begins to form reliable and confident predictions, these may themselves provide a useful learning signal for nodes with unknown labels. We build on this observation by leveraging such predictions, encouraging confidence on unlabeled nodes while preventing overconfidence on labeled ones.
+We introduce Transductive Sharpening (TS), a simple and elegant loss-level modification that implements this idea. The method introduces a single hyperparameter and can be applied on top of any GNN architecture. Empirically, we show that it consistently improves performance across a wide range of models and benchmarks.
+To understand the behavior induced by TS, we study the effect of the sharpening coefficient λ\lambda and analyze how the objective changes the distribution of predictive confidence across the graph. Empirically, we find that moderate positive values of λ\lambda yield the most reliable gains, and that TS reallocates confidence toward unlabeled nodes as intended by the objective.
+Our results point to a simple but powerful principle: predictions generated during training, typically discarded when labels are unavailable, can be directly leveraged to improve learning. While we study this idea in the context of transductive graph learning, it naturally extends to other settings, suggesting a general avenue for improving learning algorithms without increasing model complexity.
+Contributions.
+Our main contributions are as follows:
+•
+We introduce Transductive Sharpening (TS), a simple architecture-agnostic loss modification that turns predictions on unlabeled nodes into a direct training signal for transductive node classification.
+•
+We show that TS provides a strong performance-complexity trade-off: it improves standard GNN and MLP baselines across 13 node-classification benchmarks while adding only a single scalar hyperparameter and requiring no architectural changes.
+•
+We study the role of the sharpening coefficient λ\lambda, showing that TS remains effective across a range of positive values, and that a single conservative setting preserves much of the benefit across models and datasets.
+2 Background and Setup
+In this section we provide background material related to our work.
+Notation.
+We denote by ΔC−1={p∈ℝ≥0C:∑i=1Cpi=1}\Delta^{C-1}=\{p\in\mathbb{R}^{C}_{\geq 0}:\sum_{i=1}^{C}p_{i}=1\} the probability simplex over CC classes. Throughout, labels are represented as one-hot vectors yv∈{0,1}Cy_{v}\in\{0,1\}^{C}, where yv,iy_{v,i} indicates whether node vv belongs to class ii.
+Node classification tasks consist of assigning a label to each node in a graph based on its features and the graph structure [21].
+In the transductive setting, the full graph and node features are available during training, but labels are observed only for a subset of nodes, and the goal is to predict the rest.
+Definition 1 (Transductive node classification).
+Let G=(V,E)G=(V,E) be a graph with node features X∈ℝ|V|×dX\in\mathbb{R}^{|V|\times d}. Each node v∈Vv\in V has an associated label yv∈{0,1}Cy_{v}\in\{0,1\}^{C}, observed only for a subset VL⊂VV_{L}\subset V (referred to as labeled nodes). We denote by VU:=V∖VLV_{U}:=V\setminus V_{L} the remaining nodes (referred to as unlabeled nodes). The objective is to learn a model that predicts labels for nodes in VUV_{U}, using the full graph GG, all node features XX, and the labels observed on VLV_{L}.
+From standard to augmented training objectives.
+A common approach to transductive node classification is to train a model in a supervised manner on the labeled subset of nodes, and then use it to generate predictions for the unlabeled nodes.
+In practice, a model produces, for each node v∈Vv\in V, a logit vector zv∈ℝCz_{v}\in\mathbb{R}^{C} and a corresponding probability distribution
+pv=softmax⁡(zv)∈ΔC−1p_{v}=\mathrm{softmax}(z_{v})\in\Delta^{C-1}.
+Models are trained using cross-entropy loss applied only to labeled nodes:
+|
+| ℒsup=−∑v∈VL∑i=1Cyv,ilogpv,i.\mathcal{L}_{\mathrm{sup}}=-\sum_{v\in V_{L}}\sum_{i=1}^{C}y_{v,i}\log p_{v,i}.
+|
+| (1)
+This objective aligns the model’s predictions with ground-truth labels, but ignores the feature-based outputs generated on unlabeled nodes VUV_{U}, even though these are computed at every training step as the model processes the full graph.
+Although the loss cannot be evaluated on unlabeled nodes due to the absence of labels, the model’s predictions produced during training may still contain useful information that could be exploited. This suggests augmenting the objective with an additional term defined over unlabeled nodes similarly to [15].
+Definition 2 (Augmented transductive objective).
+Consider a transductive node classification problem with labeled nodes VLV_{L} and unlabeled nodes VUV_{U}. Let pv∈ΔC−1p_{v}\in\Delta^{C-1} denote the predictive distribution for node vv. An augmented transductive objective is any training objective of the form
+|
+| ℒ=ℒsup+f⁡({pv}v∈VU),\mathcal{L}=\mathcal{L}_{\mathrm{sup}}+f\bigl(\{p_{v}\}_{v\in V_{U}}\bigr),
+|
+| (2)
+where f:(ΔC−1)|VU|→ℝf:(\Delta^{C-1})^{|V_{U}|}\to\mathbb{R} extracts a learning signal from the model’s predictions on the unlabeled nodes VUV_{U}.
+Definition 2 highlights the flexibility of this framework: different choices of ff induce different ways of extracting learning signals from unlabeled predictions. For instance, in a binary classification problem with a known balanced class distribution, ff could penalize deviations from a balanced prediction distribution over the unlabeled nodes during training.
+While useful, this example depends on information that may not be available in general. The central question, then, is whether we can choose ff in a principled, task-agnostic way that applies broadly across transductive node classification problems.
+Uncertainty-based learning signals.
+A natural starting point for designing ff is to examine the structure of the supervised loss itself. In particular, cross-entropy admits the following decomposition:
+Lemma 1 (Cross-entropy decomposition).
+For any target distribution yy and prediction pp, cross-entropy loss can be written as
+|
+| ℒCE​(y,p)=H⁡(p)+∑i=1C(pi−yi)​log⁡pi,\mathcal{L}_{\mathrm{CE}}(y,p)=H(p)+\sum_{i=1}^{C}(p_{i}-y_{i})\log p_{i},
+|
+| (3)
+where H(p)=−∑ipilogpiH(p)=-\sum_{i}p_{i}\log p_{i} denotes the Shannon entropy [36].
+The proof of Lemma 1 is provided in Appendix F.
+The second term depends explicitly on the target labels11
+1
+For a bayesian perspective on this approach refer to [15], whereas the entropy term H⁡(p)H(p) depends only on the model’s predictions. This separation reveals that part of the supervised objective is inherently label-independent, and can therefore be evaluated on any node.
+This suggests a principled class of choices for ff: functions that depend only on the predictive distribution and capture uncertainty-related properties of the model’s predictions, as minimizing these should also implicitly minimize the original cross-entropy loss.
+In this work, we adopt a simple instantiation of this perspective by explicitly controlling prediction confidence across labeled and unlabeled nodes through the training objective.
+3 Transductive Sharpening for Graph Learning
+In this section, we introduce Transductive Sharpening (TS), a loss-level modification for transductive node classification.
+3.1 Transductive Sharpening Objective
+Lemma 1 motivates a label-free way to use unlabeled nodes: shape the uncertainty of their predictive distributions directly through the objective. We instantiate this principle by adding an uncertainty term over VUV_{U} to the supervised loss.
+A natural choice for the unlabeled-node term is to encourage low-uncertainty predictions on unlabeled nodes, without otherwise modifying the supervised objective. However, naively minimizing uncertainty everywhere can lead to overconfident and poorly calibrated models. To address this, we introduce a simple symmetric objective that sharpens predictions on unlabeled nodes while counterbalancing this effect on labeled ones.
+Definition 3 (Generic Transductive Sharpening objective).
+Let R:ΔC−1→ℝR:\Delta^{C-1}\to\mathbb{R} be a function on the probability simplex that measures the uncertainty of a predictive distribution. For a model producing, for each node v∈Vv\in V, a probability vector pv∈ΔC−1p_{v}\in\Delta^{C-1}, we define the Generic Transductive Sharpening objective by
+|
+| ℒR=ℒsup+λ⋅1|VU|∑v∈VUR(pv)−λ⋅1|VL|∑v∈VLR(pv),\mathcal{L}_{R}=\mathcal{L}_{\mathrm{sup}}+\lambda\cdot\frac{1}{|V_{U}|}\sum_{v\in V_{U}}R(p_{v})-\lambda\cdot\frac{1}{|V_{L}|}\sum_{v\in V_{L}}R(p_{v}),
+|
+| (4)
+where λ∈ℝ\lambda\in\mathbb{R} controls the influence of the sharpening.
+This formulation captures two complementary effects. On unlabeled nodes, minimizing uncertainty encourages confident predictions [15], allowing the model to leverage its own outputs as a learning signal. On labeled nodes, maximizing uncertainty counteracts overconfidence, helping to prevent overfitting to the training data [29].
+3.2 Implementing an Uncertainty Function
+The formulation introduced in Definition 3 depends on the choice of the function RR, which determines how predictive confidence is shaped during training. A natural candidate for RR is Shannon entropy [36], widely used as a measure of uncertainty in probabilistic models.
+However, Shannon’s logarithmic form yields unbounded gradients near the boundary of the probability simplex, which can lead to overly aggressive updates for confident predictions and, in turn, unstable training dynamics and a tendency toward degenerate one-hot solutions.
+To address these limitations, we consider an alternative based on the Tsallis entropy.
+Definition 4 (Tsallis entropy with q=2q=2).
+The Tsallis entropy [41] of order q=2q=2, also known as Gini impurity, is defined as
+|
+| S2​(p)=1−∑i=1Cpi2.S_{2}(p)=1-\sum_{i=1}^{C}p_{i}^{2}.
+|
+| (5)
+Tsallis entropy is a one-parameter generalization of Shannon entropy that reduces to Shannon entropy when q=1q=1. For q=2q=2, it preserves the same qualitative behavior, assigning low values to confident predictions and high values to diffuse predictions, but admits a simple quadratic form
+|
+| S2​(p)=1−‖p‖22.S_{2}(p)=1-\|p\|_{2}^{2}.
+|
+Thus, minimizing S2​(p)S_{2}(p) is equivalent to maximizing the squared ℓ2\ell_{2}-norm of the predictive distribution.
+We adopt R​(p)=S2​(p)R(p)=S_{2}(p) in the Transductive Sharpening objective because the quadratic form gives gradients that are linear in pp, leading to stable updates even when predictions are already confident. Substituting R​(p)=S2​(p)R(p)=S_{2}(p) into Definition 3 yields the final form of the Transductive Sharpening objective:
+Definition 5 (Transductive Sharpening Objective).
+For a model producing, for each node v∈Vv\in V, a probability vector pv∈ΔC−1p_{v}\in\Delta^{C-1}, we define the Transductive Sharpening objective by
+|
+| ℒTS=ℒsup+λ⋅1|VU|∑v∈VU(1−∥pv∥22)−λ⋅1|VL|∑v∈VL(1−∥pv∥22),\mathcal{L}_{\mathrm{TS}}=\mathcal{L}_{\mathrm{sup}}+\lambda\cdot\frac{1}{|V_{U}|}\sum_{v\in V_{U}}\left(1-\|p_{v}\|_{2}^{2}\right)-\lambda\cdot\frac{1}{|V_{L}|}\sum_{v\in V_{L}}\left(1-\|p_{v}\|_{2}^{2}\right),
+|
+| (6)
+where λ∈ℝ\lambda\in\mathbb{R} controls the strength of the sharpening.
+On the Choice of Sharpening Coefficient.
+The Transductive Sharpening objective introduces a single scalar hyperparameter λ\lambda that controls the strength of the unlabeled-node confidence signal relative to the supervised objective. In our main experiments (Section 4.1), we select λ\lambda by standard validation tuning over a fixed grid and report test performance at the validation-selected value. To assess whether TS depends on precise per-dataset tuning, we also evaluate a universal setting with λ=0.25\lambda=0.25 applied across all datasets and architectures (Section 4.2). Notably, TS requires no changes to the backbone architecture and adds negligible computational overhead to existing GNN training pipelines.
+4 Experiments
+In this section, we conduct an extensive set of experiments to demonstrate the effectiveness of TS for node classification in transductive settings. Our experiments seek to address the following questions:
+(Q1)
+Does transductive sharpening consistently improve the performance of GNNs across a broad set of node classification benchmarks?
+(Q2)
+Does transductive sharpening consistently improve the performance of MLPs across a broad set of node classification benchmarks, and does it substitute the effect of message passing?
+(Q3)
+How does the choice of sharpening coefficient λ\lambda affect the performance of TS?
+(Q4)
+Can a fixed λ\lambda perform competitively across architectures and datasets?
+Baselines.
+To isolate the effect of TS, we consider two classes of baselines: (i) GNNs, using well-tuned implementations of standard message-passing architectures (GCN, GAT, GraphSAGE) following [26], and (ii) MLPs, which operate on node features alone and do not use graph structure. Full comparison to current competitive methods can be found in Appendix E.
+We provide complete details on the experimental settings and datasets in Appendix A, as well as additional experiments in Appendix B.
+4.1 Node Classification Results
+Table 1: Per-cell results, with the GNN baseline shown on the left and the two TS variants to its right. Each treatment cell shows the value on the top line and the Δ\Delta vs. the matching baseline on the bottom. Green when positive, red when negative; bold when |Δ|>σ|\Delta|>\sigma.
+Baseline
+Baseline+TS (Ours)
+Dataset
+MLP
+GCN
+SAGE
+GAT
+MLP
+GCN
+SAGE
+GAT
+Cora
+60.96
+±\pm 2.51
+84.54
+±\pm 0.86
+83.60
+±\pm 0.58
+82.40
+±\pm 1.01
+64.48 ±\pm 2.83
+++3.52
+85.74 ±\pm 0.54
+++1.20
+85.28 ±\pm 1.11
+++1.68
+84.62 ±\pm 0.89
+++2.22
+CiteSeer
+56.58
+±\pm 1.14
+72.68
+±\pm 0.43
+69.60
+±\pm 0.61
+71.90
+±\pm 0.25
+62.72 ±\pm 3.20
+++6.14
+75.18 ±\pm 0.15
+++2.50
+74.96 ±\pm 0.24
+++5.36
+74.84 ±\pm 0.48
+++2.94
+PubMed
+68.96
+±\pm 1.16
+80.70
+±\pm 0.96
+77.86
+±\pm 1.49
+79.76
+±\pm 1.21
+72.30 ±\pm 1.89
+++3.34
+80.74 ±\pm 0.30
+++0.04
+79.72 ±\pm 0.69
+++1.86
+78.84 ±\pm 0.67
+−-0.92
+Computer
+82.46
+±\pm 0.45
+94.12
+±\pm 0.08
+93.25
+±\pm 0.36
+93.98
+±\pm 0.22
+82.87 ±\pm 0.56
+++0.41
+93.98 ±\pm 0.26
+−-0.14
+93.43 ±\pm 0.11
+++0.18
+93.86 ±\pm 0.13
+−-0.12
+Photo
+87.57
+±\pm 0.52
+95.90
+±\pm 0.33
+96.43
+±\pm 0.27
+96.69
+±\pm 0.14
+87.65 ±\pm 0.22
+++0.08
+96.21 ±\pm 0.11
+++0.31
+96.51 ±\pm 0.23
+++0.08
+96.60 ±\pm 0.07
+−-0.09
+CS
+91.54
+±\pm 0.20
+95.88
+±\pm 0.03
+96.29
+±\pm 0.12
+96.17
+±\pm 0.02
+91.77 ±\pm 0.38
+++0.23
+95.89 ±\pm 0.06
+++0.01
+96.24 ±\pm 0.10
+−-0.05
+96.17 ±\pm 0.02
+++0.00
+Physics
+95.97
+±\pm 0.07
+97.38
+±\pm 0.06
+97.25
+±\pm 0.08
+97.26
+±\pm 0.03
+95.98 ±\pm 0.08
+++0.01
+97.44 ±\pm 0.14
+++0.06
+97.23 ±\pm 0.00
+−-0.02
+97.38 ±\pm 0.04
+++0.12
+WikiCS
+70.96
+±\pm 1.00
+79.97
+±\pm 0.43
+80.71
+±\pm 0.19
+80.92
+±\pm 0.58
+72.48 ±\pm 0.83
+++1.52
+80.31 ±\pm 0.44
+++0.34
+81.10 ±\pm 0.32
+++0.39
+81.78 ±\pm 0.22
+++0.86
+Squirrel
+39.30
+±\pm 0.79
+43.75
+±\pm 1.91
+40.48
+±\pm 2.90
+41.51
+±\pm 2.34
+39.39 ±\pm 0.91
+++0.09
+44.57 ±\pm 2.04
+++0.82
+41.32 ±\pm 2.35
+++0.84
+40.36 ±\pm 1.66
+−-1.15
+Chameleon
+43.86
+±\pm 5.23
+45.30
+±\pm 2.30
+44.32
+±\pm 4.55
+43.07
+±\pm 5.25
+43.86 ±\pm 5.23
+++0.00
+45.27 ±\pm 4.74
+−-0.03
+43.32 ±\pm 4.67
+−-1.00
+44.52 ±\pm 3.69
+++1.45
+Amazon-Rat.
+48.85
+±\pm 0.55
+53.64
+±\pm 0.54
+55.18
+±\pm 0.93
+55.09
+±\pm 0.19
+49.50 ±\pm 0.27
+++0.65
+54.06 ±\pm 0.58
+++0.42
+56.72 ±\pm 0.35
+++1.54
+55.73 ±\pm 0.31
+++0.64
+Roman-Emp.
+66.10
+±\pm 0.44
+91.15
+±\pm 0.20
+90.50
+±\pm 0.21
+90.49
+±\pm 0.22
+66.12 ±\pm 0.29
+++0.02
+91.66 ±\pm 0.20
+++0.51
+91.27 ±\pm 0.36
+++0.77
+90.93 ±\pm 0.20
+++0.44
+Minesweeper
+51.06
+±\pm 1.76
+97.26
+±\pm 0.22
+97.09
+±\pm 1.00
+97.86
+±\pm 0.37
+50.97 ±\pm 1.56
+−-0.09
+97.80 ±\pm 0.20
+++0.54
+97.33 ±\pm 0.94
+++0.24
+97.86 ±\pm 0.37
+++0.00
+Table 1 reports test accuracy for each dataset–model pair, comparing the supervised baseline with the corresponding TS-augmented model across 13 different datasets. Our key takeaways are as follows:
+(A1)
+TS improves standard GNN training. Across GCN, GraphSAGE, and GAT, adding TS generally matches or improves the corresponding supervised baseline. This supports the view that unlabeled-node predictions contain recoverable training signal, as formalized by Definition 2, and that uncertainty provides an effective way to recover it, as suggested by Lemma 1.
+(A2)
+TS does not replace message passing. TS also improves MLPs on several datasets, showing that the sharpening signal is not specific to GNN architectures. However, MLP+TS remains below the corresponding GNN performance, indicating that TS does not replace the benefit of message passing.
+Overall, these results demonstrate that TS provides a simple and broadly applicable improvement to transductive node classification.
+4.2 On the Effect of the Sharpening Coefficient
+To compare λ\lambda values across datasets with different baseline accuracies and variances, we report improvements using Glass’s Δ\Delta,
+ΔGlass​(λ)=Accλ−Acc0σ0,\Delta_{\mathrm{Glass}}(\lambda)=\frac{\mathrm{Acc}_{\lambda}-\mathrm{Acc}_{0}}{\sigma_{0}},
+where Acc0\mathrm{Acc}_{0} and σ0\sigma_{0} are the mean and standard deviation of the corresponding λ=0\lambda=0 supervised baseline. This normalization measures each gain in units of the baseline variability and is preferable to raw accuracy differences in this case because the datasets differ substantially in both difficulty and noise.
+Figure 1 aggregates the Glass-normalized gains over the 13 datasets for each GNN backbone. The median curves remain close to or above zero for small positive values of λ\lambda, with the most stable region lying roughly between λ=0\lambda=0 and λ=0.5\lambda=0.5. Beyond this range, the curves gradually deteriorate, and large values become harmful more often.
+Figure 1: Glass’s Δ\Delta on test accuracy vs. λ\lambda, where each curve aggregates one GNN backbone over its 13 datasets. Solid line denotes the median and the shaded band denotes the interquartile range. This figure showcases the finding that only using λ∈[0,0.5]\lambda\in[0,0.5] will generally improve performance on any graph. Additional per-λ\lambda visualizations, including the full distribution of improvements and regressions and the corresponding per-dataset accuracy curves, are provided in Appendix D.
+(A3)
+Effect of λ\lambda:
+Across datasets and backbones, Figure 1 shows a broadly consistent relationship between λ\lambda and accuracy: performance typically improves for small positive values, reaches a plateau or local maximum at moderate sharpening strength, and then degrades when λ\lambda becomes too large. This behavior matches the intuition behind TS: a mild sharpening signal can help the model exploit reliable unlabeled-node predictions, whereas excessive sharpening may force the model to commit too strongly to incorrect predictions.
+The consistency of the pattern observed in Figure 1 suggests that the useful range of λ\lambda is not entirely dataset-specific. We therefore study whether a single coefficient can work reasonably well across datasets and architectures. Based on Figure 1, we choose the midpoint of the stable region, λ=0.25\lambda=0.25, as a simple universal setting.
+Table 2: Per-dataset results for TS at λ=0.25\lambda{=}0.25 (universal). Each cell shows test accuracy ±\pm std on top and the Δ\Delta vs. the matching baseline below. Green when positive, red when negative; bold when |Δ|>σ|\Delta|>\sigma. We observe that TS, even without tuning λ\lambda as a hyperparameter, significantly enhances the performance of classic baselines.
+Cora
+CiteSeer
+PubMed
+Computer
+Photo
+CS
+Physics
+WikiCS
+Squirrel
+Chameleon
+Amazon-Rat.
+Roman-Emp.
+Minesweeper
+GCN
+85.16
+±\pm 0.36
+++0.62
+75.10
+±\pm 0.19
+++2.42
+80.88
+±\pm 0.31
+++0.18
+93.81
+±\pm 0.22
+−-0.31
+96.32
+±\pm 0.08
+++0.42
+95.90
+±\pm 0.03
+++0.02
+97.44
+±\pm 0.14
+++0.06
+80.17
+±\pm 0.48
+++0.20
+44.25
+±\pm 2.04
+++0.50
+45.27
+±\pm 4.74
+−-0.03
+54.11
+±\pm 0.34
+++0.47
+91.57
+±\pm 0.20
+++0.42
+97.44
+±\pm 0.17
+++0.18
+SAGE
+84.94
+±\pm 0.89
+++1.34
+72.00
+±\pm 1.36
+++2.40
+78.40
+±\pm 1.12
+++0.54
+93.51
+±\pm 0.06
+++0.26
+96.41
+±\pm 0.41
+−-0.02
+96.20
+±\pm 0.06
+−-0.09
+97.23
+±\pm 0.00
+−-0.02
+80.77
+±\pm 0.14
+++0.06
+39.77
+±\pm 2.13
+−-0.71
+42.93
+±\pm 5.67
+−-1.39
+55.69
+±\pm 0.23
+++0.51
+91.21
+±\pm 0.25
+++0.71
+96.96
+±\pm 0.47
+−-0.13
+GAT
+83.70
+±\pm 1.19
+++1.30
+74.80
+±\pm 0.81
+++2.90
+79.80
+±\pm 0.93
+++0.04
+93.82
+±\pm 0.13
+−-0.16
+96.47
+±\pm 0.00
+−-0.22
+96.19
+±\pm 0.11
+++0.02
+97.32
+±\pm 0.06
+++0.06
+81.03
+±\pm 0.92
+++0.11
+39.53
+±\pm 2.12
+−-1.98
+43.87
+±\pm 5.20
+++0.80
+55.59
+±\pm 0.27
+++0.50
+90.99
+±\pm 0.11
+++0.50
+97.10
+±\pm 0.69
+−-0.76
+(A4)
+Universal λ\lambda:
+Table 2 shows that despite removing per-dataset tuning, the universal setting preserves much of the benefit of TS: it improves many model-dataset pairs and rarely causes large regressions. This suggests that TS is not overly sensitive to precise coefficient selection, provided that λ\lambda is chosen in a conservative positive range.
+4.3 Ablation Studies
+We evaluate the impact of key design choices in TS through a series of ablations.
+Removing the labeled-node correction.
+At λ=0.25\lambda=0.25, we evaluate a variant that applies the entropy-minimization term to unlabeled nodes while removing the entropy-maximization term on labeled training nodes.
+Table 3 shows that removing this correction generally does not improve performance and can substantially hurt accuracy on several datasets, suggesting that the labeled-node term is important for the stability of TS.
+Table 3: Test-accuracy gain of dropping the labelled-side entropy-max term (λL=0\lambda_{L}{=}0) over the symmetric default (λL=−λU\lambda_{L}{=}{-}\lambda_{U}). Green when positive, red when negative; bold when |Δ|>σ|\Delta|>\sigma. Results show that removing the labeled-node correction performs worse than the symmetric TS objective.
+Cora
+CiteSeer
+PubMed
+Computer
+Photo
+CS
+Physics
+WikiCS
+Squirrel
+Chameleon
+Amazon-Rat.
+Roman-Emp.
+Minesweeper
+GCN
+−-3.80
+±\pm 0.97
+−-2.96
+±\pm 0.27
+−-3.02
+±\pm 0.61
+++0.07
+±\pm 0.31
+−-0.13
+±\pm 0.20
+++0.06
+±\pm 0.10
+++0.03
+±\pm 0.16
+−-0.10
+±\pm 0.62
+−-0.54
+±\pm 3.16
+−-1.08
+±\pm 6.54
+++0.01
+±\pm 0.58
+−-0.05
+±\pm 0.24
+−-0.02
+±\pm 0.29
+SAGE
+−-3.94
+±\pm 1.27
+−-1.12
+±\pm 1.74
+++1.68
+±\pm 1.24
+++0.10
+±\pm 0.18
+++0.15
+±\pm 0.54
+++0.05
+±\pm 0.08
+0
+±\pm 0.01
+−-0.31
+±\pm 0.49
+++0.79
+±\pm 3.32
+−-0.19
+±\pm 7.46
+−-0.33
+±\pm 0.68
+−-0.17
+±\pm 0.47
+++0.22
+±\pm 0.54
+GAT
+−-2.74
+±\pm 1.41
+−-3.30
+±\pm 1.11
+−-1.92
+±\pm 1.36
+++0.16
+±\pm 0.19
+−-0.04
+±\pm 0.14
+++0.05
+±\pm 0.15
+0
+±\pm 0.09
+++0.19
+±\pm 1.22
+−-0.02
+±\pm 3.17
+−-0.02
+±\pm 6.80
+++0.26
+±\pm 0.43
+−-0.08
+±\pm 0.44
+++0.17
+±\pm 0.75
+Symmetry of λ\lambda.
+We test whether the symmetric formulation (λu=−λt\lambda_{u}=-\lambda_{t}) is essential by introducing an offset {−0.10,−0.05,+0,+0.05,+0.10}\{-0.10,-0.05,+0,+0.05,+0.10\} while keeping λu−λt\lambda_{u}-\lambda_{t} fixed.
+Table 4 shows that asymmetric configurations do not yield systematic improvements, and often slightly degrade performance, suggesting that the balance between sharpening unlabeled nodes and regularizing labeled ones is important for stable gains.
+Table 4: Best test-accuracy gain from the non-symmetric offset, relative to the symmetric default λu=−λt\lambda_{u}=-\lambda_{t}. Green when positive, red when negative; bold when |Δ|>σ|\Delta|>\sigma. This table shows the symmetric approach outperforms adding non-symmetry to the Generic Transductive Sharpening Objective (Definition 3).
+Cora
+CiteSeer
+PubMed
+Computer
+Photo
+CS
+Physics
+WikiCS
+Squirrel
+Chameleon
+Amazon-Rat.
+Roman-Emp.
+Minesweeper
+GCN
+−-0.24
+±\pm 0.49
+−-0.10
+±\pm 0.67
+−-0.20
+±\pm 0.94
+0
+−-0.26
+±\pm 0.36
+−-0.07
+±\pm 0.11
+−-0.05
+±\pm 0.18
+−-0.25
+±\pm 0.71
+−-0.57
+±\pm 2.82
+0
+−-0.03
+±\pm 0.34
+−-0.17
+±\pm 0.20
+0
+SAGE
+0
+±\pm 1.35
+0
+−-0.84
+±\pm 0.85
+0
+0
+−-0.05
+±\pm 0.20
+0
+±\pm 0.06
+−-0.12
+±\pm 0.43
+−-1.29
+±\pm 3.10
+0
+++0.14
+±\pm 0.54
+−-0.07
+±\pm 0.21
+0
+GAT
+0
+0
+−-0.26
+±\pm 1.19
+0
+−-0.31
+±\pm 0.08
+−-0.08
+±\pm 0.05
+−-0.07
+±\pm 0.13
+−-0.23
+±\pm 0.24
+−-0.69
+±\pm 2.73
+−-1.07
+±\pm 6.04
+−-0.28
+±\pm 0.35
+++0.08
+±\pm 0.43
+0
+Choice of entropy.
+We compare Tsallis entropy (q=2q=2) with Shannon entropy (q=1q=1) at a fixed λ=0.25\lambda=0.25. While average accuracy remains similar, Shannon entropy leads to higher variance and instability in some cases (see GAT++Roman-Empire cell). This confirms that the quadratic form of Tsallis entropy provides more stable optimization dynamics and is a safer default.
+Table 5: Test-accuracy gain of Shannon entropy (q=1q{=}1) over Gini (q=2q{=}2) at λ=0.25\lambda{=}0.25. Green when positive, red when negative; bold when |Δ|>σ|\Delta|>\sigma. These results show the choice of entropy generally does not affect the reported accuracy. Thus motivating the choice of Tsallis entropy for its simplicity and its better differentiability properties.
+Cora
+CiteSeer
+PubMed
+Computer
+Photo
+CS
+Physics
+WikiCS
+Squirrel
+Chameleon
+Amazon-Rat.
+Roman-Emp.
+Minesweeper
+GCN
+−-0.14
+±\pm 0.77
+−-0.12
+±\pm 0.38
+−-0.16
+±\pm 0.57
+++0.21
+±\pm 0.24
+−-0.15
+±\pm 0.13
+0
+±\pm 0.09
+++0.01
+±\pm 0.20
+−-0.02
+±\pm 0.66
+−-0.40
+±\pm 2.92
+−-1.61
+±\pm 6.00
+−-0.11
+±\pm 0.54
+−-0.02
+±\pm 0.36
+++0.04
+±\pm 0.29
+SAGE
+−-0.42
+±\pm 1.35
+−-2.52
+±\pm 1.93
+++0.54
+±\pm 1.42
+−-0.06
+±\pm 0.12
+++0.13
+±\pm 0.48
+−-0.08
+±\pm 0.17
+++0.06
+±\pm 0.05
+++0.13
+±\pm 0.31
+++0.02
+±\pm 3.00
+++0.63
+±\pm 7.31
+++0.21
+±\pm 0.59
+−-0.11
+±\pm 0.33
+—
+GAT
+++0.74
+±\pm 1.27
+−-0.68
+±\pm 0.92
+++0.26
+±\pm 1.24
+++0.06
+±\pm 0.31
+++0.07
+±\pm 0.07
+−-0.08
+±\pm 0.14
+++0.03
+±\pm 0.08
+−-0.01
+±\pm 1.07
+++0.90
+±\pm 2.58
+−-0.81
+±\pm 6.97
+−-0.27
+±\pm 0.45
+−-26.21
+±\pm 44.01
+++0.29
+±\pm 0.78
+Meta-learned sharpening coefficient.
+We consider a dynamic variant in which the sharpening coefficient is adapted during training. At each epoch, we randomly split the labeled training nodes into an inner-training subset and a held-out meta-training subset. The model parameters are first updated differentiably on the inner-training subset using the transductive sharpening objective. We then update λ\lambda so that the one-step-updated model minimizes the supervised loss on the held-out meta-training subset. As shown in Table 6, this adaptive strategy performs worse than the simpler validation-selected constant λ\lambda, suggesting that the additional meta-optimization introduces instability or noise that is not offset by better coefficient selection.
+Table 6:
+Test-accuracy difference between the meta-learned-λ\lambda variant and the constant-λ\lambda transductive sharpening baseline. Negative values indicate that adapting λ\lambda during training performs worse than selecting a fixed value by validation. Green when positive, red when negative; bold when |Δ|>σ|\Delta|>\sigma. Meta-learning the λ\lambda value shows no advantage to considering a fixed value.
+Cora
+CiteSeer
+PubMed
+Computer
+Photo
+CS
+Physics
+WikiCS
+Squirrel
+Chameleon
+Amazon-Rat.
+Roman-Emp.
+Minesweeper
+GCN
+−-3.72
+±\pm 0.80
+−-3.40
+±\pm 0.33
+−-2.18
+±\pm 0.83
+−-0.19
+±\pm 0.27
+−-1.35
+±\pm 0.76
+−-0.06
+±\pm 0.11
+0
+±\pm 0.14
+−-0.23
+±\pm 0.72
+++0.16
+±\pm 2.83
+−-0.25
+±\pm 5.82
+−-0.57
+±\pm 0.88
+−-0.50
+±\pm 0.27
+−-0.38
+±\pm 0.48
+SAGE
+−-4.68
+±\pm 1.59
+−-5.36
+±\pm 0.94
+++0.16
+±\pm 0.98
+−-0.39
+±\pm 0.20
+−-0.32
+±\pm 0.42
+++0.07
+±\pm 0.15
+−-0.03
+±\pm 0.05
+−-0.63
+±\pm 0.70
+++0.40
+±\pm 3.11
+−-1.05
+±\pm 8.67
+−-1.84
+±\pm 0.50
+−-0.53
+±\pm 0.39
+++0.49
+±\pm 1.07
+GAT
+−-4.22
+±\pm 1.40
+−-3.88
+±\pm 1.32
+−-0.36
+±\pm 1.57
+0
+±\pm 0.46
+−-0.12
+±\pm 0.23
+++0.13
+±\pm 0.07
+−-0.15
+±\pm 0.05
+−-1.13
+±\pm 0.61
+++1.57
+±\pm 2.19
+−-1.05
+±\pm 5.47
+−-0.34
+±\pm 0.48
+−-0.43
+±\pm 0.41
+−-1.00
+±\pm 0.54
+5 A Mechanistic Analysis of Transductive Sharpening
+In this section, we examine the training dynamics induced by Transductive Sharpening. We focus on a measurable effect of the objective: the evolution of predictive entropy on labeled and unlabeled nodes during training.
+The central observation is that TS changes how confidence is allocated across the graph: it encourages the model to become more confident on unlabeled nodes, while the labeled-node correction prevents confidence from concentrating only on the supervised subset.
+To measure this effect, we track the average predictive entropy on labeled and unlabeled nodes,
+|
+| HL​(t)=1|VL|​∑v∈VLH⁡(pv​(t)),HU​(t)=1|VU|​∑v∈VUH⁡(pv​(t)),H_{L}(t)=\frac{1}{|V_{L}|}\sum_{v\in V_{L}}H(p_{v}(t)),\qquad H_{U}(t)=\frac{1}{|V_{U}|}\sum_{v\in V_{U}}H(p_{v}(t)),
+|
+as well as their difference,
+|
+| Δ​H​(t)=HL​(t)−HU​(t).\Delta H(t)=H_{L}(t)-H_{U}(t).
+|
+Larger values of Δ​H​(t)\Delta H(t) indicate that the model is relatively more confident on unlabeled nodes than on labeled nodes.
+Figure 2:
+Entropy dynamics during training for the supervised baseline (grey) and TS (blue). TS lowers the entropy of unlabeled-node predictions relative to labeled-node predictions, producing a larger entropy gap Δ​H​(t)\Delta H(t). This implies that TS is distributing confidence to the unlabeled nodes as intended by its design.
+Figure 2 shows that TS reallocates confidence toward the unlabeled portion of the observed graph. Across the training trajectory, the entropy gap for λ=0.25\lambda=0.25 remains consistently above the supervised baseline λ=0\lambda=0, indicating that TS lowers the entropy of unlabeled-node predictions relative to labeled-node predictions.
+This behavior suggests a reason why the effect of TS depends on the choice of λ\lambda in Section 4.2. Moderate sharpening can improve the learned decision boundary by turning reliable unlabeled predictions into an optimization signal, whereas overly large λ\lambda can force the model to commit too strongly to its own predictions.
+6 Related Work
+Graph Neural Networks.
+Graph neural networks (GNNs) have become the standard approach for node classification [25], with architectures such as GCN [21], GAT [42], and GraphSAGE [17]. Recent work has shown that well-tuned implementations of these models remain highly competitive [26], suggesting that performance gains are not solely driven by architectural innovation.
+Improved training of GNNs.
+A line of work has explored improving GNN performance through creating different training policies and losses. Common approaches include dropout-based methods [39], structural perturbations such as DropEdge [35] and DropNode [9], normalization techniques like PairNorm [54], and data augmentation strategies including Mixup [52, 43], and G-Mixup [18]. While these methods improve GNN training, they do not explicitly leverage predictions on unlabeled nodes during training.
+Leveraging unlabeled data in GNN training.
+Recent methods explicitly incorporate both labeled and unlabeled data to improve GNN training. InfoGraph [40] learns representations by maximizing mutual information between local and global views of the graph. Related approaches leverage contrastive learning to exploit unlabeled data [50], while others rely on augmentation-based regularization such as consistency and diversity objectives [2]. Mixup-based methods incorporate unlabeled data through interpolation strategies [46, 44], whereas [10] incorporate unlabeled nodes through information-theoretic objectives and additional regularization terms. Our approach differs from these methods in two key aspects. First, rather than introducing auxiliary objectives or augmentations, we operate directly on the model’s predictive distribution. Second, our method requires no architectural changes and integrates seamlessly into standard training.
+Entropy and confidence-based objectives.
+Entropy plays a central role in many areas of machine learning as a measure of uncertainty. In semi-supervised learning, entropy minimization [15] has been used to encourage confident predictions on unlabeled data. Another approach widely used to prevent over-confidence in training is label smoothing. However, in graph neural networks, standard training objectives do not explicitly leverage entropy on unlabeled nodes, despite predictions being available for the entire graph. Our work revisits this gap and shows that directly shaping prediction entropy provides a simple and effective improvement.
+7 Conclusions and Future Work
+In this work, we introduced Transductive Sharpening (TS), a simple loss-level modification that exploits the predictions models already produce on unlabeled nodes during transductive graph learning. TS adds only a single scalar hyperparameter, requires no architectural changes, and consistently improves performance across architectures and benchmarks. These results show that TS offers a strong performance-complexity trade-off by delivering meaningful gains while requiring no substantive changes to the model architecture, data pipeline, or training procedure. More broadly, our findings suggest that unlabeled predictions, which are typically discarded by the standard supervised objective, provide a useful and underexploited signal for transductive graph learning, and that confidence-based estimates offer an effective way to extract it.
+Future work.
+This work focuses on transductive node classification with standard GNN and MLP backbones, where Transductive Sharpening can be applied as a lightweight loss-level modification. While our experiments show consistent gains across a broad set of benchmarks, an immediate extension is to study whether the same objective remains effective in closely related transductive settings, such as link prediction or temporal node classification. Another useful direction is to make the sharpening strength mildly adaptive, for example by varying it across training stages or by using simple confidence-based criteria. We hope this work inspires new transductive graph-learning objectives that leverage unlabeled predictions produced during training to obtain gains in downstream tasks without adding architectural complexity.
+Acknowledgments and Disclosure of Funding
+The authors thank Petar Veličković for helpful discussions and feedback. Mar Gonzàlez I Català acknowledges that this project was supported by G-Research. Ferran Hernandez Caralt acknowledges that the project that gave rise to these results received the support of a fellowship from “la Caixa” Foundation (ID 100010434). The fellowship code is LCF/BQ/PFA25/11000012.
+References
+[1]
+J. Bamberger, F. Barbero, X. Dong, and M. M. Bronstein (2025)
+Bundle neural networks for message diffusion on graphs.
+In The Thirteenth International Conference on Learning Representations (ICLR),
+External Links: 2405.15540
+Cited by: Table 17,
+§1.
+[2]
+D. Bo, B. Hu, X. Wang, Z. Zhang, C. Shi, and J. Zhou (2022)
+Regularizing graph neural networks via consistency-diversity graph augmentations.
+Proceedings of the AAAI Conference on Artificial Intelligence 36 (4), pp. 3913–3921.
+External Links: Document
+Cited by: §6.
+[3]
+M. M. Bronstein, J. Bruna, T. Cohen, and P. Veličković (2021)
+Geometric deep learning: grids, groups, graphs, geodesics, and gauges.
+arXiv preprint arXiv:2104.13478.
+Cited by: §1.
+[4]
+J. Bruna, W. Zaremba, A. Szlam, and Y. LeCun (2014)
+Spectral networks and locally connected networks on graphs.
+External Links: 1312.6203
+Cited by: §1.
+[5]
+J. Chen, K. Gao, G. Li, and K. He (2023)
+NAGphormer: a tokenized graph transformer for node classification in large graphs.
+In International Conference on Learning Representations,
+External Links: 2206.04910
+Cited by: Table 16.
+[6]
+E. Chien, J. Peng, P. Li, and O. Milenkovic (2021)
+Adaptive universal generalized PageRank graph neural network.
+In International Conference on Learning Representations,
+External Links: 2006.07988
+Cited by: Table 17.
+[7]
+M. Defferrard, X. Bresson, and P. Vandergheynst (2017)
+Convolutional neural networks on graphs with fast localized spectral filtering.
+External Links: 1606.09375
+Cited by: §1.
+[8]
+C. Deng, Z. Yue, and Z. Zhang (2024)
+Polynormer: polynomial-expressive graph transformer in linear time.
+In The Twelfth International Conference on Learning Representations (ICLR),
+External Links: Link,
+2403.01232
+Cited by: Table 16,
+Table 17.
+[9]
+T. H. Do, D. M. Nguyen, G. Bekoulis, A. Munteanu, and N. Deligiannis (2021)
+Graph convolutional neural networks with node transition probability-based message passing and dropnode regularization.
+Expert Systems with Applications 174, pp. 114711.
+External Links: ISSN 0957-4174,
+Document
+Cited by: §6.
+[10]
+M. Eliasof, E. Haber, and E. Treister (2022)
+Every node counts: improving the training of graph neural networks on node classification.
+External Links: 2211.16631
+Cited by: §6.
+[11]
+M. Fey and J. E. Lenssen (2019)
+Fast graph representation learning with pytorch geometric.
+External Links: 1903.02428
+Cited by: §A.1.
+[12]
+J. Gilmer, S. S. Schoenholz, P. F. Riley, O. Vinyals, and G. E. Dahl (2017)
+Neural message passing for quantum chemistry.
+External Links: 1704.01212
+Cited by: §1.
+[13]
+C. Goller and A. Kuchler (1996)
+Learning task-dependent distributed representations by backpropagation through structure.
+In Proceedings of International Conference on Neural Networks (ICNN’96),
+Vol. 1, pp. 347–352 vol.1.
+External Links: Document
+Cited by: §1.
+[14]
+M. Gori, G. Monfardini, and F. Scarselli (2005)
+A new model for learning in graph domains.
+In Proceedings. 2005 IEEE International Joint Conference on Neural Networks, 2005.,
+Vol. 2, pp. 729–734 vol. 2.
+External Links: Document
+Cited by: §1.
+[15]
+Y. Grandvalet and Y. Bengio (2004)
+Semi-supervised learning by entropy minimization.
+In Advances in Neural Information Processing Systems,
+Vol. 17.
+External Links: Link
+Cited by: §2,
+§3.1,
+§6,
+footnote 1.
+[16]
+A. Gupta, G. Waghmare, G. Oberoi, and N. Srivastava (2025)
+Flow matters: directional and expressive gnns for heterophilic graphs.
+External Links: 2509.00772
+Cited by: Table 17,
+§1.
+[17]
+W. L. Hamilton, R. Ying, and J. Leskovec (2018)
+Inductive representation learning on large graphs.
+External Links: 1706.02216
+Cited by: Table 16,
+Table 17,
+§1,
+§6.
+[18]
+X. Han, Z. Jiang, N. Liu, and X. Hu (2022)
+G-mixup: graph data augmentation for graph classification.
+External Links: 2202.07179
+Cited by: §6.
+[19]
+Z. Hu, K. Li, H. Fan, and Y. Yang (2026)
+GraphTARIF: linear graph transformer with augmented rank and improved focus.
+Note: Accepted to The Web Conference (WWW) 2026
+External Links: 2510.10631
+Cited by: Table 16,
+Table 17,
+§1.
+[20]
+J. Huang, Y. Mo, X. Shi, L. Feng, and X. Zhu (2025)
+Enhancing the influence of labels on unlabeled nodes in graph convolutional networks.
+In Proceedings of the 42nd International Conference on Machine Learning (ICML),
+External Links: 2411.02279
+Cited by: Table 16.
+[21]
+T. N. Kipf and M. Welling (2017)
+Semi-supervised classification with graph convolutional networks.
+External Links: 1609.02907
+Cited by: Table 16,
+Table 17,
+§1,
+§2,
+§6.
+[22]
+K. Kong, J. Chen, J. Kirchenbauer, R. Ni, C. B. Bruss, and T. Goldstein (2023)
+GOAT: a global transformer on large-scale graphs.
+In International Conference on Machine Learning,
+External Links: Link
+Cited by: Table 16.
+[23]
+X. Li, R. Zhu, Y. Cheng, C. Shan, S. Luo, D. Li, and W. Qian (2022)
+Finding global homophily in graph neural networks when meeting heterophily.
+In International Conference on Machine Learning,
+External Links: 2205.07308
+Cited by: Table 17.
+[24]
+S. Luan, C. Hua, M. Xu, Q. Lu, J. Zhu, X. Chang, J. Fu, J. Leskovec, and D. Precup (2023)
+When do graph neural networks help with node classification? investigating the homophily principle on node distinguishability.
+Advances in Neural Information Processing Systems 36, pp. 28748–28760.
+Cited by: §1.
+[25]
+Y. Luo, L. Shi, and X. Wu (2024)
+Classic gnns are strong baselines: reassessing gnns for node classification.
+Advances in Neural Information Processing Systems 37, pp. 97650–97669.
+Cited by: §6.
+[26]
+Y. Luo, L. Shi, and X. Wu (2024)
+Classic GNNs are strong baselines: reassessing GNNs for node classification.
+In The Thirty-eighth Conference on Neural Information Processing Systems Datasets and Benchmarks Track,
+External Links: Link,
+Document
+Cited by: §A.1,
+§A.2,
+§4,
+§6.
+[27]
+S. K. Maurya, X. Liu, and T. Murata (2022)
+Simplifying approach to node classification in graph neural networks.
+Journal of Computational Science 62, pp. 101695.
+External Links: Document,
+2111.06748
+Cited by: Table 17.
+[28]
+P. Mernyei and C. Cangea (2020)
+Wiki-CS: a Wikipedia-based benchmark for graph neural networks.
+External Links: 2007.02901
+Cited by: 3rd item.
+[29]
+R. Müller, S. Kornblith, and G. E. Hinton (2019)
+When does label smoothing help?.
+Advances in neural information processing systems 32.
+Cited by: §3.1.
+[30]
+S. H. Pahng and S. Hormoz (2025)
+Improving graph neural networks by learning continuous edge directions.
+In The Thirteenth International Conference on Learning Representations (ICLR),
+External Links: 2410.14109
+Cited by: Table 17.
+[31]
+M. Park, J. Heo, and D. Kim (2024)
+Mitigating oversmoothing through reverse process of GNNs for heterophilic graphs.
+In Proceedings of the 41st International Conference on Machine Learning,  R. Salakhutdinov, Z. Kolter, K. Heller, A. Weller, N. Oliver, J. Scarlett, and F. Berkenkamp (Eds.),
+Proceedings of Machine Learning Research, Vol. 235, pp. 39667–39681.
+External Links: Link
+Cited by: Table 17,
+§1.
+[32]
+H. Pei, B. Wei, K. C. Chang, Y. Lei, and B. Yang (2020)
+Geom-GCN: geometric graph convolutional networks.
+In International Conference on Learning Representations,
+External Links: 2002.05287
+Cited by: 4th item.
+[33]
+O. Platonov, D. Kuznedelev, M. Diskin, A. Babenko, and L. Prokhorenkova (2023)
+A critical look at the evaluation of GNNs under heterophily: are we really making progress?.
+arXiv preprint arXiv:2302.11640.
+External Links: Document
+Cited by: 4th item,
+5th item.
+[34]
+L. Rampášek, M. Galkin, V. P. Dwivedi, A. T. Luu, G. Wolf, and D. Beaini (2022)
+Recipe for a general, powerful, scalable graph transformer.
+In Advances in Neural Information Processing Systems,
+External Links: 2205.12454
+Cited by: Table 16,
+Table 17.
+[35]
+Y. Rong, W. Huang, T. Xu, and J. Huang (2020)
+DropEdge: towards deep graph convolutional networks on node classification.
+External Links: 1907.10903
+Cited by: §6.
+[36]
+C. E. Shannon (1948)
+A mathematical theory of communication.
+Bell System Technical Journal 27 (3), pp. 379–423.
+External Links: Document
+Cited by: §3.2,
+Lemma 1.
+[37]
+O. Shchur, M. Mumme, A. Bojchevski, and S. Günnemann (2018)
+Pitfalls of graph neural network evaluation.
+External Links: 1811.05868
+Cited by: 2nd item.
+[38]
+H. Shirzad, A. Velingker, B. Venkatachalam, D. J. Sutherland, and A. K. Sinop (2023)
+Exphormer: sparse transformers for graphs.
+In International Conference on Machine Learning,
+External Links: 2303.06147
+Cited by: Table 16.
+[39]
+N. Srivastava, G. Hinton, A. Krizhevsky, I. Sutskever, and R. Salakhutdinov (2014)
+Dropout: a simple way to prevent neural networks from overfitting.
+Journal of Machine Learning Research 15 (56), pp. 1929–1958.
+External Links: Link
+Cited by: §6.
+[40]
+F. Sun, J. Hoffmann, V. Verma, and J. Tang (2020)
+InfoGraph: unsupervised and semi-supervised graph-level representation learning via mutual information maximization.
+External Links: 1908.01000
+Cited by: §6.
+[41]
+C. Tsallis (1988)
+Possible Generalization of Boltzmann-Gibbs Statistics.
+J. Statist. Phys. 52, pp. 479–487.
+External Links: Document
+Cited by: Definition 4.
+[42]
+P. Veličković, G. Cucurull, A. Casanova, A. Romero, P. Liò, and Y. Bengio (2018)
+Graph attention networks.
+External Links: 1710.10903
+Cited by: Table 16,
+Table 17,
+§1,
+§6.
+[43]
+V. Verma, A. Lamb, C. Beckham, A. Najafi, I. Mitliagkas, A. Courville, D. Lopez-Paz, and Y. Bengio (2019)
+Manifold mixup: better representations by interpolating hidden states.
+External Links: 1806.05236
+Cited by: §6.
+[44]
+V. Verma, M. Qu, A. Lamb, J. Kannala, and J. Tang (2019)
+GraphMix: regularized training of graph neural networks for semi-supervised learning.
+External Links: Document
+Cited by: §6.
+[45]
+M. Wang, D. Zheng, Z. Ye, Q. Gan, M. Li, X. Song, J. Zhou, C. Ma, L. Yu, Y. Gai, T. Xiao, T. He, G. Karypis, J. Li, and Z. Zhang (2020)
+Deep graph library: a graph-centric, highly-performant package for graph neural networks.
+External Links: 1909.01315
+Cited by: §A.1.
+[46]
+Y. Wang, W. Wang, Y. Liang, Y. Cai, and B. Hooi (2021)
+Mixup for node and graph classification.
+In Proceedings of the Web Conference 2021,
+WWW ’21, New York, NY, USA, pp. 3663–3674.
+External Links: ISBN 9781450383127,
+Document
+Cited by: §6.
+[47]
+Q. Wu, W. Zhao, Z. Li, D. Wipf, and J. Yan (2022)
+NodeFormer: a scalable graph structure learning transformer for node classification.
+In Advances in Neural Information Processing Systems,
+External Links: Link
+Cited by: Table 16,
+Table 17.
+[48]
+Q. Wu, W. Zhao, C. Yang, H. Zhang, F. Nie, H. Jiang, Y. Bian, and J. Yan (2023)
+SGFormer: simplifying and empowering transformers for large-graph representations.
+In Advances in Neural Information Processing Systems,
+External Links: 2306.10759
+Cited by: Table 16,
+Table 17.
+[49]
+Y. Xing, X. Wang, B. Wu, H. Huang, and C. Shi (2025)
+Unifying and enhancing graph transformers via a hierarchical mask framework.
+In Advances in Neural Information Processing Systems (NeurIPS),
+External Links: 2510.18825
+Cited by: Table 17.
+[50]
+Y. You, T. Chen, Y. Sui, T. Chen, Z. Wang, and Y. Shen (2021)
+Graph contrastive learning with augmentations.
+External Links: 2010.13902
+Cited by: §6.
+[51]
+B. Zhang, M. Chen, J. Song, S. Li, J. Zhang, and C. Wang (2025)
+Normalize then propagate: efficient homophilous regularization for few-shot semi-supervised node classification.
+In Proceedings of the AAAI Conference on Artificial Intelligence,
+External Links: 2501.08581
+Cited by: Table 16.
+[52]
+H. Zhang, M. Cisse, Y. N. Dauphin, and D. Lopez-Paz (2018)
+Mixup: beyond empirical risk minimization.
+External Links: 1710.09412
+Cited by: §6.
+[53]
+Y. Zhang, X. Li, Y. Xu, X. Xu, and Z. Wang (2025)
+A graph transformer with optimized attention scores for node classification.
+Scientific Reports 15 (1), pp. 30015.
+External Links: Document,
+Link
+Cited by: Table 16.
+[54]
+L. Zhao and L. Akoglu (2020)
+PairNorm: tackling oversmoothing in gnns.
+External Links: 1909.12223
+Cited by: §6.
+[55]
+J. Zhu, R. A. Rossi, A. Rao, T. Mai, N. Lipka, N. K. Ahmed, and D. Koutra (2021)
+Graph neural networks with heterophily.
+In Proceedings of the AAAI Conference on Artificial Intelligence,
+External Links: 2009.13566
+Cited by: Table 17.
+[56]
+J. Zhu, Y. Yan, L. Zhao, M. Heimann, L. Akoglu, and D. Koutra (2020)
+Beyond homophily in graph neural networks: current limitations and effective designs.
+In Advances in Neural Information Processing Systems,
+External Links: 2006.11468
+Cited by: Table 17.
+[57]
+J. Zhuo, Y. Liu, Y. Lu, Z. Ma, K. Fu, C. Wang, Y. Guo, Z. Wang, X. Cao, and L. Yang (2025)
+DUALFormer: dual graph transformer.
+In The Thirteenth International Conference on Learning Representations (ICLR),
+External Links: Link
+Cited by: §1.
+Appendix A Datasets and Experimental Details
+A.1 Computing Environment
+Our implementation is built upon tunedGNN [26], which is based on PyG [11] and DGL [45]. The experiments were conducted on a single workstation with an RTX 5090. With 3 datasets running in parallel, total compute time to run all 39 (model, dataset)-pairs averaged 1 h 7 min.
+A.2 Declaration of Hyperparameters
+TS variants.
+All TS variants inherit their per-cell backbone hyperparameters (depth, width, learning rate, dropout, normalisation, residual connections, training epochs) from TunedGNN [26] Tables 8-10, reproduced here as Tables 7, 8, and 9. The optimal lambda we found is reported in λ⋆\lambda^{\star}.
+Table 7: TunedGNN hyperparameters for GCN.
+| Dataset
+| ResNet
+| Normalization
+| Dropout rate
+| GNNs layer LL
+| Hidden dim
+| LR
+| epoch
+| λ⋆\lambda^{\star}
+| Cora
+| False
+| False
+| 0.7
+| 3
+| 512
+| 0.001
+| 500
+| 1.35
+| Citeseer
+| False
+| False
+| 0.5
+| 2
+| 512
+| 0.001
+| 500
+| 0.15
+| Pubmed
+| False
+| False
+| 0.7
+| 2
+| 256
+| 0.005
+| 500
+| 0.3
+| Computer
+| False
+| LN
+| 0.5
+| 3
+| 512
+| 0.001
+| 1000
+| 0.65
+| Photo
+| True
+| LN
+| 0.5
+| 6
+| 256
+| 0.001
+| 1000
+| 0.35
+| CS
+| True
+| LN
+| 0.3
+| 2
+| 512
+| 0.001
+| 1500
+| 0.6
+| Physics
+| True
+| LN
+| 0.3
+| 2
+| 64
+| 0.001
+| 1500
+| 0.25
+| WikiCS
+| False
+| LN
+| 0.5
+| 3
+| 256
+| 0.001
+| 1000
+| 0.8
+| Squirrel
+| True
+| BN
+| 0.7
+| 4
+| 256
+| 0.01
+| 500
+| 0.45
+| Chameleon
+| False
+| False
+| 0.2
+| 5
+| 512
+| 0.005
+| 200
+| 0.25
+| Amazon-Ratings
+| True
+| BN
+| 0.5
+| 4
+| 512
+| 0.001
+| 2500
+| 0.5
+| Roman-Empire
+| True
+| BN
+| 0.5
+| 9
+| 512
+| 0.001
+| 2500
+| 0.3
+| Minesweeper
+| True
+| BN
+| 0.2
+| 12
+| 64
+| 0.01
+| 2000
+| 0.1
+Table 8: TunedGNN hyperparameters for GAT.
+| Dataset
+| ResNet
+| Normalization
+| Dropout rate
+| GNNs layer LL
+| Hidden dim
+| LR
+| epoch
+| λ⋆\lambda^{\star}
+| Cora
+| True
+| False
+| 0.2
+| 3
+| 512
+| 0.001
+| 500
+| 1.25
+| Citeseer
+| True
+| False
+| 0.5
+| 3
+| 256
+| 0.001
+| 500
+| 0.1
+| Pubmed
+| False
+| False
+| 0.5
+| 2
+| 512
+| 0.01
+| 500
+| 1.55
+| Computer
+| False
+| LN
+| 0.5
+| 2
+| 64
+| 0.001
+| 1000
+| 0.1
+| Photo
+| True
+| LN
+| 0.5
+| 3
+| 64
+| 0.001
+| 1000
+| 0.4
+| CS
+| True
+| LN
+| 0.3
+| 1
+| 256
+| 0.001
+| 1500
+| 0
+| Physics
+| True
+| BN
+| 0.7
+| 2
+| 256
+| 0.001
+| 1500
+| 0.5
+| WikiCS
+| True
+| LN
+| 0.7
+| 2
+| 512
+| 0.001
+| 1000
+| 0.9
+| Squirrel
+| True
+| BN
+| 0.5
+| 7
+| 512
+| 0.005
+| 500
+| 1
+| Chameleon
+| True
+| BN
+| 0.7
+| 2
+| 256
+| 0.01
+| 200
+| 0.3
+| Amazon-Ratings
+| True
+| BN
+| 0.5
+| 4
+| 512
+| 0.001
+| 2500
+| 0.3
+| Roman-Empire
+| True
+| BN
+| 0.3
+| 10
+| 512
+| 0.001
+| 2500
+| 0.15
+| Minesweeper
+| True
+| BN
+| 0.2
+| 15
+| 64
+| 0.01
+| 2000
+| 0
+Table 9: TunedGNN hyperparameters for SAGE.
+| Dataset
+| ResNet
+| Normalization
+| Dropout rate
+| GNNs layer LL
+| Hidden dim
+| LR
+| epoch
+| λ⋆\lambda^{\star}
+| Cora
+| False
+| False
+| 0.7
+| 3
+| 256
+| 0.001
+| 500
+| 0.65
+| Citeseer
+| False
+| False
+| 0.2
+| 3
+| 512
+| 0.001
+| 500
+| 0.05
+| Pubmed
+| False
+| False
+| 0.7
+| 4
+| 512
+| 0.005
+| 500
+| 1.65
+| Computer
+| False
+| LN
+| 0.3
+| 4
+| 64
+| 0.001
+| 1000
+| 0.4
+| Photo
+| True
+| LN
+| 0.2
+| 6
+| 64
+| 0.001
+| 1000
+| 0.45
+| CS
+| True
+| LN
+| 0.5
+| 2
+| 512
+| 0.001
+| 1500
+| 0.05
+| Physics
+| True
+| BN
+| 0.7
+| 2
+| 64
+| 0.001
+| 1500
+| 0.25
+| WikiCS
+| False
+| LN
+| 0.7
+| 2
+| 256
+| 0.001
+| 1000
+| 1.55
+| Squirrel
+| True
+| BN
+| 0.7
+| 3
+| 256
+| 0.01
+| 500
+| 0.75
+| Chameleon
+| True
+| BN
+| 0.7
+| 4
+| 256
+| 0.01
+| 200
+| 0.15
+| Amazon-Ratings
+| True
+| BN
+| 0.5
+| 9
+| 512
+| 0.001
+| 2500
+| 0.9
+| Roman-Empire
+| False
+| BN
+| 0.3
+| 9
+| 256
+| 0.001
+| 2500
+| 0.35
+| Minesweeper
+| True
+| BN
+| 0.2
+| 15
+| 64
+| 0.01
+| 2000
+| 0.4
+TS with retune.
+The λ\lambda sweep with retune variant in Appendix B.2 inherits the same backbone hyperparameters and replaces (lr,dropout)(\mathrm{lr},\mathrm{dropout}) with the 5×55{\times}5 retune (Table 10), all other settings are unchanged.
+Table 10: Hyperparameters for λ\lambda sweep with retune.
+|
+| GCN
+| SAGE
+| GAT
+| Dataset
+| lr
+| dropout
+| lr
+| dropout
+| lr
+| dropout
+| Cora
+| 0.001
+| 0.65
+| 0.00025
+| 0.7
+| 0.0005
+| 0.3
+| Citeseer
+| 0.004
+| 0.6
+| 0.001
+| 0.3
+| 0.0005
+| 0.55
+| Pubmed
+| 0.01
+| 0.8
+| 0.0025
+| 0.45
+| 0.01
+| 0.5
+| Computer
+| 0.001
+| 0.55
+| 0.0005
+| 0.2
+| 0.004
+| 0.6
+| Photo
+| 0.001
+| 0.4
+| 0.0005
+| 0.3
+| 0.001
+| 0.5
+| CS
+| 0.002
+| 0.3
+| 0.00025
+| 0.4
+| 0.00025
+| 0.35
+| Physics
+| 0.0005
+| 0.3
+| 0.001
+| 0.6
+| 0.004
+| 0.7
+| WikiCS
+| 0.0005
+| 0.5
+| 0.004
+| 0.75
+| 0.00025
+| 0.8
+| Squirrel
+| 0.02
+| 0.6
+| 0.02
+| 0.75
+| 0.005
+| 0.4
+| Chameleon
+| 0.02
+| 0.15
+| 0.02
+| 0.7
+| 0.01
+| 0.75
+| Amazon-Ratings
+| 0.004
+| 0.6
+| 0.001
+| 0.45
+| 0.001
+| 0.6
+| Roman-Empire
+| 0.004
+| 0.4
+| 0.004
+| 0.25
+| 0.001
+| 0.3
+| Minesweeper
+| 0.02
+| 0.25
+| 0.02
+| 0.2
+| 0.01
+| 0.2
+MLP baselines.
+For the MLP baselines and their TS variants, we use a single fixed architecture and optimization configuration across all datasets (Table 11). This avoids dataset-specific MLP tuning and isolates the effect of adding Transductive Sharpening to a feature-only model.
+Meta-learned lambda.
+For the meta-learned λ\lambda variant in Ablation 4.3, we additionally use the fixed meta-learner hyperparameters listed in Table 12.
+Table 11: Fixed MLP hyperparameters used across all datasets.
+| Hyperparameter
+| Value
+| Hidden channels
+| 512
+| Training epochs
+| 1000
+| Learning rate
+| 0.001
+| Local layers
+| 3
+| Weight decay
+| 0.0005
+| Dropout
+| 0.5
+| Tsallis qq
+| 2.0
+| Seeds (runs) per cell
+| 5
+Table 12: Meta-learner constants.
+| Meta-learner constant
+| Value
+| λmax\lambda_{\max}
+| 1
+| Meta-LR
+| 0.001
+| Meta-hidden dim
+| 32
+| Meta-warmup epochs
+| 20
+| Tsallis qq
+| 2
+| Seeds (runs) per cell
+| 5
+A.3 Declaration of Splits
+•
+Cora, CiteSeer, PubMed: random class-balanced splits with 20 train per class, 500 val, 1000 test.
+•
+Amazon-Computer, Amazon-Photo, Coauthor-CS, Coauthor-Physics [37]: a single fixed 60/20/2060/20/20 split per dataset.
+•
+WikiCS [28]: the 20 splits provided by the dataset.
+•
+Squirrel, Chameleon [32]: 10 splits on the filtered (updated version) versions of Platonov et al. [33] (∼48/32/20{\sim}48/32/20 after filtering).
+•
+Roman-Empire, Amazon-Ratings, Minesweeper [33]: 10 fixed 50/25/2550/25/25 splits.
+Appendix B Additional Results
+B.1 Results on ogbn-arxiv
+Table 13: Results on ogbn-arxiv. Means ±\pm std over 5 seeds. Green when positive, red when negative; bold when |Δ|>σ|\Delta|>\sigma.
+Baseline
+++TS (λ=0.25\lambda{=}0.25)
+Dataset
+GCN
+SAGE
+GAT
+GCN
+SAGE
+GAT
+ogbn-arxiv
+73.0973.09
+±\pm 0.18
+72.4872.48
+±\pm 0.26
+72.3872.38
+±\pm 0.12
+73.3073.30 ±\pm 0.23
+++0.21
+72.7272.72 ±\pm 0.17
+++0.24
+72.5372.53 ±\pm 0.18
+++0.15
+B.2 Hyperparameter retuning
+In a separate diagnostic, we additionally re-tune (lr,dropout)(\mathrm{lr},\mathrm{dropout}) on a ×55\!\times\!5 grid centred on TunedGNN’s per-cell defaults at the val-best λ⋆\lambda^{\star}. Table 14 reports the resulting test-accuracy shifts relative to the same cell with TunedGNN’s defaults: most cells move by less than one combined std, suggesting that the gains reported in the main results would not increase substantially under this additional tuning.
+Table 14: Test-accuracy gain attributable to the (lr,dropout)(\mathrm{lr},\mathrm{dropout}) retune, relative to the same cell pre-retune (i.e., at the λ⋆\lambda^{\star} but with TunedGNN’s default lr\mathrm{lr} and dropout\mathrm{dropout}). Green when positive, red when negative; bold when |Δ|>σ|\Delta|>\sigma.
+Cora
+CiteSeer
+PubMed
+Computer
+Photo
+CS
+Physics
+WikiCS
+Squirrel
+Chameleon
+Amazon-Rat.
+Roman-Emp.
+Minesweeper
+GCN
+−-0.12
+±\pm 0.73
+−-0.08
+±\pm 0.64
+++0.18
+±\pm 0.91
+−-0.25
+±\pm 0.32
+−-0.07
+±\pm 0.33
+−-0.01
+±\pm 0.17
+++0.04
+±\pm 0.09
+−-0.18
+±\pm 0.77
+−-0.04
+±\pm 2.75
+−-0.07
+±\pm 6.57
+++0.41
+±\pm 0.49
+++0.36
+±\pm 0.34
+++0.21
+±\pm 0.25
+SAGE
+−-0.16
+±\pm 1.21
+−-0.36
+±\pm 0.32
+++0.38
+±\pm 1.38
+++0.04
+±\pm 0.24
+++0.33
+±\pm 0.36
+++0.11
+±\pm 0.13
+++0.04
+±\pm 0.06
+++0.15
+±\pm 0.44
+−-1.28
+±\pm 2.51
+++0.67
+±\pm 6.97
+++0.11
+±\pm 0.63
+++0.46
+±\pm 0.38
+++0.81
+±\pm 0.52
+GAT
+−-1.66
+±\pm 1.70
+++0.38
+±\pm 0.63
+0
+++0.05
+±\pm 0.32
+0
+++0.01
+±\pm 0.05
+++0.03
+±\pm 0.06
+++0.11
+±\pm 0.31
+++0.61
+±\pm 3.09
+−-1.89
+±\pm 6.34
+++0.13
+±\pm 0.42
+0
+0
+Appendix C Further Ablations
+Sharpen only on test nodes.
+We evaluate a variant with λ=0.25\lambda=0.25 in which TS is applied only to test nodes, excluding validation nodes from the unlabeled-node sharpening term.
+Table 15: Test-accuracy gain of the restricted variant over the standard TS. Green when positive, red when negative; bold when |Δ|>σ|\Delta|>\sigma.
+Cora
+CiteSeer
+PubMed
+Computer
+Photo
+CS
+Physics
+WikiCS
+Squirrel
+Chameleon
+Amazon-Rat.
+Roman-Emp.
+Minesweeper
+GCN
+−-3.84
+±\pm 0.70
+−-3.10
+±\pm 0.30
+−-2.66
+±\pm 0.74
+++0.25
+±\pm 0.29
+−-0.02
+±\pm 0.20
+++0.10
+±\pm 0.07
+++0.02
+±\pm 0.15
+−-0.15
+±\pm 0.55
+++0.04
+±\pm 2.70
+−-0.58
+±\pm 6.47
+−-0.04
+±\pm 0.47
+−-0.30
+±\pm 0.28
+−-0.11
+±\pm 0.37
+SAGE
+−-4.56
+±\pm 1.43
+−-0.78
+±\pm 1.65
+++1.20
+±\pm 1.60
+−-0.19
+±\pm 0.19
+++0.26
+±\pm 0.48
+++0.09
+±\pm 0.11
+−-0.06
+±\pm 0.12
+−-0.25
+±\pm 0.43
+++0.30
+±\pm 3.26
+++1.84
+±\pm 7.61
+−-0.07
+±\pm 0.45
+−-0.22
+±\pm 0.32
+++0.06
+±\pm 0.90
+GAT
+−-2.32
+±\pm 1.49
+−-3.00
+±\pm 1.33
+−-2.18
+±\pm 1.40
+++0.11
+±\pm 0.21
+−-0.05
+±\pm 0.12
+++0.03
+±\pm 0.11
+−-0.01
+±\pm 0.08
+−-0.19
+±\pm 1.27
+++1.30
+±\pm 3.46
+−-1.58
+±\pm 5.89
+0
+±\pm 0.38
+−-0.52
+±\pm 0.51
+++0.40
+±\pm 0.76
+Planetoid has nodes that are not in test, val, or train. We continue to sharpen these nodes for the purpose of this ablation.
+Appendix D Further Visualizations
+This appendix provides additional visualizations of the effect of the sharpening coefficient λ\lambda by further detailing the trends studied in Section 4.2.
+Figure 3 reports improvements and regressions in units of the baseline standard deviation, using Glass’s Δ\Delta relative to the λ=0\lambda=0 supervised baseline. The results show that small positive values of λ\lambda provide the most favorable trade-off: improvements are frequent and often larger than the corresponding regressions. As λ\lambda increases, regressions become more common and more severe, indicating that aggressive sharpening is less robust. Figure 4 complements this view by showing the full test-accuracy curves for each dataset and backbone. The same qualitative pattern appears across many settings: negative values of λ\lambda are usually harmful, moderate positive values often improve performance, and overly large values eventually degrade accuracy.
+Figure 3: Distribution of improvements and regressions as a function of λ\lambda, measured using Glass’s Δ\Delta relative to the λ=0\lambda{=}0 supervised baseline. Small positive values of λ\lambda yield the most favorable balance, with improvements occurring frequently and regressions remaining comparatively limited. Larger values of λ\lambda increase both the frequency and severity of regressions, indicating that aggressive sharpening is less robust across datasets and backbones.
+Figure 4: Test accuracy as a function of λ\lambda for each dataset and backbone. The crosshair marks the λ=0\lambda{=}0 supervised baseline. Across many dataset–backbone pairs, performance improves over a finite interval of positive λ\lambda values before degrading when λ\lambda becomes too large, while negative values of λ\lambda are often harmful. This supports the use of moderate positive sharpening and helps explain why a conservative universal value such as λ=0.25\lambda=0.25 performs reliably.
+Appendix E Comparison with competitive architectures
+This appendix provides a comparison between TS and recent node-classification methods. Our aim is not to claim that a loss-level modification replaces architectural advances, but to contextualize the performance of TS relative to more complex approaches. In Table 16 and Table 17, we compare TS against competitive architectures across homophilous and heterophilous datasets, respectively.
+Overall, TS remains competitive despite using substantially simpler backbone architectures. This is especially clear on the homophilous benchmarks, where standard GNNs augmented with TS often match or approach the performance of more specialized methods. On heterophilous datasets, the comparison is more mixed, as expected, since many competing methods are specifically designed to handle heterophily. Nevertheless, the results show that a simple objective-level modification can recover a meaningful amount of performance without introducing additional architectural machinery.
+Table 16: Node classification results over homophilous graphs (%). Cells are left blank where the original paper used a different evaluation protocol than ours. The top 𝟏𝐬𝐭\mathbf{1^{st}}, 𝟐𝐧𝐝\mathbf{2^{nd}} and 𝟑𝐫𝐝\mathbf{3^{rd}} results are highlighted.
+|
+| Cora
+| CiteSeer
+| PubMed
+| Computer
+| Photo
+| CS
+| Physics
+| WikiCS
+| GraphGPS [34]
+| 83.87 ± 0.96
+| 72.73 ± 1.23
+| 79.94 ± 0.26
+| 91.79 ± 0.63
+| 94.89 ± 0.14
+| 94.04 ± 0.21
+| 96.71 ± 0.15
+| 78.66 ± 0.49
+| NAGphormer [5]
+| 80.92 ± 1.17
+| 70.59 ± 0.89
+| 80.14 ± 1.06
+| 91.69 ± 0.30
+| 96.14 ± 0.16
+| 95.85 ± 0.16
+| 97.35 ± 0.12
+| 77.92 ± 0.93
+| Exphormer [38]
+| 83.29 ± 1.36
+| 71.85 ± 1.11
+| 79.67 ± 0.73
+| 91.80 ± 0.35
+| 95.69 ± 0.39
+| 95.92 ± 0.25
+| 97.06 ± 0.13
+| 79.38 ± 0.62
+| GOAT [22]
+| 83.26 ± 1.24
+| 72.21 ± 1.29
+| 80.06 ± 0.67
+| 92.29 ± 0.37
+| 94.33 ± 0.21
+| 93.81 ± 0.19
+| 96.47 ± 0.16
+| 77.96 ± 0.63
+| NodeFormer [47]
+| 82.73 ± 0.75
+| 72.37 ± 1.20
+| 79.59 ± 0.92
+| 87.29 ± 0.58
+| 93.43 ± 0.56
+| 95.69 ± 0.27
+| 96.48 ± 0.34
+| 75.13 ± 0.93
+| SGFormer [48]
+| 84.82 ± 0.85
+| 72.72 ± 1.15
+| 80.60 ± 0.49
+| 92.42 ± 0.66
+| 95.58 ± 0.36
+| 95.71 ± 0.24
+| 96.75 ± 0.26
+| 80.05 ± 0.46
+| Polynormer [8]
+| 83.43 ± 0.89
+| 72.19 ± 0.83
+| 79.35 ± 0.73
+| 93.78 ± 0.10
+| 96.57 ± 0.23
+| 95.42 ± 0.19
+| 97.18 ± 0.11
+| 80.26 ± 0.92
+| MLP
+| 60.96 ± 2.51
+| 56.58 ± 1.14
+| 68.96 ± 1.16
+| 82.46 ± 0.45
+| 87.57 ± 0.52
+| 91.54 ± 0.20
+| 95.97 ± 0.07
+| 70.96 ± 1.00
+| NormProp [51]
+| 85.46 ± 0.51
+| 74.33 ± 0.57
+| 80.72 ± 1.09
+|
+|
+|
+|
+|
+| OGFormer [53]
+| 86.40 ± 0.30
+| 74.70 ± 0.50
+| 81.50 ± 0.50
+| 92.90 ± 0.30
+| 95.50 ± 0.00
+| 95.20 ± 0.10
+|
+|
+| ELU-GCN [20]
+| 84.29 ± 0.39
+| 74.23 ± 0.62
+| 80.51 ± 0.21
+|
+|
+|
+|
+|
+| GraphTARIF [19]
+|
+|
+|
+| 94.61 ± 0.17
+| 97.03 ± 0.19
+| 96.51 ± 0.11
+| 97.39 ± 0.07
+| 80.93 ± 0.57
+| GCN [21]
+| 84.54 ± 0.86
+| 72.68 ± 0.43
+| 80.70 ± 0.96
+| 94.12 ± 0.08
+| 95.90 ± 0.33
+| 95.88 ± 0.03
+| 97.38 ± 0.06
+| 79.97 ± 0.43
+| SAGE [17]
+| 83.60 ± 0.58
+| 69.60 ± 0.61
+| 77.86 ± 1.49
+| 93.25 ± 0.36
+| 96.43 ± 0.27
+| 96.29 ± 0.12
+| 97.25 ± 0.08
+| 80.71 ± 0.19
+| GAT [42]
+| 82.40 ± 1.01
+| 71.90 ± 0.25
+| 79.76 ± 1.21
+| 93.98 ± 0.22
+| 96.69 ± 0.14
+| 96.17 ± 0.02
+| 97.26 ± 0.03
+| 80.92 ± 0.58
+| MLP+TS
+| 64.48 ± 2.83
+| 62.72 ± 3.20
+| 72.30 ± 1.89
+| 82.87 ± 0.56
+| 87.65 ± 0.22
+| 91.77 ± 0.38
+| 95.98 ± 0.08
+| 72.48 ± 0.83
+| GCN+TS
+| 85.74 ± 0.54
+| 75.18 ± 0.15
+| 80.74 ± 0.30
+| 93.98 ± 0.26
+| 96.21 ± 0.11
+| 95.89 ± 0.06
+| 97.44 ± 0.14
+| 80.31 ± 0.44
+| SAGE+TS
+| 85.28 ± 1.11
+| 74.96 ± 0.24
+| 79.72 ± 0.69
+| 93.43 ± 0.11
+| 96.51 ± 0.23
+| 96.24 ± 0.10
+| 97.23 ± 0.00
+| 81.10 ± 0.32
+| GAT+TS
+| 84.62 ± 0.89
+| 74.84 ± 0.48
+| 78.84 ± 0.67
+| 93.86 ± 0.13
+| 96.60 ± 0.07
+| 96.17 ± 0.02
+| 97.38 ± 0.04
+| 81.78 ± 0.22
+Table 17: Node classification results over heterophilous graphs (%). Cells are left blank where the original paper used a different evaluation protocol than ours. The top 𝟏𝐬𝐭\mathbf{1^{st}}, 𝟐𝐧𝐝\mathbf{2^{nd}} and 𝟑𝐫𝐝\mathbf{3^{rd}} results are highlighted.
+|
+| Squirrel
+| Chameleon
+| Amazon-Ratings
+| Roman-Empire
+| Minesweeper
+| GraphGPS [34]
+| 39.81 ± 2.28
+| 41.55 ± 3.91
+| 53.27 ± 0.66
+| 82.72 ± 0.68
+| 90.75 ± 0.89
+| NodeFormer [47]
+| 38.89 ± 2.67
+| 36.38 ± 3.85
+| 43.79 ± 0.57
+| 74.83 ± 0.81
+| 87.71 ± 0.69
+| SGFormer [48]
+| 42.65 ± 2.41
+| 45.21 ± 3.72
+| 54.14 ± 0.62
+| 80.01 ± 0.44
+| 91.42 ± 0.41
+| Polynormer [8]
+| 41.97 ± 2.14
+| 41.97 ± 3.18
+| 54.96 ± 0.22
+| 92.66 ± 0.60
+| 97.49 ± 0.48
+| MLP
+| 39.30 ± 0.79
+| 43.86 ± 5.23
+| 48.85 ± 0.55
+| 66.10 ± 0.44
+| 51.06 ± 1.76
+| GCN+ReP [31]
+| 45.89 ± 1.45
+| 47.57 ± 3.90
+| 52.75 ± 0.62
+| 86.43 ± 0.74
+| 96.05 ± 0.19
+| CoED [30]
+| 45.50 ± 1.62
+| 47.27 ± 3.62
+|
+| 92.17 ± 0.29
+|
+| M3Dphormer [49]
+| 44.34 ± 1.94
+| 47.09 ± 4.05
+|
+|
+| 98.27 ± 0.20
+| GraphTARIF [19]
+| 45.58 ± 1.91
+|
+| 55.86 ± 0.42
+| 93.23 ± 0.38
+| 99.03 ± 0.19
+| BuNN [1]
+|
+|
+| 53.74 ± 0.51
+| 91.75 ± 0.39
+| 98.99 ± 0.16
+| Dir-Poly [16]
+|
+|
+| 50.73 ± 0.56
+| 94.51 ± 0.22
+| 93.74 ± 0.70
+| CPGNN [55]
+| 30.04 ± 2.03
+| 33.00 ± 3.15
+| 39.79 ± 0.77
+| 63.96 ± 0.62
+| 52.03 ± 5.46
+| FSGNN [27]
+| 35.92 ± 1.32
+| 40.61 ± 2.97
+| 52.74 ± 0.83
+| 79.92 ± 0.56
+| 90.08 ± 0.70
+| GloGNN [23]
+| 35.11 ± 1.24
+| 25.90 ± 3.58
+| 36.89 ± 0.14
+| 59.63 ± 0.69
+| 51.08 ± 1.23
+| GPRGNN [6]
+| 38.95 ± 1.99
+| 39.93 ± 3.30
+| 44.88 ± 0.34
+| 64.85 ± 0.27
+| 86.24 ± 0.61
+| H2GCN [56]
+| 35.10 ± 1.15
+| 26.75 ± 3.64
+| 36.47 ± 0.23
+| 60.11 ± 0.52
+| 89.71 ± 0.31
+| GCN [21]
+| 43.75 ± 1.91
+| 45.30 ± 2.30
+| 53.64 ± 0.54
+| 91.15 ± 0.20
+| 97.26 ± 0.22
+| GAT [42]
+| 41.51 ± 2.34
+| 43.07 ± 5.25
+| 55.09 ± 0.19
+| 90.49 ± 0.22
+| 97.86 ± 0.37
+| SAGE [17]
+| 40.48 ± 2.90
+| 44.32 ± 4.55
+| 55.18 ± 0.93
+| 90.50 ± 0.21
+| 97.09 ± 1.00
+| MLP+TS
+| 39.39 ± 0.91
+| 43.86 ± 5.23
+| 49.50 ± 0.27
+| 66.12 ± 0.29
+| 50.97 ± 1.56
+| GCN+TS
+| 44.57 ± 2.04
+| 45.27 ± 4.74
+| 54.06 ± 0.58
+| 91.66 ± 0.20
+| 97.80 ± 0.20
+| GAT+TS
+| 40.36 ± 1.66
+| 44.52 ± 3.69
+| 55.73 ± 0.31
+| 90.93 ± 0.20
+| 97.86 ± 0.37
+| SAGE+TS
+| 41.32 ± 2.35
+| 43.32 ± 4.67
+| 56.72 ± 0.35
+| 91.27 ± 0.36
+| 97.33 ± 0.94
+Appendix F Proof of Lemma 1
+Proof.
+By definition, the cross-entropy between a target distribution yy and a prediction pp is
+|
+| ℒCE(y,p)=−∑i=1Cyilogpi.\mathcal{L}_{\mathrm{CE}}(y,p)=-\sum_{i=1}^{C}y_{i}\log p_{i}.
+|
+Adding and subtracting ∑i=1Cpi​log⁡pi\sum_{i=1}^{C}p_{i}\log p_{i} gives
+|
+| ℒCE(y,p)=−∑i=1Cpilogpi+∑i=1Cpilogpi−∑i=1Cyilogpi.\mathcal{L}_{\mathrm{CE}}(y,p)=-\sum_{i=1}^{C}p_{i}\log p_{i}+\sum_{i=1}^{C}p_{i}\log p_{i}-\sum_{i=1}^{C}y_{i}\log p_{i}.
+|
+The first term is the Shannon entropy H⁡(p)H(p). Combining the remaining terms yields
+|
+| ℒCE​(y,p)=H⁡(p)+∑i=1C(pi−yi)​log⁡pi,\mathcal{L}_{\mathrm{CE}}(y,p)=H(p)+\sum_{i=1}^{C}(p_{i}-y_{i})\log p_{i},
+|
+which proves the claim.
+∎
+Appendix G Broader Impacts
+This paper presents work whose goal is to advance the field of Machine Learning. The method is foundational graph-learning research with no direct high-risk application.
+Experimental support, please
+view the build logs
+for errors. Generated by
+L
+A
+T
+E
+xml
+.
+Instructions for reporting errors
+We are continuing to improve HTML versions of papers, and your feedback helps enhance accessibility and mobile
+support. To report errors in the HTML that will help us improve conversion and rendering, choose any of the
+methods listed below:
+Click the "Report Issue" (
+) button, located in the page header.
+Tip: You can select the relevant text first, to include it in your report.
+Our team has already identified the following issues. We appreciate your time reviewing and reporting rendering errors we
+may not have found yet. Your efforts will help us improve the HTML versions for all readers, because disability
+should not be a barrier to accessing research. Thank you for your continued support in championing open access for
+all.
+Have a free development cycle? Help support accessibility at arXiv! Our collaborators at LaTeXML maintain a list of packages that need conversion, and welcome developer contributions.
+We gratefully acknowledge support from
+our major funders,
+member institutions, ,
+and all contributors.
+About
+·
+Help
+·
+Contact
+·
+Subscribe
+·
+Copyright
+·
+Privacy
+·
+Accessibility
+·
+Operational Status (opens in new tab)
+Major funding support from

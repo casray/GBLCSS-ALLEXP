@@ -1,0 +1,463 @@
+# 基于冻结对比表征局部共识软监督的标签噪声鲁棒无图推理节点分类
+
+**Local-Consensus Soft Supervision on Frozen Contrastive Representations for Label-Noise-Robust Node Classification without Message Passing at Inference**
+
+---
+
+## Highlights
+
+- 提出局部共识软监督方法 LCSS，在冻结图对比表征上以粒球式递归划分构造局部分组，将含噪训练标签转化为半硬软监督，最终训练仅依赖节点特征的轻量 MLP 分类器。
+- 在 11 个数据集的统一 uniform 0.4 筛选中完整报告成功与失效边界；对筛选后完成全噪声谱评测的 5 个数据集，LCSS 在 25 个设置中的 24 个取得最高均值，23 个达到至少 4/5 配对种子同向。
+- 随机化分组、leave-one-out 与显式标签平滑对照共同表明：真实外部局部共识具有独立贡献，但默认目标也包含组感知平滑效应。
+- 共识 teacher 蒸馏扩展使仅特征输入的学生网络在三个数据集上超过同协议 GCN 的绝对精度，弥合了无图推理的精度差距。
+- 通过分组形式替代性、共识票数、学生容量与表征空间选择四组机制实验，系统刻画了方法的适用域与边界。
+
+---
+
+## 摘要
+
+在许多图学习应用中，训练阶段可以访问完整的图结构，而部署阶段由于隐私合规、推理延迟或图数据与在线服务分离等原因，模型往往只能获得目标节点自身的特征；与此同时，训练标签常来自人工标注、众包或自动规则，标注错误难以避免。现有的图标签噪声方法在去噪与推理两个环节都依赖邻接矩阵，无法在上述无图推理场景下部署；而以 GNN-to-MLP 蒸馏为代表的无图推理方法通常以干净监督为主，其鲁棒性研究集中于特征噪声、特征缺失与标签稀缺，训练标签噪声尚未被作为中心问题系统研究。针对这一交叉场景，本文提出局部共识软监督方法 LCSS（Local-Consensus Soft Supervision）：首先以图对比学习在完整图上无监督地预训练节点表征并冻结；随后在冻结表征空间中以粒球式递归二分构造局部分组，各数据集共用同一套固定构造参数；每个分组内由含噪训练标签投票生成半硬软标签，以降低个体错误标签的影响；最后仅以节点特征训练两层 MLP，推理阶段不接触图结构与表征编码器。目标构造不使用任何干净标签，也不依赖模型自身预测，整个流程非迭代、单遍完成。我们首先在 11 个数据集上统一完成 uniform 0.4 五种子筛选并保留成功与失效结果；随后在该筛选中表现稳定且完成全部对照的数据集上扩展五种噪声设置。对于这 5 个开发阶段选定并完成全噪声谱评测的数据集，相对 7 个保持方法身份且完整覆盖噪声谱的同骨干对照，LCSS 在 25 个设置中的 24 个取得最高均值，其中 23 个设置至少 4/5 配对种子同向。将局部分组随机打乱后，25 个设置的精度均下降；进一步的 leave-one-out 消融在投票时排除节点自身标签，六数据集平均仍比当前目标高 0.60 个百分点，并稳定优于显式均匀/先验平滑与随机分组，支持外部局部共识具有独立贡献。该消融也表明默认方法同时包含组感知平滑效应，因而本文不把其表述为逐节点硬纠错器。本文另给出一条可选的共识 teacher 蒸馏扩展，使仅特征输入的学生网络在多个数据集上达到 GNN-to-MLP 蒸馏方法的同一精度区间。分组形式可由同一表征空间中的 kNN 或 kmeans 共识替代，方法的贡献在于"冻结对比表征、局部共识软监督与无图推理"三者的组合而非分组算法本身。
+
+**关键词**：标签噪声；节点分类；无图推理；图对比学习；粒球计算；知识蒸馏
+
+---
+
+## 1 引言
+
+图神经网络通过消息传递聚合邻域信息，已成为图节点分类的主流方法 [1,2]。然而在工业部署中，消息传递要求推理端取回目标节点的多跳邻居：在电商与社交平台的实时服务中，边表示用户交互、交易或社交关系，向推理端暴露这些边会触发隐私与合规问题；在延迟敏感的在线场景中，邻居抓取的开销随网络层数呈指数增长 [3]；此外，图结构本身也可能滞后于业务数据的更新。这些约束催生了"训练期利用图、推理期只用节点特征"的无图推理（graph-free inference）研究方向：GLNN [3] 以 GNN 为教师蒸馏纯 MLP 学生，其后的工作沿蒸馏信号设计 [6,7]、结构编码 [5] 与工程扩展 [29,30] 等方向持续推进，使 MLP 学生在干净标签下逼近甚至超过 GNN 教师的精度。
+
+与此并行，真实图数据的训练标签往往并不干净。节点类别可能来自众包标注、启发式规则或自动抽取流程，近年也越来越多地由大模型批量生成，标注错误率不可忽视；而深度模型对错误标签的记忆效应 [8] 会直接损害泛化。图上标签噪声学习因此成为活跃方向：NRGNN [9] 通过边预测连接含噪节点与无标签节点，RTGNN [10] 采用双网络相互校验，DND-NET [11] 结合传播特征与邻居不确定性加权伪标签，RNCGLN [12] 则将图对比与标签自纠正联合训练。这些方法的共同点是去噪机制与推理过程都离不开邻接矩阵。
+
+问题出现在两条研究线的交汇处。图标签噪声方法无法在无图推理约束下部署；而无图推理文献虽然常规性地讨论"鲁棒性"，但我们对该方向 13 篇代表工作的逐篇核验显示，其鲁棒性实验集中于测试特征的高斯扰动（NOSMOG [5]、PGKD [28]、VQGraph [6] 采用同一扰动协议）、特征缺失与标签稀缺（AdaGMLP [29]），或教师预测对特征扰动的稳定性（KRD [7]）；训练标签噪声从未被作为中心问题、按标签噪声学习的标准协议（多种噪声类型与噪声率、与标签噪声学习策略族的系统对比）加以研究。GSDN [14] 曾附带报告单一非对称噪声下与 GNN 系方法的对比曲线，但未与任何标签噪声学习策略比较。也就是说，"如何在无图推理约束下从含噪标签中训练一个可用的分类器"这一具有直接部署意义的问题，在两条文献线之间处于空置状态。
+
+本文从一个通道层面的观察切入。结构信息注入 MLP 已有三条被充分探索的路径：输入侧，将传播特征或位置嵌入拼入模型输入（DND-NET [11]、NOSMOG [5]）；表征侧，令 MLP 编码器与图编码器对齐（SimMLP [15]）；预测侧，以教师蒸馏或自蒸馏传递软预测（GLNN [3]、GSDN [14]）。三条路径都把结构用于增强模型，而监督信号本身仍是可能含噪的原始标签、或由这些标签训练出的教师预测。本文选择第四条路径——监督侧：把结构转化为监督信号自身的鲁棒化机制。具体而言，冻结的对比表征在几何上定义了局部邻域，邻域内含噪标签的集体投票构成软监督目标，以降低单个错误标签的影响。这一设计带来两个直接的性质：其一，目标构造只依赖表征几何与标签投票，不含模型自身预测，因而不存在自训练类方法"模型错误进入目标、目标又强化错误"的自增强回路；其二，表征由无监督对比学习获得，标签噪声无法污染分组几何。
+
+在方法实现上，LCSS 由四个步骤组成：以 GRACE [16] 在完整图上无监督预训练节点表征并冻结；在行归一化的表征空间上以粒球计算 [34] 的递归二分方式构造局部分组，全部数据集共用同一套固定构造参数；每个分组内统计含噪训练标签的分布与多数类，以半硬混合（β=0.5）与置信度加权生成软标签；最后仅以原始节点特征训练两层 MLP。整个流程非迭代、单遍完成；由于输入维数和类别数随数据集变化，学生参数量为 48,392 至 562,182，推理不需要邻接矩阵且单节点开销不随图边数增长。
+
+本文的主要工作与贡献如下。（1）在问题层面，将训练标签噪声作为中心问题引入无图推理节点分类，并提出经由监督侧通道利用图结构的局部共识软监督方法；据我们所知，这是该设定下首个在多噪声类型、噪声率下与标签噪声学习策略族进行统一协议系统比较的研究。（2）在实验层面，先在 11 个数据集上统一报告 uniform 0.4 的成功与边界结果，再对开发阶段筛选并完成全套对照的 5 个数据集扩展 5 种噪声设置；在后一条件评测中，相对 7 个保持方法身份且完整覆盖噪声谱的对照，LCSS 在 24/25 设置取得最高均值，23/25 设置达到至少 4/5 配对种子同向。该计数不被外推为未筛选数据集上的无条件胜率。（3）在扩展层面，将共识软标签迁移至教师侧构成蒸馏扩展，使仅特征输入的学生在多个数据集上达到 GNN-to-MLP 蒸馏方法的同一精度区间；CoraFull 的补充结果同时表明，该扩展的增益在部分数据集上主要来自教师的表征输入与全节点监督，而非球式共识目标。（4）在分析层面，通过随机化分组、leave-one-out、显式标签平滑、分组替代性、共识票数、学生容量与表征空间选择等消融刻画方法的适用域；结果支持外部局部共识具有独立贡献，同时表明默认目标包含组感知平滑，且真实局部结构存在并不保证其增益超过强样本选择或鲁棒损失。
+
+需要说明本文的比较范围。主实验比较的是 train-target 类抗噪策略，即所有方法仅使用含噪训练标签构造监督；利用无标签节点的蒸馏属于另一条资源轴，在第 6 节单独对照并展示两者的结合方式。本文协议为 transductive；子图上重训对比编码器的 inductive 扩展在实验中未能保持分组质量，作为局限在第 7 节讨论。
+
+---
+
+## 2 相关工作
+
+### 2.1 通用标签噪声学习
+
+面向含噪标签的深度学习已形成若干成熟的策略族。样本选择类方法基于"干净样本先被拟合"的记忆效应，以小损失准则筛选可信样本，代表性工作包括 Co-teaching [17]、JoCoR [18] 以及作为其共同基础的 small-loss 准则；鲁棒损失类方法设计对错误标签不敏感的目标函数，如对称交叉熵 SCE [19]、早期学习正则 ELR [20] 与主动负损失 ANL [21]；正则化类方法直接约束模型输出，LogitClip [22] 通过裁剪 logit 范数为交叉熵设置上界；混合类方法将噪声划分与半监督学习结合（DivideMix [23]），或引入特征谱过滤（FINE [24]）、置信度跟踪（CT [25]）。本文在统一的 X-only MLP 骨干上比较可直接保持方法身份的策略，并将若干无法逐项保留原论文训练管线的本地实现明确标为 inspired proxy；后者只用于机制参照，不作为对已发表方法的性能排名。第 5.3 节进一步分析样本选择族与学生容量的交互。
+
+### 2.2 图上标签噪声学习
+
+将标签噪声学习引入图节点分类的工作大多以 GNN 为骨干。NRGNN [9] 通过边预测器将含噪标签节点与无标签节点连接以扩充可靠监督；RTGNN [10] 以双网络互校与自适应过滤抑制噪声传播；DND-NET [11] 将 PPR 传播特征输入简单分类器，并以邻居不确定性加权可靠伪标签；RNCGLN [12] 用图对比损失与自注意力联合建模，以预测置信度自纠正标签。近期 GNN-CFGD [44] 以损失记忆效应和 GMM 粗分干净/噪声标签，再以置信度细分并重构图；SAMTD [45] 则用多种自监督图编码器构造多教师，通过嵌入结构一致性、教师预测一致性加权与标签增强进行噪声节点蒸馏。后二者进一步说明“带噪图上的教师可靠性”已成为活跃问题，但其公开方法仍围绕 GNN 结构传播与图依赖学生展开，没有建立本文要求的严格 X-only 推理资源类。这一族方法的去噪信号来自图邻域，推理通常也需要邻接矩阵，与本文的部署设定不同：DND-NET 虽然以"简单模型"为特点，但其分类器输入是多步传播特征，推理仍需图。本文在第 6 节（表 5）与附录 C 中报告了其中若干方法在相同协议下的参考数字，并标注部署设定差异；这些数字不参与配对比较。
+
+### 2.3 GNN-to-MLP 蒸馏与无图推理节点分类
+
+GLNN [3] 确立了以 GNN 教师蒸馏纯 MLP 学生的范式，此后该方向沿三条线索发展。第一是丰富蒸馏信号：FF-G2M [26] 将教师知识分解为低频与高频成分分别传递；VQGraph [6] 以向量量化学习局部结构码本再蒸馏软码分配；PGKD [28] 通过类原型对齐传递类间结构；TINED [43] 进一步以教师参数注入和 Dirichlet energy 逐层传递特征变换与图传播知识。第二是提升蒸馏可靠性：KRD [7] 以特征扰动下的熵不变性量化教师知识点的可靠度，上采样可靠监督。第三是工程扩展：AdaGMLP [29] 以 AdaBoost 式集成应对标签稀缺与测试特征缺失，ProGMLP [30] 提供精度—代价可调的渐进推理，SALE-MLP [31] 学习结构感知的潜在嵌入。理论方面，Yu 等 [32] 从神经正切核角度证明软标签蒸馏使 MLP 学生的核与邻接矩阵对齐并偏好低频平滑特征，为"软监督能够向纯特征学生传递结构偏置"提供了依据；本文的共识软标签来自表征局部共识而非 GNN 教师输出，该理论构成类比性支撑。
+
+如引言所述，这一族工作的鲁棒性研究不涉及训练标签噪声。与本文机制最接近的是 PGKD 的类原型：两者都利用表征空间中的聚合统计抵抗离群点，但 PGKD 的原型是按标签分组的全局类均值，标签含噪时类中心被直接污染；本文的分组构造完全不读取标签，投票阶段只使用局部含噪标签分布，不要求单个训练标签正确。就教师端监督的处理而言，已有工作可以概括为上采样可靠监督（KRD）与下采样不可靠监督（RKD-MLP [33]）两类，本文的共识软标签提供了第三种选择：修复被污染的监督。此外需要指出，NOSMOG [5] 推理需要 DeepWalk 位置嵌入，SA-MLP [27] 推理需要邻接行输入，二者并非严格意义上的仅特征推理；GSDN [14] 以邻域自蒸馏实现无图推理并附带单一非对称噪声评测，但其标签层自蒸馏会将含噪训练标签扩散给邻居监督，第 5.2 节的实验证实了该机制在高噪声下的退化。
+
+### 2.4 粒球计算
+
+粒球计算以自适应多粒度划分为核心思想 [34]，在分类、聚类与标签噪声过滤中形成了系列工作：GBkNN [34] 以最近粒球代替 k 个最近样本，并避免逐数据集选择 k；MgCNL [35] 与 MgBIF [36] 在故障诊断场景中以多粒度球分离含噪样本；相关工作还包括面向不平衡与过采样的粒球方法 [37]。已发表的成功应用多为端到端训练，球结构参与表征塑造。本文的用法与之不同：在冻结表征上做一次性离线聚合，球结构不参与梯度回传。消融实验（第 5.3 节）表明，在这一角色下球式聚合与同表征空间的 kNN、kmeans 共识精度相当，方法的贡献在于问题设定与配方组合而非新的球生成算法；在本文固定球数预算的实现中，球式构造无需邻域尺度扫描，其时间开销对节点数近似线性。
+
+---
+
+## 3 方法
+
+### 3.1 问题设定
+
+给定图 G=(V, E)，节点特征矩阵 X∈R^{N×d}，其中 N 为节点数、d 为特征维数。训练子集 V_L 的标签以噪声率 ρ 被污染，记含噪标签为 Ỹ_L；污染过程服从 uniform、pair 或 instance-dependent 三种噪声模型之一。验证与测试标签保持干净，仅用于模型选择与评测。学习目标是训练分类器 f_θ，使其在干净测试集上的精度最大化，同时满足部署约束：推理时 f_θ 只接受节点自身特征 x_v 作为输入，不使用邻接矩阵，也不使用任何由图派生的嵌入。训练阶段允许访问完整图，这是无图推理文献的标准资源约定 [3,6,14]。
+
+### 3.2 LCSS 方法
+
+LCSS 包含四个步骤，整体流程见算法 1。
+
+**步骤一：冻结对比表征。** 采用 GRACE [16] 在 (X, A) 上无监督预训练：通过边丢弃与特征掩码构造两个增广视图，以 InfoNCE 目标最大化同一节点跨视图表征的一致性，得到节点表征 H∈R^{N×d_h} 后冻结；正式实验中 Cora 的 d_h=128，其余完整噪声谱数据集的 d_h=256。预训练使用完整图的邻接与全部节点特征，但不接触任何标签，因此标签噪声不进入表征学习目标；无图约束仅施加于推理端。选择无监督对比目标并非出于便利：第 5.4 节的实验表明，在本文测试的多任务联合训练、噪声标签微调与训练后网络隐层三类替代方案中，监督信号会降低局部可聚类性，部分设置下后续分组从数十个塌缩为单个。该结果说明线性可分性与局部可聚类性并不等价，并支持在本管线中采用冻结 GRACE 表征；它不构成监督表征普遍破坏局部簇的通用定律。
+
+**步骤二：局部共识分组。** 对行 L2 归一化后的表征 Ḣ 执行递归二分：将全体节点视为初始粒球，每次选取平均中心距离最大的候选球，以 2-means 尝试划分；若划分使加权平均中心距离的改善超过阈值 δ 且两个子球的规模均不小于下限 n_min，则接受划分，否则该球停止分裂。过程持续至没有可分裂的球或球数达到上限 B_max。全部数据集共用同一套固定参数（B_max=64，n_min=32，δ=0.05），未针对任何数据集调整。正式五种子重建得到 52 至 64 个分组：Cora 为 52 至 53，CiteSeer 为 63 至 64，CoraFull、Coauthor-CS 与 Amazon-Photo 均为 64；25 次重建中有 19 次触及 B_max。因而，小图上分裂可由几何准则自行停止，而较大图上的分组数量由几何准则与固定 64 组预算共同决定；后者使节点规模增长时单组覆盖范围自适应增大。我们不主张这一分组形式不可替代——第 5.3 节的消融显示 kNN 与 kmeans 共识可以达到相当的精度——其工程价值在于固定预算下无需按数据集扫描邻域尺度参数。
+
+**步骤三：半硬共识软标签。** 对每个分组 B_j，统计其中训练节点的含噪标签分布 p_j 与多数类 m_j，构造组级目标
+
+　　q_j = (1−β)·p_j + β·onehot(m_j)，　β = 0.5。
+
+每个训练节点 v 的最终软标签由原始含噪标签与组级目标按置信度混合：
+
+　　ỹ_v = (1−α_j)·onehot(Ỹ_v) + α_j·q_j，
+
+其中融合权重由组内投票裕度经随机基线修正给出：α_j = max(0, (r_j − 1/C)/(1 − 1/C))，r_j 为组内多数类票占比，C 为类别数。组内多数越显著，共识目标的权重越大；当投票不优于随机（r_j ≤ 1/C）或组内训练节点不足时，软标签退回原始含噪 one-hot，不做修正。默认实现中，节点 v 自身的含噪标签既参与 p_j 的统计，也出现在外层 onehot(Ỹ_v) 中。因此，默认目标应准确理解为“外部局部共识与组感知平滑的混合”，而不是纯粹由其他节点纠正 v。第 5.3 节进一步报告 leave-one-out 版本：对每个 v 使用 \(T_j\setminus\{v\}\) 重算 \(p_{j,-v}\)、\(m_{j,-v}\)、\(r_{j,-v}\) 与 \(\alpha_{j,-v}\)，从而严格排除自票。该消融仍稳定优于随机分组和显式标签平滑，支持外部共识具有独立贡献。
+
+这一构造背后的直觉是：由于分组建立在与标签无关的表征几何上，错误标签在其所在分组内通常处于少数地位，集体投票可降低个体错误的影响。β=0.5 的半硬化在保留分布信息与强化多数信号之间折中，是初始探索后冻结的保守默认值——它是唯一在全部试点设置中不劣于纯软目标（β=0）的取值，其有效性随后在两个新增数据集与 pair、instance 噪声上得到样本外确认（选择过程的完整审计见附录 D.2）。目标构造全程只使用训练子集的含噪标签，不接触验证与测试标签，也不使用模型预测——后者使 LCSS 与自训练类方法在机制上分离：不存在模型错误进入目标再强化自身的回路。
+
+**步骤四：仅特征学生。** 以软交叉熵在 {(x_v, ỹ_v)} 上训练两层 MLP（隐层宽度 64）。由于输入维数和类别数不同，完整噪声谱数据集上的学生参数量分别为 Cora 92,359、CiteSeer 237,574、CoraFull 562,182、Coauthor-CS 436,687 与 Amazon-Photo 48,392。推理即普通前向传播，不涉及邻接、表征编码器或分组结构。
+
+### 3.3 复杂度分析
+
+本文实现的递归二分在每次成功分裂前扫描当前分区，并至多执行 B_max−1 次分裂。保守地记，其分组阶段开销为 O(B_max·N·d_h + T_2means)，其中 T_2means 表示全部二均值迭代的累计开销；当 B_max=64 固定时，该开销关于节点数 N 近似线性。软标签构造为 O(|V_L|·C)。学生网络单节点推理开销为 O(d·F + F·C)（F 为隐层宽度），不随图边数增长。本文用于精确对照的 kNN 实现显式计算训练节点间相似度矩阵，其开销为 O(|V_L|²·d_h)；这一二次复杂度仅描述当前精确实现，采用索引或近似最近邻算法时可降低搜索成本。GRACE 预训练是独立的一次性成本；同一份 H 在同一数据集的全部噪声类型与噪声率之间复用，因为预训练过程不读取标签。
+
+为区分一次性预处理与部署成本，我们在同一 ROCm GPU 上另做 seed 0 计时。GRACE 预训练未混入下表：其日志来自更早的独立运行，且同一 H 被全部噪声设置复用；构球时间与下游训练墙钟时间分开报告。推理延迟为训练后最佳模型的 100 次 full-batch 前向均值。
+
+| 数据集 | 方法 | 下游墙钟 (s) | 构球 (s) | 推理 (ms/全图) | 峰值推理显存 (MB) |
+|---|---|---:|---:|---:|---:|
+| Cora | MLP+CE / LCSS / GCN | 2.16 / 5.20 / 2.39 | 0 / 4.18 / 0 | 0.388 / 0.389 / 2.171 | 126.2 / 126.2 / 160.4 |
+| CiteSeer | MLP+CE / LCSS / GCN | 1.32 / 4.99 / 2.02 | 0 / 3.62 / 0 | 1.121 / 1.111 / 2.364 | 193.4 / 193.5 / 196.1 |
+| CoraFull | MLP+CE / LCSS / GCN | 8.83 / 13.34 / 7.15 | 0 / 4.49 / 0 | 15.120 / 14.987 / 10.996 | 821.7 / 827.7 / 846.8 |
+
+LCSS 与 MLP+CE 使用相同学生，因而推理延迟和显存几乎一致；额外成本集中在约 3.6--4.5 秒的一次性构球阶段。Cora/CiteSeer 上 MLP 推理快于当前 GCN 实现，但 CoraFull 的高维稠密特征使 MLP 前向反而更慢。因此，本文的部署主张是“不读取邻接与图派生嵌入”，而不是“在任意硬件和数据集上必然比 GCN 更快”。完整 CSV 与显存口径见补充材料。
+
+### 3.4 扩展：共识 teacher 蒸馏
+
+仅使用训练节点监督的 LCSS 受监督覆盖的限制：20% 的训练节点无法为其余 80% 的节点提供直接监督，绝对精度与 GCN 存在差距。当部署需要更高绝对精度且训练期预算允许时，可将同款共识软标签用于训练一个以 [X‖H] 为输入的 GCN 教师，再将教师对全部节点的软预测蒸馏给同一个仅特征学生。该扩展保持推理端不变；第 6 节的实验表明，它在多个数据集上可达到或超过同协议 GCN 的精度，但共识目标的额外贡献具有数据集依赖性。
+
+**算法 1** LCSS：粒球式局部共识软标签生成与 MLP 训练
+
+```
+输入: 图 G=(V,E,X)；含噪训练标签 Ỹ_L；训练掩码 M_train；类别数 C；
+      构造参数 B_max, n_min, δ；混合系数 β
+输出: 仅特征分类器 f_θ；软标签矩阵 Ỹ
+
+ 1: 以 GRACE 在 G 上无监督预训练，得到冻结表征 H；行 L2 归一化得 Ḣ
+ 2: 初始化粒球集合 𝓑 ← {全体节点}
+ 3: while |𝓑| < B_max 且存在可分裂球 do
+ 4:     取平均中心距离最大的球 GB_i；若 |GB_i| < 2·n_min 则标记不可分裂并 continue
+ 5:     以 2-means 将 GB_i 划分为 GB_i1, GB_i2
+ 6:     if min(|GB_i1|,|GB_i2|) ≥ n_min 且加权平均中心距离改善 > δ then
+ 7:         𝓑 ← 𝓑 ∪ {GB_i1, GB_i2} \ {GB_i}
+ 8:     else 标记 GB_i 不可分裂
+ 9: end while
+10: 初始化 Ỹ_v ← onehot(Ỹ_v^noisy)（全部训练节点）
+11: for GB_j ∈ 𝓑 do
+12:     T_j ← GB_j ∩ M_train；若 |T_j| 过小则跳过（保留原始标签）
+13:     p_j ← T_j 内含噪标签分布；m_j ← argmax p_j；r_j ← max p_j  // 默认含 v 自身投票
+14:     α_j ← max(0, (r_j − 1/C)/(1 − 1/C))
+15:     q_j ← (1−β)·p_j + β·onehot(m_j)
+16:     for v ∈ T_j: Ỹ_v ← (1−α_j)·onehot(Ỹ_v^noisy) + α_j·q_j
+17: end for
+18: 以软交叉熵在 {(X_v, Ỹ_v)} 上训练两层 MLP f_θ
+19: return f_θ, Ỹ
+```
+
+第 1—9 行只使用表征几何，不接触标签；第 10—17 行只使用训练节点的含噪标签；第 18 行训练的学生在推理时只接收原始特征 X。leave-one-out 消融仅将第 13—16 行改为对每个 v 从 T_j 中排除 v 后重新计算分布与权重，其余流程完全相同。
+
+---
+
+## 4 实验设置
+
+**数据集与开发顺序。** uniform 0.4 的统一五种子筛选覆盖 11 个数据集，并在正文表 1--2 中完整报告。开发阶段先根据这一标准设置的稳定性和完整对照可用性，确定 5 个数据集进入全噪声谱：引文网络 Cora（2708 节点，7 类）、CiteSeer（3327 节点，6 类）与 CoraFull（19793 节点，70 类）[38]，合著网络 Coauthor-CS（18333 节点，15 类）[39]，以及共购网络 Amazon-Photo（7650 节点，8 类）[39]。因此，24/25 是该开发筛选后的条件评测结果，不代表在任意未筛选数据集上的无条件胜率。所有数据集按 20%/10%/70% 划分训练、验证与测试集。正文表 2 另外集中报告未进入五数据集全谱表的全部筛选数据集：PubMed（19717 节点，3 类）、Amazon-Computers（13752 节点，10 类）、Cora_ML、Attributed-Wiki、CiteSeerFull（4230 节点，6 类）与 Coauthor-Physics（34493 节点，5 类）。其中 PubMed 已完成完整噪声谱，其结果作为容量交互边界在第 5.3 节继续分析；其余数据集用于标准设置下的广度与适用域审计。CoraFull 的纳入扩大了规模与类别覆盖，但本文不把其结果归因于类别数本身。
+
+**噪声协议。** 噪声仅注入训练标签：uniform 噪声以概率 ρ∈{0.2, 0.4, 0.6} 将标签均匀翻转至其余类别；pair 噪声（ρ=0.4）将标签翻转至预定的相邻类别；instance-dependent 噪声（ρ=0.4）依据样本特征决定翻转概率。验证与测试标签保持干净，验证集用于所有方法的模型选择，这一协议与 NoisyGL 基准 [13] 一致。
+
+**对比方法。** 全部方法共用同一个两层 MLP 骨干（隐层 64、dropout 0.5、学习率与权重衰减一致）。完整噪声谱正式排名覆盖 7 个保持方法身份的同骨干对照：交叉熵 CE、small-loss、Co-teaching [17]、JoCoR [18]、SCE [19]、ELR [20] 与 LogitClip [22]。在代表性 uniform 0.4 设置上，另外加入 ANL-CE [21]、GMM+CT [25] 与 FINE [24] 的忠实度重跑，用于检验主结论是否依赖历史代理偏弱。其中 ANL-CE 保留 NCE+NNCE+L1 目标；GMM+CT 保留逐类置信差轨迹、Mann--Kendall 趋势检验及其与低损失双高斯选择器的并集；FINE 保留逐 noisy class 的未中心化 SVD 主方向、归一化投影评分和逐类双高斯选择。三者均使用本文统一 MLP/Adam 节点分类协议，故标注为 MLP-adapted，而非原图像训练栈的逐项复现。完整 DivideMix 依赖双网络、MixMatch、co-refinement 与 co-guessing，本文未移植其完整管线；现有单网络 GMM 损失重加权只标为 DivideMix-inspired proxy，不参与对 DivideMix 的正式性能排名。另设随机化对照（shuffled）：保持 LCSS 全流程不变，仅将分组归属随机打乱，用于检验真实分组结构是否提供额外信息。历史 `mlp_anl`、`mlp_ct` 与 `mlp_fine` 代理行只保留于附录机制表，不计入投稿版已发表方法排名。
+
+**报告口径。** 全部下游结果为 5 个配对随机种子的均值与标准差，并报告逐种子方向计数、配对均值差及其 95% 置信区间。主检验族预先限定为 LCSS 相对 MLP+CE、随机化分组与预声明强对照 JoCoR 的比较；每一比较族内使用 Holm 方法校正。其余方法间检验只作探索性分析，不据此作显著性结论。由于 n=5 时 Wilcoxon 双侧精确 p 值下限为 0.0625，本文不以其单独判定显著性，也不再以“差异小于一倍标准差”定义统计等价；未通过校正的接近结果统一表述为“数值接近，五种子证据不足以区分”。每个数据集的 5 个下游种子共用同一份冻结 H，因此误差条覆盖数据划分、噪声注入和下游训练随机性，不覆盖 GRACE 预训练随机性，不能解释为完整管线的方差。实验在单卡 AMD RX 7700 XT（ROCm）上完成。
+
+---
+
+## 5 实验结果与分析
+
+### 5.1 与标签噪声学习策略的比较
+
+表 1 给出开发阶段选定的五个全谱数据集在 uniform 0.4 下的代表性结果；表 2 紧接着报告其余六个筛选数据集，二者合起来构成 11 数据集的标准设置全景。五数据集、五噪声设置的 7 个正式全谱对照与逐种子结果见附录 A（表 A.1–A.5）；历史代理另列为机制探索，不进入正式胜出统计。
+
+**表 1** uniform 0.4 噪声下的测试精度（%，5 种子均值±标准差）。完整结果见附录 A。
+
+| 数据集 | 最强对照方法 | LCSS | 随机化分组对照 |
+|---|---:|---:|---:|
+| Cora | Small-loss 51.95±1.97 | **55.59±1.50** | 43.63±1.62 |
+| CiteSeer | JoCoR 49.91±3.37 | **53.83±2.75** | 42.35±2.74 |
+| CoraFull | JoCoR 35.70±0.32 | **37.33±0.81** | 32.27±0.81 |
+| Coauthor-CS | JoCoR 89.38±0.61 | **90.62±0.57** | 87.60±1.03 |
+| Amazon-Photo | JoCoR 79.57±0.53 | **81.64±0.93** | 72.06±2.97 |
+
+为排除本地代理实现偏弱造成的虚假优势，我们另外完成了 ANL-CE、GMM+CT 与 FINE 核心算法的忠实度重跑。uniform 0.4 下，ANL-CE 在 Cora/CiteSeer/CoraFull/Coauthor-CS/Amazon-Photo 上分别为 43.35±3.77、44.27±4.28、31.09±1.46、84.46±0.91 与 67.27±3.40；GMM+CT 为 43.53±1.41、43.93±2.72、31.98±0.98、88.42±0.62 与 73.90±1.80；FINE 为 44.83±2.19、45.27±2.82、32.01±0.96、88.51±0.66 与 72.69±3.15。三者均未改变表 1 的最强对照：JoCoR 仍在 CoraFull、Coauthor-CS 与 Amazon-Photo 上最强，Cora/CiteSeer 的最强行也保持不变。GMM+CT 在后三个数据集上与 CE 锚点相同，结合约 0.98--1.00 的最终选择比例，表明其低损失 GMM 在本文 full-batch MLP 协议下基本保留了全部训练样本；该结果作为迁移行为如实报告，而不通过事后调阈值追点。
+
+从完整结果看，LCSS 在 Cora、CiteSeer、CoraFull 与 Amazon-Photo 的 20 个数据集×噪声组合中均取得最高均值；其中 CoraFull 在 uniform 0.4、uniform 0.6、pair 0.4 与 instance 0.4 下分别领先当前最强正式同骨干对照 1.63、2.70、2.96 与 1.91 个百分点，而 uniform 0.2 仅领先 0.17 个百分点且只有 3/5 配对种子为正，应表述为数值接近、五种子证据不足以区分。在 Coauthor-CS 上，LCSS 在 4/5 设置取得最高均值，唯一例外 uniform 0.2 落后 0.25 个百分点且 0/5 种子为正。合计而言，在经 uniform 0.4 开发筛选并完成全谱对照的五个数据集上，25 个设置中有 24 个取得最高均值，其中 23 个达到至少 4/5 配对种子同向；该条件计数仅针对 7 个保持方法身份且完整覆盖噪声谱的对照，不能解释为对未筛选数据集的总体胜率。uniform 0.4 加入三项额外忠实度重跑后，五个数据集的最强对照均未变化。PubMed 与 Amazon-Computers 的失败结果在正文表 2 直接列出：PubMed 上样本选择族在弱 MLP 学生下占优；Amazon-Computers 上真实分组稳定优于随机分组，但被 JoCoR 等强 baseline 吸收。5.3 节进一步分析 PubMed 上的学生容量与策略族交互。
+
+随机化分组对照提供了增益来源的直接证据。保持全流程不变、仅打乱分组归属后，完整噪声谱的 25 个数据集×噪声组合均出现下降；CoraFull 五个设置的真实分组优势为 2.67 至 5.97 个百分点。PubMed、Amazon-Computers 及其余 uniform 0.4 筛选数据集上也观察到真实分组相对随机分组的正向差异。该受控消融支持表征空间中的真实局部分组具有额外贡献，而不是仅由目标软化产生；它不等同于证明每个被修改节点的噪声标签都被正确识别或修复。
+
+预声明主比较族的校正结果进一步限定了证据强度。在五数据集×五噪声设置的 25 个配对比较中，LCSS 相对 MLP+CE、随机化分组和 JoCoR 的跨设置平均增量分别为 +7.16、+7.83 和 +2.87 个百分点；经各自 25 设置 family 内 Holm 校正后，p<0.05 的设置分别为 24/25、25/25 和 8/25，而至少 4/5 种子方向为正的设置分别为 24/25、25/25 和 23/25。因此，“真实分组优于随机分组”的证据最稳定；相对强鲁棒基线 JoCoR 的优势在方向上广泛，但并非每个单独设置都达到 family-wise 显著性。
+
+从噪声类型看，LCSS 的优势在结构化噪声下更为明显：pair 0.4 与 instance 0.4 下相对最强对照的领先幅度普遍大于 uniform 同噪声率的情形（如 CoraFull 上 pair 0.4 领先 2.96 个百分点、instance 0.4 领先 1.91 个百分点；Amazon-Photo 上 pair 0.4 领先 3.6 个百分点、instance 0.4 领先 4.8 个百分点）。一个合理的解释是，样本选择依赖的损失分离信号在结构化噪声下更加模糊——错误标签集中于相似类别，损失分布的双峰性减弱——而几何共识不依赖损失信号，受噪声结构的影响较小。
+
+**表 2** 数据集广度与边界审计（uniform 0.4，测试精度 %，5 种子均值±标准差）。最强对照取自当前同骨干比较；该表完整呈现已筛选而未进入五数据集完整噪声谱表的数据集，不扩大完整噪声谱的胜出 claim。
+
+| 数据集 | LCSS | 最强对照 | 随机化分组 | LCSS−最强对照 | LCSS−随机化分组 |
+|---|---:|---:|---:|---:|---:|
+| PubMed | 71.90±0.88 | JoCoR 77.84±1.10 | 62.72±4.49 | −5.94 | +9.18 |
+| Amazon-Computers | 75.53±0.87 | JoCoR 76.81±0.85 | 69.89±1.19 | −1.28 | +5.64 |
+| Cora_ML | 55.78±3.37 | Small-loss 55.56±3.42 | 49.07±4.10 | +0.22 | +6.71 |
+| Attributed-Wiki | 65.42±1.20 | LogitClip 67.83±1.51 | 59.48±1.91 | −2.41 | +5.94 |
+| CiteSeerFull | 59.40±1.73 | JoCoR 59.48±1.60 | 46.25±3.18 | −0.08 | +13.14 |
+| Coauthor-Physics | **93.11±0.25** | JoCoR 93.09±0.28 | 88.90±2.05 | +0.02 | +4.21 |
+
+表 2 将此前分散在附录和阶段报告中的六个数据集集中呈现。PubMed 与 Amazon-Computers 明确展示了真实分组虽优于随机分组、却仍落后强同骨干策略的边界；Cora_ML 与 Coauthor-Physics 的均值差分别只有 +0.22 和 +0.02 个百分点，跨种子或统计波动不足以支持稳定领先；Attributed-Wiki 落后 LogitClip 2.41 个百分点；CiteSeerFull 与 JoCoR 仅差 −0.08 个百分点。进一步的噪声率筛选显示，CiteSeerFull 在 uniform 0.2 下领先当前最强对照 2.28 个百分点、在 uniform 0.6 下落后 4.71 个百分点，Coauthor-Physics 在 uniform 0.2/0.6 下分别落后 0.69/2.29 个百分点。因而，这些数据只用于广度与适用域刻画，不并入五数据集完整噪声谱的胜出统计。
+
+### 5.2 与无图推理方法族的比较
+
+主实验回答"相同监督资源下哪种抗噪策略更好"；表 3 回答另一个问题："不同无图推理机制在同一噪声协议下表现如何"。GLNN-style 先以含噪训练标签训练 GCN 教师，再用其全节点温度软概率监督 X-only MLP；该实现保留 GLNN 的核心响应蒸馏范式，但统一了教师、学生和优化协议，故不称官方 tuned reproduction。GSDN-inspired 使用两个 MLP 头，保留基于训练图边的特征 mixup、由有标签训练节点向邻居传播的标签级监督以及负样本约束；这些机制按本文 train-only 噪声协议重新实现，未逐项移植原作者训练栈，因而只作为机制适配结果。Graph-MLP 行保留原方法的专用网络、基于多跳邻接的 NContrast 目标及官方数据集参数；FF-G2M 行保留低频邻域 KL 与高频边差异 KL 目标。两者的数据加载、噪声协议和公共骨干迁移到本文框架，因此分别记为 protocol port 和 common-backbone reimplementation，而不声称是官方调参复现。KRD 与 VQGraph 仍为缺少原方法核心训练流程的本地代理，不参与已发表方法的性能排名。
+
+**表 3** 无图推理机制比较（uniform 0.4，测试精度 %，5 种子均值±标准差；全部方法推理仅使用节点特征）。protocol port/reimplementation 表示保留论文核心目标后迁移到统一噪声协议，不等同于官方调参复现；带 inspired proxy 标记的行不参与已发表方法的性能排名。完整表与 uniform 0.6 结果见附录 I。
+
+| 方法 | 训练资源 | Cora | CiteSeer | CoraFull | Coauthor-CS | Amazon-Photo |
+|---|---|---:|---:|---:|---:|---:|
+| MLP+CE | 含噪标签 | 44.24±2.62 | 43.50±3.02 | 31.98±0.98 | 88.42±0.62 | 73.90±1.80 |
+| Graph-MLP (protocol port) | +多跳邻接 NContrast | 64.91±2.04 | 59.87±1.73 | 44.51±0.55 | 89.97±0.39 | 80.44±0.65 |
+| GSDN-inspired (mechanism adaptation) | +邻域自蒸馏 | 55.97±4.29 | 50.36±3.39 | 35.80±0.66 | 86.55±0.78 | 73.31±2.00 |
+| LCSS | +图（经冻结表征） | 55.59±1.50 | 53.83±2.75 | 37.33±0.81 | 90.62±0.57 | 81.64±0.93 |
+| GLNN 式蒸馏 | +GNN 教师+无标签节点 | 77.95±2.62 | 66.09±1.38 | **58.74±0.82** | 93.20±0.09 | 89.86±0.77 |
+| FF-G2M (common-backbone reimplementation) | +GNN 教师+LFD/HFD | 77.65±2.97 | 65.80±0.49 | 56.58±0.93 | 91.58±0.24 | 84.82±0.84 |
+| KRD-inspired reliability proxy | +GNN 教师+全局可靠性筛选 | 71.77±2.20 | 64.96±1.03 | 47.12±0.95 | 91.39±0.49 | 85.17±0.94 |
+| VQGraph-inspired token proxy | +GNN 教师+软码本代理 | 78.89±2.34 | 65.64±1.72 | 58.52±0.77 | 93.25±0.09 | **90.54±0.85** |
+| LCSS 蒸馏扩展（球式共识教师） | +球式去噪共识教师+无标签节点 | **80.60±0.69** | **69.40±1.08** | 58.22±0.69 | **93.75±0.22** | 90.49±1.05 |
+
+注：CoraFull 的 train-only、Graph-MLP/GSDN 与蒸馏家族结果均为本轮新增的同协议 5 种子结果；所有方法使用 percent 0.2/0.1/0.7 划分，且 uniform 0.4 噪声仅注入训练节点。
+
+三点观察值得展开。第一，Graph-MLP protocol port 在三个引文数据集上高于仅用训练标签的 LCSS，而在 Coauthor-CS 与 Amazon-Photo 上低 0.65/1.20 个百分点，说明利用全图边关系训练并不在所有数据集上形成同样收益。它比旧 edge-contrastive proxy 高 1.02--7.46 个百分点，也验证了用弱代理替代正式核心目标会低估对手。第二，GLNN-style 表明全节点教师覆盖是绝对精度提升的主要来源；保留 LFD/HFD 的 FF-G2M 重实现仍低于 LCSS 蒸馏扩展 1.64--5.67 个百分点。KRD 与 VQGraph 的代理结果只作机制探索，不用于正式排名。第三，LCSS 蒸馏扩展在 Cora、CiteSeer 与 Coauthor-CS 上超过 GLNN-style，在 Amazon-Photo 上与其相近，而 CoraFull 上低于 GLNN-style；这支持去噪 teacher 在部分数据集上的额外价值，同时表明该增益并不普遍。按当前表 4 的六个设置，uniform 0.4 下 kNN 相对球式在 Cora、CiteSeer 和 CoraFull 上分别高 0.39、0.17 和 0.73 个百分点；uniform 0.6 下球式在 Cora 和 CiteSeer 上分别高 0.20 和 0.32 个百分点，而 CoraFull 上 kNN 高 0.91 个百分点。两种局部共识实现互有胜负，因此球式实现不被表述为不可替代的精度来源。
+
+### 5.3 消融与机制分析
+
+**自票、外部共识与显式平滑。** 默认 p_j 包含节点自身的含噪标签，因此真实分组优于随机分组尚不能单独排除“自标签回流+平滑”的解释。为此，我们增加三类严格对照：（i）leave-one-out LCSS（LOO），对每个训练节点从投票池中移除其自身后重算分布、半硬多数与 α；（ii）LOO 后再随机打乱分组；（iii）不使用任何局部分组的均匀标签平滑与含噪训练先验平滑（ε=0.1）。全部对照保持相同 X-only MLP、划分、噪声与五个配对种子。
+
+| 数据集 | 当前 LCSS | LOO-LCSS | LOO-随机分组 | 均匀平滑 | 先验平滑 | LOO−当前 |
+|---|---:|---:|---:|---:|---:|---:|
+| Cora | 55.59±1.50 | **57.15±0.84** | 42.79±1.11 | 44.69±2.90 | 44.89±2.38 | +1.56 |
+| CiteSeer | 53.83±2.75 | **55.21±2.34** | 41.62±2.80 | 43.69±3.31 | 43.43±2.99 | +1.37 |
+| CoraFull | **37.33±0.81** | 37.18±0.48 | 32.18±0.73 | 32.59±1.12 | 32.63±0.84 | −0.15 |
+| Coauthor-CS | **90.62±0.57** | 90.61±0.62 | 87.46±1.08 | 88.25±0.80 | 88.04±0.73 | −0.01 |
+| Amazon-Photo | 81.59±0.91 | **82.07±1.15** | 72.83±2.67 | 74.18±1.72 | 74.72±1.44 | +0.47 |
+| PubMed | 71.69±0.81 | **72.02±0.37** | 63.38±4.60 | 63.67±5.08 | 64.25±4.52 | +0.32 |
+
+LOO 相对当前目标的六数据集平均配对增量为 +0.60 个百分点，在 4/6 数据集均值非负，并在 Cora、CiteSeer 与 PubMed 上 5/5 种子正向；它同时超过两种显式平滑和 LOO-随机分组的均值为 6/6，且相对 LOO-随机分组在六个数据集上均达到至少 4/5 种子正向。目标质量诊断也给出一致方向：LOO 的 Brier 分数在六个数据集上均低于当前目标，例如 Cora 从 0.488 降至 0.450、CiteSeer 从 0.565 降至 0.537。另一方面，排除自票使目标更激进，噪声纠正率和干净标签误伤率通常同时升高（Cora 的 NCR 由 0.685 升至 0.711，CDR 由 0.215 升至 0.302），因此不能把 LOO 简化为“降低误伤”的机制。Cora 与 CiteSeer 的未校正配对 t 检验分别为 p=0.024 与 p=0.039，但在六数据集 family 内经 Holm 校正后均未低于 0.05；据此，本文只作机制结论：外部局部共识在去除自票后仍有独立作用，默认目标同时包含有益的组感知平滑，不将 LOO 宣称为统一优于当前 LCSS 的新算法。
+
+**分组形式的可替代性与共识票数。** 将球式分组换成同一表征空间中的 kNN（k=20）或 kmeans（簇数与分组数匹配），学生精度相当，kNN 在 uniform 0.4 下甚至略高 0.3 至 2.6 个百分点。进一步的实验定位了起作用的核心变量：每个共识单元内的有效票数。默认构造下每组平均含约 10 个训练节点；将最小组规模从 32 提高到 64 使每组票数升至约 24 后，球式分组与最优 kNN 的差距基本闭合（CiteSeer 从落后 2.58 收窄到 0.77 个百分点，PubMed 持平），且值得注意的是，更大的分组虽然标签纯度更低（0.477 对 0.505），精度反而更高——约 20 票的可靠多数比 10 票的高纯度更有价值。这一票数机制与 kNN 侧的观察相互印证：kNN 的最优 k 在四个测试数据集上均为 20，k=5 时因票数不足而全面弱于球式分组（Cora 53.93 对 55.59），干净验证集扫描几乎无损地找到最优 k。基于这些结果，我们不将"无需选择 k"作为精度优势，而将其定位为工程便利：球式构造以近线性代价、在不做任何邻域尺度扫描的前提下达到各数据集最优 kNN 一个百分点以内的精度（CiteSeer 除外），构造参数在合理范围内表现为约正负一个百分点的平台，仅分裂阈值过大（δ=0.1）会导致分组塌缩（附录 D.1）。
+
+**三种表征空间的对照。** 同一套 β=0.5 共识公式作用于三种空间的结果差异显著：在原始特征空间上，递归二分退化为单一分组，方法失效；在原图邻接空间上，以含噪标签沿边两步传播的分布作为组级目标，被 GRACE 表征空间共识稳定压制 6.9 至 8.3 个百分点（三个数据集全部 5/5 种子），与标签沿边传播可能扩散噪声的机制一致。作为补充，用含噪监督训练的普通 GCN 隐层替代 GRACE 构造分组时，6/6 设置仍优于随机分组，但仅 1/6 设置以超过 0.5 个百分点的幅度优于 GRACE。因而，在本文测试的三种空间中，冻结 GRACE 表征最稳定；该结论不外推为所有监督或自监督表征的普遍排序。
+
+**学生容量与 PubMed 边界的重新定性。** 将全部方法的学生换成线性分类器后出现了一个信息量很大的反转。LCSS 的线性版本在五个数据集上均值优于线性 CE 与线性随机分组对照（PubMed 上相对线性 CE 为弱正，+0.68 个百分点、4/5 种子，其余数据集差距明确），说明共识监督的增益不依赖 MLP 的非线性容量。为保持同一噪声设置内的配对比较，在 uniform 0.2 下，PubMed 上线性 Small-loss 为 69.60，而同设置的 MLP Small-loss 为 81.88；在 uniform 0.4 下，线性 DivideMix-lite 为 66.32，而历史 MLP DivideMix-inspired proxy 为 78.28。后一个数值仅用于同一实现家族内的学生容量机制对照，不进入表 2 或正式方法排名；表 2 的 PubMed 行采用 uniform 0.4 正式排名口径，因此最强对照仍为 JoCoR 77.84。LCSS 线性版本在 PubMed 的五个设置中均高于对应的最强线性选择方法，差值为 7.4 至 14.3 个百分点。一个与结果一致的解释是：样本选择依赖“干净样本先被拟合”产生的损失分离信号，而线性学生的噪声记忆能力较弱，该信号可能随之减弱；共识监督不使用训练损失作为筛选依据，因而对学生容量的依赖较小。据此，PubMed 边界更适合解释为学生容量与策略族的交互现象：弱 MLP 下选择族占优（边界表如实保留该结果），线性学生下关系反转。两点限定需要说明：线性选择族为本文的移植实现，其退化幅度可能部分源于移植；低噪声下线性 CE 本身已相当强。
+
+**H-access 参照与资源分层。** H 是由完整图预训练得到的强结构表征，直接把它交给分类器构成必要但不同资源的参照。表中所有数值均为 uniform 0.4、五种子；“推理输入 H”表示部署必须持有预计算的图派生嵌入，对于新节点或图更新还需重新运行图编码器，因而不属于本文严格的 X-only 部署类。
+
+| 分类路线 | 推理输入 H | Cora | CiteSeer | PubMed |
+|---|:---:|---:|---:|---:|
+| LCSS（X-only） | 否 | 55.59 | 53.83 | 71.90 |
+| H-only 线性分类头 | 是 | 78.61 | 68.87 | 83.87 |
+| H-only MLP 分类头 | 是 | 73.09 | 68.69 | 84.05 |
+| MLP[X‖H]+CE | 是 | 48.54 | 51.66 | 83.68 |
+| MLP[X‖H]+Small-loss | 是 | 57.70 | 56.30 | **84.83** |
+| MLP[X‖H]+JoCoR | 是 | **60.13** | **58.60** | 84.79 |
+
+该表推翻了“裸拼 H 失败，因此 H 必须经监督侧转化”的过强叙事：更准确的结论是，`[X‖H]+CE` 在 Cora/CiteSeer 上不稳定，但 Small-loss 与 JoCoR 能有效利用 H，并在三数据集上超过 X-only LCSS。它们的代价是推理持续依赖 H，与主表的严格 X-only 资源类不同；因此本文的 claim 限定为同资源的 X-only train-target 策略族内比较，而不声称优于所有 H-access 分类器。第 6 节的蒸馏扩展回答了如何在最终推理只保留 X 的同时迁移 H 的价值：其学生达到 80.60/69.40/85.01，数值上达到或超过上述 H-only 参照，但这同样是一条使用教师与无标签节点的更高训练资源路线。
+
+**低标签率。** 训练标签比例从 65% 降至 5% 的六点曲线（附录 H）显示，LCSS 相对最强选择方法的优势从 0.2 至 1.4 个百分点总体扩大到 5.6 至 6.7 个百分点：标签越稀缺，单个错误标签的破坏力越大，局部共识的修复价值越高。
+
+**干净标签下的表现。** 在已测的旧五数据集上，零噪声下 LCSS 相对 CE 的差异为：Cora +0.44、CiteSeer +2.33、PubMed +0.02、Coauthor-CS −0.88、Amazon-Photo −1.20 个百分点。在特征强可分且标签完全干净的条件下，半硬共识可能带来约一个百分点的代价，本方法面向标签含噪的场景。CoraFull 的零噪声补点尚未进入本版主文。
+
+**测试特征噪声。** 按无图推理文献的标准协议对测试特征施加高斯扰动（附录 E），LCSS 的相对优势在 Cora、CiteSeer 与 Amazon-Photo 上保持到最高扰动水平，但其绝对退化在小图上比 CE 更陡（Cora 全程降幅 34.0 对 22.8 个百分点）：共识目标加深了模型对特征所承载结构的依赖，这是机制的自然代价。LCSS 不是特征噪声的防御机制，对特征质量的依赖是所有仅特征方法的共同边界。
+
+### 5.4 为什么必须是冻结的无监督对比表征
+
+四组独立实验对这一设计选择给出一致的回答。将含噪交叉熵以 0.1 的权重混入 GRACE 预训练，分组从 52 个塌缩为 1 个（真实类纯度从 0.79 降至 0.30，下游精度下降 12.6 个百分点）；以训练后 MLP 的隐层重新构造分组，出现同样的塌缩；部分线性探针精度更高的自监督表征（如 CCA-SSG 与 GraphMAE，其 512 维嵌入几何不适配递归二分）同样塌缩为单组；含噪监督 GCN 的隐层保有部分局部结构但不稳定（见 5.3 节）。这些结果共同说明，线性可分性与局部可聚类性是表征的两种不同性质：监督信号（即使是轻微的）会将同类样本压向类中心方向、抹平类内的局部簇结构，而 GRACE 的 InfoNCE 目标在对齐与均匀性之间的平衡恰好保留了递归二分所需的局部几何。附录 G 的可视化直观展示了这一几何：真实类别在表征空间中呈清晰的簇结构，噪声标签在各簇内是分散的少数派，局部分组与类簇大体对齐——这正是共识投票能够稀释错误标签的几何前提。
+
+---
+
+## 6 扩展：以共识教师蒸馏弥合精度差距
+
+仅用训练节点监督的 LCSS 在绝对精度上与 GCN 存在约 20 个百分点的差距。这是监督覆盖的机制性差距而非可通过标签数量弥合的差距：将训练标签比例提高到 65%，Cora uniform 0.4 下的精度仅从 43.7 升至 64.0，仍低于使用 20% 标签的 GCN 约 14 个百分点——因为随标签同比例增加的还有噪声，而仅特征模型无法获得结构信息。无图推理文献的标准答案是蒸馏 [3]：教师把全部节点（含 80% 无标签节点）的软预测传给学生，结构信息经由预测传递。本文的扩展将共识软标签移至教师侧，全部构件与第 3 节共用、不引入任何新资源。
+
+具体流程分两步。第一步训练教师：教师为两层 GCN，其输入为原始特征与行归一化冻结表征的拼接 x̃_v = [x_v ‖ h̄_v]——此处的 H 即第 3 节用于构造局部分组的同一份冻结表征；训练目标为共识软标签上的软交叉熵，仅在训练节点上计算：
+
+L_T = −(1/|V_L|) Σ_{v∈V_L} ỹ_vᵀ · log softmax(g_φ(x̃_v; A))，
+
+其中 g_φ 为教师网络，ỹ_v 为第 3 节生成的共识软标签；教师以留出的干净验证集精度选择检查点。第二步蒸馏学生：教师对全部 N 个节点（含无标签节点）输出软预测 p_v = softmax(g_φ(x̃_v; A)/τ)，学生以蒸馏损失
+
+L_S = −(1/N) Σ_{v∈V} p_vᵀ · log softmax(f_θ(x_v)/τ)
+
+在全部节点上训练，温度 τ=1，学生结构、早停协议与第 3 节完全一致，推理端不变。需要说明的一处适配是：学生损失不含 GLNN 原版的真标签交叉熵项——在标签噪声下该项会把错误标签直接灌入学生；为保证公平，表中的 GLNN 式基线采用同一适配（该适配对基线有利，帮助其抵挡噪声）。
+
+**表 4** 共识教师蒸馏（测试精度 %，5 种子均值±标准差）。学生均为同一仅特征 MLP，仅教师不同。完整五臂表与增益分解见附录 I。
+
+| 教师 | Cora u0.4 | CiteSeer u0.4 | CoraFull u0.4 | Cora u0.6 | CiteSeer u0.6 | CoraFull u0.6 |
+|---|---:|---:|---:|---:|---:|---:|
+| GCN(X)+CE（GLNN 式） | 77.95±2.62 | 66.09±1.38 | 58.74±0.82 | 65.50±3.28 | 53.30±4.42 | 51.63±2.02 |
+| GCN[X‖H]+CE | 80.23±1.57 | 68.81±1.12 | **59.45±0.63** | 69.44±2.18 | 61.04±3.08 | **52.75±0.88** |
+| 随机分组共识教师 | 78.81±1.63 | 68.60±1.14 | 58.98±0.41 | 68.51±1.82 | 61.07±2.76 | 52.20±0.72 |
+| kNN 共识教师 | **80.99±1.02** | **69.57±1.46** | 58.95±0.56 | 71.07±2.29 | 61.96±2.98 | 52.73±0.95 |
+| 球式共识教师（本文） | 80.60±0.69 | 69.40±1.08 | 58.22±0.69 | **71.27±2.46** | **62.28±2.30** | 51.82±0.86 |
+
+球式共识教师学生在 Cora 与 CiteSeer 上达到 80.60 与 69.40（uniform 0.4），超过同协议 GCN(X) 教师自身的精度；kNN 共识教师作为替代分组实现给出相近且略高的 80.99/69.57。uniform 0.6 下，球式共识教师相对 GLNN 式蒸馏的领先扩大到 5.8 与 9.0 个百分点，说明在这两个小型引文图上，高噪声确实放大了共识去噪 teacher 的价值。CoraFull 给出了不同的边界图景：球式共识教师在 uniform 0.4 与 0.6 下分别为 58.22 与 51.82，低于 GCN[X‖H]+CE、kNN 共识教师和随机分组教师；因此，CoraFull 不能作为"球式 teacher 去噪归因成立"的证据，只能说明蒸馏扩展将仅特征学生带入强 graph-free 蒸馏方法的同一精度区间。
+
+增益的来源可以通过教师臂之间的配对比较分解为三层。第一层，教师输入端的表征拼接通常是主要来源：在 Cora/CiteSeer/CoraFull 上，GCN[X‖H] 教师相对 GCN(X) 教师大多带来正增益，尤其在 CoraFull 上它成为最强教师。第二层，共识去噪目标是否带来额外增益取决于数据集：Cora 与 CiteSeer 上，高噪声下球式共识相对 GCN[X‖H]+CE 进一步提高；CoraFull 上则相反，共识目标低于直接 CE teacher，说明该数据集的蒸馏收益主要来自 H 输入与教师覆盖，而不是球式标签修正。第三层，球式与 kNN 式共识教师在小图上效果相当，CoraFull 上 kNN 明显高于球式，进一步支持 5.3 节的结论：分组形式不是不可替代的贡献，真正关键的是冻结表征空间能否产生合适尺度的局部共识。结构一致性度量（cut value，附录 F）从另一个角度支持这一图景：蒸馏学生的预测—拓扑一致性显著高于仅用训练标签的学生（提升 0.14 至 0.25，全部 5/5 种子），与软标签蒸馏向纯特征学生传递结构偏置的理论刻画 [32] 相符。
+
+**与图领域专用方法的跨部署参照。** 前述比较均在"推理仅特征"的部署约束内进行；表 5 回答一个约束之外的问题：若允许训练与推理都使用图，图领域专用的标签噪声方法能达到什么水平，蒸馏学生在不使用图推理时又处于什么位置。正文表实际列出基础 GCN、边扩充方法 NRGNN [9]，以及 TFR [40]、ProCon [41] 和 GD² [42] 三类近期图标签噪声参考；这些方法的去噪与推理均依赖邻接矩阵，与本文部署约束不同，因此不进入主表的同资源比较。对照在 uniform 0.4 代表性设置下进行，正文所列图依赖行均采用与主表相同的划分、噪声与种子，并通过噪声范围审计。RTGNN、CRGNN 与 RNCGLN 的既有可行性或高方差记录仅保留在附录 C；CLNode 因本地实现使用验证标签参与预模型选择，在修复前不报告数值。
+
+**表 5** 图领域专用去噪方法参照（uniform 0.4，测试精度 %，5 种子均值±标准差）。图依赖方法推理需要邻接矩阵，与本文部署设定不同，不构成同资源配对比较。该表只呈现已完成五数据集同协议审计的方法；不完整或存在评测卫生问题的方法不以空缺行补入。
+
+| 方法 | 推理需图 | Cora | CiteSeer | CoraFull | Coauthor-CS | Amazon-Photo |
+|---|---|---:|---:|---:|---:|---:|
+| GCN(X) | 是 | 78.97±1.63 | 64.53±1.54 | 61.28±0.52 | 92.06±0.34 | 90.77±0.43 |
+| GCN[X‖H] | 是 | 80.70±1.54 | 67.48±1.39 | 61.42±0.44 | 92.05±0.19 | 91.87±0.64 |
+| NRGNN | 是 | 81.76±1.28 | 71.03±1.01 | **62.70±0.63** | 93.56±0.11 | 89.02±1.08 |
+| NRGNN[X‖H] | 是 | 81.47±1.28 | 70.74±1.04 | 62.06±0.52 | 93.72±0.18 | 89.53±1.53 |
+| TFR-GCN | 是 | 78.75±0.11 | 68.92±1.77 | 42.12±1.14 | 78.36±2.39 | 35.36±9.43 |
+| ProCon | 是 | 77.19±2.17 | 61.07±3.32 | 36.42±3.48 | 86.08±6.85 | 20.74±4.82 |
+| GD2 | 是 | 76.89±3.51 | 63.07±1.58 | 59.88±0.79 | 91.57±0.18 | 91.04±1.00 |
+| **LCSS 蒸馏扩展（学生）** | **否** | 80.60±0.69 | 69.40±1.08 | 58.22±0.69 | **93.75±0.22** | 90.49±1.05 |
+
+注：TFR-GCN、ProCon 与 GD2 为同协议本地 adapted/reimplemented 参考，不声称官方 tuned 复现。所有新补 CoraFull 图依赖行均通过 train-only 噪声审计：验证集与测试集标签零污染，且 `modified_count == modified_train_count`。
+
+三点观察。第一，图完全可用时，NRGNN 在 Cora、CiteSeer 与 CoraFull 上仍是最强参照（81.76/71.03/62.70），仅特征推理的蒸馏学生与其差距分别为 1.2、1.6 与 4.5 个百分点；CoraFull 因而构成无图蒸馏扩展的清晰经验边界。现有实验没有隔离类别数、同质性和特征可分性，不能把该差距因果归于其 70 个类别。第二，在 Coauthor-CS 上学生与最强图依赖行数值相当（93.75 对 NRGNN[X‖H] 的 93.72），在 Amazon-Photo 上低于最强图依赖行 GCN[X‖H] 约 1.4 个百分点。第三，TFR-GCN、ProCon 与 GD2 的迁移表现具有明显数据集依赖；这些本地 adapted/reimplemented 结果用于同协议参照，不等同于官方 tuned 排名。仅特征蒸馏学生的价值不在于所有数据集都超过图模型，而在于推理端不访问邻接矩阵时仍保持可竞争精度。
+
+综合来看，这条扩展给出了部署上的完整谱系：当训练预算有限时，LCSS 以单遍流程提供无图推理下有效的抗噪训练；当部署要求 GCN 级绝对精度时，增加一次教师训练与蒸馏即可在保持仅特征推理的前提下弥合精度差距。
+
+---
+
+## 7 结论
+
+本文研究了训练标签含噪、推理无图这一处于两条文献线交叉处的问题，提出局部共识软监督方法 LCSS：冻结的图对比表征定义局部分组，含噪标签的组内投票构成半硬软监督，最终学生只依赖节点特征。我们先在 11 个数据集上完整报告 uniform 0.4 的成功与失效边界；对于开发阶段筛选并完成全噪声谱评测的 5 个数据集，相对 7 个保持方法身份且完整覆盖噪声谱的对照，LCSS 在 24/25 设置取得最高均值，23/25 设置达到至少 4/5 配对种子同向。该计数是条件评测结果，不被外推为任意数据集上的无条件胜率。随机化分组、leave-one-out 和显式标签平滑共同支持外部局部共识具有独立贡献；同时，默认目标包含组感知平滑，本文不把 LCSS 表述为逐节点硬纠错器。共识教师蒸馏扩展在多个数据集上使仅特征学生达到或超过同协议 GCN，而 CoraFull 说明这一增益可能主要来自教师表征输入与全节点覆盖。机制分析表明，在本文协议下，共识单元的有效票数、冻结表征的局部可聚类性和学生容量共同影响方法表现。
+
+本文的局限均有实验依据。其一，训练阶段需要在完整图上完成高质量的对比预训练，在观测子图上重训编码器会降低本文分组质量，因此当前协议限于 transductive，inductive 扩展有待表征层面的改进。其二，分组形式可由同空间 kNN 或 kmeans 共识替代，本文的贡献在于问题设定与配方组合；粒球式实现的工程价值是在固定 B_max 预算下无需扫描邻域尺度，而不是已证明优于近似最近邻方法的普遍复杂度优势。其三，在损失可分性强的数据（如 PubMed）与弱 MLP 学生的组合下，样本选择策略更优；Amazon-Computers、Attributed-Wiki、CiteSeerFull 与 Coauthor-Physics 的结果进一步表明，真实局部分组即使优于随机分组，其分类增益仍可能被强同骨干策略吸收，且这一边界在 uniform 0.6 下更明显。其四，完全干净标签下方法可能有约一个百分点的代价。其五，方法不防御测试特征噪声，且共识目标会加深对特征质量的依赖。其六，实验采用合成噪声（instance-dependent 为最接近真实标注错误的代理），图领域目前缺少带真实标注噪声的公开基准。其七，每个数据集的下游种子共用同一份 H，当前误差条没有覆盖 GRACE 预训练随机性。未来工作将围绕 inductive 场景的表征预训练、完整管线不确定性与真实噪声基准展开。
+
+---
+
+## 参考文献
+
+[1] T. N. Kipf, M. Welling, Semi-supervised classification with graph convolutional networks, in: Proc. ICLR, 2017.
+
+[2] P. Velickovic, G. Cucurull, A. Casanova, A. Romero, P. Lio, Y. Bengio, Graph attention networks, in: Proc. ICLR, 2018.
+
+[3] S. Zhang, Y. Liu, Y. Sun, N. Shah, Graph-less neural networks: Teaching old MLPs new tricks via distillation, in: Proc. ICLR, 2022.
+
+[4] Y. Hu, H. You, Z. Wang, Z. Wang, E. Zhou, Y. Gao, Graph-MLP: Node classification without message passing in graph, arXiv preprint arXiv:2106.04051, 2021.
+
+[5] Y. Tian, C. Zhang, Z. Guo, X. Zhang, N. V. Chawla, Learning MLPs on graphs: A unified view of effectiveness, robustness, and efficiency, in: Proc. ICLR, 2023.
+
+[6] L. Yang, et al., VQGraph: Rethinking graph representation space for bridging GNNs and MLPs, in: Proc. ICLR, 2024.
+
+[7] L. Wu, H. Lin, Y. Huang, S. Z. Li, Quantifying the knowledge in GNNs for reliable distillation into MLPs, in: Proc. ICML, 2023.
+
+[8] C. Zhang, S. Bengio, M. Hardt, B. Recht, O. Vinyals, Understanding deep learning (still) requires rethinking generalization, Communications of the ACM 64 (3) (2021) 107–115.
+
+[9] E. Dai, C. Aggarwal, S. Wang, NRGNN: Learning a label noise resistant graph neural network on sparsely and noisily labeled graphs, in: Proc. ACM SIGKDD, 2021.
+
+[10] S. Qian, et al., Robust training of graph neural networks via noise governance, in: Proc. WSDM, 2023.
+
+[11] K. Ding, et al., Divide and denoise: Empowering simple models for robust semi-supervised node classification against label noise, in: Proc. ACM SIGKDD, 2024.
+
+[12] Y. Zhu, L. Feng, Z. Deng, Y. Chen, R. Amor, M. Witbrock, Robust node classification on graph data with graph and label noise, in: Proc. AAAI, 2024.
+
+[13] Z. Wang, et al., NoisyGL: A comprehensive benchmark for graph neural networks under label noise, in: Proc. NeurIPS Datasets and Benchmarks Track, 2024.
+
+[14] L. Wu, J. Xia, H. Lin, Z. Gao, Z. Liu, G. Zhao, S. Z. Li, Teaching yourself: Graph self-distillation on neighborhood for node classification, arXiv preprint arXiv:2210.02097, 2022.
+
+[15] Z. Wang, Z. Zhang, C. Zhang, Y. Ye, Training MLPs on graphs without supervision, in: Proc. WSDM, 2025.
+
+[16] Y. Zhu, Y. Xu, F. Yu, Q. Liu, S. Wu, L. Wang, Deep graph contrastive representation learning, in: ICML Workshop on Graph Representation Learning and Beyond, 2020.
+
+[17] B. Han, Q. Yao, X. Yu, G. Niu, M. Xu, W. Hu, I. W. Tsang, M. Sugiyama, Co-teaching: Robust training of deep neural networks with extremely noisy labels, in: Proc. NeurIPS, 2018.
+
+[18] H. Wei, L. Feng, X. Chen, B. An, Combating noisy labels by agreement: A joint training method with co-regularization, in: Proc. CVPR, 2020.
+
+[19] Y. Wang, X. Ma, Z. Chen, Y. Luo, J. Yi, J. Bailey, Symmetric cross entropy for robust learning with noisy labels, in: Proc. ICCV, 2019.
+
+[20] S. Liu, J. Niles-Weed, N. Razavian, C. Fernandez-Granda, Early-learning regularization prevents memorization of noisy labels, in: Proc. NeurIPS, 2020.
+
+[21] X. Ye, X. Li, S. Dai, T. Liu, Y. Sun, W. Tong, Active negative loss functions for learning with noisy labels, in: Proc. NeurIPS, 2023.
+
+[22] H. Wei, H. Zhuang, R. Xie, L. Feng, G. Niu, B. An, Y. Li, Mitigating memorization of noisy labels by clipping the model prediction, in: Proc. ICML, 2023.
+
+[23] J. Li, R. Socher, S. C. H. Hoi, DivideMix: Learning with noisy labels as semi-supervised learning, in: Proc. ICLR, 2020.
+
+[24] T. Kim, J. Ko, S. Cho, J. Choi, S.-Y. Yun, FINE samples for learning with noisy labels, in: Proc. NeurIPS, 2021.
+
+[25] W. Pan, W. Wei, F. Zhu, Y. Deng, Enhanced sample selection with confidence tracking: Identifying correctly labeled yet hard-to-learn samples in noisy data, in: Proc. AAAI, 39 (19) (2025) 19795–19803. https://doi.org/10.1609/aaai.v39i19.34180.
+
+[26] L. Wu, H. Lin, Y. Huang, T. Fan, S. Z. Li, Extracting low-/high-frequency knowledge from graph neural networks and injecting it into MLPs: An effective GNN-to-MLP distillation framework, in: Proc. AAAI, 2023.
+
+[27] J. Chen, M. Bai, S. Chen, J. Gao, J. Zhang, J. Pu, SA-MLP: Distilling graph knowledge from GNNs into structure-aware MLP, Transactions on Machine Learning Research (2024).
+
+[28] T. Wu, Z. Zhao, J. Wang, X. Bai, L. Wang, N. Wong, Y. Yang, Edge-free but structure-aware: Prototype-guided knowledge distillation from GNNs to MLPs, in: Proc. COLING, 2025, pp. 5656–5667.
+
+[29] W. Lu, et al., AdaGMLP: AdaBoosting GNN-to-MLP knowledge distillation, in: Proc. ACM SIGKDD, 2024.
+
+[30] W. Lu, Z. Guan, W. Zhao, Y. Yang, Y. Sun, Z. Liang, Y. Zhan, D. Tao, ProGMLP: A progressive framework for GNN-to-MLP knowledge distillation with efficient trade-offs, in: Proc. AAAI, 40 (29) (2026) 24088–24096. https://doi.org/10.1609/aaai.v40i29.39587.
+
+[31] H. Pal, S. Malik, R. Patel, A. Malhotra, SALE-MLP: Structure aware latent embeddings for GNN to graph-free MLP distillation, in: Proc. IJCAI, 2025, pp. 6003–6011. https://doi.org/10.24963/ijcai.2025/668.
+
+[32] Z. Yu, M. Lin, W. Li, Z. Yin, S. Xiao, S. Lu, Demystifying GNN-to-MLP knowledge transfer: Theoretical grounding and dual-stream distillation method, in: Proc. AAAI, 40 (33) (2026) 28005–28013. https://doi.org/10.1609/aaai.v40i33.40025.
+
+[33] Q. Tan, D. Zha, S.-H. Choi, L. Li, R. Chen, X. Hu, Double wins: Boosting accuracy and efficiency of graph neural networks by reliable knowledge distillation, OpenReview, ICLR 2023 submission (2023). https://openreview.net/forum?id=NGIFt6BNvLe.
+
+[34] S. Xia, Y. Liu, X. Ding, G. Wang, H. Yu, Y. Luo, Granular ball computing classifiers for efficient, scalable and robust learning, Information Sciences 483 (2019) 136–152.
+
+[35] F. Dunkin, X. Li, H. Li, G. Wu, C. Hu, S. S. Ge, MgCNL: A sample separation approach via multi-granularity balls for fault diagnosis with the interference of noisy labels, IEEE Transactions on Automation Science and Engineering 22 (2025) 7748–7761. https://doi.org/10.1109/TASE.2024.3469000.
+
+[36] F. Dunkin, X. Li, C. Hu, G. Wu, H. Li, X. Lu, Z. Zhang, Like draws to like: A multi-granularity ball-intra fusion approach for fault diagnosis models to resists misleading by noisy labels, Advanced Engineering Informatics 60 (2024) 102425. https://doi.org/10.1016/j.aei.2024.102425.
+
+[37] S. Xia, S. Zheng, G. Wang, X. Gao, B. Wang, Granular ball sampling for noisy label classification or imbalanced classification, IEEE Transactions on Neural Networks and Learning Systems 34 (4) (2023) 2144–2155. https://doi.org/10.1109/TNNLS.2021.3105984.
+
+[38] P. Sen, G. Namata, M. Bilgic, L. Getoor, B. Galligher, T. Eliassi-Rad, Collective classification in network data, AI Magazine 29 (3) (2008) 93–106.
+
+[39] O. Shchur, M. Mumme, A. Bojchevski, S. Gunnemann, Pitfalls of graph neural network evaluation, arXiv preprint arXiv:1811.05868, 2018.
+
+[40] Z. Wang, Y. Bei, S. Zhou, Z. Zhou, J. Fan, H. Xue, H. Wang, J. Bu, Learning from graph: Mitigating label noise on graph through topological feature reconstruction, in: Proc. CIKM, 2025, pp. 3261–3270. https://doi.org/10.1145/3746252.3761185.
+
+[41] K. Li, J. Sun, J. Lou, Z. Feng, H. Zhou, C. Wu, G. Xue, W. Zhao, J. Li, Leveraging peer-informed label consistency for robust graph neural networks with noisy labels, in: Proc. IJCAI, 2025, pp. 5598–5606. https://doi.org/10.24963/ijcai.2025/623.
+
+[42] K. Li, J. Lou, J. Sun, H. Zeng, W. Li, C. Wu, Y. Luo, W. Zhao, S. Du, J. Li, GD²: Robust graph learning under label noise via dual-view prediction discrepancy, Advances in Neural Information Processing Systems 38 (2025).
+
+[43] Z. Zhou, Z. Ding, J. Shi, L. Qing, S. Shen, TINED: GNNs-to-MLPs by teacher injection and Dirichlet energy distillation, in: Proc. ICML, PMLR 267 (2025) 78616--78632. https://proceedings.mlr.press/v267/zhou25a.html.
+
+[44] S. Li, B. Zhang, J. Song, G. Ruan, C. Wang, J. Xie, Graph neural networks with coarse- and fine-grained division for mitigating label noise and sparsity, Neural Networks 187 (2025) 107338. https://doi.org/10.1016/j.neunet.2025.107338.
+
+[45] B. Hu, G. Wen, Y. Huang, Y. Liu, X. Zhu, Structure-aware multi-teacher distillation for noise node classification, Information Processing & Management 63 (7) (2026) 104877. https://www.sciencedirect.com/science/article/pii/S0306457326002682.
+
+---
+
+## 附录索引（投稿时编排为 Supplementary Material）
+
+附录完整内容沿用审阅版与资产包 paper_assets_20260706/，全部 23 项数据对拍通过。
+
+- **附录 A** 完整主表：核心 5 数据集（Cora/CiteSeer/CoraFull/Coauthor-CS/Amazon-Photo）× 5 噪声设置，正式排名包含 LCSS、随机化消融与 7 个完整噪声谱对照；uniform 0.4 另列 ANL-CE、GMM+CT、FINE 三项忠实度重跑。历史代理仅作为机制探索并显式标注，不进入已发表方法胜出计数。附录同时给出 5 种子均值±标准差、配对方向与统计检验；PubMed、Amazon-Computers、Cora_ML、Attributed-Wiki、CiteSeerFull 与 Coauthor-Physics 另列为适用域审计。
+- **附录 B** 预声明主比较族统计：LCSS 分别相对 MLP+CE、随机化分组和 JoCoR 的逐设置配对差、95% 置信区间、方向计数及 family-wise Holm 校正结果；其余方法间检验单列为探索性结果，不据此作显著性 claim。n=5 下不以未拒绝零假设证明等效。
+- **附录 C** 图依赖参考方法：正文表 5 的完整版（逐种子数字、可行性记录与协议审计）。全部图依赖行经 2026-07-08/09 干净协议重跑或补齐（`noise_scope=train`，逐行核验验证/测试标签零污染）；旧版 phase24/tfr 数字因早期噪声注入污染验证/测试标签已作废，禁止引用。RNCGLN 的 seed0-only/坍缩记录与 RTGNN/CRGNN 在 Amazon-Photo 上的高方差记录一并保留。
+- **附录 D** 构造参数敏感性（27 配置网格：合理范围内为约 ±1 个百分点的平台，δ=0.1 导致分组塌缩为单组；组数上限 32 与 128 在 Cora/CiteSeer 上给出逐种子相同结果，说明小图对该范围不敏感；正式五数据集重建同时报告 52–64 个分组及 19/25 次触顶，避免把大图分组完全归因于几何自行终止）与 β 选择审计（逐设置验证集选择的完整记录，支撑正文的保守默认表述）。
+- **附录 E** 测试特征噪声完整曲线（5 方法 × 5 数据集 × 6 个扰动水平，零扰动点逐种子锚定主表数字）。
+- **附录 F** Cut value 结构一致性表，附该指标在标签噪声协议下受预测坍缩污染的说明（CE 与随机分组对照的逐种子方差达 0.15–0.28，蒸馏臂仅 0.003–0.01）；正文仅引用蒸馏变体与仅训练标签变体之间的组内差值。
+- **附录 G** 表征空间可视化：t-SNE 三着色图（真实类别/噪声标签/分组归属）、粒球覆盖示意图与噪声软修正机制图（图 G.1–G.3，均为机制示意，定量证据以正文消融为准）。
+- **附录 H** 低标签率完整曲线（6 个标签比例 × 5 方法）及趋势单调性核验（Cora 严格单调，CiteSeer 存在一个回折点，故正文表述为总体扩大）。
+- **附录 I** 正文表 3 与表 4 的完整版本（全部噪声设置、训练资源标注列、教师精度与三层增益分解）。当前 CoraFull 已补齐表 3 的 graph-free family 行，并通过 MLP-22 补齐正文表 4 的五臂教师分解与正文表 5 的主要图依赖参照；RTGNN、CLNode、CRGNN 与 RNCGLN 的 CoraFull 行暂不进入正文表。
+
+---
+
+## 导师审阅附录图精选
+
+> 本节只保留适合导师快速理解机制与实验边界的附录图，不加入长表格。所有图均来自 HTML 审阅版对应的本地资产 `paper_assets_20260706/figures/`。
+
+### 图 S1：表征空间三着色可视化
+
+该图用于直观说明：GRACE 表征空间中真实类别具有局部聚集结构，训练标签噪声主要表现为局部簇内的少数派错误标签，而局部共识分组大体沿表征几何覆盖这些区域。注意该图是机制示意，定量证据仍以正文消融为准。
+
+![Appendix G t-SNE three coloring](../paper_assets_20260706/figures/appendix_G_tsne_three_coloring.png)
+
+### 图 S2：GRACE-H 空间中的局部球覆盖
+
+该图用于解释“粒球式分组”在本文中的角色：它不是新的分类器，而是在冻结 GRACE 表征空间上构造局部覆盖单元，再由组内训练标签投票生成软监督。图中的圆圈表示投影空间中的球覆盖，圆心用叉号标出。
+
+![Appendix G2 GRACE ball cover](../paper_assets_20260706/figures/appendix_G2_grace_ball_cover.png)
+
+### 图 S3：含噪标签到局部共识软标签的修正机制
+
+该图用于说明 LCSS 的监督侧去噪逻辑：单个训练节点的 noisy one-hot 标签不会被直接信任，而是与其所在局部组的标签分布和多数类信号混合，得到半硬软标签。
+
+![Appendix G3 noise soft correction](../paper_assets_20260706/figures/appendix_G3_noise_soft_correction.png)
+
+### 图 S4：低标签率曲线
+
+该图用于展示标签越稀缺时，局部共识软监督的相对价值越明显。正文中只保守表述为“总体扩大”，因为 CiteSeer 存在一个非严格单调的回折点。
+
+![Appendix H label-rate curves](../paper_assets_20260706/figures/appendix_H_labelrate_curves.png)
+
+### 图 S5：测试特征噪声曲线
+
+该图用于说明方法边界：LCSS 解决的是训练标签噪声，不是测试特征噪声。强特征扰动下，所有仅特征推理方法都会退化；LCSS 在部分数据集上保持相对优势，但绝对下降可能更陡。
+
+![Appendix E feature-noise curves](../paper_assets_20260706/figures/appendix_E_feature_noise_curves.png)

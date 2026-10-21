@@ -1,0 +1,391 @@
+                                                                                                                                                                                              2022 7th International Conference on Cloud Computing and Big Data
+
+                                                                                                                                                                         Research on Classification Label Denoising
+                                                                                                                                                                              Algorithm Based on Granular Ball
+
+2022 7th International Conference on Cloud Computing and Big Data Analytics (ICCCBDA) | 978-1-6654-8711-5/22/$31.00 ¬©2022 IEEE | DOI: 10.1109/ICCCBDA55098.2022.9778872            Weiyu Kong*                      Yanmin Wu                                Jinli Qi                    Yanyi Chen
+                                                                                                                                                                         Chongqing Key Laboratory of         Department of Artificial        Department of General education      Department of Software
+                                                                                                                                                                                                             intelligence and Big data
+                                                                                                                                                                             Computer Science and       ChongQing College of Electronic           and International Studies              Engineering
+                                                                                                                                                                                    Technology                                               ChongQing College of Electronic  Chongqing University of Posts
+                                                                                                                                                                                                                    Engineering
+                                                                                                                                                                         Chongqing University of Posts          ChongQing, China                          Engineering            and Telecommunications
+                                                                                                                                                                            and Telecommunications                                                    ChongQing, China               ChongQing, China
+                                                                                                                                                                                ChongQing, China
+                                                                                                                                                                              2951475518@qq.com
+
+                                                                                                                                                                             Abstract‚ÄîThis paper presents a granular ball denoising          method of kernel logistic regression, reference [14] proposed a
+                                                                                                                                                                         method (GBD) which can effectively improve the accuracy and         method to reduce the impact of label noise on the classifier by
+                                                                                                                                                                         robustness of classification algorithm. GBD method first uses the   using random matrix, and reference [15] proposed that the
+                                                                                                                                                                         self-adaptive hypersphere to cover the data space, then             noise data can be detected by density based support vector
+                                                                                                                                                                         eliminates the data not contained in the hypersphere and the        machine.
+                                                                                                                                                                         noise data in the sphere, and finally uses only the hypersphere
+                                                                                                                                                                         data for training, so as to reduce the sample data and improve          To sum up, the existing methods to deal with tag noise
+                                                                                                                                                                         the data quality. Experiments show that using the data obtained     either rarely remove the noise data actively, or they are only
+                                                                                                                                                                         by this method for training can greatly improve the accuracy of     designed for specific classifiers, which has poor universality
+                                                                                                                                                                         the classification algorithm. In addition, because the hypersphere  and practicability. The GBD algorithm proposed in this paper
+                                                                                                                                                                         has good adaptive ability, GBD also has excellent robustness. The   solves the above problems well. GBD has universality and
+                                                                                                                                                                         experiment shows that GBD sampling data training can still get      robustness, and can effectively improve the classification
+                                                                                                                                                                         good results after adding noise to the data set. Therefore, GBD is  accuracy of each classifier. The main contributions of this
+                                                                                                                                                                         an efficient and robust denoising method.                           paper can be summarized as follows:
+
+                                                                                                                                                                             Keywords‚Äîclassification, label noise, granular ball                 1) GBD algorithm is proposed, which can improve the data
+                                                                                                                                                                                                                                             quality and the classification accuracy of each classifier.
+                                                                                                                                                                                                   I. INTRODUCTION
+                                                                                                                                                                                                                                                 2) GBD only needs to set one parameter, and the parameter
+                                                                                                                                                                             Classification algorithms have been widely studied in           setting is flexible. Simple setting can achieve good sampling
+                                                                                                                                                                         machine learning. Classification algorithms can learn               effect and is easy to use.
+                                                                                                                                                                         classifiers from labeled data sets to predict the categories of
+                                                                                                                                                                         new samples. However, classification algorithms are very                3) GBD has unique advantages and good robustness in
+                                                                                                                                                                         dependent on the accuracy of data sets. Real data sets may          dealing with noisy data sets.
+                                                                                                                                                                         contain noise. Many works have proved that noise will have an
+                                                                                                                                                                         adverse impact on the classification performance of classifier          4) GBD is a general data denoising algorithm with low time
+                                                                                                                                                                         [1], And reliably labeled data is usually time-consuming and        complexity, which can improve the classification accuracy of
+                                                                                                                                                                         expensive [2]. Therefore, how to remove noise and reduce the        most classifiers.
+                                                                                                                                                                         impact of noise on classifier algorithm is an important problem
+                                                                                                                                                                         in machine learning.                                                    The rest of this paper is organized as follows. The second
+                                                                                                                                                                                                                                             section introduces the specific content of granular ball
+                                                                                                                                                                             Noise can be divided into two categories, attribute noise       denoising algorithm in detail, the third section carries out
+                                                                                                                                                                         and class noise [3]. In addition, literature [4] points out that    specific experimental analysis and discussion, and the fourth
+                                                                                                                                                                         class noise is more harmful to the classifier than feature noise,   section gives the conclusion.
+                                                                                                                                                                         which emphasizes the importance of dealing with class noise.
+                                                                                                                                                                         Noise like is defined as a tag that is not observed correctly. It              II. GRANULAR BALL DENOISING METHOD
+                                                                                                                                                                         mainly causes insufficient information [5], expert tag errors [6],
+                                                                                                                                                                         subjective tasks [7], coding and communication problems [8,9].      A. Granular Ball Theory
+                                                                                                                                                                         The label like noise mainly studied in this paper is the label
+                                                                                                                                                                         noise caused by label errors. At present, there are many                human cognition has the characteristics of large-scale
+                                                                                                                                                                         methods to study the label noise. Literature [10] uses the          priority [16]. The thinking mode of human brain is from large
+                                                                                                                                                                         importance weighting method to remove the influence of label        to small, or from coarse to fine. Human beings always know
+                                                                                                                                                                         noise, literature [11] proposes to filter the label noise with      the macro level of things first, and then go deep into the micro
+                                                                                                                                                                         completely random forest, and literature [12] and [13] propose      level of things. Just as people need to identify a cat, they only
+                                                                                                                                                                         respectively for decision tree For the label noise processing       need to identify the overall outline of the cat, and do not need
+                                                                                                                                                                                                                                             to identify every detail of the cat's body to judge whether it is a
+                                                                                                                                                                                                                                             cat. This paper puts forward the granular cognitive theory,
+
+                                                                                                                                                                         978-1-6654-8711-5/22/$31.00 ¬©2022 IEEE  102
+                                                                                                                                                                         Authorized licensed use limited to: NANJING UNIVERSITY OF SCIENCE AND TECHNOLOGY. Downloaded on June 24,2026 at 00:28:58 UTC from IEEE Xplore. Restrictions apply.
+which is developed from the granular theory. At present,                  category. The second classification data set is mainly discussed
+granular ball theory has been applied to rough set [17],                  below. Then determine the center and radius of the two pellets
+sampling [18,19], classification [20], and has achieved good              according to definition 1, and check the purity of the two
+results. The practicability and authenticity of granular ball             pellets. If the two pellets do not meet the given purity
+theory are verified.                                                      requirements, continue to split the pellets to generate more
+                                                                          pellets, as shown in Fig.1(b), and stop splitting the pellets until
+    Granular computing theory clusters all labeled data into              the purity of all pellets meets the requirements, as shown in
+data balls, which is called granular ball. The relevant                   Fig.1(c). It can be seen that the granulars fit the data
+definitions of pellets are as follows.                                    distribution well.
+
+    The sphere covering the point consists of the center and
+radius.
+
+    Definition 1: given a data set Ì†µÌ∞∑ ‚äÜ Ì†µÌ±ÖÌ†µÌ±Å and Ì†µÌ∞∑‚Ä≤ ‚äÜ Ì†µÌ∞∑( Ì†µÌ∞∑‚Ä≤ ‚â†          (a)  (b)
+
+Ì†µÌºô), The generated granular ball Ì†µÌ∞∫Ì†µÌ∞µ defines its center point as
+Ì†µÌ∞∂, radius as Ì†µÌ±ü, and the set of all points in the ball is Ì†µÌ∞∑‚Ä≤. Ì†µÌ∞∂ is
+the center of all sample points in the ball, and Ì†µÌ±ü is the average
+distance from all sample points in the ball to the center of the
+ball. For any point Ì†µÌ±•Ì†µÌ±ñ ‚àà Ì†µÌ∞∑‚Ä≤(Ì†µÌ±ñ = 1,2, ‚Ä¶ , Ì†µÌ∞æ ), Ì†µÌ∞æ is the number
+of data points in the ball.
+
+1 Ì†µÌ∞æ  1 Ì†µÌ∞æ
+Ì†µÌ∞∂ = Ì†µÌ∞æ ‚àë Ì†µÌ±•Ì†µÌ±ñ , Ì†µÌ±ü = Ì†µÌ∞æ ‚àë ||Ì†µÌ±•Ì†µÌ±ñ ‚àí Ì†µÌ∞∂||
+Ì†µÌ∞º=1  Ì†µÌ∞º=1
+
+In this process, some points will not be included in the
+
+granular sphere, but according to the granularity cognitive
+
+theory, the lack of those points will not affect the overall
+
+judgment. As long as the classification boundary is well
+
+described on the granular sphere scale, the obtained data will
+
+not reduce the sample and affect the classification accuracy,
+
+but can select better quality data to replace the whole data set.
+
+    The labels of all data points in the pellet do not have to be                                              (c)
+completely consistent. The proportion of most classes to a few
+classes in the pellet can be controlled by purity. The concept of           Fig.1 The generation process of Granular Ball at a purity threshold of
+purity of the pellet is an important basis for the scalability and          0.90.(a)first iteration; (b) intermediate results; (c) generation of GB
+robustness of the pellet.                                                   completion.
+
+    Definition 2: given a data set Ì†µÌ∞∑ ‚äÜ Ì†µÌ±ÖÌ†µÌ±Å and Ì†µÌ∞∑‚Ä≤ ‚äÜ Ì†µÌ∞∑( Ì†µÌ∞∑‚Ä≤ ‚â†          B. Granular Ball Denoising Algorithm
+
+Ì†µÌºô), The generated granular ball Ì†µÌ∞∫Ì†µÌ∞µ defines its center point                The basic idea of the granular ball denoising algorithm is
+as Ì†µÌ∞∂, radius as Ì†µÌ±ü, and the set of all points in the ball is Ì†µÌ∞∑‚Ä≤. Ì†µÌ∞∂     shown in Fig.2. Fig.2(a) shows the data distribution of the
+is the center of all sample points in the ball, and Ì†µÌ±ü is the             original data set. In Fig.2(b), the original data set is replaced by
+average distance from all sample points in the ball to the center         granular ball Ì†µÌ∞µÌ†µÌ±ñ(Ì†µÌ±ñ = 1,2, ‚Ä¶ , Ì†µÌ±õ) coverage. Literature [20]
+of the ball. For any point Ì†µÌ±•Ì†µÌ±ñ ‚àà Ì†µÌ∞∑‚Ä≤(Ì†µÌ±ñ = 1,2, ‚Ä¶ , Ì†µÌ∞æ ) , Ì†µÌ±•Ì†µÌ±ñ is        proposes that enough granular balls can be used to describe the
+                                                                          decision boundary of arbitrarily distributed data sets.
+labeled Ì†µÌ±¶Ì†µÌ±ñ (Ì†µÌ±ñ = 1,2, ‚Ä¶ , Ì†µÌ±ö ), Ì†µÌ∞æ is the number of data points in      According to this conclusion, points outside the ball can be
+the ball, Ì†µÌ±ö is the number of classification of the data set, and         removed because they have little impact on the decision
+                                                                          boundary. As shown in Fig.2(c), a few sample points in the
+the purity of Ì†µÌ∞∫Ì†µÌ∞µ is Ì†µÌ±ùÌ†µÌ±¢Ì†µÌ±üÌ†µÌ±ñÌ†µÌ±°Ì†µÌ±¶(Ì†µÌ∞∫Ì†µÌ∞µ), |Ì†µÌ±¶Ì†µÌ±ñ| is the quantity of each  granular ball can be regarded as noise points, as shown in
+category.                                                                 Fig.2(d), Finally, the data shown in Fig.2(e) is obtained.
+
+Ì†µÌ±ùÌ†µÌ±¢Ì†µÌ±üÌ†µÌ±ñÌ†µÌ±°Ì†µÌ±¶(Ì†µÌ∞∫Ì†µÌ∞µ) = Ì†µÌ±öÌ†µÌ±éÌ†µÌ±•(|Ì†µÌ±¶Ì†µÌ±ñ| )
+      ‚àëÌ†µÌ±ö
+               |Ì†µÌ±¶Ì†µÌ±ñ|
+         Ì†µÌ±ñ=1
+
+    Definition 3: the label of the pellet is defined as the label
+of most samples in the pellet.
+
+    Based on the above concepts and theories, the granular                (a)  (b)
+formation process can be obtained. The first step is to
+randomly generate m balls covering most samples through
+clustering, as shown in Fig.1(a), where m is the classification
+
+                                                                                             103
+
+Authorized licensed use limited to: NANJING UNIVERSITY OF SCIENCE AND TECHNOLOGY. Downloaded on June 24,2026 at 00:28:58 UTC from IEEE Xplore. Restrictions apply.
+                                                                            2. The set of GBs Balls is initialized with{Ì†µÌ∞∑}
+
+                                                                            3. The data set was clustered by 2-means, divided into 2 granular
+
+                                                                                spheres Ì†µÌ∞µ1 and Ì†µÌ∞µ2 . the Ì†µÌ±ùÌ†µÌ±¢Ì†µÌ±üÌ†µÌ±ñÌ†µÌ±°Ì†µÌ±¶(Ì†µÌ∞µÌ†µÌ±ñ) of each granular sphere was
+                                                                                calculated.
+
+                                                                            4. Repeat
+
+                                                                            5. for each Ì†µÌ∞µÌ†µÌ±ñ ‚àà Ì†µÌ∞µÌ†µÌ±éÌ†µÌ±ôÌ†µÌ±ôÌ†µÌ±† do
+                                                                                if Ì†µÌ±ùÌ†µÌ±¢Ì†µÌ±üÌ†µÌ±ñÌ†µÌ±°Ì†µÌ±¶(Ì†µÌ∞µÌ†µÌ±ñ) < Ì†µÌ±É then
+                                                                            6.
+
+                                                                            7.  Split Ì†µÌ∞µÌ†µÌ±ñ to Ì†µÌ∞µÌ†µ‚Ä≤Ì±ñ and Ì†µÌ∞µÌ†µ‚Ä≤Ì±ñ‚Ä≤ by using 2-means
+
+                                                                            8.  Add Ì†µÌ∞µÌ†µ‚Ä≤Ì±ñ and Ì†µÌ∞µÌ†µ‚Ä≤Ì±ñ‚Ä≤ to Ì†µÌ∞µÌ†µÌ±éÌ†µÌ±ôÌ†µÌ±ôÌ†µÌ±†
+
+                                                                            9.  Delete Ì†µÌ∞µÌ†µÌ±ñ from Ì†µÌ∞µÌ†µÌ±éÌ†µÌ±ôÌ†µÌ±ôÌ†µÌ±†
+
+                                                                            10. end if
+
+(c)  (d)                                                                    11. end for
+
+                                                                            12. until All GBs in Ì†µÌ∞µÌ†µÌ±éÌ†µÌ±ôÌ†µÌ±ôÌ†µÌ±† meet the given purity
+
+                                                                            13. // Stage 2: Generate sampling data
+
+                                                                            14. for each Ì†µÌ∞µÌ†µÌ±ñ ‚àà Ì†µÌ∞µÌ†µÌ±éÌ†µÌ±ôÌ†µÌ±ôÌ†µÌ±† do
+                                                                            15. Delete a few class points
+                                                                            16. Add every point contained in the ball to Ì†µÌ∞∑‚Ä≤
+
+                                                                            17. end for
+
+                                     (e)                                                            III. EXPERIMENT
+
+  Fig. 2. The concept of GBD. (a)The original data set;(b)The generated of      This section verifies the efficiency, reliability and
+  GBs;(c)drop the Outliers;(d) Remove noise points in the ball;(e)Get       robustness of the granular ball denoising algorithm from two
+  denoised data.                                                            aspects: the comparison of the denoising accuracy of different
+                                                                            purity granular balls and the comparison of the accuracy before
+C. Time Complexity Analysis of Granular Ball Denoising                      and after granular ball denoising.
+    Algorithm
+                                                                                The experiments in this section are completed on an
+    The description of granular ball denoising algorithm is                 ordinary computer. The specific configuration of the computer
+shown in algorithm 1. The granular ball denoising algorithm                 is as follows: 6-core Intel i5-9500 3GHz frequency processor,
+consists of granular ball generation and sampling point                     16GB memory and windows 10 operating system. The
+generation. Take the binary classification data set as an                   classification algorithms used in the experiment are scikit
+example. The process of generating pellets is shown in steps 3              learning toolbox algorithms, and the default parameter settings
+to 12. 2-means is used to divide the dataset into pellets.                  are retained. The experimental data sets are all from UCI
+Suppose a scale is Ì†µÌ±Å, because 2-means algorithm is used for                machine learning library. The specific information of the eight
+division, the number of generated granular balls is Ì†µÌ±ò, and                 data sets used in the experiment is shown in Table ‚Ö†. In order to
+Ì†µÌ∞∫Ì†µÌ∞µÌ†µÌ±ñ(Ì†µÌ±ñ = 1,2, ‚Ä¶ , Ì†µÌ±ò). Then the time complexity is Ì†µÌ±Ç(Ì†µÌ±òÌ†µÌ±Å). In the      improve the reliability of the experiment, five ten fold cross
+worst case, the generated granular balls contain only one point,            validation is adopted, and the average value is taken as the final
+and the 2-means algorithm needs Ì†µÌ±ôÌ†µÌ±úÌ†µÌ±î2Ì†µÌ±Å iterations. Therefore,            result.
+the time complexity of the granular ball generation algorithm is
+Ì†µÌ±Ç(Ì†µÌ±òÌ†µÌ±Å ‚àó Ì†µÌ±ôÌ†µÌ±úÌ†µÌ±î2Ì†µÌ±Å). For the K classification, the time complexity             TABLE I.  INFORMATION OF THE DATA SETS
+of the granular ball generation algorithm is Ì†µÌ±Ç(Ì†µÌ±òÌ†µÌ±Å ‚àó Ì†µÌ±ôÌ†µÌ±úÌ†µÌ±îÌ†µÌ±òÌ†µÌ±Å).
+However, the worst case will hardly occur. Most granular balls                  Datasets Number of the Samples                     Dimensionality
+will contain many sample points. Therefore, the number of
+iterations can be regarded as a constant, so the final time of                fourclass   862                                              2
+granular ball generation is Ì†µÌ±Ç(Ì†µÌ±òÌ†µÌ±Å). The process of generating                 votes     435                                             16
+sampling points is shown in steps 13 to 17. Since it is only a                            683                                             10
+simple iteration to remove some points from k granular balls,               breastcancer  8124                                            112
+the time complexity is Ì†µÌ±Ç(Ì†µÌ±ò). The time complexity of the final              mushroom     7085                                             4
+granular ball compression sampling is Ì†µÌ±Ç(Ì†µÌ±òÌ†µÌ±Å + Ì†µÌ±ò) , where                 svmguide1     1284                                            22
+Ì†µÌ±ò < Ì†µÌ±õ , and the time complexity of the granular ball denoising            svmguide3     270                                             13
+algorithm is close to linear, which verifies its high efficiency.                         170                                             54
+                                                                                heart
+ Algorithm 1: Granular Ball Denoising Algorithm (GBD                           divorce
+ algorithm)
+                                                                            A. Comparison of Denoising Accuracy of Granular Balls with
+                      Input: Dataset Ì†µÌ∞∑, the purity threshold Ì†µÌ±É                Ddifferent Purity
+  Output: The resulting data set Ì†µÌ∞∑‚Ä≤
+  1. // Stage 1: generate Granular-ball                                         Firstly, some sample points are removed from the original
+                                                                            data set by using the granular ball denoising algorithm, and
+                                                                            then these data are classified and trained by using the decision
+                                                                            tree algorithm. It can be seen that the test accuracy changes
+                                                                            with the granular ball purity, as shown in table ‚Ö°-table ‚Ö¢. It
+                                                                            can be seen from the table that different purity can achieve the
+                                                                            same accuracy, As long as the appropriate purity is given, the
+
+                                                                                             104
+
+Authorized licensed use limited to: NANJING UNIVERSITY OF SCIENCE AND TECHNOLOGY. Downloaded on June 24,2026 at 00:28:58 UTC from IEEE Xplore. Restrictions apply.
+test accuracy can be improved. The parameter of granular ball          Dataset      LR    GBD-LR  Best-purity    Accuracy
+purity has no contingency and particularity and is easy to                                                     Improvement
+control. In addition, it can be seen that after adding noise to the  breastcancer  0.968
+data set, the purity of obtaining the best test accuracy becomes      mushroom     0.990  0.970   0.99         0.002
+smaller, because after adding noise, the granular ball should        svmguide1     0.954                       0.000
+allow more minority points to enter the granular ball, and then      svmguide3     0.822  0.990   0.99         0.002
+complete the filtering, so as to improve the training ability.                     0.844                       -0.014
+                                                                         heart     0.982  0.956   0.98         0.012
+                                                                        divorce                                -0.006
+                                                                                          0.808   0.87
+
+TABLE II.     DENOISING EFFECT OF GRANULAR BALLS WITH DIFFERENT                           0.856   0.56
+                        PURITY (NOISE RATE 0%)
+                                                                                          0.976   0.61
+
+  Dataset     Original  0.71-0.75   Purity      0.96-1.00            TABLE V.      TEST ACCURACY COMPARISON OF LR (NOISE RATE 10%)
+                          0.848    0.81-0.85      0.982
+  fourclass     0.985     0.946                   0.948                Dataset      LR    GBD-LR  Best-purity    Accuracy
+    votes       0.949     0.963      0.929        0.943                                                        Improvement
+                0.952     0.923      0.942        1.000                fourclass   0.632
+breastcancer    1.000     0.956      0.963        0.967                  votes     0.728  0.639   0.78         0.007
+ mushroom       0.952     0.791      0.955        0.818                            0.745                       -0.003
+svmguide1       0.788     0.787      0.961        0.784              breastcancer  0.748  0.725   0.78         0.004
+svmguide3       0.744     0.971      0.814        0.971               mushroom     0.719                       0.010
+                0.959                0.770                           svmguide1     0.672  0.749   0.62         0.013
+    heart                            0.971                           svmguide3     0.662                       -0.007
+   divorce                                                                         0.711  0.758   0.9          0.032
+                                                                         heart                                 0.033
+                                                                        divorce           0.732   0.65
+
+                                                                                          0.665   0.84
+
+TABLE III.    DENOISING EFFECT OF GRANULAR BALLS WITH DIFFERENT                           0.694   0.58
+                       PURITY (NOISE RATE 10%)
+                                                                                          0.744   0.66
+
+  Dataset     Original  0.71-0.75   Purity      0.96-1.00            TABLE VI. TEST ACCURACY COMPARISON OF DT (NOISE RATE 0%)
+                          0.806    0.81-0.85      0.805
+  fourclass     0.745     0.815                   0.819                Dataset      DT    GBD-DT  Best-purity    Accuracy
+    votes       0.752     0.844      0.818        0.825                                                        Improvement
+                0.825     0.799      0.806        0.825                fourclass   0.985
+breastcancer    0.738     0.832      0.827        0.821                  votes     0.949  0.983   0.97         -0.002
+ mushroom       0.743     0.702      0.856        0.717                            0.952                       -0.002
+svmguide1       0.662     0.720      0.832        0.701              breastcancer  1.000  0.947   0.88         0.011
+svmguide3       0.633     0.846      0.832        0.829               mushroom     0.959                       0.000
+                0.718                0.722                           svmguide1     0.788  0.963   0.9          0.008
+    heart                            0.835                           svmguide3     0.744                       0.025
+   divorce                                                                         0.959  1.000   1            0.037
+                                                                         heart                                 0.012
+                                                                        divorce           0.967   0.99
+
+B. Comparison of Precision before and after Granular Ball                                 0.813   0.92
+    Denoising
+                                                                                          0.781   0.8
+    Table ‚Ö£-table ‚Ö¶ respectively compare the accuracy of
+data sampling and classification algorithm training directly                              0.971   0.56
+using logistic regression algorithm, decision tree algorithm and
+granular ball denoising algorithm without adding noise and           TABLE VII. TEST ACCURACY COMPARISON OF DT (NOISE RATE 10%)
+adding 10% noise. When granular ball denoising algorithm is
+applied to decision tree algorithm, it is the best, followed by        Dataset      DT    GBD-DT  Best-purity    Accuracy
+logistic regression algorithm. When no noise data is added, the                                                Improvement
+application of granular denoising algorithm to some data sets          fourclass   0.635
+can improve the classification accuracy by 2% - 3%. After                votes     0.629  0.710   0.8          0.075
+adding noise data, the application of granular ball denoising                      0.637                       0.094
+algorithm to data sets can comprehensively improve the               breastcancer  0.623  0.723   0.81         0.101
+classification accuracy, or even improve the classification           mushroom     0.633                       0.135
+accuracy by more than 10%.                                           svmguide1     0.602  0.738   0.63         0.089
+                                                                     svmguide3     0.551                       0.050
+                                                                                   0.606  0.758   1            0.104
+                                                                         heart                                 0.141
+                                                                        divorce           0.722   0.61
+
+                                                                                          0.652   0.8
+
+TABLE IV. TEST ACCURACY COMPARISON OF LR (NOISE RATE 0%)                                  0.655   0.61
+
+                                                                                          0.747   0.79
+
+Dataset        LR       GBD-LR     Best-purity    Accuracy                                     IV. CONCLUSION
+                                                Improvement
+fourclass     0.760                                                      In this paper, a new denoising method, granular ball
+  votes       0.945     0.771      0.75         0.011                denoising method(GBD), is proposed. The granular ball sphere
+                                                -0.014
+                        0.931      0.82
+
+                                                                                             105
+
+Authorized licensed use limited to: NANJING UNIVERSITY OF SCIENCE AND TECHNOLOGY. Downloaded on June 24,2026 at 00:28:58 UTC from IEEE Xplore. Restrictions apply.
+denoising algorithm is proposed based on the granular ball                      [12] Ghosh, Aritra, Naresh Manwani, and P. S. Sastry. "On the robustness of
+sphere theory. This method first forms a granular ball sphere                         decision tree learning under label noise." Pacific Asia Conference on
+on the original data set, then removes the noise points in the                        Knowledge Discovery and Data Mining. Springer, Cham, 2017.
+granular ball sphere and the sample points outside the granular
+ball sphere, and only retains the data sample points in the                     [13] Bootkrajang, Jakramate, and Ata Kab√°n. "Learning kernel logistic
+granular ball sphere. Experiments show that this method can                           regression in the presence of class label noise." Pattern Recognition
+effectively improve the data quality, reduce the impact of noise                      47.11(2014): 3641-3655.
+on classification accuracy, and has good robustness. Granular
+ball denoising method does not need to be combined with a                       [14] Gao, Wei, Lu Wang, and Zhi-Hua Zhou. "Risk minimization in the
+specific classifier. It is not only effective for some data sets,                     presence of label noise." Proceedings of the AAAI Conference on
+but also a general denoising method. At the same time,                                Artificial Intelligence. Vol. 30. No. 1. 2016.
+granular ball denoising algorithm only depends on the purity of
+subjective parameters. In order to achieve better classification                [15] Xia, Shuyin, et al. "Relative density based support vector machine."
+accuracy, the variation range of granular ball purity is large and                    Neurocomputing 149 (2015): 1424-1432.
+easy to adjust and use. In a word, GBD is robust and easy to
+use. However, the GBD method directly discards the sample                       [16] Lin, Chen "Neural correlation of ‚Äúglobal-first‚Äù object formation:
+points outside the ball, which will lead to the loss of effective                     Anterior temporal lobe." Chinese Bulletin of Life Sciences 5 (2008).
+sample points. In the future, on the basis of preserving the
+characteristics of the algorithm, we can consider optimizing the                [17] Xia, Shuyin, et al. "GBNRS: A novel rough set algorithm for fast
+processing of out of ball sampling points, so as to retain as                         adaptive attribute reduction in classification." IEEE Transactions on
+many data sampling points as possible, so as to achieve higher                        Knowledge and Data Engineering (2020).
+classification accuracy.
+                                                                                [18] Chen, Baiyun, et al. "RSMOTE: A self-adaptive robust SMOTE for
+                         ACKNOWLEDGMENT                                               imbalanced problems with label noise." Information Sciences 553
+                                                                                      (2021):397-428.
+    This work was supported in part by National Key Research
+nd Development Program of China (2019QY(Y)0301), the                            [19] Xia, Shuyin, et al. "Granular ball sampling for noisy label classification
+National Natural Science Foundation of China under Grant                              or imbalanced classification." IEEE Transactions on Neural Networks
+Nos. 62176033 and 61936001, and the Natural Science                                   and Learning Systems (2021).
+Foundation of Chongqing No. cstc2019jcyj-cxttX0002.
+                                                                                [20] Xia, Shuyin, et al. "Granular ball computing classifiers for efficient,
+                              REFERENCES                                              scalable and robust learning." Information Sciences 483 (2019):
+                                                                                      136-152.
+[1] Zhu, Xingquan, and Xindong Wu. "Class noise vs. attribute noise:
+      Aquantitative study." Artificial intelligence review 22.3 (2004):
+      177-210.
+
+[2] Bross, Irwin. "Misclassification in 2 x 2 tables." Biometrics 10.4 (1954):
+      478-486.
+
+[3] Wu, Xindong. Knowledge acquisition from databases. Intellect books,
+      1995.
+
+[4] S√°ez, Jos√© A., et al. "Analyzing the presence of noise in multi-class
+      problems: alleviating its influence with the one decomposition."
+      Knowledge and information systems 38.1 (2014): 179-206.
+
+[5] Brodley, Carla E., and Mark A. Friedl. "Identifying mislabeled training
+      data." Journal of artificial intelligence research 11 (1999): 131-167.
+
+[6] Ipeirotis, Panagiotis G., Foster Provost, and Jing Wang. "Quality
+      management on amazon mechanical turk." Proceedings of the ACM
+      SIGKDD workshop on human computation. 2010.
+
+[7] Ivasic-Kos, Marina, Ivo Ipsic, and Slobodan Ribaric. "A knowledge
+      based multi-layered image annotation system." Expert systems with
+      applications 42.24 (2015): 9539-9553.
+
+[8] Orr, Ken. "Data quality and systems theory." Communications of the
+      ACM 41.2 (1998): 66-71.
+
+[9] Bootkrajang Jakramate. "A generalized label noise model for
+      classification in the presence of annotation errors." Neurocomputing
+      192(2016): 61-71.
+
+[10] Liu, Tongliang, and Dacheng Tao. "Classification with noisy labels by
+      importance reweighting." IEEE Transactions on pattern analysis and
+      machine intelligence 38.3 (2015): 447-461.
+
+[11] Xia, Shuyin, et al. "Complete random forest based class noise filtering
+      learning for improving the generalizability of classifiers." IEEE
+      Transactions on Knowledge and Data Engineering 31.11 (2018):
+      2063-2078.
+
+                                                                                             106
+
+Authorized licensed use limited to: NANJING UNIVERSITY OF SCIENCE AND TECHNOLOGY. Downloaded on June 24,2026 at 00:28:58 UTC from IEEE Xplore. Restrictions apply.
+

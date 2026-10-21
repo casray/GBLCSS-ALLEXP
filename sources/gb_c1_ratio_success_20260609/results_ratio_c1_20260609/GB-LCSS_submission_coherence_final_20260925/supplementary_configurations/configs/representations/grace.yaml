@@ -1,0 +1,52 @@
+common:
+  encoder: two_layer_gcn
+  layers: 2
+  weight_decay: 0.00001
+  label_agnostic: true
+
+datasets:
+  cora:
+    activation: relu
+    hidden_dim: 128
+    projection_dim: 128
+    learning_rate: 0.0005
+    epochs: 200
+    edge_drop_rates: [0.2, 0.4]
+    feature_mask_rates: [0.3, 0.4]
+    temperature: 0.4
+  citeseer:
+    activation: prelu
+    hidden_dim: 256
+    projection_dim: 256
+    learning_rate: 0.001
+    epochs: 200
+    edge_drop_rates: [0.2, 0.0]
+    feature_mask_rates: [0.3, 0.2]
+    temperature: 0.9
+  corafull:
+    activation: relu
+    hidden_dim: 256
+    projection_dim: 256
+    learning_rate: 0.001
+    epochs: 1000
+    edge_drop_rates: [0.1, 0.4]
+    feature_mask_rates: [0.1, 0.0]
+    temperature: 0.7
+  coauthorcs:
+    activation: relu
+    hidden_dim: 256
+    projection_dim: 256
+    learning_rate: 0.001
+    epochs: 1000
+    edge_drop_rates: [0.1, 0.4]
+    feature_mask_rates: [0.1, 0.0]
+    temperature: 0.7
+  amazonphoto:
+    activation: relu
+    hidden_dim: 256
+    projection_dim: 256
+    learning_rate: 0.001
+    epochs: 1500
+    edge_drop_rates: [0.4, 0.1]
+    feature_mask_rates: [0.0, 0.2]
+    temperature: 0.7

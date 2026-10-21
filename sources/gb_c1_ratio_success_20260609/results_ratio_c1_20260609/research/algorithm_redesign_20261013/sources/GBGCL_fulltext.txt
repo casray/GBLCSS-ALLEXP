@@ -1,0 +1,1698 @@
+===== PDF PAGE 1 =====
+JOURNAL OF LATEX CLASS FILES, VOL. 14, NO. 8, AUGUST 2021 1
+Multi-Granularity Graph Contrastive Learning
+Framework via Granular-Ball on Heterogeneous
+Graphs
+Shuyin Xia, Guan Wang, Cheng Tan, Chao Huang, Sen Zhao ∗, Yi Liu, Yi Wang, Wei Wang, Guoyin Wang,
+Xinbo Gao
+Abstract—Graph Contrastive Learning (GCL) is a popular
+self-supervised learning (SSL) technique. However, mainstream
+GCL methods usually favor single fine-grained random aug-
+mentation schemes, which will destroy the structural integrity
+of the graph, and they largely ignore the topology of the
+graph structure, that is, multi-granularity characteristics. Graphs
+are typically composed of homogeneous regions with varying
+granularities, where nodes within a region exhibit strong ho-
+mogeneous properties. However, most of the real graphs are
+heterogeneous, and in the local regions of heterogeneous graphs,
+interconnected nodes may have similar semantic information,
+even if they do not belong to the same class. To this end,
+we propose a new multi-granularity graph contrastive learning
+framework via granular-ball (GBGCL) to explore the potential
+on heterogeneous graphs. Specifically, we develop an adap-
+tive granular-ball augmentation strategy that identifies multi-
+granularity homogeneous regions in the heterogeneous graph,
+and treat nodes in the same granular-ball as positive pairs, while
+nodes in different granular-balls as negative pairs. In addition, we
+integrate the feature information of the nodes in original graph
+and semantic information of similar nodes in the feature space.
+Node representations are obtained through joint optimization
+of losses. Experiments on heterogeneous graphs demonstrate
+the unique advantages of our framework. Code is available at
+https://anonymous.4open.science/r/GBGCL/.
+Index Terms —Graph contrastive learning, Self-supervised
+learning, Heterogeneous graphs, Multi-granularity characteris-
+tics.
+I. I NTRODUCTION
+G
+RAPH Neural Networks (GNNs) [1]–[6] have gained
+significant attention for their effectiveness in processing
+graph-structured data, with applications in areas such as social
+networks [7], [8], finance [9]–[11], and recommendation sys-
+tems [12]–[15]. Using a message-passing mechanism, GNNs
+iteratively aggregate and transform information from neigh-
+boring nodes, enabling them to capture node characteristics
+and graph structures for tasks such as node classification and
+clustering. However, obtaining fully labeled graph datasets is
+often challenging in real-world applications due to complex
+graph structures [16]. This scenario has led to the rise of
+Shuyin Xia, Guan Wang, Cheng Tan, Chao Huang, Sen Zhao, Guoyin Wang
+and Xinbo Gao are with the Chongqing Key Laboratory of Computational
+Intelligence, Chongqing University of Telecommunications and Posts, 400065,
+Chongqing, China. E-mail: xiasy@cqupt.edu.cn, 1640124287@qq.com,
+1529924810@qq.com, 2294349755@qq.com, zhaosen@cqupt.edu.cn (cor-
+responding author), wanggy@cqupt.edu.cn, gaoxb@cqupt.edu.cn. Yi Liu,
+Yi Wang and Wei Wang are with the Chongqing Ant Consumer
+Finance Co,. Ltd, Ant Group. E-mail: larry.liuy@myxiaojin.cn, hao-
+nan.wy@myxiaojin.cn,wangshi.ww@myxiaojin.cn.
+Augmentation via granular-ball.
+Random augmentation schemes 
+which are single fine-grained.
+Fig. 1. Most existing methods are limited to the most fine-grained random
+augmentations and fail to fully utilize the multi-granularity homogeneous
+substructure of the graph. The new method proposed in this paper will
+augment heterogeneous graphs via granular-ball computing.
+SSL methodologies [17]–[20], with particular emphasis on the
+paradigm of GCL [21]–[26].
+Homogeneity is an important inductive bias on real-world
+graphs and is widely considered to be an important factor in
+the success of GNNs [27]. In GNNs, many models are built
+upon the homophily assumption, which suggests that nodes
+with similar features or identical class labels tend to be con-
+nected. However, real-world graphs often exhibit heterophily,
+where connected nodes may have dissimilar features or belong
+to different categories. Therefore, applying messaging mech-
+anisms directly to heterogeneous graphs can pose a problem,
+where aggregation of information from different neighbors
+can significantly reduce the accuracy of node representations
+and ultimately affect the model’s performance on downstream
+tasks. In addition, graphs are composed of homogeneous
+subregions with different levels of granularity, and the multi-
+granularity feature of heterogeneous graphs refers to local
+regions with different topologies, and the interconnected nodes
+in these regions may have similar semantic information even
+if they belong to different classes. GCL usually constructs
+positive and negative pairs by graph augmentation methods,
+and then enhances the node representation by making the
+representation between positive pairs closer and the represen-
+tation between negative pairs farther. As shown in the left
+half of Fig.1, most existing GCL methods use random graph
+augmentation to generate different views, such as edge or
+node augmentation based on the finest granularity. However,
+these graph augmentation methods often require manual trial
+and error, extensive searching, or costly domain knowledge,
+and more importantly, the multi-granularity characteristics of
+heterogeneous graphs have not been fully explored yet.
+This article has been accepted for publication in IEEE Transactions on Pattern Analysis and Machine Intelligence. This is the author's version which has not been fully edited and 
+content may change prior to final publication. Citation information: DOI 10.1109/TPAMI.2026.3720194
+© 2026 IEEE. All rights reserved, including rights for text and data mining and training of artificial intelligence and similar technologies. Personal use is permitted,
+but republication/redistribution requires IEEE permission. See https://www.ieee.org/publications/rights/index.html for more information.
+Authorized licensed use limited to: University of Electronic Science and Tech of China. Downloaded on August 24,2026 at 16:09:16 UTC from IEEE Xplore.  Restrictions apply. 
+
+===== PDF PAGE 2 =====
+JOURNAL OF LATEX CLASS FILES, VOL. 14, NO. 8, AUGUST 2021 2
+In light of this, three challenges come to this paper: (1) The
+first challenge is to refine homogeneous structure.the homoge-
+neous structure consists of nodes with high connectivity and
+strong homogeneity. Therefore, these regions should exhibit
+greater homogeneity than adjacent regions, ensuring that nodes
+in the region are more similar to each other than nodes outside
+the region. In addition, the granularity of homogeneous struc-
+tures may vary between nodes. Inspired by the advantage of
+granular-ball computing [28] in distinguishing homogeneous
+points for scatter data, we further explore its potential for
+graph refinement and propose an adaptive granular-ball graph
+refinement mechanism to capture homogeneous structures
+within the graph. (2) The second challenge is to get augmented
+views to build positive and negative pairs. GCL generally
+maximizes the similarity between two augmentations (positive
+pairs) of one sample and minimizes the similarity between
+other samples (negative pairs). Therefore, it is crucial to build
+accurate positive and negative pairs, but it can be distorted
+by heterogeneous edges, which introduces noise into the node
+representation. For this reason, an effective graph augmenta-
+tion strategy is needed to identify and retain the homogeneous
+structure while reducing the influence of the heterogeneous
+edge. (3) The third challenge is joint optimization. Besides
+constructing contrastive views, it is also necessary to uncover
+the deeper semantic information embedded in the graph data
+and the similarities reflected in the feature space. Therefore,
+joint optimization is required to obtain a higher quality node
+representation.
+To address these challenges, we propose GBGCL, a multi-
+granularity graph contrastive learning framework via granular-
+ball computing on heterogeneous graphs. Specifically, (1) in-
+stead of random augmentation, GBGCL introduces an adaptive
+granular-ball graph refinement mechanism to capture multi-
+granularity homogeneous structures by iteratively decompos-
+ing the graph from coarse to fine. (2) For each node, the GBA
+strategy performs adaptive augmentation by treating nodes
+within the same granular-ball as positive pairs and nodes
+from different granular-balls as negative pairs. (3) GBGCL
+further integrates original node features with latent semantic
+information. The Gaussian Mixture Model (GMM) [29] is used
+to obtain soft clustering assignments, where node similarity
+is estimated according to the probability that neighboring
+nodes form positive samples. By jointly optimizing multiple
+losses, GBGCL learns high-quality node representations for
+downstream tasks. Extensive experiments on heterogeneous
+graph datasets demonstrate that GBGCL outperforms baselines
+and state-of-the-art (SOTA) methods. Our contributions are
+summarized as follows:
+• Inspired by the cognitive law of “global precedence” [30],
+we propose a novel granular-ball augmentation strategy
+(GBA). This strategy can adaptively refine the homo-
+geneous structure in the graph, and construct positive
+and negative pairs through multi-granularity refinement
+results.
+• In order to explore the potential of GCL in heterogeneous
+graphs, we propose a new multi-granularity graph con-
+trastive learning framework via granular-ball on hetero-
+geneous graphs (GBGCL), which integrates the structure
+and semantic of heterogeneous graphs to obtain effective
+node representations.
+• Experiments on several heterogeneous datasets show that
+our proposed approach achieves performance over SOTA
+methods on downstream tasks compared to supervised
+and unsupervised baselines.
+II. R ELATED WORK
+A. Graph contrastive learning
+Unlike traditional graph learning methods that rely on
+labeled data, GCL uses the graph’s inherent structure to
+create contrastive tasks, enabling unsupervised learning of
+node, edge, subgraph, or graph-level representations. This
+approach is highly effective for various graph-related tasks
+without extensive labeled data. Node-level GCL learns node
+representations through contrastive learning, often using neigh-
+bor information. For example, You et al. applied structural
+perturbation for contrastive node representation [21], while
+Sun et al. minimized contrastive loss between positive and
+negative samples [31]. Edge-level GCL focuses on learning
+edge representations to capture node relationships and graph
+structure. Zhao et al. proposed an edge prediction task to
+enhance structural learning [32]. Subgraph-based GCL com-
+pares subgraphs extracted from the graph, optimizing graph
+representations for local structure learning. Hamilton et al.
+used graph convolution to sample neighborhoods, generate
+subgraphs, and perform contrastive learning [33]. Graph-level
+GCL treats the entire graph as a unit for representation
+learning. For example, You et al. incorporated graph-level
+contrastive loss [21].
+Among the various variants of GCL, graph augmentation
+plays a crucial role in graph representation learning. Conse-
+quently, numerous studies have focused on designing effective
+graph augmentation strategies tailored to GCL. The early GCL
+methods were mainly based on random graph augmentation
+methods. For example, GRACE [34] took the lead in using
+random edge deletion and feature mask to achieve graph
+augmentation. Subsequently, GraphCL [21] explores a variety
+of graph augmentation combinations, including randomly node
+dropping, edge perturbation, subgraph sampling, and feature
+masking. To increase the flexibility of GraphCL, JOAO [35]
+also implements automatic selection of the ideal augmentation
+strategy for each dataset.
+GCL has become a powerful tool for improving graph
+representations in unsupervised settings, particularly for het-
+erogeneous graphs where labels are scarce. Traditional embed-
+ding methods, such as random walks or link prediction, often
+struggle to capture the nuanced relationships between diverse
+node types [36]. To address these limitations, innovative
+approaches have incorporated contrastive mechanisms, often
+based on meta-path predictions, to better utilize structures of
+heterogeneous graphs. For instance, HeCo [37] enhances node
+representations through multi-view learning, GREET [38]
+leverages non-homogeneous edges to capture node-specific
+features, HLCL [39] combines high- and low-frequency fil-
+tering with contrastive learning, and GASSER [40] integrates
+This article has been accepted for publication in IEEE Transactions on Pattern Analysis and Machine Intelligence. This is the author's version which has not been fully edited and 
+content may change prior to final publication. Citation information: DOI 10.1109/TPAMI.2026.3720194
+© 2026 IEEE. All rights reserved, including rights for text and data mining and training of artificial intelligence and similar technologies. Personal use is permitted,
+but republication/redistribution requires IEEE permission. See https://www.ieee.org/publications/rights/index.html for more information.
+Authorized licensed use limited to: University of Electronic Science and Tech of China. Downloaded on August 24,2026 at 16:09:16 UTC from IEEE Xplore.  Restrictions apply. 
+
+===== PDF PAGE 3 =====
+JOURNAL OF LATEX CLASS FILES, VOL. 14, NO. 8, AUGUST 2021 3
+TABLE I
+COMPARISON OF PROPERTIES OF GRAPH AUGMENTATION METHODS .
+“MG” MEANS MULTI -GRANULARITY CHARACTERISTICS .
+Property GRACE GraphCL JOAO HeterGCL MEOW Ours
+Topology ✔ ✔ ✔ ✔ ✔ ✔
+Feature ✔ ✔ ✔ ✔ ✔ ✔
+Adaptive ✗ ✗ ✔ ✔ ✗ ✔
+MG ✗ ✗ ✗ ✗ ✗ ✔
+spectral selection and edge perturbation to reduce topological
+loss. MEOW [41] considers meta-path contexts and weighted
+negative samples, while HeterGCL [42] introduces adaptive
+neighbor aggregation with structural and semantic learning.
+HMCF [43] mainly constructs hierarchical contrast views
+through different messaging layers and different coding spaces
+of GCN, emphasizing the consistency of the representation of
+the same node in different propagation levels and geometric
+spaces. TCL4KT [44] constructs three views based on meta
+paths, network patterns, and task information in knowledge
+tracing heterogeneous graphs, emphasizing complementary
+fusion between different relational semantics. In contrast, the
+method proposed in this paper is to adaptively partition multi-
+granularity homogeneous regions based on the graph structure,
+and construct contrastive views that are more in line with the
+graph structure distribution. A detailed comparison of graph
+augmentation strategies is provided in Table I.
+B. Granular-ball computing
+Chen [30] pointed out that human cognition has the law of
+“global precedence” in his research published in Sciences. This
+characteristic distinguishes human cognition from existing
+artificial intelligence algorithms, which typically focus on
+analyzing fine-grained details. The human visual system is
+particularly sensitive to the law, which is from coarse-grained
+to fine-grained, so directly processing the most fine-grained
+raw data is not in line with the human cognitive law. Granular
+computing establishes a “coarse-fine” hierarchy for a set of
+problem spaces through the use of granularity measures.
+Wang [45] was the first to incorporate the “global prece-
+dence” cognitive mechanism into granular computing, in-
+troducing the idea of multi-granularity cognitive computing.
+Expanding on this foundation, Xia and Wang et al. [28]
+proposed a new, efficient, and robust granularity computing
+method, namely granular-ball computing. The core idea of
+this method is to first process the entire data as a coarsest
+granular-ball, and then split it into some fine-grained granular-
+balls. In granular-ball computing, granular-balls of different
+sizes are used to represent the sample space, and subse-
+quent calculations are performed based on these granular-balls.
+Granular-ball computing has been widely extended to various
+artificial intelligence tasks, including rough sets [46]–[48],
+clustering [49]–[52], reinforcement learning [53], and graph
+neural networks [54]–[58].
+III. P RELIMINARIES
+In this section, we first introduce the key notations and
+fundamental concepts related to GCL, thereby providing the
+necessary theoretical foundation for understanding the princi-
+ples and techniques adopted in GCL.
+A. Notations
+Given the node set V with size N and edge set E with
+size E, we denote an undirected graph as G = (V, E). The
+adjacency matrix of G is A ∈ { 0, 1}N ×N , and Aij = 1 if
+there is an edge between nodes vi and vj. The feature matrix
+of G is denoted as X ∈ RN ×d, where d is the dimension of the
+feature. The diagonal degree matrix of G is D ∈ RN ×N , and
+Dii =P
+j Aij. Re-normalized adjacency matrix is defined as
+ˆA = ˜D−1/2(A + I) ˜D−1/2, where ˜D is the degree matrix of
+A + I, I is the identity matrix, and I ∈ RN ×N .
+B. Graph contrastive learning
+As a widely used self-supervised learning approach, GCL
+seeks to pre-train GNN encoders without relying on super-
+vision. Given an unlabeled graph G, the objective of GCL
+is to train a graph encoder fΘ(X, A) that produces node
+embeddings, which can then be used for downstream tasks
+such as node classification and clustering. Taking the widely
+used GRACE framework [34] as an example, two augmen-
+tation functions, t1 and t2 (typically involving random edge
+dropout and feature masking) are first applied to the graph
+G to generate two views: G1 = t1(G) = ( X1, A1) = and
+G2 = t2(G) = ( X2, A2). Then, these augmented graphs
+are encoded using the same GNN encoder, resulting in node
+embeddings U = fΘ(X1, A1) and V = fΘ(X2, A2). Finally,
+the loss function is defined by the InfoNCE loss [59] as
+L = 1
+2N
+NX
+i=1
+(ℓ (ui, vi) + ℓ (vi, ui)) , (1)
+with
+ℓ (ui, vi) =
+log eθ(ui,vi)/τ
+eθ(ui,vi)/τ
+| {z }
+positive pair
++
+X
+j̸=i
+eθ(ui,vj )/τ
+| {z }
+inter-view negative pairs
++
+X
+j̸=i
+eθ(ui,uj )/τ
+| {z }
+intra-view negative pairs
+, (2)
+where θ(·, ·) is the similarity function and τ is the temperature
+parameter.
+In principle, any GNN can serve as the graph encoder. For
+example, we adopt a two-layer graph convolutional network
+(GCN) [60] as the encoder fΘ by default, which can be
+formalized as
+fΘ(X, A) = H(2) = ˆAσ( ˆAXW(1))W(2), (3)
+where ˆA = ˜D−1/2(A + I) ˜D−1/2 with ˜D being the degree
+matrix of A + I and I being the identity matrix, W are
+learnable weight matrices, and σ(·) is the ReLU activation
+function [61].
+By minimizing the contrastive loss L, the embeddings of the
+same node across different views are brought closer together,
+while the embeddings of different nodes are pushed apart,
+thereby achieving node discrimination.
+This article has been accepted for publication in IEEE Transactions on Pattern Analysis and Machine Intelligence. This is the author's version which has not been fully edited and 
+content may change prior to final publication. Citation information: DOI 10.1109/TPAMI.2026.3720194
+© 2026 IEEE. All rights reserved, including rights for text and data mining and training of artificial intelligence and similar technologies. Personal use is permitted,
+but republication/redistribution requires IEEE permission. See https://www.ieee.org/publications/rights/index.html for more information.
+Authorized licensed use limited to: University of Electronic Science and Tech of China. Downloaded on August 24,2026 at 16:09:16 UTC from IEEE Xplore.  Restrictions apply. 
+
+===== PDF PAGE 4 =====
+JOURNAL OF LATEX CLASS FILES, VOL. 14, NO. 8, AUGUST 2021 4
+Adaptive Granular-Ball Graph Refinement
+Joint 
+Optimization
+Input graph
+The graph 
+structural 
+augmentation 
+results
+The process of 
+granular-ball 
+formation
+Split
+Multi-Granularity Positive and Negative Pairs
+GBX
+Negative 
+pairs
+Positive 
+pairs
+X
+H0
+GMM
+Soft clusteringInput graph
+Frature drop
+Perturbation graph
+X1
+H1
+Shared 
+weights
+Node
+Granular-ball
+Next step
+Input
+Feature masking
+A schematic line linking negative pairs
+A schematic line linking positive pairs
+MLP
+Features
+��
+��
+��
+MLP
+MLP
+Loss
+Fig. 2. The framework of GBGCL. 1⃝ In the Adaptive Granular-Ball Graph Refinement module, the GBA strategy adaptively identifies homogeneous regions
+of different granularities in heterogeneous graphs by splitting granular-balls from coarse to fine. 2⃝ In the Multi-Granularity Positive and Negative Pairs
+module, obtain positive and negative pairs, and representation GB x are obtained. 3⃝ In the Joint Optimization module, the original graph is sent to the MLP
+encoder to learn the representation H0, and the perturbation graph is sent to the same MLP encoder to learn the representation H1. At the same time, the
+GMM is used to provide soft cluster assignment for each node in the original graph. Finally, Lc, Lo and Ll losses are jointly optimized to optimize the node
+representation.
+IV. M ETHODOLOGY
+A detailed description of the proposed multi-granularity
+graph contrastive learning framework via granular-ball on
+heterogeneous graphs (GBGCL) is then presented. Fig. 2
+illustrates the overall framework of GBGCL, which primarily
+comprises three modules : (1) The Adaptive Granular-Ball
+Graph Refinement . We propose an adaptive Granular-Ball
+Augmentation (GBA) strategy that adaptively identifies ho-
+mogeneous regions of different granularities in heterogeneous
+graphs by splitting granular-balls from coarse to fine. (2) The
+Multi-Granularity Positive and Negative Pairs . Nodes in the
+same granular-ball are regarded as positive pairs, while nodes
+in different granular-balls are regarded as negative pairs. (3)
+The Joint Optimization . The original graph and perturbation
+graph are sent to the same MLP encoder to learn the represen-
+tation. At the same time, the Gaussian Mixture Model (GMM
+[29]) is used to perform soft clustering assignment for each
+node in the original graph. Finally, the joint optimization of the
+three losses is carried out to optimize the node representation.
+Next, we introduce each module in detail.
+A. Adaptive Granular-Ball Graph Refinement
+GCL generally follows the paradigm of “augmentation-
+encoding-contrast”, so we first augment the original graph to
+build contrastive graph views. On the one hand, most of the
+existing random augmentation methods destroy the structural
+integrity of the original graph. Due to the preference of high-
+frequency connections in heterogeneous graphs, structural per-
+turbations may affect the middle- and high-frequency compo-
+nents of the original graph [42]. On the other hand, most of the
+existing random augmentation methods focus on single fine-
+grained, so they largely ignore the multi-granularity features
+of graphs. In other words, graphs are usually composed of
+homogeneous regions with different granularity, and the nodes
+within these regions exhibit strongly homogeneous properties.
+Therefore, random augmentation is not adopted in this
+paper, in order to preserve the structural information of graphs
+and better exploit the multi-granularity characteristics of het-
+erogeneous graphs. Inspired by the granular-ball computing
+[28], we propose the GBA strategy, which is a graph refine-
+ment method that can adaptively refine homogeneous regions
+in heterogeneous graphs.
+The GBA strategy mainly consists of two stages: 1 The
+process of granular-ball formation . The process starts at a
+coarse-grained level and progressively refines into smaller
+granular-balls, capturing varying levels of homogeneous re-
+gions. This hierarchical approach enables the model to rep-
+resent both high-level relationships and fine-grained depen-
+dencies, enhancing its ability to handle complex structures
+of heterogeneous graphs. Following the cognitive law of
+“global precedence” [30], the original graph is considered to
+be the coarsest granular-ball. Then, initial granular-balls are
+This article has been accepted for publication in IEEE Transactions on Pattern Analysis and Machine Intelligence. This is the author's version which has not been fully edited and 
+content may change prior to final publication. Citation information: DOI 10.1109/TPAMI.2026.3720194
+© 2026 IEEE. All rights reserved, including rights for text and data mining and training of artificial intelligence and similar technologies. Personal use is permitted,
+but republication/redistribution requires IEEE permission. See https://www.ieee.org/publications/rights/index.html for more information.
+Authorized licensed use limited to: University of Electronic Science and Tech of China. Downloaded on August 24,2026 at 16:09:16 UTC from IEEE Xplore.  Restrictions apply. 
+
+===== PDF PAGE 5 =====
+JOURNAL OF LATEX CLASS FILES, VOL. 14, NO. 8, AUGUST 2021 5
+generated. Mathematically,
+GB init = {GB 1, GB 2, ..., GB m}(m =
+j√
+N
+k
+). (4)
+The value of
+j√
+N
+k
+is an empirical choice, referenced from
+previous work [54], [55], [57], [62], [63], which has been
+shown to balance the trade-off between size and quantity of
+granular-balls.
+The procedure for generating GB init is as follows. Firstly,
+we select the node with the highest degree vcenter =
+arg max
+v∈V
+deg(v) in the original graph as the first initial central
+node. Subsequently, the breadth-first search (BFS) starts with
+the vcenter and traverses one by one until the number of nodes
+in the graph inside GB 1 (represented by |N1|) reaches
+j√
+N
+k
+:
+|N1| =
+j√
+N
+k
+. (5)
+Then delete these nodes from V:
+V ′ = V \ N 1. (6)
+Continue to find the second central node with the highest
+degree v′
+center = arg max
+v∈V ′
+deg(v) in V ′. The number of nodes
+in the graph inside GB 2 (represented by |N2|) is determined
+in the same way as |N1|, and so on throughout the graph to
+determine GB init.
+Then, the qualities of granular-balls are assessed. The qual-
+ity of the granular-ball is defined as follows.
+Definition 1. The quality of GB is measured by the homo-
+geneity of its internal graph, which is the fraction of edges
+with connected nodes of the same class, i.e.:
+quality(GB) = 1
+|EGB |
+X
+(u,v)∈EGB
+1 (Yu = Yv) , (7)
+where EGB denotes the set of edges within GB, |EGB | is the
+number of such edges, Yi denotes the label of node i, and
+1(·) is the indicator function. The value of quality(GB) lies
+in [0, 1]. A larger value indicates stronger homogeneity within
+GB, while a smaller value implies more pronounced hetero-
+geneity. Since real-world graphs tend to show heterogeneity,
+using homogeneity as a measure of quality can help models
+better understand and deal with the heterogeneity of graphs
+because it provides a way to measure similarity between nodes.
+During fine-grained granular-ball splitting, the two nodes
+with the highest degrees within each granular-ball are selected
+as the center nodes. Each center node then performs BFS
+to traverse the remaining nodes. Each non-center node is
+assigned to the center node that first reaches it during the
+BFS process. The heuristic adaptive condition for splitting the
+parent granular-ball GB k is defined as follows:
+quality(GB k) < max(quality(GB kA ), quality(GB kB )),
+(8)
+where quality(GB k) denotes the quality of the parent
+granular-ball GB k, and quality(GB kA ) and quality(GB kB )
+denote the qualities of its child granular-balls GB kA and GB kB,
+respectively. When the quality of GB k is found to be lower
+than the maximum quality of its two child granular-balls, it in-
+dicates that further refinement is needed to improve its quality.
+This iterative process ensures that the structural representation
+of the graph becomes more precise and meaningful at each
+level of granularity.
+2 The graph structural augmentation results . The original
+graph G is refined from coarse to fine to obtain M granular-
+balls denoted as
+GB results = {GB 1, GB 2, ..., GB M }. (9)
+Positive pairs are composed of nodes in the same granular-
+ball, and negative pairs are composed of nodes in different
+granular-balls. Mathematically,
+Ppos = {(u, v) | u, v ∈ GB i},
+Pneg = {(u, v) | u ∈ GB i, v ∈ GB j, i ̸= j}. (10)
+The graph structural augmentation produces positive and
+negative node pairs for contrastive learning.
+B. Multi-Granularity Positive and Negative Pairs
+We use the GBA strategy to adaptively refine the original
+graph and treat nodes within same granular-ball as posi-
+tive pairs and nodes within different granular-balls as neg-
+ative pairs. For each granular-ball GB i(i = 1 , 2, ..., M) in
+GB results, the feature for GB i is:
+µ(i) = 1
+|P (i)
+pos|
+X
+v∈P (i)
+pos
+Xv, (11)
+where |P (i)
+pos| denotes the number of positive pairs of GB i, Xv
+represents the feature vector corresponding to node v in the
+set of positive pairs P (i)
+pos. To further process the information
+captured from granular-balls, we combine the feature for
+GB i(i = 1 , 2, ..., M) into a new matrix, which is also the
+node representation by the GBA strategy:
+GBx =
+h
+µ(1), µ(2), ..., µ(M )
+iT
+, (12)
+which is a compact and meaningful representation of
+GB results, facilitating more efficient learning. This approach
+helps to reduce the complexity of the graph while preserving
+essential information.
+C. Joint Optimization
+The homophily assumption in GNNs can hinder the model’s
+ability to capture diverse relationships, especially in heteroge-
+neous graphs. Given these limitations, we opt to use Multi-
+Layer Perceptrons (MLPs) instead of GNNs to encode the
+original graph:
+H0 = MLP(X). (13)
+The contrastive loss Lc for GB i is denoted as:
+L(i)
+c = − 1
+N
+NX
+j=1
+log
+exp
+
+hj · µ(i)
+j /τ
+
+P
+vk∈V 1[k̸=j] exp
+
+hj · µ(i)
+k /τ
+ , (14)
+where hj denotes the j-th row of H0, which is also the
+representation of the j-th node in the original graph. 1[k̸=j]
+denotes 1 when k is not equal to j and 0 when equal. τ is
+the temperature parameter, and exp (·) denotes the exponential
+This article has been accepted for publication in IEEE Transactions on Pattern Analysis and Machine Intelligence. This is the author's version which has not been fully edited and 
+content may change prior to final publication. Citation information: DOI 10.1109/TPAMI.2026.3720194
+© 2026 IEEE. All rights reserved, including rights for text and data mining and training of artificial intelligence and similar technologies. Personal use is permitted,
+but republication/redistribution requires IEEE permission. See https://www.ieee.org/publications/rights/index.html for more information.
+Authorized licensed use limited to: University of Electronic Science and Tech of China. Downloaded on August 24,2026 at 16:09:16 UTC from IEEE Xplore.  Restrictions apply. 
+
+===== PDF PAGE 6 =====
+JOURNAL OF LATEX CLASS FILES, VOL. 14, NO. 8, AUGUST 2021 6
+function. Then, the overall contrastive loss of GB results can
+be defined as:
+Lc =
+MX
+i=1
+L(i)
+c . (15)
+In graph learning, effectively integrating structural informa-
+tion and node features is essential for understanding graph
+data. Wang et al. [64] showed that using only original node
+features in heterogeneous graphs can outperform more com-
+plex GNNs. Based on this finding, Original Feature Analysis
+(OFA) [42], inspired by canonical correlation analysis [65],
+maximizes the mutual information between node embeddings
+and original features. By adopting OFA, we aim to uncover
+deeper semantic information and enhance representation learn-
+ing. Specifically, we first construct a perturbed graph from
+the original graph, and then feed the perturbed features into
+the same MLP used in the topology channel to obtain node
+representations:
+X1 = FeatDrop(X, p),
+H1 = MLP(X1), (16)
+where X1 is the feature matrix of the perturbed graph,
+FeatDrop refers to the feature dropout operation, and p is the
+probability of dropout. To minimize disruption to structures of
+heterogeneous graphs, we mask only a subset of features. The
+embeddings for the perturbed graph and the original graph are
+denoted as H1 and H0, respectively. Then we can construct
+the original feature loss function as follows:
+Lo = ∥H0 − H1∥2
+F| {z }
+invariance
++ λ
+H⊤
+0 H0 − I
+2
+F +
+H⊤
+1 H1 − I
+2
+F
+
+| {z }
+decorrelation
+, (17)
+where λ is a non-negative hyperparameter for tuning the
+invariant and decorrelation terms. By optimizing the Lo loss,
+the mutual information between node embeddings and original
+features is maximized.
+In graph data analysis, exploring the internal relationships
+between nodes is essential. Although nodes may belong to
+different classes, they may exhibit similarities in feature space.
+To capture these similarities, we implement soft clustering
+based on the probabilistic method [66], using GMM [29]
+to estimate adjacent nodes as true positives. This method
+addresses the non-differentiability of k-means clustering and
+leverages latent node similarities to reveal underlying graph
+structure. Specifically, we define k centroids {c1, c2, ..., ck}
+based on mean node embeddings, calculating the posterior
+probability of each node belonging to each centroid for more
+refined clustering:
+p (hi | cj) = 1√
+2πσ 2 exp
+
+− ∥hi − cj∥2
+2σ2
+
+, (18)
+where σ2 is the variance of the Gaussian distribution. In soft
+clustering, σ2 plays a crucial role in calculating the posterior
+probability of the assigned matrix. In the joint optimization
+module of this paper, the Gaussian variance σ2 is set to a
+fixed hyperparameter of 0.001 to control the smoothness of
+converting the distance from nodes to cluster centers into
+soft assignment probabilities. It not only avoids introducing
+additional learnable parameters that may cause instability in
+clustering training, but also characterizes the local similarity
+relationship between nodes and clustering centroids with fixed
+variance. By considering an equal prior p(c1) = p(c2) =
+· · · = p(ck), the probability of hi belonging to cj can be
+calculated by the Bayes rule as:
+p(cj | hi) = p(cj)p (hi | cj)
+Pk
+r=1 p(cr)p (hi | cr)
+=
+exp
+
+− (hi−cj )2
+2σ2
+
+Pk
+r=1 exp
+
+− (hi−cr)2
+2σ2
+ .
+(19)
+In this way, we can get a cluster assignment matrix R ∈
+RN ×k where Rij = p(cj | hi) indicates the soft clustering
+value between node vi and cluster cj. Then we can construct
+the latent feature loss function as follows:
+Ll = 1
+kE
+kX
+r=1
+X
+(vi,vj )∈E
+M SE (p(cr | hi), p(cr | hj)) , (20)
+where M SE(·) is the mean square error.
+We optimize the above three partial losses simultaneously
+to ensure that the model efficiently captures homogeneous
+regions and feature-based dependencies in heterogeneous
+graphs. By combining these three types of losses, we aim to
+strike a balance between preserving the structural integrity of
+the graph and learning meaningful node representations based
+on its semantic properties. The total loss function integrates
+these two components, ultimately providing more robust and
+accurate node embedding for downstream tasks. The total loss
+is defined as follows:
+L = αLc + (1 − α)(Lo + Ll), (21)
+where α is weight factor. The overall algorithm design of
+GBGCL is shown in Algorithm 1.
+D. Time and space complexity analysis
+1) Time complexity analysis: For the original graph, con-
+structing GB init selects the node with the maximum degree,
+which takes O(N ). Then, BFS is performed from this center
+node until the granular-ball contains
+√
+N nodes. Each BFS
+costs O(N + E), and this procedure repeats
+√
+N times
+to generate all initial granular-balls. Node removal during
+granular-ball construction is merged into BFS and incurs no
+extra asymptotic cost. Thus, the time complexity of GB init is
+O(
+√
+N (N + E)). Next, the quality of each initial granular-
+ball is evaluated, followed by adaptive binary splitting. As
+splitting only involves local BFS within existing granular-balls
+rather than full graph, its cost is negligible. The overall time
+complexity of the GBA strategy remains O(
+√
+N (N + E)).
+Subsequently, multi-granularity positive–negative pairs are
+built and granular-ball features are computed, yielding O(N d).
+For the training module, MLP encoding takes O(N d), GMM
+soft clustering takes O(N kd), and the three loss terms cost
+This article has been accepted for publication in IEEE Transactions on Pattern Analysis and Machine Intelligence. This is the author's version which has not been fully edited and 
+content may change prior to final publication. Citation information: DOI 10.1109/TPAMI.2026.3720194
+© 2026 IEEE. All rights reserved, including rights for text and data mining and training of artificial intelligence and similar technologies. Personal use is permitted,
+but republication/redistribution requires IEEE permission. See https://www.ieee.org/publications/rights/index.html for more information.
+Authorized licensed use limited to: University of Electronic Science and Tech of China. Downloaded on August 24,2026 at 16:09:16 UTC from IEEE Xplore.  Restrictions apply. 
+
+===== PDF PAGE 7 =====
+JOURNAL OF LATEX CLASS FILES, VOL. 14, NO. 8, AUGUST 2021 7
+Algorithm 1 GBGCL
+Input: Heterogeneous graph G and hyperparameters
+Output: Node embedding
+1: Initialize MLP encoder
+2: Generate augmented views of the G via the GBA strategy
+3: Obtain the node embedding GBx of augmented views via
+GBx =
+
+µ(1), µ(2), · · · , µ(M )T
+4: while not converge do
+5: Obtain node embedding of G using the MLP encoder
+via Eq. (13)
+6: Generate the perturbed graph of G, and obtain the node
+embedding H1 of the perturbed graph using the same
+MLP encoder via Eq. (16)
+7: Perform GMM clustering on H0 and obtain k centroids
+{c1, c2, · · · , ck}
+8: Obtain the cluster assignment matrix R via Eq. (19)
+9: Compute the Lc loss via Eq. (15)
+10: Compute the Lo loss via Eq. (17)
+11: Compute the Ll loss via Eq. (20)
+12: Compute the total L loss via Eq. (21)
+13: Update the parameters of MLP via L
+14: end while
+15: Return Node embedding
+O(N d), O(N d), and O(Ek), respectively. Therefore, the per-
+epoch training complexity is O(N d+ N kd + Ek). Under the
+sparse graph assumption E = O(N ) and considering that k
+is usually a small constant, the per-epoch training complexity
+can be simplified to O(N d). Therefore, the time complexity
+of GBGCL is O(
+√
+N (N + E) + N d).
+2) Big-O complexity analysis of the GBA strategy: As
+mentioned above, the time complexity of the GBA strategy
+is O(
+√
+N (N + E)). For large-scale sparse heterogeneous
+graphs with E = O(N ), the complexity can be simplified to
+O(N
+√
+N ). While this strategy remains tractable for medium-
+scale graphs, the computational cost may become relatively
+high for extremely large-scale graphs (e.g., with millions of
+nodes), indicating that further optimization or approximation
+strategies could be beneficial for improving scalability.
+3) Space complexity analysis: The spatial complexity of
+storing the original graph is O(N + N d + E). The granular-
+ball construction requires O(N ), the model encoder and node
+embeddings require O(N d), and the GMM clustering results
+require O(N k). Thus, the overall space complexity of GBGCL
+is O(N (d+k)) under the sparse graph assumption E = O(N ).
+V. E XPERIMENTS
+In this section, we conducted a series of experiments aimed
+at evaluating the performance of GBGCL and answered fol-
+lowing research questions (RQs).
+• RQ1: Does GBGCL outperform existing SOTA methods
+in terms of node classification and clustering perfor-
+mance?
+• RQ2: What is the impact of the critical components of
+GBGCL on its overall performance?
+• RQ3: How do the hyperparameters of GBGCL affect its
+performance?
+TABLE II
+SUMMARY OF INFORMATION FROM THE BENCHMARK DATASETS .
+Dataset Cornell Texas Wisconsin Chameleon Film Squirrel
+Nodes 183 183 251 2277 7600 5201
+Edges 277 279 499 36101 33544 217073
+Features 1703 1703 1703 2325 931 2089
+Classes 5 5 5 5 5 5
+• RQ4: How do different quality splitting conditions affect
+the performance of GBGCL?
+• RQ5: How does GBGCL perform in specific case stud-
+ies?
+A. Experimental settings
+Datasets. We evaluated the performance of GBGCL and
+some comparison baselines on several representative hetero-
+geneous datasets. Details of datasets are shown in Table II.
+Comparison baselines. To demonstrate the validity of
+our proposed framework, we compared GBGCL with several
+representative baseline methods and SOTA methods for node
+classification and node clustering:
+• The traditional method without using graph structure.
+Logistic regression (LR): A statistical method for binary
+classification that models the probabilities of binary out-
+comes based on linear combinations of input features.
+• Semi-supervised baselines regardless of heterogeneity.
+GCN [60]: A Graph Convolutional Network model that
+improves node classification by aggregating local neigh-
+borhood information using graph structure. GAT [67]: A
+Graph Attention Network that uses attention mechanisms
+to assign adaptive weights to neighbors, enabling flexible
+and topology-free aggregation. APPNP [68]: Combines
+graph neural networks with personalized PageRank to
+effectively capture local structures and node relationships
+in the graph.
+• Semi-supervised baselines for heterogeneity. GPRGNN
+[69]: Adjusts PageRank propagation adaptively to en-
+hance flexibility and effectiveness in representing diverse
+graph structures. Mix-Hop [70]: Builds a higher-order
+graph convolution by mixing sparse neighborhoods across
+multiple levels to capture richer graph structure. H2GCN
+[71]: Leverages higher-order neighborhood information
+to model complex node relationships, improving perfor-
+mance on heterogeneous and complex graphs.
+• Self-supervised baselines. GRACE [34]: A contrastive
+learning framework that leverages local and global struc-
+ture to enhance node representation and boost graph task
+performance. MVGRL [72]: Combines multiple graph
+views for contrastive learning, improving robustness and
+representation learning across diverse data. BGRL [73]:
+Uses bootstrapping to enhance graph structure represen-
+tation and improve generalization through unsupervised
+learning. SELENE [38]: Distinguishes edge heterogeneity
+to improve graph convolutional networks’ performance
+on complex heterogeneous graphs. HeterGCL [42]: This
+method improves node representation and graph task
+This article has been accepted for publication in IEEE Transactions on Pattern Analysis and Machine Intelligence. This is the author's version which has not been fully edited and 
+content may change prior to final publication. Citation information: DOI 10.1109/TPAMI.2026.3720194
+© 2026 IEEE. All rights reserved, including rights for text and data mining and training of artificial intelligence and similar technologies. Personal use is permitted,
+but republication/redistribution requires IEEE permission. See https://www.ieee.org/publications/rights/index.html for more information.
+Authorized licensed use limited to: University of Electronic Science and Tech of China. Downloaded on August 24,2026 at 16:09:16 UTC from IEEE Xplore.  Restrictions apply. 
+
+===== PDF PAGE 8 =====
+JOURNAL OF LATEX CLASS FILES, VOL. 14, NO. 8, AUGUST 2021 8
+performance by employing a contrastive learning strat-
+egy tailored to heterogeneous graph structures, address-
+ing the limitations of traditional graph neural networks.
+LOHA [74]: This method does not require additional
+data augmentation and can directly contrast the natural
+characteristics of low-pass and high pass views. EPAGCL
+[75]: This is an enhanced GCL model that generates
+views by adding or removing edges based on weights
+derived from error passing rate (EPR). SDMG [76]: It
+learns recognition oriented representations without labels,
+using two dedicated low-frequency encoders, one for
+node features and the other for topology, to extract global
+low-frequency signals.
+• Graph embedding methods. Attribute-based autoEn-
+coder (AE) [77]: The method uses deep autoencoders
+to reduce the data dimension by learning compact and
+meaningful representations in hierarchical neural network
+structures. Node2Vec [78]: A random-walk-based em-
+bedding method that uses Skip-gram to learn flexible
+node representations by capturing diverse graph struc-
+tures. Struc2Vec [79]: Learns node representations by
+recursively aggregating structural information, capturing
+relative structural relationships in complex networks.
+LINE [80]: Preserves first- and second-order adjacency
+relationships to effectively embed large-scale graph data
+while capturing network structure.
+• Graph embedding method based on autoencoder.
+GAE [81]: An unsupervised method using a GCN-based
+autoencoder to learn node representations by reconstruct-
+ing the graph’s adjacency matrix. VGAE [81]: A varia-
+tional extension of GAE that incorporates uncertainty and
+improves robustness through a variational autoencoder
+framework.
+• Unsupervised learning methods. SDCN [82]: Combines
+GCN and clustering objectives to extract and optimize
+node representations for efficient graph clustering. DGI
+[83]: A self-supervised method that maximizes mutual in-
+formation between node representations and local context
+to enhance graph embeddings.
+Performance metrics. For node classification, accuracy
+(ACC ) is adopted as the evaluation metric. For node clus-
+tering, we employ accuracy ( ACC ), normalized mutual infor-
+mation (N M I), and adjusted rand index (ARI). Higher values
+of these metrics indicate superior performance.
+Implementation. The experiments are conducted on an
+Intel(R) Xeon(R) Gold 5218 CPU @ 2.30GHz with four Tesla
+V100 graphics cards. The key software environment includes
+Python 3.10.9, PyTorch 1.13, CUDA 11.6, and NetworkX 2.8.
+We use grid search to adjust the hyperparameters and find
+the best combination. We limit the learning rate to the range
+{1 × 10−3, 5 × 10−3, 1 × 10−2} and search for α in steps of
+0.05, from 0.80 to 0.95. The dropout rate is selected from
+{0.3, 0.4, 0.5}, while both feat drop and edge drop are chosen
+from {0.1, 0.2, 0.3}. Each dataset is split into 10% training
+sets, 10% validation sets, and 80% test sets. Each model is
+run 10 times, and the average accuracy is reported.
+B. Performance of node classification and clustering (RQ1)
+Node classification performance. Table III shows the
+experimental results of node classification, and we can sum-
+marize the following points:
+• GBGCL performs well on most datasets, highlighting its
+effectiveness and superiority in node classification tasks.
+This result demonstrates that GBGCL is highly capable
+of handling the complexities of different datasets, making
+it a robust and reliable method for various heterogeneous
+graph datasets. In addition, regarding the Chameleon and
+Squirrel datasets, GBGCL and other baseline models did
+not achieve optimal performance because the reference
+[84] has theoretically demonstrated and experimentally
+validated that GCN can achieve strong performance on
+these two heterogeneous graph datasets.
+• LR shows relatively low performance compared with
+more advanced models, mainly because it cannot effec-
+tively exploit the structural information of the graph.
+Unlike GBGCL, which jointly considers topological and
+feature information, LR relies primarily on node features
+and thus fails to capture the underlying graph structure.
+Moreover, GBGCL consistently outperforms other base-
+lines that use X, A, and Y, demonstrating its stronger
+ability to integrate heterogeneous sources of information
+for node classification.
+• Compared with other baselines, GBGCL more effec-
+tively captures both structural and semantic information
+in heterogeneous graphs, enabling it to model complex
+node relationships and dependencies. By adaptively and
+iteratively decomposing graphs into more homogeneous
+regions, GBGCL refines homogeneous structures within
+heterogeneous graphs.
+We attribute this advantage to three factors: (1) GBGCL
+adopts a multi-granularity granular-ball augmentation strategy
+to adaptively identify regions with different topological scales,
+thereby better capturing heterogeneity at multiple granularities.
+(2) GBGCL effectively exploits the semantic information
+embedded in original node features. (3) By using an MLP en-
+coder to process structural and feature information separately,
+GBGCL avoids the limited expressiveness caused by mixing
+structure and feature information in GNN encoders under
+heterogeneous settings. Together, these components improve
+the adaptability and performance of GBGCL on heterogeneous
+graph datasets.
+To verify the effectiveness of the MLP encoder compared to
+the GNN encoder in heterogeneous graph scenarios, Table IV
+presents node classification performance comparison between
+the GBGCL configured with MLP encoder and the model
+using heterogeneity-specific GNN encoder, while keeping
+other parameter settings consistent. The results show that the
+MLP encoder achieves superior performance, indicating its
+good applicability and effectiveness in heterogeneous graph
+representation learning.
+Node clustering performance. As shown in Table V,
+GBGCL performs better than comparison models on the
+vast majority of datasets, reaching highest values in clus-
+tering evaluation metrics, demonstrating excellent node clus-
+This article has been accepted for publication in IEEE Transactions on Pattern Analysis and Machine Intelligence. This is the author's version which has not been fully edited and 
+content may change prior to final publication. Citation information: DOI 10.1109/TPAMI.2026.3720194
+© 2026 IEEE. All rights reserved, including rights for text and data mining and training of artificial intelligence and similar technologies. Personal use is permitted,
+but republication/redistribution requires IEEE permission. See https://www.ieee.org/publications/rights/index.html for more information.
+Authorized licensed use limited to: University of Electronic Science and Tech of China. Downloaded on August 24,2026 at 16:09:16 UTC from IEEE Xplore.  Restrictions apply. 
+
+===== PDF PAGE 9 =====
+JOURNAL OF LATEX CLASS FILES, VOL. 14, NO. 8, AUGUST 2021 9
+TABLE III
+COMPARISON OF NODE CLASSIFICATION PERFORMANCE , WITH THE BEST RESULTS DISPLAYED IN BOLD AND THE SECOND BEST RESULTS HIGHLIGHTED
+IN UNDERLINE . X, A, Y DENOTE FEATURE MATRIX , ADJACENCY MATRIX , AND NODE LABELS , RESPECTIVELY . “OOM” MEANS OUT OF MEMORY .
+Methods Available
+data
+Cornell Texas Wisconsin Chameleon Squirrel Film
+LR X,Y 56.9 ± 6.0 58.4 ± 5.4 55.9 ± 8.0 32.9 ± 1.1 27.6 ± 1.0 35.1 ± 0.8
+GCN X,A,Y 54.8 ± 2.9 58.4 ± 4.2 51.8 ± 6.0 67.0 ± 2.2 44.1 ± 2.0 28.2 ± 0.4
+GAT X,A,Y 54.8 ± 3.1 56.7 ± 3.1 51.0 ± 4.3 42.9 ± 2.4 30.0 ± 0.4 26.9 ± 0.8
+APPNP X,A,Y 62.0 ± 4.8 60.3 ± 5.7 63.1 ± 8.4 48.0 ± 1.2 33.8 ± 0.4 28.7 ± 0.3
+GPRGNN X,A,Y 63.4 ± 8.4 66.4 ± 7.8 65.2 ± 8.4 59.2 ± 2.5 38.4 ± 0.8 33.3 ± 0.7
+MixHop X,A,Y 52.8 ± 6.3 55.5 ± 3.3 51.5 ± 5.4 60.5 ± 2.5 43.8 ± 1.5 29.0 ± 1.0
+H2GCN X,A,Y 62.4 ± 6.8 67.6 ± 8.3 63.5 ± 7.2 51.6 ± 1.5 28.9 ± 1.8 33.8 ± 0.4
+GRACE X,A 56.2 ± 2.4 61.7 ± 3.9 50.6 ± 5.9 49.3 ± 2.0 33.4 ± 0.7 28.1 ± 0.8
+MVGRL X,A 56.4 ± 2.1 61.1 ± 3.2 50.4 ± 6.1 38.3 ± 1.4 31.4 ± 6.9 31.4 ± 0.8
+BGRL X,A 56.3 ± 1.9 62.4 ± 1.7 55.1 ± 4.5 47.5 ± 2.7 32.6 ± 0.8 29.8 ± 0.3
+SELENE X,A 56.1 ± 2.5 64.0 ± 1.7 55.5 ± 4.8 38.9 ± 1.4 OOM 33.2 ± 0.4
+HeterGCL X,A 74.9 ± 3.8 73.2 ± 2.5 73.4 ± 4.9 46.7 ± 2.2 32.8 ± 0.6 37.2 ± 0.4
+LOHA X,A 54.1 ± 7.1 69.7 ± 6.3 77.1 ± 6.0 45.5 ± 1.8 34.5 ± 1.7 33.7 ± 0.7
+EPAGCL X,A 53.0 ± 5.8 68.9 ± 6.0 63.7 ± 4.0 35.4 ± 1.3 40.3 ± 1.6 30.0 ± 0.9
+SDMG X,A 45.6 ± 0.7 53.6 ± 2.7 52.7 ± 1.2 36.8 ± 0.8 41.6 ± 6.7 26.7 ± 0.1
+GBGCL X,A,Y 79.2 ± 2.8 78.2 ± 2.4 78.1 ± 2.5 45.3 ± 1.6 33.9 ± 0.7 36.4 ± 0.4
+-w/o GBA – 71.8 ± 2.9 71.0 ± 3.3 74.2 ± 3.1 46.6 ± 1.0 33.7 ± 0.0 36.3 ± 0.6
+-w/o Lo – 66.0 ± 5.1 67.5 ± 2.1 70.0 ± 4.5 44.3 ± 2.0 32.8 ± 0.4 35.2 ± 0.4
+-w/o Ll – 76.3 ± 3.5 76.5 ± 3.3 77.5 ± 2.5 44.9 ± 1.5 33.6 ± 0.5 36.2 ± 0.4
+1 2 3 4 5 6
+number of layers
+0
+10
+20
+30
+40
+50
+60
+70
+80ACC(%)
+(a) The effect of the number of layers
+on node classification
+128 256 512 1024 2048 4096
+hidden dimension
+0
+10
+20
+30
+40
+50
+60
+70
+80ACC(%)
+(b) The effect of the hidden dimen-
+sion on node classification
+1 2 3 4 5 6
+number of layers
+0
+10
+20
+30
+40
+50NMI(%)
+(c) The effect of the number of layers
+on node clustering
+128 256 512 1024 2048 4096
+hidden dimension
+0
+10
+20
+30
+40
+50NMI(%)
+(d) The effect of the hidden dimen-
+sion on node clustering
+Fig. 3. Hyperparameter sensitivity analysis on the Cornell dataset.
+TABLE IV
+THE NODE CLASSIFICATION PERFORMANCE COMPARISON BETWEEN THE
+GBGCL CONFIGURED WITH MLP ENCODER AND THE MODEL USING
+GNN ENCODER .
+Methods Cornell Texas Wisconsin Film
+GBGCL (MLP) 79.2 ± 2.8 78.2 ± 2.4 78.1 ± 2.5 36.4 ± 0.4
+GBGCL (GNN) 56.0 ± 2.0 65.0 ± 3.1 59.2 ± 4.2 35.8 ± 0.3
+tering performance. Additionally, the feature-based method
+AE outperforms structure-based network embedding methods,
+highlighting the importance of learning node features. The
+superior performance of GBGCL can be attributed to its joint
+consideration of structural and semantic information, which
+further demonstrates its effectiveness and advantages.
+C. Ablation studies (RQ2)
+We set up ablation studies to explore the contribution of dif-
+ferent components to GBGCL, including GBGCL-w/o GBA,
+GBGCL-w/o Lo loss, and GBGCL-w/o Ll loss. The results
+are shown in Table III. We have the following observations:
+• Although removing the GBA strategy module slightly
+improves performance on Chameleon, this may be due to
+its stronger heterogeneity and more complex local mixing
+structure, where granular-ball splitting could introduce
+additional structural bias and weaken original node-level
+information. Overall, however, the GBA strategy remains
+crucial for improving GBGCL on most datasets, espe-
+cially Texas, where removing it leads to a substantial per-
+formance drop. Unlike traditional recursive aggregation,
+the GBA strategy adaptively identifies multi-granularity
+homogeneous regions in heterogeneous graphs and treats
+nodes within the same granular-ball as positive pairs,
+enabling more accurate node representation learning.
+• In addition, the Lo loss is important because node
+features provide critical information for distinguishing
+nodes, particularly on small-scale datasets. For larger or
+more complex graphs, structural connectivity may play
+a more dominant role. Although the performance of
+GBGCL decreased after removing the Ll loss is relatively
+limited, and this trend remains consistent across different
+datasets, indicating that Ll loss still has a stable positive
+This article has been accepted for publication in IEEE Transactions on Pattern Analysis and Machine Intelligence. This is the author's version which has not been fully edited and 
+content may change prior to final publication. Citation information: DOI 10.1109/TPAMI.2026.3720194
+© 2026 IEEE. All rights reserved, including rights for text and data mining and training of artificial intelligence and similar technologies. Personal use is permitted,
+but republication/redistribution requires IEEE permission. See https://www.ieee.org/publications/rights/index.html for more information.
+Authorized licensed use limited to: University of Electronic Science and Tech of China. Downloaded on August 24,2026 at 16:09:16 UTC from IEEE Xplore.  Restrictions apply. 
+
+===== PDF PAGE 10 =====
+JOURNAL OF LATEX CLASS FILES, VOL. 14, NO. 8, AUGUST 2021 10
+TABLE V
+COMPARISON OF NODE CLUSTERING PERFORMANCE , WITH THE BEST RESULTS DISPLAYED IN BOLD . N OTE THAT “–” MEANS THE RESULTS ARE NOT
+AVAILABLE IN THE ORIGINAL PAPER .
+Methods Cornell Texas Film
+ACC N M I ARI ACC N M I ARI ACC N M I ARI
+AE 52.2 ± 0.0 17.1 ± 0.0 17.4 ± 0.0 50.5 ± 0.0 16.6 ± 0.0 14.6 ± 0.0 24.2 ± 0.1 1.0 ± 0.0 0.5 ± 0.0
+Node2vec – – – 48.8 ± 1.9 2.6 ± 0.7 -1.6 ± 0.6 25.0 ± 0.0 0.1 ± 0.0 0.1 ± 0.0
+Struc2vec 32.7 ± 0.0 1.5 ± 0.0 -2.2 ± 0.0 49.7 ± 0.0 18.6 ± 0.0 21.0 ± 0.0 22.4 ± 0.3 0.1 ± 0.0 -0.1 ± 0.0
+LINE 34.1 ± 0.8 2.9 ± 0.2 -1.5 ± 0.3 49.4 ± 2.1 16.9 ± 1.6 18.1 ± 1.1 22.7 ± 0.1 0.1 ± 0.0 0.1 ± 0.0
+GAE 55.7 ± 0.0 3.9 ± 0.0 2.2 ± 0.0 55.7 ± 0.0 7.9 ± 0.0 7.5 ± 0.0 23.5 ± 0.0 0.2 ± 0.0 -0.0 ± 0.0
+VGAE 55.7 ± 0.0 3.6 ± 0.0 5.9 ± 0.0 56.3 ± 0.0 7.2 ± 0.0 10.5 ± 0.0 23.3 ± 0.2 0.2 ± 0.0 0.3 ± 0.1
+SDCN 36.9 ± 2.0 6.6 ± 0.9 3.4 ± 1.3 44.0 ± 0.6 14.2 ± 1.9 10.7 ± 3.0 23.7 ± 0.3 0.1 ± 0.1 0.0 ± 0.1
+DGI 44.1 ± 2.7 5.8 ± 0.8 4.9 ± 0.2 55.7 ± 0.7 8.7 ± 3.6 8.3 ± 6.8 24.3 ± 0.1 1.4 ± 0.0 0.1 ± 0.0
+GRACE 43.6 ± 4.6 8.2 ± 1.2 6.4 ± 2.0 57.0 ± 2.2 20.7 ± 1.0 29.5 ± 4.2 25.9 ± 0.5 0.6 ± 0.3 0.9 ± 0.4
+MVGRL 43.8 ± 3.0 8.4 ± 2.8 7.1 ± 3.0 62.8 ± 2.3 25.7 ± 1.8 33.5 ± 4.6 28.6 ± 1.0 2.4 ± 0.5 2.8 ± 0.6
+BGRL 55.1 ± 1.7 8.0 ± 0.5 3.9 ± 1.0 58.7 ± 1.8 22.0 ± 2.4 23.7 ± 2.3 28.2 ± 0.3 1.8 ± 0.2 2.4 ± 0.1
+SELENE 57.8 ± 4.7 17.0 ± 3.5 22.9 ± 5.1 64.5 ± 4.4 25.2 ± 8.1 34.2 ± 11.5 28.2 ± 0.3 4.7 ± 0.7 1.8 ± 0.1
+HeterGCL 62.9 ± 2.7 29.2 ± 3.5 33.5 ± 5.2 63.1 ± 1.3 39.0 ± 2.8 31.3 ± 3.5 30.9 ± 1.0 4.9 ± 1.2 5.0 ± 1.2
+GBGCL 72.1 ± 1.9 47.6 ± 1.8 44.8 ± 5.4 71.0 ± 2.0 44.3 ± 2.9 47.3 ± 3.4 30.4 ± 0.9 12.0 ± 0.1 4.9 ± 0.6
+(a) Hyperparameter sensitivity analysis on different number of initial
+granular-balls.
+(b) Hyperparameter sensitivity analysis on the weight factor α.
+Fig. 4. Hyperparameter sensitivity analysis.
+contribution in overall optimization. We believe that in
+heterogeneous graphs, although some nodes connected by
+edges still have some semantic correlation, this correla-
+tion is weak and unstable, so relying solely on structure
+or contrast may lead to a dispersed representation space.
+Introducing Ll loss to constrain the structural consistency
+of potential representations can help alleviate this issue.
+D. Hyper-parameter sensitivity analysis (RQ3)
+We analyze in detail the key hyperparameters that affect
+the performance of GBGCL, including the number of layers
+L, hidden dimensions, the number of initial granular-balls, and
+the weight factor α.
+As shown in Fig.3(a)–Fig.3(d), GBGCL achieves the best
+performance when L = 2 or L = 3, while deeper architectures
+lead to gradual performance degradation, possibly due to
+additional noise or overfitting.
+For hidden dimensions, the best performance is obtained
+with 2048 for node classification and 512 for clustering,
+indicating a favorable balance between model capacity and
+computational efficiency.
+Fig.4(a) shows that changing the initial number of granular-
+balls mainly affects the coarse-grained initialization, while the
+subsequent adaptive binary splitting keeps the final number of
+granular-balls relatively stable. For the Film dataset, however,
+the refinement process tends to preserve the structure ofGB init
+because the adaptive splitting condition is rarely satisfied,
+which may be related to its more complex heterogeneous
+structure. Overall,
+j√
+N
+k
+provides a good balance between the
+size and number of GB init, avoiding both excessive splitting
+This article has been accepted for publication in IEEE Transactions on Pattern Analysis and Machine Intelligence. This is the author's version which has not been fully edited and 
+content may change prior to final publication. Citation information: DOI 10.1109/TPAMI.2026.3720194
+© 2026 IEEE. All rights reserved, including rights for text and data mining and training of artificial intelligence and similar technologies. Personal use is permitted,
+but republication/redistribution requires IEEE permission. See https://www.ieee.org/publications/rights/index.html for more information.
+Authorized licensed use limited to: University of Electronic Science and Tech of China. Downloaded on August 24,2026 at 16:09:16 UTC from IEEE Xplore.  Restrictions apply. 
+
+===== PDF PAGE 11 =====
+JOURNAL OF LATEX CLASS FILES, VOL. 14, NO. 8, AUGUST 2021 11
+Fig. 5. The comparison of different quality splitting conditions on the
+performance of GBGCL.
+and overly coarse partitioning.
+In addition, Fig.4(b) shows that GBGCL achieves the best
+performance on most datasets when α = 0 .9, suggesting that
+contrastive loss plays a dominant role and that this setting
+provides an effective balance between contrastive loss and
+feature-based loss.
+E. Impact of different quality splitting conditions (RQ4)
+We evaluated the impact of different quality splitting con-
+ditions on the node classification performance of GBGCL:
+• quality(GB k) < min(quality(GB kA ), quality(GB kB ));
+• quality(GB k) < quality (GB kA ) + quality(GB kB );
+• quality(GB k) < (quality(GB kA ) + quality(GB kB ))/2.
+Taking three datasets as examples, as shown in Fig.5, condi-
+tions 1-3 correspond to the above three conditions respectively.
+It can be seen that none of them are as effective as GBGCL,
+indicating that selecting appropriate quality splitting condition
+is crucial for improving the performance of the model.
+F . Case study (RQ5)
+We designed case study to more intuitively demonstrate the
+effectiveness of GBGCL. Several granular-balls are randomly
+sampled in three datasets, and the visualized results are shown
+in Fig.6. We observe that GBGCL can effectively refine homo-
+geneous regions of different topological sizes in heterogeneous
+graph datasets, and the nodes within each granular-ball also
+exhibit greater homogeneity.
+VI. C ONCLUSION
+In this paper, we propose a new multi-granularity graph con-
+trastive learning framework via granular-ball on heterogeneous
+graphs (GBGCL). The main innovation of this framework is
+to introduce the granular-ball computing model into the graph
+contrastive learning framework, and to propose a new granular-
+ball augmentation strategy (GBA). This strategy adaptively
+identifies multi-granularity homogeneous regions in heteroge-
+neous graphs and effectively generates positive and negative
+pairs. In addition, we also adopt a joint optimization module
+to make full use of the structural and semantic information
+of heterogeneous graphs, and further improve the quality of
+node representation. Experimental results on several heteroge-
+neous graph datasets show that GBGCL performs better than
+comparison methods.
+However, GBGCL also has certain limitations that require
+further research. For example, although the proposed GBA
+strategy has shown effectiveness on the evaluated dataset, its
+computational overhead may become significant when applied
+to graphs with millions of nodes or highly complex structures.
+In these cases, more effective augmentation mechanisms may
+be needed. Therefore, developing scalable and adaptive graph
+augmentation strategies remains a valuable direction for future
+work. This paper mainly conducts experimental verification on
+static heterogeneous graph data, extending the framework to
+dynamic graph structures, which is also a promising research
+direction.
+VII. A CKNOWLEDGMENT
+We extend our sincere gratitude to everyone whose dedi-
+cation and efforts contributed to the completion of this work.
+This research was partially supported by the National Natural
+Science Foundation of China under Grant Nos. 62222601,
+62176033, 62221005, and 61936001; the Key Cooperation
+Project of the Chongqing Municipal Education Commission
+under Grant No. HZ2021008; the Scientific and Technological
+Research Program of the Chongqing Municipal Education
+Commission under Grant No. KJZD-M202400603; and the
+Project of the Key Laboratory of Tourism Multisource Data
+Perception and Decision-Making, Ministry of Culture and
+Tourism, under Grant No. H2023009, and Ant Group, and
+Chongqing Ant Consumer Finance Co.
+REFERENCES
+[1] X. Zheng, Y . Wang, Y . Liu, M. Li, M. Zhang, D. Jin, P. S. Yu, and
+S. Pan, “Graph neural networks for graphs with heterophily: A survey,”
+IEEE Transactions on Knowledge and Data Engineering , 2026.
+[2] L. Cai, J. Li, J. Wang, and S. Ji, “Line graph neural networks for
+link prediction,” IEEE Transactions on Pattern Analysis and Machine
+Intelligence, vol. 44, no. 9, pp. 5103–5113, 2021.
+[3] S. Fan, X. Wang, C. Shi, P. Cui, and B. Wang, “Generalizing graph
+neural networks on out-of-distribution graphs,” IEEE Transactions on
+Pattern Analysis and Machine Intelligence , 2023.
+[4] M. Besta and T. Hoefler, “Parallel and distributed graph neural networks:
+An in-depth concurrency analysis,” IEEE Transactions on Pattern Anal-
+ysis and Machine Intelligence , 2024.
+[5] J. Guo, K. Huang, R. Zhang, and X. Yi, “Es-gnn: Generalizing graph
+neural networks beyond homophily with edge splitting,” IEEE Transac-
+tions on Pattern Analysis and Machine Intelligence , 2024.
+[6] L. Wang, X. Zhang, H. Su, and J. Zhu, “A comprehensive survey of
+continual learning: theory, method and application,” IEEE Transactions
+on Pattern Analysis and Machine Intelligence , 2024.
+[7] E. Binshaflout, A. Hamrouni, and H. Ghazzai, “Graph neural networks
+for vehicular social networks: Trends, challenges, and opportunities,”
+IEEE Transactions on Intelligent Transportation Systems , 2026.
+[8] J. An, B. Ding, and N. Jiang, “Noise-aware graph neural networks
+for multimodal semantic alignment in social media sentiment analysis,”
+Engineering Applications of Artificial Intelligence , vol. 168, p. 114058,
+2026.
+[9] L. Han, L. Wang, Z. Cheng, B. Wang, G. Yang, D. Cheng, and X. Lin,
+“Mitigating the tail effect in fraud detection by community enhanced
+multi-relation graph neural networks,” IEEE Transactions on Knowledge
+and Data Engineering , vol. 37, no. 4, pp. 2029–2041, 2025.
+[10] B. Xu, H. Shen, B. Sun, R. An, Q. Cao, and X. Cheng, “Towards con-
+sumer loan fraud detection: Graph neural networks with role-constrained
+conditional random field,” in Proceedings of the AAAI Conference on
+Artificial Intelligence, vol. 35, no. 5, 2021, pp. 4537–4545.
+This article has been accepted for publication in IEEE Transactions on Pattern Analysis and Machine Intelligence. This is the author's version which has not been fully edited and 
+content may change prior to final publication. Citation information: DOI 10.1109/TPAMI.2026.3720194
+© 2026 IEEE. All rights reserved, including rights for text and data mining and training of artificial intelligence and similar technologies. Personal use is permitted,
+but republication/redistribution requires IEEE permission. See https://www.ieee.org/publications/rights/index.html for more information.
+Authorized licensed use limited to: University of Electronic Science and Tech of China. Downloaded on August 24,2026 at 16:09:16 UTC from IEEE Xplore.  Restrictions apply. 
+
+===== PDF PAGE 12 =====
+JOURNAL OF LATEX CLASS FILES, VOL. 14, NO. 8, AUGUST 2021 12
+(a) case1 Cornell
+ (b) case2 Texas
+ (c) case3 Wisconsin
+Fig. 6. Visualization of GBGCL on three datasets.
+[11] B. Wu, K.-M. Chao, and Y . Li, “Heterogeneous graph neural networks
+for fraud detection and explanation in supply chain finance,”Information
+Systems, vol. 121, p. 102335, 2024.
+[12] J. Song, Y . Li, D. Li, X. Wang, R. Zhang, H. Zhang, and J. Chen,
+“Integrating deep clustering and multi-view graph neural networks for
+recommender system,” Knowledge-Based Systems, p. 115449, 2026.
+[13] S. Bao, Q. Xu, Z. Yang, Y . He, X. Cao, and Q. Huang, “Improved
+diversity-promoting collaborative metric learning for recommendation,”
+IEEE Transactions on Pattern Analysis and Machine Intelligence , 2024.
+[14] K. Liang, L. Meng, M. Liu, Y . Liu, W. Tu, S. Wang, S. Zhou, X. Liu,
+F. Sun, and K. He, “A survey of knowledge graph reasoning on graph
+types: Static, dynamic, and multi-modal,” IEEE Transactions on Pattern
+Analysis and Machine Intelligence , 2024.
+[15] H. Xiang, Y . Wang, Y . Xu, S. Liu, Y . Fang, Z. Liu, and G. Ye,
+“Graph self-supervised learning via learnable view augmentation for
+recommender system,” IEEE Transactions on Industrial Informatics ,
+2025.
+[16] T. Chen, S. Kornblith, M. Norouzi, and G. Hinton, “A simple framework
+for contrastive learning of visual representations,” in International
+Conference on Machine Learning . PMLR, 2020, pp. 1597–1607.
+[17] L. Wen, X. Wang, J. Liu, and Z. Xu, “Mveb: Self-supervised learning
+with multi-view entropy bottleneck,” IEEE Transactions on Pattern
+Analysis and Machine Intelligence , 2024.
+[18] G. Liu, Q. Zhou, Z. Fu, and Z. Wang, “Confusion distillation for
+continual self-supervised learning,” Pattern Recognition , p. 114071,
+2026.
+[19] K. Zhang, Q. Wen, C. Zhang, R. Cai, M. Jin, Y . Liu, J. Y . Zhang,
+Y . Liang, G. Pang, D. Song et al. , “Self-supervised learning for time
+series analysis: Taxonomy, progress, and prospects,” IEEE Transactions
+on Pattern Analysis and Machine Intelligence , 2024.
+[20] L. Huang, Y . Ni, X. Weng, R. M. Anwer, S. Khan, M.-H. Yang, and F. S.
+Khan, “Understanding whitening loss in self-supervised learning,” IEEE
+Transactions on Pattern Analysis and Machine Intelligence , no. 01, pp.
+1–12, 2024.
+[21] Y . You, T. Chen, Y . Sui, T. Chen, Z. Wang, and Y . Shen, “Graph con-
+trastive learning with augmentations,” Advances in Neural Information
+Processing Systems, vol. 33, pp. 5812–5823, 2020.
+[22] K. Tan, Y . Bai, Y . Zhang, Z. Shu, and Z. Yu, “scdgcl: a dual-
+level and graph-constrained contrastive learning method for single-cell
+rna sequencing data clustering,” IEEE Transactions on Computational
+Biology and Bioinformatics , 2026.
+[23] Y . Chang, F. Xiong, S. Pan, J. Wu, L. Wang, and A. Beheshti, “Iegscl:
+Interaction-enhanced graph neural sequence contrastive learning for mi-
+croscopic diffusion prediction,” IEEE Transactions on Neural Networks
+and Learning Systems , 2026.
+[24] S. Qian, D. Xue, Q. Fang, and C. Xu, “Integrating multi-label con-
+trastive learning with dual adversarial graph neural networks for cross-
+modal retrieval,” IEEE Transactions on Pattern Analysis and Machine
+Intelligence, vol. 45, no. 4, pp. 4794–4811, 2022.
+[25] Y . Zong, Q. Zuo, M. K.-P. Ng, B. Lei, and S. Wang, “A new brain
+network construction paradigm for brain disorder via diffusion-based
+graph contrastive learning,” IEEE Transactions on Pattern Analysis and
+Machine Intelligence, 2024.
+[26] J. Liu, X. Liu, Y . Yang, Q. Liao, and Y . Xia, “Contrastive multi-view
+kernel learning,” IEEE Transactions on Pattern Analysis and Machine
+Intelligence, vol. 45, no. 8, pp. 9552–9566, 2023.
+[27] H. Pei, B. Wei, K. C.-C. Chang, Y . Lei, and B. Yang, “Geom-gcn: Geo-
+metric graph convolutional networks,” arXiv preprint arXiv:2002.05287,
+2020.
+[28] S. Xia, G. Wang, X. Gao, and X. Lian, “Granular-ball computing: an
+efficient, robust, and interpretable adaptive multi-granularity representa-
+tion and computation method,” arXiv preprint arXiv:2304.11171, 2023.
+[29] W. Jin, X. Liu, X. Zhao, Y . Ma, N. Shah, and J. Tang, “Automated
+self-supervised learning for graphs,” arXiv preprint arXiv:2106.05470 ,
+2021.
+[30] L. Chen, “Topological structure in visual perception,” Science, vol. 218,
+no. 4573, pp. 699–700, 1982.
+[31] F.-Y . Sun, J. Hoffmann, V . Verma, and J. Tang, “Infograph: Unsupervised
+and semi-supervised graph-level representation learning via mutual
+information maximization,” arXiv preprint arXiv:1908.01000 , 2019.
+[32] T. Zhao, Y . Liu, L. Neves, O. Woodford, M. Jiang, and N. Shah, “Data
+augmentation for graph neural networks,” in Proceedings of the AAAI
+Conference on Artificial Intelligence, vol. 35, no. 12, 2021, pp. 11 015–
+11 023.
+[33] W. Hamilton, Z. Ying, and J. Leskovec, “Inductive representation
+learning on large graphs,” Advances in Neural Information Processing
+Systems, vol. 30, 2017.
+[34] Y . Zhu, Y . Xu, F. Yu, Q. Liu, S. Wu, and L. Wang, “Deep graph
+contrastive representation learning,” arXiv preprint arXiv:2006.04131 ,
+2020.
+[35] Y . You, T. Chen, Y . Shen, and Z. Wang, “Graph contrastive learning
+automated,” in International Conference on Machine Learning. PMLR,
+2021, pp. 12 121–12 132.
+[36] Z. Zhang, P. Cui, X. Wang, J. Pei, X. Yao, and W. Zhu, “Arbitrary-
+order proximity preserved network embedding,” in Proceedings of the
+24th ACM SIGKDD International Conference on Knowledge Discovery
+and Data Mining , 2018, pp. 2778–2786.
+[37] X. Chen, Y . Wang, J. Fang, Z. Meng, and S. Liang, “Heterogeneous
+graph contrastive learning with metapath-based augmentations,” IEEE
+Transactions on Emerging Topics in Computational Intelligence , 2023.
+[38] Y . Liu, Y . Zheng, D. Zhang, V . C. Lee, and S. Pan, “Beyond smooth-
+ing: Unsupervised graph representation learning with edge heterophily
+discriminating,” in Proceedings of the AAAI Conference on Artificial
+Intelligence, vol. 37, no. 4, 2023, pp. 4516–4524.
+[39] W. Yang and B. Mirzasoleiman, “Graph contrastive learning under
+heterophily: Utilizing graph filters to generate graph views,” 2023.
+[40] K. Yang, H. Han, W. Jin, and H. Liu, “Augment with care: Enhancing
+graph contrastive learning with selective spectrum perturbation,” arXiv
+preprint arXiv:2310.13845, 2023.
+[41] J. Yu and X. Li, “Heterogeneous graph contrastive learning with meta-
+path contexts and weighted negative samples,” in Proceedings of the
+2023 SIAM International Conference on Data Mining (SDM) . SIAM,
+2023, pp. 37–45.
+[42] C. Wang, Y . Liu, Y . Yang, and W. Li, “Hetergcl: graph contrastive
+learning framework on heterophilic graph,” in Proceedings of the 33rd
+International Joint Conference on Artificial Intelligence, 2024, pp. 2397–
+2405.
+[43] Z. Liu, H. Xiang, R. Liang, J. Xiang, C. Wen, S. Liu, and J. Sun,
+“Graph contrastive learning via hierarchical multiview enhancement for
+recommendation,” IEEE Transactions on Industrial Informatics, vol. 21,
+no. 3, pp. 2403–2412, 2025.
+[44] J. Sun, S. Du, Z. Liu, F. Yu, S. Liu, and X. Shen, “Weighted heteroge-
+neous graph-based three-view contrastive learning for knowledge tracing
+This article has been accepted for publication in IEEE Transactions on Pattern Analysis and Machine Intelligence. This is the author's version which has not been fully edited and 
+content may change prior to final publication. Citation information: DOI 10.1109/TPAMI.2026.3720194
+© 2026 IEEE. All rights reserved, including rights for text and data mining and training of artificial intelligence and similar technologies. Personal use is permitted,
+but republication/redistribution requires IEEE permission. See https://www.ieee.org/publications/rights/index.html for more information.
+Authorized licensed use limited to: University of Electronic Science and Tech of China. Downloaded on August 24,2026 at 16:09:16 UTC from IEEE Xplore.  Restrictions apply. 
+
+===== PDF PAGE 13 =====
+JOURNAL OF LATEX CLASS FILES, VOL. 14, NO. 8, AUGUST 2021 13
+in personalized e-learning systems,” IEEE Transactions on Consumer
+Electronics, vol. 70, no. 1, pp. 2838–2847, 2024.
+[45] G. Wang, “Dgcc: data-driven granular cognitive computing,” Granular
+Computing, vol. 2, no. 4, pp. 343–355, 2017.
+[46] S. Xia, D. Peng, D. Meng, C. Zhang, G. Wang, E. Giem, W. Wei, and
+Z. Chen, “Ball k k-means: Fast adaptive clustering with no bounds,”
+IEEE transactions on pattern analysis and machine intelligence, vol. 44,
+no. 1, pp. 87–99, 2020.
+[47] S. Xia, C. Wang, G. Wang, X. Gao, W. Ding, J. Yu, Y . Zhai, and Z. Chen,
+“Gbrs: A unified granular-ball learning model of pawlak rough set and
+neighborhood rough set,” IEEE Transactions on Neural Networks and
+Learning Systems, 2023.
+[48] S. Xia, X. Lian, G. Wang, X. Gao, J. Chen, and X. Peng, “Gbsvm:
+An efficient and robust support vector machine framework via granular-
+ball computing,” IEEE Transactions on Neural Networks and Learning
+Systems, 2024.
+[49] J. Xie, X. Xiang, S. Xia, L. Jiang, G. Wang, and X. Gao, “Mgnr: A multi-
+granularity neighbor relationship and its application in knn classification
+and clustering methods,” IEEE transactions on pattern analysis and
+machine intelligence, vol. 46, no. 12, pp. 7956–7972, 2024.
+[50] J. Xie, Y . Cheng, S. Xia, C. Hua, G. Wang, and X. Gao, “Aw-gbgae: an
+adaptive weighted graph autoencoder based on granular-balls for general
+data clustering,” IEEE Transactions on Pattern Analysis and Machine
+Intelligence, 2025.
+[51] S. Xia, Y . Wang, L. Shen, and G. Wang, “Granular-ball-induced mul-
+tiple kernel k-means,” in International Joint Conference on Artificial
+Intelligence, 2025.
+[52] S. Xia, X. Tian, S. Yuan, and J. D.Deng, “Efficient quantum approxi-
+mate knn algorithm via granular-ball computing,” in International Joint
+Conference on Artificial Intelligence , 2025.
+[53] J. Liu, J. Hao, Y . Ma, and S. Xia, “Unlock the cognitive generalization of
+deep reinforcement learning via granular ball representation,” in Forty-
+first International Conference on Machine Learning , 2024.
+[54] S. Xia, G. Wang, G. Xu, S. Zhao, and G. Wang, “Gbgc: Efficient and
+adaptive graph coarsening via granular-ball computing,” in International
+Joint Conference on Artificial Intelligence , 2025.
+[55] S. Xia, X. Ma, Z. Liu, C. Liu, S. Zhao, and G. Wang, “Graph coarsening
+via supervised granular-ball for scalable graph neural network training,”
+in Proceedings of the AAAI Conference on Artificial Intelligence, vol. 39,
+no. 12, 2025, pp. 12 872–12 880.
+[56] S. Xia, D. Dai, F. Chen, L. Yang, G. Wang, G. Wang, and X. Gao, “An
+adaptive multi-granularity graph representation of image via granular-
+ball computing,” IEEE Transactions on Image Processing , 2025.
+[57] J. Ni, S. Xia, Y . Guan, G. Xu, L. Chen, Y . Liu, and Y . Wang, “Multi-
+granularity graph refinement via granular ball for graph classification,”
+Neurocomputing, p. 133713, 2026.
+[58] L. Shen, L. Peng, R. Liu, S. Xia, and Y . Liu, “Finding time series
+anomalies using granular-ball vector data description,” in Proceedings
+of the AAAI Conference on Artificial Intelligence , vol. 40, no. 30, 2026,
+pp. 25 295–25 303.
+[59] A. v. d. Oord, Y . Li, and O. Vinyals, “Representation learning with
+contrastive predictive coding,” arXiv preprint arXiv:1807.03748 , 2018.
+[60] T. N. Kipf and M. Welling, “Semi-supervised classification with graph
+convolutional networks,” arXiv preprint arXiv:1609.02907 , 2016.
+[61] V . Nair and G. E. Hinton, “Rectified linear units improve restricted boltz-
+mann machines,” in Proceedings of the 27th International Conference
+on Machine Learning (ICML-10) , 2010, pp. 807–814.
+[62] J. Xie, Z.-Y . Xiong, Q.-Z. Dai, X.-X. Wang, and Y .-F. Zhang, “A
+new internal index based on density core for clustering validation,”
+Information Sciences, vol. 506, pp. 346–365, 2020.
+[63] J. Yu and Q. Cheng, “The upper bound of the optimal number of clusters
+in fuzzy clustering,” Science in China Series: Information Sciences ,
+vol. 44, pp. 119–125, 2001.
+[64] T. Wang, D. Jin, R. Wang, D. He, and Y . Huang, “Powerful graph convo-
+lutional networks with adaptive propagation mechanism for homophily
+and heterophily,” in Proceedings of the AAAI Conference on Artificial
+Intelligence, vol. 36, no. 4, 2022, pp. 4210–4218.
+[65] H. Zhang, Q. Wu, J. Yan, D. Wipf, and P. S. Yu, “From canonical
+correlation analysis to self-supervised graph neural networks,” Advances
+in Neural Information Processing Systems , vol. 34, pp. 76–89, 2021.
+[66] W.-Z. Li, C.-D. Wang, H. Xiong, and J.-H. Lai, “Homogcl: Rethinking
+homophily in graph contrastive learning,” in Proceedings of the 29th
+ACM SIGKDD Conference on Knowledge Discovery and Data Mining ,
+2023, pp. 1341–1352.
+[67] P. Velickovic, G. Cucurull, A. Casanova, A. Romero, P. Lio, Y . Bengio
+et al., “Graph attention networks,”Stat, vol. 1050, no. 20, pp. 10–48 550,
+2017.
+[68] J. Gasteiger, A. Bojchevski, and S. G ¨unnemann, “Predict then propagate:
+graph neural networks meet personalized pagerank,” arXiv preprint
+arXiv:1810.05997, 2018.
+[69] E. Chien, J. Peng, P. Li, and O. Milenkovic, “Adaptive universal general-
+ized pagerank graph neural network,” arXiv preprint arXiv:2006.07988,
+2020.
+[70] S. Abu-El-Haija, B. Perozzi, A. Kapoor, N. Alipourfard, K. Lerman,
+H. Harutyunyan, G. Ver Steeg, and A. Galstyan, “Mixhop: Higher-order
+graph convolutional architectures via sparsified neighborhood mixing,”
+in international conference on machine learning . PMLR, 2019, pp.
+21–29.
+[71] J. Zhu, Y . Yan, L. Zhao, M. Heimann, L. Akoglu, and D. Koutra,
+“Beyond homophily in graph neural networks: Current limitations and
+effective designs,” Advances in Neural Information Processing Systems ,
+vol. 33, pp. 7793–7804, 2020.
+[72] K. Hassani and A. H. Khasahmadi, “Contrastive multi-view represen-
+tation learning on graphs,” in International Conference on Machine
+Learning. PMLR, 2020, pp. 4116–4126.
+[73] S. Thakoor, C. Tallec, M. G. Azar, R. Munos, P. Veli ˇckovi´c, and
+M. Valko, “Bootstrapped representation learning on graphs,” in ICLR
+2021 Workshop on Geometrical and Topological Representation Learn-
+ing, 2021.
+[74] Z. Zou, Y . Jiang, L. Shen, J. Liu, and X. Liu, “Loha: Direct graph
+spectral contrastive learning between low-pass and high-pass views,” in
+Proceedings of the AAAI Conference on Artificial Intelligence , vol. 39,
+no. 12, 2025, pp. 13 492–13 500.
+[75] Y . Xu, S. Huang, H. Zhang, and X. Li, “Why does dropping edges
+usually outperform adding edges in graph contrastive learning?” in
+Proceedings of the AAAI Conference on Artificial Intelligence , vol. 39,
+no. 20, 2025, pp. 21 824–21 832.
+[76] J. Zhu, L. He, C. Gao, D. Hou, Z. Su, P. S. Yu, J. Kurths, and
+F. Hellmann, “Sdmg: Smoothing your diffusion models for powerful
+graph representation learning,” in Forty-second International Conference
+on Machine Learning , 2025.
+[77] G. E. Hinton and R. R. Salakhutdinov, “Reducing the dimensionality of
+data with neural networks,” Science, vol. 313, no. 5786, pp. 504–507,
+2006.
+[78] A. Grover and J. Leskovec, “node2vec: Scalable feature learning for
+networks,” in Proceedings of the 22nd ACM SIGKDD International
+Conference on Knowledge Discovery and Data Mining , 2016, pp. 855–
+864.
+[79] L. F. Ribeiro, P. H. Saverese, and D. R. Figueiredo, “struc2vec: Learning
+node representations from structural identity,” inProceedings of the 23rd
+ACM SIGKDD International Conference on Knowledge Discovery and
+Data Mining, 2017, pp. 385–394.
+[80] J. Tang, M. Qu, M. Wang, M. Zhang, J. Yan, and Q. Mei, “Line:
+Large-scale information network embedding,” inProceedings of the 24th
+International Conference on World Wide Web , 2015, pp. 1067–1077.
+[81] T. N. Kipf and M. Welling, “Variational graph auto-encoders,” arXiv
+preprint arXiv:1611.07308, 2016.
+[82] D. Bo, X. Wang, C. Shi, M. Zhu, E. Lu, and P. Cui, “Structural deep
+clustering network,” in Proceedings of the Web Conference 2020 , 2020,
+pp. 1400–1410.
+[83] P. Veli ˇckovi´c, W. Fedus, W. L. Hamilton, P. Li `o, Y . Bengio, and R. D.
+Hjelm, “Deep graph infomax,” arXiv preprint arXiv:1809.10341 , 2018.
+[84] Y . Ma, X. Liu, N. Shah, and J. Tang, “Is homophily a necessity for
+graph neural networks?” arXiv preprint arXiv:2106.06134 , 2021.
+Shuyin Xia received his B.S. degree and M.S.
+degree in Computer science in 2008 and 2012,
+respectively, both from Chongqing University of
+Technology in China. He received his Ph.D. degree
+from College of Computer Science in Chongqing
+University in China. He is an IEEE Member. Since
+2015, he has been working at the Chongqing Univer-
+sity of Posts and Telecommunications, Chongqing,
+China, where he is currently an professor and a
+Ph.D. supervisor, the executive deputy director of
+CQUPT - Chongqing Municipal Public Security
+Bureau - Qihoo 360 Big Data and Network Security Joint Lab. Dr. Xia is the
+director of Chongqing Artificial Intelligence Association. His research results
+have expounded at many prestigious journals, such IEEE-TKDE and IS. His
+research interests include data mining, granular computing, fuzzy rough sets,
+classifiers and label noise detection.
+This article has been accepted for publication in IEEE Transactions on Pattern Analysis and Machine Intelligence. This is the author's version which has not been fully edited and 
+content may change prior to final publication. Citation information: DOI 10.1109/TPAMI.2026.3720194
+© 2026 IEEE. All rights reserved, including rights for text and data mining and training of artificial intelligence and similar technologies. Personal use is permitted,
+but republication/redistribution requires IEEE permission. See https://www.ieee.org/publications/rights/index.html for more information.
+Authorized licensed use limited to: University of Electronic Science and Tech of China. Downloaded on August 24,2026 at 16:09:16 UTC from IEEE Xplore.  Restrictions apply. 
+
+===== PDF PAGE 14 =====
+JOURNAL OF LATEX CLASS FILES, VOL. 14, NO. 8, AUGUST 2021 14
+Guan Wang received her master’s degree from
+Chongqing University of Posts and Telecommuni-
+cations in 2024. She is currently a doctoral student
+in the School of Computer Science and Technology,
+Chongqing University of Posts and Telecommunica-
+tions. Her research interest is graph representation
+learning.
+Cheng Tan received his bachelor’s degree in 2024
+from Southwest Petroleum University. He is cur-
+rently a graduate student at College of Computer
+Science and Technology, Chongqing University of
+Posts and Telecommunications. His research inter-
+ests Including graph learning and multi granularity
+cognitive computing.
+Chao Huang received his bachelor’s degree in 2024
+from Chongqing University of Posts and Telecom-
+munications. He is currently a graduate student
+at College of Computer Science and Technology,
+Chongqing University of Posts and Telecommuni-
+cations. His research interests include graph repre-
+sentation learning and deep reinforcement learning.
+Sen Zhao ∗ received his bachelor’s degree in Au-
+tomation in 2020 and his Ph.D. in Computer Science
+in 2024, both from Huazhong University of Science
+and Technology, Wuhan, China. Since 2024, he has
+been working at Chongqing University of Posts
+and Telecommunications, Chongqing, China. His
+research interests primarily focus on graph represen-
+tation learning, information retrieval, and granular
+computing.
+Yi Liu received his bachelor’s degree in 2010 from
+Inner Mongolia University of Science & Technology.
+He is currently employed as a Principal Researcher
+at Chongqing Ant Consumer Finance Co., Ltd. His
+research interests including deep learning, machine
+learning, privacy computing.
+Yi Wang received his bachelor’s degree in 2010
+from School of Computer Science, Northwest A&F
+University. He is currently employed as a Principal
+Researcher at Chongqing Ant Consumer Finance
+Co., Ltd. His research interests including privacy
+computing, multimodal learning, computer vision.
+Wei Wang received his bachelor’s degree in 2012
+from Huazhong University of Science and Technol-
+ogy. He is currently employed as a Researcher at
+Chongqing Ant Consumer Finance Co., Ltd. His
+research interests including federated learning, deep
+learning.
+Guoyin Wang(Senior Member, IEEE) received the
+B.S., M.S., and Ph.D. degrees from Xi’an Jiaotong
+University, Xian, China, in 1992, 1994, and 1996,
+respectively. He worked at the University of North
+Texas, and the University of Regina, Canada, as a
+visiting scholar during 1998-1999. He had worked at
+the Chongqing University of Posts and Telecommu-
+nications during 1996-2024, where he was a profes-
+sor, the Vice-President of the University, the director
+of the Chongqing Key Laboratory of Computational
+Intelligence, the director of the Key Laboratory of
+Cyberspace Big Data Intelligent Security, Ministry of Education, and the
+director of the Sichuan-Chongqing Joint Key Laboratory of Digital Economy
+Intelligence and Security. He was the director of the Institute of Electronic
+Information Technology, Chongqing Institute of Green and Intelligent Tech-
+nology, CAS, China, 2011-2017. He has been serving as the President of
+Chongqing Normal University since June 2024. He is the author of over
+20 books, the editor of dozens of proceedings of international and national
+conferences and has more than 300 reviewed research publications. His
+research interests include rough sets, granular computing, machine learning,
+knowledge technology, data mining, neural network, cognitive computing, etc.
+Dr. Wang was the President of International Rough Set Society (IRSS) 2014-
+2017, a Vice-President of the Chinese Association for Artificial Intelligence
+(CAAI) 2014-2025, and a council member of the China Computer Federation
+(CCF) 2008-2023. He is a supervisor of the Board of Supervisors of CAAI.
+He is a Fellow of IRSS, CAAI and CCF.
+Xinbo Gao(Senior Member, IEEE) received the
+B.Eng., M.Sc., and Ph.D. degrees in signal and in-
+formation processing from Xidian University, Xi’an,
+China, in 1994, 1997, and 1999, respectively. From
+1997 to 1998, he was a Research Fellow with the
+Department of Computer Science, Shizuoka Univer-
+sity, Shizuoka, Japan. From 2000 to 2001, he was a
+Post-Doctoral Research Fellow with the Department
+of Information Engineering, Chinese University of
+Hong Kong, Hong Kong. From 2001 to 2020, he
+has been with the School of Electronic Engineering,
+Xidian University. He is currently the President of the Chongqing University
+of Posts and Telecommunications, Chongqing, China. He has authored or
+coauthored six books and approximately 200 technical articles in prestigious
+journals and conferences, including the IEEE TRANSACTIONS ON PAT-
+TERN ANALYS IS AND MACHINE INTELLIGENCE (TPAMI), the IEEE
+TRANSACTIONS ON KNOWLEDGE AND DATA ENGINEERING (TIP),
+the IEEE TRANSACTIONS ON NEURAL NETWORKS AND LEARNING
+SYSTEMS (TNNLS), the IEEE TRANSACTIONS ON MEDICAL IMAG-
+ING (TMI), Conference and Workshop on Neural Information Processing
+Systems (NIPS), IEEE Conference on Computer Vision and Pattern Recog-
+nition (CVPR), IEEE International Conference on Computer Vision (ICCV),
+AAAI Conference on Artificial Intelligence (AAAI), and International Joint
+Conference on Artificial Intelligence (IJCAI).
+This article has been accepted for publication in IEEE Transactions on Pattern Analysis and Machine Intelligence. This is the author's version which has not been fully edited and 
+content may change prior to final publication. Citation information: DOI 10.1109/TPAMI.2026.3720194
+© 2026 IEEE. All rights reserved, including rights for text and data mining and training of artificial intelligence and similar technologies. Personal use is permitted,
+but republication/redistribution requires IEEE permission. See https://www.ieee.org/publications/rights/index.html for more information.
+Authorized licensed use limited to: University of Electronic Science and Tech of China. Downloaded on August 24,2026 at 16:09:16 UTC from IEEE Xplore.  Restrictions apply. 

@@ -1,0 +1,1394 @@
+PAGE 1
+Granular ball local consensus for graph-free node
+classification under label noise
+SileiCaoa,KunWanga,JingyuZhub,TianxingWangc,BingHuanga,∗
+aSchoolofComputerScience,NanjingAuditUniversity,Nanjing,211815,PRChina
+bSchoolofStatisticsandDataScience,NanjingAuditUniversity,Nanjing,211815,PRChina
+cSchoolofBusiness,NanjingAuditUniversity,Nanjing,211815,PRChina
+Abstract
+Graph-free node classification enables prediction from node attributes when graph
+relationsareunavailableorcostlytoaccessatdeployment. However,existingnoise-
+robust graph methods generally retain graph-dependent inference, whereas graph-
+free methods have largely been studied with clean training labels. To address this
+gap, we propose Granular Ball Local-Consensus Soft Supervision (GB-LCSS) for
+transductivenodeclassificationwithnoisylabelsandgraph-freeinference. GB-LCSS
+learnsnoderepresentationsthroughlabel-freegraphcontrastivelearning,freezesthem,
+andrecursivelygroupsnodesintogranularballs. Foreachtrainingnode,theobserved
+labelsoftheothertrainingnodesinitsballformaleave-one-outconsensus. Aweight
+determinedbytheiragreementblendsthisconsensuswiththenode’sobservedlabel
+to produce a soft target for a multilayer perceptron (MLP). This design decouples
+regionconstructionfromnoisy-labelaggregationanduseslocalevidencetoreducethe
+influenceofisolatedannotationerrors. Acrossfivedatasetsandfivenoisesettings,GB-
+LCSSachievesthehighestfive-seedmeanaccuracyin24ofthe25settings,compared
+withsevennoisy-labelbaselinesthatusethesamedeployedMLParchitecture. Itssoft
+targetsalsohavelowermeanBrierscoresthantheobservedone-hotlabelsinall25
+settings.
+Keywords: labelnoise,nodeclassification,graph-freeinference,graphcontrastive
+learning,granularballcomputing,softlabels
+∗Correspondingauthor.
+Emailaddress:huangbing@nau.edu.cn(BingHuang)
+PreprintsubmittedtoPatternRecognition September30,2026
+
+PAGE 2
+1. Introduction
+Nodeclassificationcombinesnodeattributesandrelationshipsforprediction.Graph
+neuralnetworks(GNNs)aggregateneighboringrepresentations[1],buttheneighbor-
+hoodaccessandmulti-hopaggregationrequiredforpredictioncomplicatedeployment
+andaddcomputationalcost. Inapplicationswithmissingrelations,privacyrestrictions,
+orlow-latencyrequirements,suchaccessmaybeunavailableorimpractical. These
+constraintshavemotivatedgraph-freenodeclassification,inwhichgraphstructureis
+usedduringtrainingbutthedeployedclassifierreceivesonlynodeattributes. Graph-
+MLP[2]andGLNN[3]demonstratedthisapproach,andlaterworksuchasSimMLP
+[4]andFF-G2M[5]refinedwhatstructuralknowledgeistransferredtothemultilayer
+perceptron(MLP)andhow. Thesemethodshavebeendevelopedandevaluatedwith
+cleantraininglabels.
+Inpractice,however,traininglabelsobtainedthroughmanualannotation,automated
+rules,ormultiplesourcesmaycontainerrors,anddeepmodelscanfitsuchcorrupted
+annotations[6].Ongraphs,messagepassingmaypropagatetheinfluenceofmislabeled
+nodestotheirneighbors[7]. Noise-robustgraphmethodsusetopologytoaugment
+supervision[8]orselectreliablesamples[9],buttheyretaingraphaccessatinference.
+Graph-freeclassifiersfacearelatedchallenge: errorsinthelabelsusedtotrainanMLP
+oritsteachercancarryovertothedeployedmodel. Westudyhowthetraininggraph
+canimprovenoisy-labelsupervisionforaclassifierthatusesonlynodeattributesat
+inference.
+Onewaytoaddressthischallengeistocombineanobservedlabelwithevidence
+from nearby training nodes. When their labels provide consistent evidence for the
+underlying class, aggregating them can reduce the influence of isolated annotation
+errors. Related methods use neighborhood consistency to identify potentially mis-
+labeled samples or encourage agreement between neighboring predictions [10, 11].
+Forgraphdata, agraphcontrastiverepresentationlearnedfromnodeattributesand
+connectivitywithoutclasslabelsprovidesabasisforidentifyingsuchlocalgroups[12].
+Theremainingchallengeistoformlocalregionsfromtherepresentationgeometry
+2
+
+PAGE 3
+before aggregating labels, so that annotation errors do not determine which nodes
+contributeevidence.
+Granularballcomputingoffersonewaytoconstructsuchregions.Itgroupssamples
+intocoarse-grainedunitssummarizedbytheircentersandradii[13].Subsequentstudies
+haveinvestigatedgranularballsamplingfornoisyorimbalancedclassification[14]and
+refinedadaptiveballgeneration[15]. Unlikesupervisedgranularballclassifiersthat
+uselabelpuritytoguidesplitting,GB-LCSSformsballsfromrepresentationgeometry
+undersizeandball-countconstraintsbeforeaggregatingtraininglabels.
+Buildingonthisidea,weproposeGranularBallLocal-ConsensusSoftSupervision
+(GB-LCSS)fortransductivenodeclassificationwithnoisylabelsandgraph-freeinfer-
+ence. AsshowninFig.1,GB-LCSSfirstlearnsnoderepresentationsthroughlabel-free
+graphcontrastivelearningandfreezesthem. Itthenrecursivelyapplies2-meansto
+thefrozennoderepresentations,assigningeachnodetoexactlyonegranularball. For
+eachtrainingnode,theobservedlabelsoftheothertrainingnodesinitsballprovide
+aleave-one-outconsensus. Aweightdeterminedbytheiragreementblendsthiscon-
+sensuswiththenode’sobservedlabeltoformasofttarget. AnMLPtrainedonthese
+targetsreceivesonlynodeattributesatinference.
+Themaincontributionsofthispaperaresummarizedasfollows:
+(1) WeintroduceGB-LCSSfornoisy-labelnodeclassificationwithgraph-freein-
+ference. It organizes nodes into granular balls in a frozen, label-free graph
+representation,therebyseparatingregionconstructionfromnoisy-labelaggrega-
+tion.
+(2) Weconstructnode-specificsofttargetsbycombiningeachobservedlabelwith
+theconsensusoftheothertrainingnodesinitsball. Underindependentsym-
+metric label noise, we analyze how the number of votes and the underlying
+classdistributionaffectthereliabilityoflocalvoting. Wealsoderiveanexact
+decompositionofthesquarederrorofthesofttargetandasufficientcondition
+underwhichithaslowerexpectederrorthantheobservedlabel.
+(3) WeevaluateGB-LCSSonfivedatasetsunderfivenoisesettingsagainstnoisy-
+label learning methods and graph-assisted MLP methods. Controlled com-
+3
+
+PAGE 4
+1 Label-free node representation learning 2 Label-agnostic granular ball partition
+Input graph Two augmented views on F t r h o e z e o n ri g e in n a co l g d r e a r ph Frozen node representation Geometry-only partition in frozen representation space
+pr V o i j e e w ct i 1 on Initialization 2- R m e e c a u n r s s i s v p e lit s F p u l r it t t h in e g r Final granular ball partition in
+× × × ×
+Node features Vie + w fe 1 a : t u e r d e g e m d a r s o k p in p g ing ( e G S n g h R c r a a A o r p d C e h e d E r ) × × × × × × × ×
+pr V o i j e e w ct i 2 on × × × × × × ×
+Adjacency Projection
+v v ₁ ₂ v 0 1 ₁v 1 0 ₂… … … 0 1 View 2: s a in m de p p le e d ndently head se b l a e l c l ted
+… ⋮ ⋮ ⋱ ⋮
+0 1…0 Partition all nodes without using labels.
+3 Leave-one-out local-consensus targets 4 MLP training and graph-free inference
+(a) Selected granular ball (b) Leave-one-out consensus (c) Construct a soft target MLP training with GB-LCSS targets
+1 (excluding ) 1 Observed label Local consensus Soft target node feature 2-layer MLP softmax prediction Soft cross-entropy
+v 0 1 2 3 4 5 0 12345 + 12345 = 12345 Update ML 1 P p 2 a 3 ram 4 e 5 ters
+Graph-free inference (transductive)
+Trained MLP proba c b la i s li s ties
+test-node
+v's own vote removed If the high u e s s e t v ote co . unt is tied, Few r e e r t a th in a n th e ob s r e e r m ve a d in i l n a g b e v l o . tes: feature softmax 12345 Predicted class: 3
+Observed noisy labels C1 C2 C3 C4 C5 non-voting node excluded self-vote data flow symmetric contrastive loss Inference input: only
+Figure1:OverviewofGB-LCSS.Stage1learnsalabel-freerepresentation,andStage2constructsgranular
+ballsinthatrepresentationspace.Stage3showsanenlargedviewofarepresentativeballtoillustratehowa
+local-consensustargetisformed.Stage4trainsthedeployedMLPwiththeresultingsofttargets.Hollow
+nodesdonotvote.Balloutlinesareschematic,andeachnodebelongstoexactlyoneball.Forclarity,node
+andballindicesareomittedintheschematic.
+parisons examine grouping, representation learning, target construction, and
+parameter sensitivity. A graph-teacher extension evaluates the same targets
+againstgraph-to-MLPdistillationmethods.
+2. Relatedwork
+2.1. Learningwithnoisylabels
+Methodsforlearningwithnoisylabelsreducetheinfluenceofcorruptedannota-
+tionsbyselectingtrainingsamples,encouragingconsistentpredictions,ormodifying
+thetrainingobjective. Sample-selectionmethodsusethetraininglosstoassesslabel
+reliability: Co-teaching[16]exchangedsmall-losssamplesbetweentwonetworks,and
+JoCoR[17]additionallyencouragedpredictionagreement. Localrelationshipsofferan-
+othersourceofevidence. Deepk-NN[11]filteredoutsampleswhoselabelsdisagreed
+withthoseoftheirneighbors,whileneighbor-consistencyregularization[10]encour-
+agedthepredictionforeachsampletomatchthoseofitsneighbors. Affinity-aware
+4
+
+PAGE 5
+uncertaintyquantification(AUQ)[18]insteadexaminedsample–prototyperelation-
+shipstoquantifyuncertaintyandrefinepseudo-labels.
+Other methods address label noise by modifying the training loss. SCE [19]
+combinedcross-entropywithreversecross-entropy,ELR[6]regularizedtrainingto
+limitnoisememorization,andLogitClip[20]constrainedlogitnorms. Thesestrategies
+handleannotationnoisewithoutexplicitlymodelinggraphrelationsbetweensamples.
+2.2. Noise-robustlearningongraphs
+Graphstructurecanprovideadditionalevidenceforassessinglabelreliability,while
+messagepassingmayalsospreadtheinfluenceofsupervisionerrors[7]. NRGNN[8]
+usedstructuralinformationandpseudo-labelingtoaugmentsupervision.
+Labelreliabilitycanalsoguidetheselectionoftrainingnodes. TSS[9]usedgraph
+topology to select reliable samples, while ProCon [21] assessed label consistency
+amongsemanticallysimilarpeers. Fortext-attributedgraphswithnoisyLLMannota-
+tions,confidence-calibratednodeselection[22]combinedprototype-basedconfusion
+modelingwithgraph-awarereliabilitypropagationtoselectreliablesupervision.
+Beyond assessing label reliability, several methods have constructed additional
+supervision. RNCGLN[23]combinedgraphcontrastivelearningwithpseudo-graphs
+andpseudo-labelstoaddressgraphandlabelnoise. Prototype-GuidedSupervision
+[24]formedclass-levelprototypesbyaggregatingtherepresentationsofnodeswith
+thesameobservedlabel,whileSAMTD[25]improvedsupervisionthroughmultiple
+graphteachers.
+Othermethodsmodifyneighborhoodaggregationorthetrainingobjective. MILAB
+[26]combinedinformation-bottleneck-guidedaggregationwithadversarialconsistency,
+andHALF[27]fusedlow-andhigh-passlossesaccordingtolocalhomophilytoidentify
+reliablelabels. Inaddition,NoisyGL[7]establishedaunifiedevaluationframework
+forlearningwithnoisylabelsongraphs.
+2.3. Graph-freenodeclassification
+Methodsforgraph-freenodeclassificationexploitgraphinformationduringtrain-
+ingwhileavoidingonlinemessagepassingatinference. Graph-MLP[2]incorporated
+5
+
+PAGE 6
+adjacencyinformationthroughaneighborhood-contrastiveobjective,whereasGLNN
+[3] distilled predictions from a GNN teacher into an MLP. Both methods deploy
+attribute-onlyMLPs. GSDN[28]usedneighborhoodself-distillation, SimMLP[4]
+alignedGNNandMLPrepresentationswithoutsupervision,andSA-MLP[29]inves-
+tigatedstructure-awaredistillation. Thesemethodsdifferinhowgraphinformation
+guidestrainingandinwhetherprecomputedstructuralfeaturesareretainedatinference.
+Subsequentdistillationmethodsdifferintheteacherinformationtheytransfer. FF-
+G2M[5]separatedlow-andhigh-frequencyknowledge,KRD[30]assessedknowledge
+reliabilitythroughthestabilityofpredictionentropyundernoiseperturbations,and
+VQGraph [31] encoded local structures as discrete tokens. PGKD [32] used class
+prototypestoguidestructuralknowledgedistillationfromGNNstoMLPs. Yuetal.
+[33]theoreticallyanalyzedhowlabelalignmentindistillationallowsanMLPtolearn
+theimplicitgraphbiasofaGNNteacher.
+Arelatedlineofworkusesgraphstructuretoconstructsofttrainingtargets. PosteL
+[34]constructedposteriorsoftlabelsfromneighborhoodlabelsandgraph-widelabel
+statistics. ALS [35] used neighborhood label distributions and adaptively updated
+smoothed targets during graph training, while SALS [36] incorporated structural
+informationintothetargetlabeldistribution. Thesemethodsuseadjacency-defined
+neighborhoods to construct or refine training targets. GB-LCSS also modifies the
+trainingtargets,butitdefinesregionsbyproximityinafrozen,label-freerepresentation
+andexcludeseachnode’sownlabelfromtheconsensusthatadjustsit.
+2.4. Graphcontrastiverepresentationlearning
+Self-supervisedgraphlearningderivestrainingsignalsfromnodeattributesand
+graph connectivity [37]. Graph contrastive learning generates different views of a
+graphbyperturbingitsstructureorattributes. Acommonnode-levelobjectivebrings
+therepresentationsofthesamenodeacrossviewsclosertogetherwhiledistinguishing
+themfromthoseofothernodes. Theresultingnoderepresentationsprovideabasisfor
+comparingnodeswithoutusingtheirobservedclasslabels.
+GRACE[12]implementsthisapproachthroughrandomedgedroppingandfeature
+masking,withasharedgraphencoderprocessingthetwoviews. Becauseitsobjective
+6
+
+PAGE 7
+usesnoclasslabels,GB-LCSScancomputeandfreezetheGRACErepresentation
+beforeanytraininglabelisused;theobservedtraininglabelsenteronlyafterwards,
+whensofttargetsareconstructedwithintheresultinggroups.
+2.5. Granularballcomputing
+Granularballcomputingrepresentssamplesusingcoarse-grainedhyperspherical
+regions,whichGBkNNusedtoclassifyquerysamples[13]. Granularballsampling
+extendedthisrepresentationtosampleselectionfornoisyorimbalancedclassification
+[14], andsubsequentworkrefinedadaptiveballgeneration[15]. MGNR[38]used
+granularballrepresentationstoconstructmulti-granularityneighborhoodrelationships
+for classification and clustering. BNO-GB [39] used label-agnostic granular-ball
+clusteringandball-andsample-levelindicatorstoidentifynoisetypesinopenintent
+classification.
+Ongraphs,supervisedgranularballcoarsening[40]andGBGC[41]usedgranular
+regionstoconstructcoarsenedgraphs,reducingthesizeofthegraphonwhichaGNN
+operates. Themethodsaboveusegranularregionsforclassification,clustering,sample
+selection,orgraphcoarsening. Insupervisedgranularballclassifiersandsampling
+methods,labelpuritycanguideballgeneration[13–15]. GB-LCSSusesgranularballs
+toorganizesupervision: ageometriccriterionformstheminafrozen,label-freegraph
+representation,andtheobservedtraininglabelsarethenaggregatedwithineachball.
+RatherthanidentifyingnoisetypesasinBNO-GB,GB-LCSSconstructsaleave-one-
+out soft target for each training node from the labels of the other training nodes in
+itsball. ThesetargetstransfergraphinformationintothesupervisionofanMLPthat
+receivesonlynodeattributesatinference.
+3. Method
+3.1. Problemsettingandnotation
+This subsection defines the learning task and introduces the notation used to
+describeGB-LCSS.
+7
+
+PAGE 8
+ConsideranattributedgraphwithnodesetV={v ,...,v },edgesetE⊆V×V,
+1 N
+adjacencymatrixA∈{0,1}N×N,andattributematrixX=[x ,...,x ]⊤ ∈RN×d,where
+1 N
+x istheattributevectorofnodev .
+n n
+Each node belongs to one ofC ≥ 2 classes, indexed by i ∈ {1,...,C}. The set
+V ⊆Vcontainsthelabeledtrainingnodes. Nodev hasacleanlabely ;ifv ∈V ,
+L n n n L
+its observed label z may be corrupted. Both labels take values in {1,...,C}. The
+n
+methodusesobservedlabels,whereascleanlabelsserveasthereferenceforanalysis
+andevaluation.
+Weusen,ℓtoindexnodes, jtoindexgranularballs,anditoindexclasses. Bold
+lowercaseanduppercaselettersdenotevectorsandmatrices,respectively;calligraphic
+lettersdenotesetsorcollections. Asecondsubscriptselectsaclasscomponent. These
+conventionsapplytothemainnotationinTable1.
+Duringtraining,thecompleteXandA,includingtheattributesandtopologyof
+testnodes,areavailableforlabel-freerepresentationlearningandtargetconstruction,
+whiletestlabelsremainhidden. ThegoalistolearnanMLP f whosepredictedclass
+distributionfornodev is
+n
+p =softmax (cid:0) f(x ) (cid:1) . (1)
+n n
+Here, p isthepredictedprobabilitythatnodev belongstoclassi. Aftertraining,
+n,i n
+only f isretainedforinference.
+3.2. Label-freerepresentationlearningandgranularballconstruction
+GB-LCSSfirstlearnsalabel-freegraphrepresentationandthenusesitsgeometry
+topartitionthenodesintogranularballs.
+3.2.1. Label-freerepresentationlearning
+WepretrainGRACE[12]onnodeattributesandgraphconnectivitywithoutclass
+labels,freezetheencoder,andnormalizeitspre-projectionoutputsfordistance-based
+grouping. Theresultingrepresentationmatrixis
+G=[g ,...,g ]⊤ ∈RN×h, (2)
+1 N
+8
+
+PAGE 9
+Table1:Mainnotation.
+Symbol Meaning
+Graphanddata
+V,E Nodesetandedgeset
+N,C Numberofnodesandnumberofclasses
+n,ℓ Nodeindicesin{1,...,N}
+j Granularballindex
+i Classindexin{1,...,C}
+A,X Adjacencymatrixandnodeattributematrix
+xn Attributevectorofnodevn
+V L Setoflabeledtrainingnodes
+yn,zn Cleanandobservedlabelsofnodevn
+η Labelcorruptionprobability
+Representationsandgranularballs
+G,gn FrozennormalizedGRACErepresentationmatrixandvectorfornodevn
+d,h AttributedimensionandGRACErepresentationdimension
+B,Bj Collectionofgranularballsandits j-thmember
+µ
+j
+,D(Bj) CenterandmeanradiusofballBj
+D′(Bj) Size-weightedmeanradiusaftersplittingBj
+Bmax Maximumnumberofgranularballs
+nmin Minimumnumberofnodesineachacceptedchildball
+δ Minimumrelativedecreaseinmeanradiusforanacceptedsplit
+Localconsensusandsofttargets
+wj Observedclass-countvectoroftrainingnodesinBj
+Un Othertrainingnodesintheballcontainingvn
+smin Minimumnumberofvotesrequiredtouselocalconsensus
+rn ObservedclassproportionsamongthevotingnodesinUn
+i⋆
+n
+ClasswiththeuniquehighestvotecountinUn
+qn Local-consensusclassdistributionfornodevn
+β Strengthoftheadjustmenttowardtheuniquelymost-votedclass
+αn Weightofthelocalconsensusinthetargetforvn
+ei,I(·) One-hotvectorforclassi;indicatorfunction
+tn Softtrainingtargetfornodevn
+f,pn MLPclassifieranditspredictedclassdistributionforvn
+whereg isthenormalizedrepresentationofthen-thnodeandhistherepresentation
+n
+dimension. Let g′ denote the encoder output for node v before normalization. Its
+n n
+normalizedrepresentationis
+g′
+g = n . (3)
+n max(∥g′∥ ,ε)
+n 2
+Here,∥·∥ denotestheEuclideannorm,andε=10−12isanumericalsafeguard.
+2
+3.2.2. Granularballconstruction
+LetB={B ,...,B }denotethegranularballsconstructedfromG,whereB ⊆V
+1 M j
+isthe j-thballand M isthefinalballcount. Eachnodebelongstoexactlyoneball.
+9
+
+PAGE 10
+StartingfromB={V},werecursivelysplitballsaccordingtohowtightlytheirnode
+representationsareconcentratedaroundtheircenters.
+Definition1. Foranonemptygranularball B , eachmembernodev ∈ B hasthe
+j n j
+normalizedrepresentationg . Thecenterµ andmeanradiusD(B )oftheballare
+n j j
+1 (cid:88) 1 (cid:88)
+µ = g , D(B )= ∥g −µ ∥ . (4)
+j |B | n j |B | n j 2
+j vn ∈Bj j vn ∈Bj
+ThemeanradiusistheaverageEuclideandistancefromthememberrepresentations
+totheballcenter. Asmallervalueindicatesamorecompactball.
+Letthepositiveintegern specifytheminimumnumberofnodesineachchild
+min
+ball. Balls with |B | ≥ 2n are examined in descending order of D(B ). For each
+j min j
+candidate,2-meansproduceschildrenB(1)andB(2).
+j j
+Definition2. Thesize-weightedpost-splitdispersionofB is
+j
+|B(1)|D(B(1))+|B(2)|D(B(2))
+D′(B )= j j j j . (5)
+j |B |
+j
+Letδ∈(0,1)specifytheminimumrelativedecreaseinthemeanradius. Thesplitis
+acceptedonlyifbothchildballscontainatleastn nodesand
+min
+D′(B )≤(1−δ)D(B ). (6)
+j j
+WeightingthechildradiibytheirsizesmakesD′(B )theaveragedistancefromthe
+j
+samenodestotheirnewcenters,soEq.(6)requiresthisaveragetodecreasebyatleast
+afractionδ. Weacceptthefirstcandidatesplitthatsatisfiesbothconditions,updatethe
+ballcollection,andreordertheremainingcandidates.
+Splitting stops when no valid candidate remains or the ball count reaches B ,
+max
+ensuringM ≤ B . Algorithm1summarizestheprocedure;itsBooleanflagaccepted
+max
+indicateswhetherthecurrentpassacceptedasplit. Section4.1.4givestheparameter
+values.
+3.3. Local-consensussupervisionandMLPtraining
+Given the partition, GB-LCSS constructs each training target by summarizing
+theobservedlabelsoftheothertrainingnodesinthesameballandcombiningtheir
+10
+
+PAGE 11
+Input: NormalizedfrozenrepresentationG,nodesetV,parameters
+B ,n ,δ
+max min
+Output: GranularballpartitionB
+B←{V};
+while|B|< B do
+max
+accepted←false;
+foreachB ∈Bwith|B |≥2n ,indescendingorderofD(B )do
+j j min j
+Apply2-meanstothenormalizedrepresentationsofnodesinB to
+j
+obtainB(1)andB(2);
+j j
+if min(|B(1)|,|B(2)|)≥n andD′(B )≤(1−δ)D(B )then
+j j min j j
+B←(B\{B })∪{B(1),B(2)};
+j j j
+accepted←true;
+break;
+end
+end
+if accepted=falsethen
+break;
+end
+end
+returnB;
+Algorithm 1: Recursive granular ball partitioning in the frozen representation
+space
+consensus with the node’s own observed label. These targets then supervise MLP
+training.
+3.3.1. Within-balllabelconsensus
+Consideratrainingnodev andthegranularballB containingit. Weconstructits
+n j
+targetusingaleave-one-outvotethatexcludesv ,andrepeatthiscalculationforevery
+n
+trainingnode.
+Definition3. ThevotingsetU containstheothertrainingnodesinB :
+n j
+U =(B ∩V )\{v }. (7)
+n j L n
+11
+
+PAGE 12
+Lets ≥1beanintegerspecifyingtheminimumnumberofvotingnodesrequiredto
+min
+uselocalconsensus. When|U |≥ s ,theobservedlabelsofthevotingnodesdefine
+n min
+theempiricalclassdistributionr =(r ,...,r )⊤,with
+n n,1 n,C
+1 (cid:88)
+r = I(z =i), i=1,...,C. (8)
+n,i |U | ℓ
+n vℓ ∈Un
+Here,z istheobservedlabelofvotingnodev ,andI(z =i)equalsoneifthislabel
+ℓ ℓ ℓ
+isiandzerootherwise. Theentriesofr arenonnegativeandsumtoone. Excluding
+n
+v preventsitsobservedlabelfromreinforcingtheconsensususedtoadjustit.
+n
+Definition4. Ifasingleclassreceivesmorevotesthaneveryotherclass,itsindexis
+i⋆ =argmaxr . (9)
+n n,i
+i
+Thelocal-consensusdistributionq assignsadditionalweighttothisclassthroughthe
+n
+parameterβ∈[0,1]:
+
+q =
+
+(1−β)r
+n
++βe
+i⋆
+n
+, ifauniquehighest-voteclassexists
+(10)
+n r
+n
+, ifthehighestvotecountistied,
+Here,e istheone-hotvectorwithvalue1atclassiand0elsewhere. Theparameter
+i
+βcontrolstheweightassignedtotheone-hotdistributionoftheuniquelymost-voted
+class.
+3.3.2. Consensus-weightedsofttargets
+Thedistributionq summarizestheobservedlabelsoftheothertrainingnodes. Its
+n
+weightinthefinaltargetisdeterminedbythelargestclassproportionintheoriginal
+votedistributionr .
+n
+Definition5. When|U |≥ s ,theconsensusweightα isdefinedbyrescalingthe
+n min n
+largestvoteproportionrelativetotheuniformclassprobability1/C:
+Cmax r −1
+α = i n,i . (11)
+n C−1
+Becauser isaclassdistribution,itslargestentryliesbetween1/Cand1. Equa-
+n
+tion(11)mapsthisintervalonto[0,1]: uniformlydistributedvotesgiveα =0,and
+n
+unanimousvotesgiveα =1. Forfixedvotes,changingβleavesα unchanged.
+n n
+12
+
+PAGE 13
+Definition 6. The soft target t combines the observed label of v with its local
+n n
+consensus:
+
+t =
+
+(1−α
+n
+)e
+zn
++α
+n
+q
+n
+, |U
+n
+|≥ s
+min
+(12)
+n e
+zn
+, |U
+n
+|< s
+min
+,
+Thetargetisaconvexcombinationoftheobservedone-hotlabelandlocalconsen-
+sus,withα controllingtheconsensuscontribution.
+n
+Nodeswithfewerthans othertrainingnodesintheirballretaintheirobserved
+min
+one-hotlabels.
+Equations(7)–(12)useonlytheobservedlabelsoftrainingnodes;validationand
+testlabelsarenotusedintargetconstruction. Foreachball B , Algorithm2stores
+j
+theobservedclasscountsofitstrainingnodesinavectorw . Foreachtrainingnode
+j
+v ∈ B ,itsubtractsthenode’sownvotefromw andconstructst fromtheremaining
+n j j n
+counts.
+3.3.3. MLPtraining
+Thetwo-layerMLP f consistsofahiddenlinearlayer,followedbyReLU,batch
+normalization,anddropout,andanoutputlayerthatproducesclasslogits. Thetraining
+lossis
+1 (cid:88) (cid:88)C
+L=− t logp . (13)
+|V | n,i n,i
+L vn ∈V L i=1
+3.4. Analysisoflocal-consensussupervision
+Underindependentsymmetriclabelnoise,weboundthelocal-voteerrorprobability
+andderiveasufficientconditionforalowerexpectedsoft-targeterror.Thepartition,the
+training-nodeset,andthecleanlabelsarefixed. Letηdenotethecorruptionprobability:
+eachlabelisindependentlyretainedwithprobability1−ηandotherwisereplacedbya
+uniformlychosenincorrectclass.
+Fixatrainingnodev withcleanlabely and s =|U |≥ s votingnodes. The
+n n n n min
+cleanclassproportionsandthemarginofthetrueclassoveritsclosestcompetitorare
+1 (cid:88)
+a = I(y =i), ∆ =a −maxa . (14)
+n,i s
+n vℓ ∈Un
+ℓ n n,yn i(cid:44)yn n,i
+13
+
+PAGE 14
+Input: GranularballpartitionB,trainingnodesV ,observedlabels
+L
+{z :v ∈V },numberofclassesC,parameterss ,β
+n n L min
+Output: OnestoredsofttargetforeachnodeinV
+L
+Initializet ←e foreverytrainingnodev ∈V ;
+n zn n L
+foreachB ∈Bdo
+j
+(cid:80)
+w ← e ;
+j vℓ ∈Bj ∩V L zℓ
+foreachv ∈ B ∩V do
+n j L
+U ←(B ∩V )\{v };
+n j L n
+if |U |< s then
+n min
+continue;
+end
+r ←(w −e )/|U |;
+n j zn n
+if oneclassi⋆hasastrictlylargervotecountthaneveryotherclass
+n
+then
+q ←(1−β)r +βe ;
+n n i⋆
+n
+else
+q ←r ;
+n n
+end
+α ←(Cmax r −1)/(C−1);
+n i n,i
+t ←(1−α )e +α q ;
+n n zn n n
+end
+end
+returnStoredtargetsforallnodesinV ;
+L
+Algorithm2:Granularballsoft-targetconstruction
+Here, a is the fraction of nodes in U whose clean label is i, and a selects the
+n,i n n,yn
+proportionforthetrueclassofv . Apositive∆ meansthatthisclassreceivesmore
+n n
+clean votes than any competing class. We use Pr to denote probability over the
+independentlabelcorruptions.
+Proposition 1. Suppose that C ≥ 2, ∆ > 0, and 0 ≤ η < (C − 1)/C, and let
+n
+γ=1−Cη/(C−1)>0. Eachvotinglabelisindependentlyflippedwithprobabilityη
+14
+
+PAGE 15
+toauniformlychosenincorrectclass. Then
+(cid:32) (cid:33) (cid:40) (cid:32) s γ2∆2 (cid:33)(cid:41)
+Pr maxr ≥r ≤min 1,(C−1)exp − n n . (15)
+i(cid:44)yn
+n,i n,yn
+2
+Proof. Fixacompetingclassi(cid:44)y . Foreachvotingnodev ∈U ,defineξ =I(z =
+n ℓ n ℓ ℓ
+y )−I(z =i). Thesevariablesareindependentandliein[−1,1],andtheiraverageis
+n ℓ
+ξ¯ =r −r . Undersymmetriclabelcorruption,
+n,yn n,i
+E[ξ¯]=γ(a −a )≥γ∆ .
+n,yn n,i n
+Hoeffding’sinequality[42]thereforegives
+(cid:16) (cid:17) (cid:32) s γ2∆2 (cid:33)
+Pr r ≥r =Pr(ξ¯ ≤0)≤exp − n n .
+n,i n,yn
+2
+TakingtheunionboundovertheC−1competingclassesandcappingtheboundat
+oneyieldsEq.(15).
+Symmetric corruption reduces the expected margin over the closest competitor
+from∆ toγ∆ . Forafixedpositivemarginandnoiserate,theexponentialterminthe
+n n
+bounddecreasesasthenumberofvotesincreases. However,enlargingagroupcan
+alsochangeitsclasscompositionandreducethemargin,sobothquantitiesmatterfor
+votingreliability. TheadjustmentinEq.(10)preservesthemost-votedclasses,andthe
+sameboundthereforeappliestoq . AppendicesA–Iareprovidedinthesupplementary
+n
+material. AppendixH.1givesthedetailedexpectationcalculation.
+Proposition1boundstheprobabilitythatlocalvotingfailstogivethetrueclassa
+uniquelead. Wenextassessthefullsoft-targetdistributionthroughitssquareddistance
+fromthecleanone-hotlabel. Fornodev ,e isitsobservedone-hotlabel. TheBrier
+n zn
+scoreofatargetvectorbisBS (b) = ∥b−e ∥2. Thetargett = (1−α )e +α q
+n yn 2 n n zn n n
+satisfies
+BS (t )=(1−α )BS (e )+α BS (q )−α (1−α )∥e −q ∥2. (16)
+n n n n zn n n n n n zn n 2
+Thisidentityexpressestheerrorofthesofttargetastheweightedsumoftheerrors
+oftheobservedlabelandthelocalconsensus,minusanonnegativetermdetermined
+by their disagreement. The following corollary gives a sufficient condition for an
+improvementinexpectation.
+15
+
+PAGE 16
+Corollary1. Forthefixednodev with|U |≥ s ,assumeindependentsymmetric
+n n min
+labelcorruptionwithrateη. Fixthepartition,thetraining-nodeset,thecleanlabels,
+andtheobservedlabelsofallothertrainingnodes. Thenq andα arefixed,and
+n n
+E[BS (t )]≤2η(1−α )+α BS (q ), (17)
+n n n n n n
+wheretheexpectationistakenoverthecorruptionofnodev ’slabel. Ifα > 0and
+n n
+BS (q ) < 2η,thesofttargethasalowerexpectedsquarederrorthantheobserved
+n n
+one-hotlabel.
+Because node v is excluded from its own vote, q and α do not change with
+n n n
+itsobservedlabel,whoseone-hotvectorhasexpectedsquarederror2η. Takingthe
+expectationofEq.(16)andomittingitsnonpositivefinaltermthereforegivesEq.(17)
+(AppendixH.2).
+Acrossthetrainingset,thechangeinBrierscorecombinestheerrorreductionon
+corruptedlabelswithanyerrorintroducedoncorrectlabels. Section4.3.1reportsthe
+netreduction,andAppendixI.2measuresthetwocomponentsseparately.
+3.5. Graph-teacherdistillationextension
+ThebasemethodtrainstheMLPonthelabeledtrainingnodes. Intheextension,
+thesametargetssuperviseaGCNteacher,whosepredictionsonallnodesaredistilled
+intoanMLPstudent.
+Theteacherisatwo-layerGCNthattakestheoriginalattributesXandtheadjacency
+matrixAasinputs. Itsclass-logitmatrixis
+O=GCN(X,A)∈RN×C. (18)
+Leto ∈ RC denotetheteacher-logitvectorfornodev ,whosetransposeisthen-th
+n n
+rowofO. Theteacherlossis
+L =− 1 (cid:88) (cid:88)C t log (cid:2) softmax(o ) (cid:3) . (19)
+1 |V | n,i n i
+L vn ∈V L i=1
+TheteacherthereforeusesGonlythroughtheGB-LCSStargets;itsinputsareXand
+A.
+16
+
+PAGE 17
+After checkpoint selection, the teacher is frozen. With distillation temperature
+τ>0,itspredictionfornodev is
+n
+(cid:18)o (cid:19)
+π =softmax n . (20)
+n τ
+Here,π istheteacher’sprobabilityforclassiatnodev . Increasingτproducesa
+n,i n
+softerdistribution. Theresultingdistributionisstoredasthedistillationtargetofthe
+node.
+TheMLPstudent f istrainedonallN nodes,withthesedistributionsasitssole
+distillationtargets. Itslossis
+τ2 (cid:88)N (cid:88)C (cid:34) (cid:32) f(x ) (cid:33)(cid:35)
+L =− π log softmax n . (21)
+2 N n,i τ
+n=1 i=1 i
+Afterdistillation,onlytheMLPstudentisretainedforinferenceonnodeattributes.
+3.6. Computationalcosts
+RelativetodirectMLPtraining,GB-LCSSaddsthreetraining-timestages: graph
+contrastivepretraining,granularballpartitioning,andsoft-targetconstruction. Pretrain-
+ingissharedacrossdownstreamrunsthatusethesamefrozenrepresentation.
+Partitioningisdominatedby2-means,whichcostsO(I|B |h)perballforIiterations
+j
+andafixednumberofinitializations.InAlgorithm1,disjointcandidatescontainatmost
+N nodesperpass. WithatmostB −1successfulpassesandonefinalunsuccessful
+max
+pass,thetotal2-meanscostisboundedby
+O(IB Nh). (22)
+max
+For fixed I and B , this bound is linear in both the number of nodes and the
+max
+representation dimension. Sorting the candidates by dispersion in each pass adds
+at most O(B2 logB ) operations in total. The frozen representation G requires
+max max
+O(Nh)space,andthenodeassignments,ballcenters,andper-ballclasscountsrequire
+O(N+B (h+C))space. Giventheper-ballclasscounts,computingthetargetsfor
+max
+thelabelednodestakesO(|V |C)time. Theimplementationinitializesandstoresa
+L
+denseN×Ctargetmatrix,whichaddsO(NC)timeandspace.
+17
+
+PAGE 18
+Theclassifieristhesametwo-layerMLPasthatusedinthebaselines. LetFdenote
+itshiddenwidthandT thenumberoftrainingepochs. ThelossinEq.(13)involves
+S
+onlythetrainingnodes,butthefull-batchimplementationevaluatesallNnodesineach
+epoch,atatotalcostofO(T N(dF+FC)).
+S
+Atinference,thecostpernodeis
+O(dF+FC). (23)
+ThemodelparametersalsorequireO(dF+FC)space. Theextensionadditionally
+trainsaGCNteacherandthentrainsanMLPstudentontheteacher’spredictionsfor
+allN nodes. ItsdeployedMLPhasthesamearchitectureandinferencecostasabove.
+4. Experiments
+4.1. Experimentalsetup
+4.1.1. Datasets
+Themainexperimentsusefivepublicdatasets: thecitationgraphsCoraandCite-
+Seer[43],the70-classcitationgraphCoraFull,theco-authorshipgraphCoauthor-CS,
+andtheco-purchasegraphAmazon-Photo[44]. Table2summarizestheirstatistics.
+Edgesarecountedasuniqueundirectedpairsafterself-loopremoval,training-node
+counts refer to the 20% split, and edge homophily is the proportion of edges that
+connectnodesofthesameclass. Sixadditionaldatasetsareevaluatedunderuniform
+0.4noise(AppendixG).
+4.1.2. Datasplitsandlabelnoise
+Allcomparisonsfollowthefixed-graphtransductiveprotocolofSection3.1. For
+eachseedfrom0to4,weusetheNoisyGLpercentage-splitroutinetorandomlysample
+Table2:Statisticsofthefivemaindatasets.
+Dataset Nodes Undirected Features Classes Training Edge
+edges nodes homophily
+Cora 2,708 5,278 1,433 7 541 0.810
+CiteSeer 3,327 4,552 3,703 6 665 0.736
+CoraFull 19,793 63,421 8,710 70 3,958 0.567
+Coauthor-CS 18,333 81,894 6,805 15 3,666 0.808
+Amazon-Photo 7,650 119,081 745 8 1,530 0.827
+18
+
+PAGE 19
+training,validation,andtestnodesfromthefullnodesetatratiosof20%,10%,and
+70%,respectively. Noiseisinjectedonlyintothetraininglabels,andallmethodsshare
+thesamesplitandnoisylabelsforeachdatasetandseed. Cleanvalidationlabelsare
+usedforcheckpointselection,andtestlabelsforfinalevaluation. AppendixFgivesthe
+exactsubsetsizesandthesamplingprocedure,andAppendixCexaminessensitivityto
+corruptedvalidationlabels.
+Underuniformnoise,eachtraininglabelisretainedwithprobability1−ηandis
+replacedbyeachoftheotherC−1classeswithprobabilityη/(C−1). Weevaluate
+η ∈ {0.2,0.4,0.6}. Pair noise uses η = 0.4: it changes class i ∈ {1,...,C} to ((i−
+2)modC) + 1 with probability η and leaves it unchanged with probability 1 − η.
+Instance-dependentnoiseisgeneratedwiththeNoisyGLgenerator,usingaconfigured
+meanfliprateof0.4andnorm_std=0.1.
+4.1.3. Comparedmethods
+The first comparison group comprises seven noisy-label baselines: MLP+CE,
+Small-loss,Co-teaching,JoCoR,SCE,ELR,andLogitClip. Theyusethesamede-
+ployedtwo-layerMLPandthesamelabeledtrainingnodesasGB-LCSS.GB-LCSS
+usesgraphinformationduringtrainingandrequiresnonoise-modelparameters. Small-
+loss,Co-teaching,andJoCoRusethetruenoiseratetosettheirforget-rateschedules.
+Small-loss selects samples by their per-sample cross-entropy. Co-teaching and Jo-
+CoRtraintwoindependentlyinitializedMLPsbutevaluateasinglenetworkwithout
+ensembling.
+Thesecondgroupcomprisesgraph-assistedMLPmethods: PosteL[34],ALS[35],
+SALS [36], Graph-MLP [2], and GSDN [28]. All of them use graph information
+onlyduringtraininginourprotocol. PosteLusestheofficialtarget-constructioncode
+withiterativepseudo-labelingdisabled. Graph-MLPisadaptedtothecommonMLP,
+whereasALS,SALS,andGSDNareimplementedasmechanismadaptationsunder
+thecommonprotocol. AppendixFidentifiestheretainedcomponentsandparameter
+sourcesforeachmethod.
+The third group comprises graph-to-MLP distillation methods: a GCN(X)+CE
+response-distillationbaselinebasedonGLNN[3],FF-G2M[5],KRD[30],VQGraph
+19
+
+PAGE 20
+[31], and a GCN teacher trained on GB-LCSS targets (Section 3.5). FF-G2M is
+reimplementedwiththecommonbackbonesanditslow-andhigh-frequencyobjectives.
+ThemechanismadaptationsofKRDandVQGraphretainreliability-basedknowledge
+selectionandsoft-codebookdistillation,respectively. Foreachseed,theteacherand
+studentareretrainedforeveryroute,usingthesameMLPconfigurationforallstudents.
+4.1.4. Implementationdetails
+DatasetsareloadedthroughtheNoisyGLinterfacetoPyTorchGeometric. Graph
+contrastivepretrainingusesrow-normalizedattributes,whereasdownstreammodels
+usetheattributessuppliedbyNoisyGL.Graph-convolutionalmodelsusethesupplied
+adjacency,withnormalizationandself-loopshandledwithintheirgraph-convolution
+layers.
+Thenoisy-labelbaselinesandGB-LCSSuseatwo-layerMLPwithahiddenwidth
+of64andadropoutrateof0.5. Wetrainfor200epochsusingAdamwithalearning
+rateof0.01andaweightdecayof5×10−4, andweselectthecheckpointwiththe
+highestvalidationaccuracy. Teachercheckpointsareselectedwiththesamecriterion.
+Bydefault,GB-LCSSusesB =64,n =32,δ=0.05,s =2,andβ=0.5.
+max min min
+Recursive 2-means uses Euclidean distance, k-means++ initialization [45], and 10
+initializationspercandidatesplit,withrandomizationcontrolledbythedownstream
+seed. Thedistillationextensionusesatemperatureofτ=1. GRACEconfigurations
+andallotherparametersettings,withtheirsources,aregiveninAppendixF.
+4.1.5. Evaluationprotocol
+Test-node classification accuracy is reported in percent as the mean ± sample
+standarddeviationoverfivepairedseeds. Boldmarksthehighestmeanwithineach
+dataset and noise setting; underlining marks the second-highest mean in the graph-
+assistedcomparison. Eachdatasetusesonefixednormalizedpretrainedrepresentation
+G.
+Same-seedaccuracydifferencesareassessedwithtwo-sidedpairedt-testsand95%
+confidence intervals. Holm correction [46] is applied separately to each family of
+25 tests, with one family for each reference method: random size-matched group-
+20
+
+PAGE 21
+Table3:Testaccuracyofnoisy-labelmethodswiththesamedeployedMLPunderuniform0.4noise.
+Method Cora CiteSeer CoraFull Coauthor-CS Amazon-
+Photo
+MLP+CE 44.24±2.62 43.50±3.02 31.98±0.98 88.42±0.62 73.90±1.80
+Small-loss 51.95±1.97 49.70±3.07 33.04±0.50 89.06±0.88 77.25±1.62
+Co-teaching 46.83±1.78 46.24±2.89 34.39±0.24 88.80±0.97 78.21±1.00
+JoCoR 51.72±1.30 49.91±3.37 35.70±0.32 89.38±0.61 79.57±0.53
+SCE 43.60±1.86 42.09±3.47 29.29±0.45 88.37±0.53 76.08±3.11
+ELR 44.28±1.38 43.17±3.95 32.14±0.67 88.29±0.73 73.93±2.12
+LogitClip 47.50±1.50 46.57±3.52 34.69±1.17 88.40±0.21 74.98±2.38
+GB-LCSS 57.49±0.76 55.24±2.04 37.39±0.51 90.71±0.59 82.12±1.08
+ing,MLP+CE,andJoCoR.AppendixBreportsthepairedcomparisons,confidence
+intervals,andHolm-adjustedp-values.
+4.2. Comparativeresults
+4.2.1. Comparisonwithnoisy-labelbaselines
+GB-LCSS attains the highest mean accuracy on all five datasets under uniform
+0.4,exceedingthestrongestbaselineoneachdatasetby1.33–5.54percentagepoints
+(Table3).
+Acrossallfivenoisesettings,itachievesthehighestmeanin24ofthe25settings,
+with average gains of 7.74 points over MLP+CE and 3.46 points over JoCoR, the
+strongestbaselineonaverageacrossthe25settings(Fig.2). Theonlyexceptionis
+Coauthor-CSunderuniform0.2,whereJoCoRishigherby0.27points. AppendixA
+gives the complete accuracy results, and Appendix B reports the paired statistical
+comparisons.
+Fig.3showsaccuracyasafunctionoftheuniformnoiserate. Astherateincreases
+from0.2to0.6,GB-LCSSloseslessaccuracythanMLP+CEandJoCoRonalldatasets
+exceptCiteSeer.
+On six additional datasets under uniform 0.4 noise, GB-LCSS exceeds random
+size-matchedgroupingonallsixandthestrongestnoisy-labelbaselineonthree(Ap-
+pendixG).
+4.2.2. Comparisonwithgraph-assistedMLPmethods
+Table4comparesthegraph-assistedMLPmethods,whichusethegrapheitherto
+constructsofttargetsortoshapetherepresentationoftheMLP.
+21
+
+PAGE 22
+6
+Cora +3.13 +5.54 +4.94 +4.46 +4.58 5
+4
+3
+CiteSeer +4.56 +5.34 +2.95 +3.07 +4.72 2
+1
+CoraFull +0.13 +1.69 +2.82 +3.02 +1.78 0
+Coauthor-CS -0.27 +1.33 +4.61 +4.66 +1.34
+Amazon-Photo +0.46 +2.55 +4.96 +5.37 +4.79
+−1
+Uniform Uniform Uniform Pair Instance
+0.2 0.4 0.6 0.4 0.4
+Noise setting
+)stniop
+egatnecrep(
+niag
+ycaruccA
+Accuracy gain over the strongest noisy-label MLP baseline
+Figure2:AccuracygainofGB-LCSSoverthestrongestnoisy-labelbaselinewiththesamedeployedMLP.
+Eachcellshows,inpercentagepoints,thefive-seedmeanaccuracyofGB-LCSSminusthehighestmean
+amongthesevenbaselinesforthesamedatasetandnoisesetting.Blueandreddenotepositiveandnegative
+gains,respectively.
+60
+50
+40
+30
+0.2 0.4 0.6
+)%(
+ycarucca
+tseT
+GB-LCSS JoCoR MLP+CE Random grouping
+Cora CiteSeer CoraFull Coauthor-CS Amazon-Photo
+90
+60 40 90 80
+50
+85
+30 70
+40
+80
+60
+30 20
+0.2 0.4 0.6 0.2 0.4 0.6 0.2 0.4 0.6 0.2 0.4 0.6
+Uniform label-noise rate
+Figure3:Testaccuracyunderuniformlabelnoise.Linesshowthemeansoverfivepairedseeds,andshaded
+regionsshowthesamplestandarddeviations.Panelsusedifferenty-axisscales.“Randomgrouping”denotes
+randomsize-matchedgrouping,whichpreservesthenumberandsizesofthegranularballs.
+Acrossthe25settings,theaverageaccuracygainsoverPosteL,ALS,andSALSare
+5.69,7.71,and4.69percentagepoints,respectively. GB-LCSSachieveshighermean
+accuracythanPosteLandSALSin24settingseach,andthanALSinall25settings
+(AppendixE).Thesemethodsusegraph-definedneighborhoodsfortargetconstruction,
+whereasGB-LCSSusesregionsofalabel-freerepresentationandleave-one-outvoting.
+Underuniform0.4,GB-LCSSachieveshighermeanaccuracythanGraph-MLPon
+CoraFull,Coauthor-CS,andAmazon-Photo,butloweraccuracyonCoraandCiteSeer.
+ItexceedsGSDNonallfivedatasets. Theseresultshighlightthedataset-dependent
+22
+
+PAGE 23
+Table4:TestaccuracyofmethodsthatusethegraphduringMLPtraining,underuniform0.4noise.
+Method Useofgraph Cora CiteSeer CoraFull Coauthor- Amazon-
+structureintraining CS Photo
+PosteL Posteriorsoftlabels 47.09±1.81 45.84±2.48 36.51±1.01 84.74±1.51 80.59±0.94
+ALS Neighborhoodlabel 45.20±1.24 43.77±2.76 31.91±1.05 88.55±0.86 73.41±2.75
+smoothing
+SALS Structure-awarelabel 48.27±2.50 47.20±1.69 37.06±0.78 88.85±0.82 77.86±0.79
+smoothing
+Graph-MLP Multi-hop 63.23±3.07 57.23±1.85 37.05±0.91 88.95±0.43 77.05±1.24
+neighborhood-
+contrastiveobjective
+GSDN Neighborhood 55.97±4.29 50.36±3.39 35.80±0.66 86.55±0.78 73.31±2.00
+self-distillation
+GB-LCSS Labelconsensus 57.49±0.76 55.24±2.04 37.39±0.51 90.71±0.59 82.12±1.08
+withingranularballs
+Table5:Target-constructionablationsunderuniform0.4noise.
+Dataset GB-LCSS Ownvote Random Uniform Prior Gainfrom
+included size-matched smoothing smoothing excluding
+grouping ownvote
+Cora 57.49±0.76 56.28±1.54 43.31±1.40 44.69±2.90 44.89±2.38 +1.21
+CiteSeer 55.24±2.04 53.52±2.71 42.08±2.88 43.69±3.31 43.43±2.99 +1.72
+CoraFull 37.39±0.51 37.30±0.57 32.30±0.85 32.59±1.12 32.63±0.84 +0.09
+Coauthor-CS 90.71±0.59 90.62±0.47 87.46±1.07 88.25±0.80 88.04±0.73 +0.09
+Amazon-Photo 82.12±1.08 81.33±0.70 71.45±3.29 74.18±1.72 74.72±1.44 +0.79
+strengthsofrepresentationlearningwithGraph-MLPandtargetrefinementwithGB-
+LCSS(Table4).
+4.3. Ablationandmechanismanalysis
+4.3.1. Effectoflocal-consensustargets
+Toexaminetheroleofballmembership,randomsize-matchedgroupingshuffles
+nodeswhilepreservingballsizesandthetargetrule. Uniformandpriorsmoothingtest
+whetherordinarylabelsmoothingprovidessimilargainsbymixingeachobservedone-
+hotlabelwithauniformdistributionorobservedtraining-labelfrequencies,respectively,
+usingacoefficientof0.1. Afurthervariantincludesthecurrentnode’sownlabelin
+thevoteunderthesametie-handlingrule. Table5reportsthesecomparisonsunder
+uniform0.4.
+Randomsize-matchedgroupinglowersaccuracyin all25settings, by 8.69per-
+centagepointsonaverage,toapproximatelythelevelofMLP+CE.Uniformandprior
+smoothingrecoverlittleofthisgain. Thesecontrolssupporttheimportanceofwhich
+23
+
+PAGE 24
+1.2
+1.0
+0.8
+0.6
+0.4
+0.2
+0.2 0.4 0.6 0.8 1.0 1.2
+Observed one-hot target Brier score
+erocs
+reirB
+tegrat
+SSCL-BG
+a Target quality b Mean Brier-score reduction
+Cora 0.5
+CiteSeer Cora 0.20 0.36 0.37 0.29 0.35
+CoraFull
+Coauthor-CS
+Amazon-Photo 0.4
+CiteSeer 0.12 0.28 0.31 0.23 0.28
+0.3
+CoraFull 0.06 0.17 0.19 0.15 0.17
+0.2
+Coauthor-CS 0.26 0.49 0.51 0.43 0.49
+0.1
+Uniform
+Pair Amazon-Photo 0.24 0.43 0.44 0.37 0.44
+Instance
+0.0
+Uniform Uniform Uniform Pair Instance
+0.2 0.4 0.6 0.4 0.4
+Noise setting
+Figure4:TargetBrierscoresagainstcleantraininglabels.(a)Observedone-hottargets(horizontal)versus
+GB-LCSStargets(vertical).Eachmarkeraveragesfiveseedsforonedataset–noisesetting.Colorsidentify
+datasets;circles,squares,andtrianglesindicateuniform,pair,andinstance-dependentnoise,respectively.
+Thedashedlinemarksequality. (b)Observed-targetscoreminusGB-LCSStargetscore;positivevalues
+indicateimprovement.
+nodescontributetothelocalconsensus,beyondtargetsofteningalone. Excludingthe
+currentnode’svoteraisesmeanaccuracyonallfivedatasetsunderuniform0.4,aswell
+asoneverydatasetwhenaveragedoverthefivenoisesettings. Withcleantraining
+labels, targets change only in balls whose training nodes belong to more than one
+class. AccuracydiffersfromthatofMLP+CEby−1.75to+2.00percentagepoints
+(AppendixD).
+We then assess the training targets themselves, independently of the classifier.
+Fig.4reportstheirmulticlassBrierscore[47],averagedoverthelabeledtrainingnodes
+andcomputedagainstthecleantraininglabels,whichareusedonlyforevaluation:
+1 (cid:88)
+∥t −e ∥2.
+|V | n yn 2
+L vn ∈V L
+The score of the observed labels is computed by replacing t with e . All 25
+n zn
+points,eachaveragedoverfiveseeds,liebelowtheequalityline: theGB-LCSStargets
+reducethescoreby0.06–0.51relativetotheobservedone-hottargets,withthelargest
+reductionsonCoauthor-CSandAmazon-Photo.
+UsingEq.(H.5),AppendixI.2separatesthenetBrier-scorereductionunderuniform
+0.4noiseintoerrorremovedoncorruptedlabelsanderrorintroducedoncorrectlabels.
+24
+
+PAGE 25
+Table6:Sensitivitytothegroupingruleunderuniform0.4noise.
+Dataset Granularball kNN kNN−GB k-means k-means−GB
+Cora 57.49±0.76 57.21±1.19 −0.27 56.58±1.23 −0.91
+CiteSeer 55.24±2.04 56.17±3.24 +0.94 56.18±1.78 +0.94
+CoraFull 37.39±0.51 40.50±0.51 +3.11 39.26±0.48 +1.87
+Coauthor-CS 90.71±0.59 90.83±0.57 +0.12 91.01±0.64 +0.29
+Amazon-Photo 82.12±1.08 82.23±1.20 +0.11 81.68±0.66 −0.44
+GBdenotesgranularballgrouping.Differencesareinpercentagepoints.
+Thereductionexceedstheincreaseinall25dataset–seedruns,byafactorof6.7–18.1
+inthefive-seedmeans.
+4.3.2. Sensitivitytothegroupingrule
+Toassesssensitivitytogrouping,wereplacegranularballswithkNNneighbor-
+hoodsork-meansclusterswhilekeepingthefrozenrepresentationandEqs.(7)–(12)
+unchanged. Foreachseed,kNNmatchesthemeannumberoftrainingvotesperball,
+andk-meansmatchestheballcount; bothexcludethecurrentnode’svote. Table6
+reportsuniform0.4results,withdifferencesmeasuredagainstgranularballgrouping
+inpercentagepoints.
+Allthreegroupingrulesexceedrandomsize-matchedgroupingandyieldmean
+accuracieswithinonepercentagepointofoneanotheronfouroffivedatasets(Tables5
+and6),supportingtheuseofalternativegroupingrulesforlocal-consensussupervi-
+sion. We use granular balls because geometric splitting adapts the partition under
+explicitsizeandball-countconstraints,whileeachballprovidessharedclasscounts
+forconstructingitsmembers’targets. Section4.4.2examinestheconstructiontime
+andstoragerequirementsofthisdesign.
+4.3.3. Effectoftherepresentationspace
+Table7comparesGRACE,rawattributesX,andpropagatedattributesA2Xunder
+uniform0.4noiseonallfivedatasets,usingfivepairedseeds,fixedsplittingparameters,
+and the main training protocol. Ball counts give the ranges across seeds. Propaga-
+tionusestheoriginaladjacencymatrixtwice,withoutaddedself-loopsoradjacency
+normalization,followedbyvectornormalizationusingEq.(3).
+RawXproducesnoacceptedsplitinanyofthe25dataset–seedruns,soeachnode
+drawsitsconsensusfromallothertrainingnodes. TheA2Xrepresentationproduces
+25
+
+PAGE 26
+Table7:Effectoftherepresentationusedforpartitioningunderuniform0.4noise.
+Dataset Accuracy Numberofballs
+GRACE RawX A2X GRACE RawX A2X
+Cora 57.49±0.76 44.37±2.31 44.37±2.31 52–53 1 1
+CiteSeer 55.24±2.04 42.90±2.50 42.90±2.50 63–64 1 1
+CoraFull 37.39±0.51 31.86±1.05 31.86±1.05 64 1 1
+Coauthor-CS 90.71±0.59 87.63±1.10 89.20±0.67 64 1 50–59
+Amazon-Photo 82.12±1.08 73.37±1.13 81.13±1.64 64 1 64
+multipleballsonlyonCoauthor-CSandAmazon-Photo,whereitalsooutperformsraw
+attributes. GRACEproducesmultipleballsoneverydatasetandachievesthehighest
+meanaccuracyamongthethreerepresentations(Table7).
+On Cora, CiteSeer, and CoraFull, we train three GRACE representations with
+differentpretrainingseedsandevaluateeachrepresentationusingthreedownstream
+seeds. Partitionsobtainedfromdifferentpretrainingseedsdiffersubstantially, with
+adjustedRandindices[48]between0.247and0.365. Afteraveragingoverdownstream
+seeds, the standard deviations of accuracy across pretraining seeds are 0.13, 0.45,
+and0.60percentagepoints,respectively,andGB-LCSSexceedsMLP+CEforevery
+pretraining seed. Thus, although the node assignments change substantially across
+pretrainingseeds,downstreamaccuracychangeslittle.
+4.3.4. Sensitivitytoconstructionandtargetparameters
+AppendixI.1variesonegroupingorvotingparameteratatimeonthefivedatasets
+underuniform0.4noise,withfixedrepresentationsandfivepairedseeds. Thelargest
+losses occur when a higher splitting threshold leaves all nodes in one ball or when
+ahighervotingthresholdsharplyreducesthenumberofnodesreceivingconsensus
+supervision. Theremainingtestedsettingsstaywithinthreepercentagepointsofthe
+default. A larger ball budget improves accuracy on CoraFull, and assigning more
+weighttothemost-votedclassimprovesaccuracyonfourdatasets.
+4.4. Graph-teacherextensionandcomputationalcost
+4.4.1. Graph-teacherdistillation
+We next examine whether training a graph teacher with GB-LCSS targets also
+improvesitsdistilledMLPstudent(Section3.5). Table8comparesdirectMLPtraining
+26
+
+PAGE 27
+Table8:TestaccuracyofdeployedMLPsunderdirecttrainingandgraph-to-MLPdistillation.
+Trainingroute Cora CiteSeer CoraFull Coauthor- Amazon-
+CS Photo
+(a)Uniform0.4
+GB-LCSS,directMLPtraining 57.49±0.76 55.24±2.04 37.39±0.51 90.71±0.59 82.12±1.08
+GCN(X)+CEteacher 77.95±2.62 66.09±1.38 58.74±0.82 93.20±0.09 89.86±0.77
+FF-G2M 77.65±2.97 65.80±0.49 56.58±0.93 91.58±0.24 84.82±0.84
+KRD 71.77±2.20 64.96±1.03 47.12±0.95 91.39±0.49 85.17±0.94
+VQGraph 78.89±2.34 65.64±1.72 58.52±0.77 93.25±0.09 90.54±0.85
+GCNteachertrainedon 81.35±1.05 69.27±1.57 57.29±0.24 93.83±0.21 90.40±0.77
+GB-LCSStargets
+(b)Uniform0.6
+GB-LCSS,directMLPtraining 41.86±2.30 42.02±3.14 27.43±0.89 87.19±0.69 71.45±3.75
+GCN(X)+CEteacher 65.50±3.28 53.30±4.42 51.63±2.02 91.13±0.58 84.80±1.48
+FF-G2M 63.63±2.16 52.32±4.20 45.78±2.90 86.50±1.01 73.08±2.82
+KRD 61.28±1.17 54.17±3.14 41.61±2.43 89.80±0.29 80.30±0.51
+VQGraph 65.75±2.72 53.34±4.47 52.01±0.65 90.71±1.24 84.77±2.19
+GCNteachertrainedon 71.34±3.91 58.93±4.62 52.32±1.26 92.40±0.65 86.81±1.94
+GB-LCSStargets
+withfivedistillationroutesonthefivedatasetsunderuniform0.4and0.6. Thefirst
+rowtrainstheMLPonthelabelednodesonly,whereastheremainingrowsuseteacher
+predictionswithmethod-specificobjectivesandnodeselection;allroutesdeploythe
+sametwo-layerMLP.TheGCNteachertrainedonGB-LCSStargetsdiffersfromthe
+GCN(X)+CEbaselineonlyinusingthesofttargetofEq.(12)inplaceoftheobserved
+one-hotlabel;theotherroutesaredescribedinSection4.1.3andAppendixF.
+TrainingtheGCNteacherwithGB-LCSStargetsimprovesitsdistilledstudent’s
+mean accuracy in nine of ten settings compared with observed-label training; the
+exception is CoraFull under uniform 0.4. Among the five distillation routes, this
+studentranksfirstineightsettings,trailingGCN(X)+CEonCoraFullandVQGraph
+onAmazon-Photounderuniform0.4. ItexceedsdirectMLPtraininginalltensettings
+(Table8).
+4.4.2. Computationalcost
+GB-LCSS and MLP+CE deploy the same MLP, so we measure the additional
+training-time costs. Timing and GPU-memory measurements were obtained on a
+Windows10(build19045)workstationwithanAMDRadeonRX7700XTGPU,using
+Python3.12.10,PyTorch2.9.1+rocm7.2.1,andPyTorchGeometric2.7.0. GRACE
+27
+
+PAGE 28
+15
+10
+5
+0
+Cora CiteSeer CoraFull Coauthor-CS Amazon-Photo
+)s(emitnoitcurtsnoC
+a End-to-endconstruction
+2048
+1024
+512
+256
+128
+64
+32
+Cora CiteSeer CoraFull Coauthor-CS Amazon-Photo
+)2gol,BiK(egarotserutcurtS
+Granularballpartition ExactkNN k-meanspartition
+b Storedgroupingstructure
+Figure5:Constructioncostofgranularball,exact-kNN,andk-meansgrouping.(a)End-to-endconstruction
+time.(b)Storageofthegroupingstructure.Bothpanelsshowseed-0measurements.
+pretraining takes 0.07, 0.13, and 74.48 minutes on Cora, CiteSeer, and CoraFull,
+respectively,withpeakallocatedGPUmemoryof0.40,0.67,and12.73GiB.Timesare
+averagedoverthreepretrainingseeds,andmemoryisthelargestpeakacrosstheseruns
+reportedbytorch.cuda.max_memory_allocated(). Eachfrozenrepresentationis
+computedonceperdatasetandreusedacrossallnoisesettingsanddownstreamseeds.
+Fig.5comparestheconstructiontimeandstorageofthethreegroupingrules. The
+granularballpartitionstoresoneclass-countvectorperball,whereasexactkNNstores
+oneneighborlistpertrainingnode. Intheseed-0measurements,granularballgrouping
+requireslessstoragethanexactkNNonCoraFull,Coauthor-CS,andAmazon-Photo,
+withthelargestdifferencesonthetwolargestgraphs. Itsconstructiontimeisalsothe
+shortestamongthethreegroupingrulesonthreeofthefivedatasets.
+4.5. Discussion
+When the other training labels in a ball provide consistent evidence for the un-
+derlyingclass,theirconsensuscanoffsetanisolatedannotationerror. Thelabel-free
+representation determines which nodes contribute this evidence, and the random-
+groupingandlabel-smoothingcontrolssupporttheimportanceofthischoicebeyond
+targetsofteningalone(Table5). Leave-one-outvotingkeepsthecurrentannotationout
+ofitsownconsensusestimate,apropertyusedintheconditionalexpected-erroranaly-
+sisofCorollary1. Underuniform0.4noise,thereductioninBriererroroncorrupted
+labelsexceedstheerrorintroducedoncorrectlylabelednodes(AppendixI.2).
+28
+
+PAGE 29
+Theusefulnessoflocalevidencedependsonbothitsclasscompositionandthe
+numberofavailablevotes. Proposition1relatesthesequantitiestovotingreliability
+underindependentsymmetricnoise. Agreementaloneisinsufficientwhenthelocal
+labels favor an incorrect class, since the consensus can then move the target away
+fromthetrueclass. Therepresentationandparameterstudiesshowloweraccuracy
+when local groups fail to form or voting support becomes sparse. Under uniform
+0.4noise,CoraFullhasboththelowestproportionoftrainingnodeswithapositive
+clean-votemargin(36.13%)andthesmallestnetreductionintargetBrierscoreamong
+thefivedatasets(AppendixI.2). Withcleantraininglabels,refinementraisesmean
+accuracyononedatasetandlowersitonfour,withallchangeswithin2.00percentage
+points(AppendixD).Theseresultsindicatethatthebenefitvariesacrossdatasetsand
+supervisionconditions.
+Withattribute-onlydeployment,Graph-MLPshapesrepresentationsthroughneigh-
+borhoodcontrast,GLNNtransfersGNNpredictions,andGB-LCSSrefinessupervision
+targets. Graph-MLPandGB-LCSShavedataset-dependentstrengths(Table4). The
+refinedtargetscanalsobenefitadistilledMLPstudentwhenusedtotraintheGCN
+teacher(Table8),supportingbothdirecttraininganddistillation.
+Granular balls provide a practical organization for local-consensus supervision.
+Eachnodebelongstooneball,whoseclasscountsaresharedwhenconstructingtargets
+foritstrainingnodes. Geometricsplittingadaptsthepartitiontotherepresentation
+whilelimitingthenumberofballsandenforcingaminimumsizeforeachchildball.
+GranularballgroupingrequireslessstoragethanexactkNNonthethreelargergraphs
+andhastheshortestconstructiontimeonthreedatasets(Fig.5). Theseresultssupport
+itsuseasagroupingmechanismthatcombinescompetitiveaccuracy,sharedregional
+statistics,andcontrolledconstructioncosts.
+5. Conclusion
+WepresentedGB-LCSSforlearningfromnoisytraininglabelswhenthedeployed
+classifier receives only node attributes. The method organizes nodes into granular
+ballsinafrozen,label-freegraphrepresentationandcombineseachobservedlabel
+29
+
+PAGE 30
+withtheconsensusoftheothertrainingnodesinitsball. Ouranalysisrelateslocal-
+vote reliability to the number of available votes and their clean-class margin under
+symmetricnoise,decomposesthesquarederrorofthesofttarget,andgivesasufficient
+conditionforittohavelowerexpectederrorthantheobservedlabel.
+Acrossfivedatasetsandfivenoisesettings,GB-LCSSachievesthehighestfive-seed
+meanaccuracyin24ofthe25settings,comparedwithsevennoisy-labelbaselinesthat
+usethesamedeployedMLParchitecture. ItssofttargetshavelowermeanBrierscores
+thantheobservedone-hotlabelsinall25settings. Thecontrolledcomparisonssupport
+theimportanceofwhichtrainingnodescontributetothelocalconsensus,withgranular
+ballsprovidingacompactwaytosharelabelstatistics. Thedistillationexperiments
+furthershowthatthesetargetscanimprovetheMLPstudentwhentheyareusedto
+trainitsgraphteacher.
+Thepresentevaluationfocusesonsyntheticlabelnoiseinafixed-graphtransductive
+setting,withcleanvalidationlabelsusedformodelselection. Futureworkwilltestthe
+methodonnaturallyoccurringannotationerrorsanddevelopmodel-selectionproce-
+duresforimperfectvalidationlabels. Anotherdirectionistoevaluategeneralization
+tonewlyarrivingnodesandtoinvestigatehowtherepresentationsandgranularball
+partitionscanbeupdatedasthetraininggraphgrows.
+CRediTauthorshipcontributionstatement
+SileiCao: Conceptualization,Methodology,Software,Formalanalysis,Investiga-
+tion,Writing–originaldraft. KunWang: Conceptualization,Methodology,Writing–
+review&editing. JingyuZhu: Validation,Visualization,Writing–review&editing.
+TianxingWang: Validation,Datacuration,Writing–review&editing. BingHuang:
+Supervision,Projectadministration,Fundingacquisition,Writing–review&editing.
+Acknowledgements
+This work was supported by the Yangtze River Delta Social Assistance Public
+ServicePlatform(B801065001FY050)andtheNationalNaturalScienceFoundation
+ofChina(Nos. 62276136,62206129,and62375133).
+30
+
+PAGE 31
+References
+[1] T.N.Kipf,M.Welling,Semi-supervisedclassificationwithgraphconvolutional
+networks,in: InternationalConferenceonLearningRepresentations,2017.
+[2] Y.Hu,H.You,Z.Wang,Z.Wang,E.Zhou,Y.Gao,Graph-MLP:Nodeclassifica-
+tionwithoutmessagepassingingraph(2021). arXiv:2106.04051.
+[3] S.Zhang, Y.Liu, Y.Sun, N.Shah, Graph-lessneuralnetworks: Teachingold
+MLPsnewtricksviadistillation,in: InternationalConferenceonLearningRepre-
+sentations,2022.
+[4] Z.Wang,Z.Zhang,C.Zhang,Y.Ye,TrainingMLPsongraphswithoutsupervi-
+sion,in: ProceedingsoftheACMInternationalConferenceonWebSearchand
+DataMining,2025,pp.697–706.
+[5] L. Wu, H. Lin, Y. Huang, T. Fan, S. Z. Li, Extracting low-/high-frequency
+knowledgefromgraphneuralnetworksandinjectingitintoMLPs: Aneffective
+GNN-to-MLPdistillationframework,in: ProceedingsoftheAAAIConference
+onArtificialIntelligence,Vol.37,2023,pp.10351–10360.
+[6] S.Liu,J.Niles-Weed,N.Razavian,C.Fernandez-Granda,Early-learningregular-
+izationpreventsmemorizationofnoisylabels,in:AdvancesinNeuralInformation
+ProcessingSystems,Vol.33,2020,pp.20331–20342.
+[7] Z.Wang,D.Sun,S.Zhou,H.Wang,J.Fan,L.Huang,J.Bu,NoisyGL:Acom-
+prehensivebenchmarkforgraphneuralnetworksunderlabelnoise,in: Advances
+inNeuralInformationProcessingSystems,Vol.37,2024,pp.38142–38170.
+[8] E.Dai,C.Aggarwal,S.Wang,NRGNN:Learningalabelnoiseresistantgraph
+neuralnetworkonsparselyandnoisilylabeledgraphs, in: Proceedingsofthe
+ACMSIGKDDConferenceonKnowledgeDiscoveryandDataMining,2021,pp.
+227–236.
+[9] Y.Wu, J.Yao, X.Xia, J.Yu, R.Wang, B.Han, T.Liu, Mitigatinglabelnoise
+ongraphsviatopologicalsampleselection,in: ProceedingsoftheInternational
+ConferenceonMachineLearning,Vol.235ofProceedingsofMachineLearning
+Research,2024,pp.53944–53972.
+31
+
+PAGE 32
+[10] A.Iscen,J.Valmadre,A.Arnab,C.Schmid,Learningwithneighborconsistency
+for noisy labels, in: Proceedings of the IEEE/CVF Conference on Computer
+VisionandPatternRecognition,2022,pp.4672–4681.
+[11] D.Bahri,H.Jiang,M.Gupta,Deepk-NNfornoisylabels,in: Proceedingsof
+theInternationalConferenceonMachineLearning,Vol.119ofProceedingsof
+MachineLearningResearch,2020,pp.540–550.
+[12] Y. Zhu, Y. Xu, F. Yu, Q. Liu, S. Wu, L. Wang, Deep graph contrastive repre-
+sentationlearning,in: ICMLWorkshoponGraphRepresentationLearningand
+Beyond,2020.
+[13] S. Xia, Y. Liu, X. Ding, G. Wang, H. Yu, Y. Luo, Granular ball computing
+classifiersforefficient,scalableandrobustlearning,InformationSciences483
+(2019)136–152.
+[14] S.Xia,S.Zheng,G.Wang,X.Gao,B.Wang,Granularballsamplingfornoisy
+labelclassificationorimbalancedclassification,IEEETransactionsonNeural
+NetworksandLearningSystems34(4)(2023)2144–2155.
+[15] S.Xia,X.Dai,G.Wang,X.Gao,E.Giem,Anefficientandadaptivegranular-
+ballgenerationmethodinclassificationproblem,IEEETransactionsonNeural
+NetworksandLearningSystems35(4)(2024)5319–5331.
+[16] B. Han, Q. Yao, X. Yu, G. Niu, M. Xu, W. Hu, I. W. Tsang, M. Sugiyama,
+Co-teaching: Robust training of deep neural networks with extremely noisy
+labels,in: AdvancesinNeuralInformationProcessingSystems,Vol.31,2018,
+pp.8527–8537.
+[17] H. Wei, L. Feng, X. Chen, B. An, Combating noisy labels by agreement: A
+jointtrainingmethodwithco-regularization,in: ProceedingsoftheIEEE/CVF
+Conference on Computer Vision and Pattern Recognition, 2020, pp. 13726–
+13735.
+[18] Z.Zhou,R.Li,W.Ai,X.Li,Z.Teng,B.Zhang,J.Du,Affinity-awareuncertainty
+quantification for learning with noisy labels, Pattern Recognition 172 (2026)
+112495. doi:10.1016/j.patcog.2025.112495.
+[19] Y.Wang,X.Ma,Z.Chen,Y.Luo,J.Yi,J.Bailey,Symmetriccrossentropyfor
+32
+
+PAGE 33
+robustlearningwithnoisylabels,in: ProceedingsoftheIEEE/CVFInternational
+ConferenceonComputerVision,2019,pp.322–330.
+[20] H. Wei, H. Zhuang, R. Xie, L. Feng, G. Niu, B. An, Y. Li, Mitigating mem-
+orizationofnoisylabelsbyclippingthemodelprediction, in: Proceedingsof
+theInternationalConferenceonMachineLearning,Vol.202ofProceedingsof
+MachineLearningResearch,2023,pp.36868–36886.
+[21] K.Li,J.Sun,J.Lou,Z.Feng,H.Zhou,C.Wu,G.Xue,W.Zhao,J.Li,Lever-
+aging peer-informed label consistency for robust graph neural networks with
+noisylabels,in: ProceedingsoftheInternationalJointConferenceonArtificial
+Intelligence,2025,pp.5598–5606.
+[22] Z. Fang, S. Du, Z. Wu, Z. Cai, Y. Tan, S. Wang, Z. Lin, Harnessing noisy
+LLMannotations: Confidence-calibratednodeselectionontext-attributedgraphs,
+PatternRecognition180(2026)114379. doi:10.1016/j.patcog.2026.114379.
+[23] Y.Zhu,L.Feng,Z.Deng,Y.Chen,R.Amor,M.Witbrock,Robustnodeclassi-
+ficationongraphdatawithgraphandlabelnoise,in: ProceedingsoftheAAAI
+ConferenceonArtificialIntelligence,Vol.38,2024,pp.17220–17227.
+[24] Q.Li,X.Li,D.Li,J.Wang,Prototype-guidedsupervisionforgraphlearningwith
+noisyandsparselabels,in: ProceedingsoftheAAAIConferenceonArtificial
+Intelligence,Vol.40,2026,pp.23105–23113.
+[25] B.Hu,G.Wen,Y.Huang,Y.Liu,X.Zhu,Structure-awaremulti-teacherdistilla-
+tionfornoisenodeclassification,InformationProcessing&Management63(7)
+(2026)104877.
+[26] Z.Liu,H.Yu,X.Luo,Mitigatinglabelnoiseingraphlearningwithinformation
+bottleneck-guidedaggregationandadversarialconsistency,PatternRecognition
+180(2026)114271.
+[27] S. Li, B. Zhang, M. Cao, J. Song, X. Cheng, C. Wang, HALF: A homophily-
+aware loss fusion for robust learning under label noise in heterophilic graphs,
+InformationSciences754(2026)123714.
+[28] L. Wu, J. Xia, H. Lin, Z. Gao, Z. Liu, G. Zhao, S. Z. Li, Teaching your-
+self: Graph self-distillation on neighborhood for node classification (2022).
+33
+
+PAGE 34
+arXiv:2210.02097.
+[29] J. Chen, M. Bai, S. Chen, J. Gao, J. Zhang, J. Pu, SA-MLP: Distilling graph
+knowledge from GNNs into structure-aware MLP, Transactions on Machine
+LearningResearch(2024).
+[30] L. Wu, H. Lin, Y. Huang, S. Z. Li, Quantifying the knowledge in GNNs for
+reliabledistillationintoMLPs,in: ProceedingsoftheInternationalConference
+onMachineLearning,Vol.202ofProceedingsofMachineLearningResearch,
+2023,pp.37571–37581.
+[31] L.Yang,Y.Tian,M.Xu,Z.Liu,S.Hong,W.Qu,W.Zhang,B.Cui,M.Zhang,
+J.Leskovec,VQGraph:RethinkinggraphrepresentationspaceforbridgingGNNs
+andMLPs,in: InternationalConferenceonLearningRepresentations,2024.
+[32] T. Wu, Z. Zhao, J. Wang, X. Bai, L. Wang, N. Wong, Y. Yang, Edge-free but
+structure-aware: Prototype-guidedknowledgedistillationfromGNNstoMLPs,
+in: ProceedingsoftheInternationalConferenceonComputationalLinguistics,
+2025,pp.5656–5667.
+[33] Z. Yu, M. Lin, W. Li, Z. Yin, S. Xiao, S. Lu, Demystifying GNN-to-MLP
+knowledgetransfer: Theoreticalgroundinganddual-streamdistillationmethod,
+in: ProceedingsoftheAAAIConferenceonArtificialIntelligence,Vol.40,2026,
+pp.28005–28013.
+[34] J.Heo,M.Park,D.Kim,Posteriorlabelsmoothingfornodeclassification,in:
+ProceedingsoftheAAAIConferenceonArtificialIntelligence,Vol.40,2026,pp.
+21708–21716.
+[35] K.Zhou,S.-H.Choi,Z.Liu,N.Liu,F.Yang,R.Chen,L.Li,X.Hu,Adaptive
+labelsmoothingtoregularizelarge-scalegraphtraining,in: Proceedingsofthe
+2023SIAMInternationalConferenceonDataMining,2023,pp.55–63.
+[36] Y. Wang, Y. Cai, Y. Liang, W. Wang, H. Ding, M. Chen, J. Tang,
+B. Hooi, Structure-aware label smoothing for graph neural networks (2021).
+arXiv:2112.00499.
+[37] Y.Xie,Z.Xu,J.Zhang,Z.Wang,S.Ji,Self-supervisedlearningofgraphneural
+networks: Aunifiedreview,IEEETransactionsonPatternAnalysisandMachine
+34
+
+PAGE 35
+Intelligence45(2)(2023)2412–2429.
+[38] J.Xie,X.Xiang,S.Xia,L.Jiang,G.Wang,X.Gao,MGNR:Amulti-granularity
+neighborrelationship andits applicationinKNN classificationand clustering
+methods,IEEETransactionsonPatternAnalysisandMachineIntelligence46(12)
+(2024)7956–7972.
+[39] Y.Li,X.Ouyang,J.Zhang,C.Pan,L.Ren,X.Yang,Beneficialnoiselearning
+foropenintentclassificationviagranular-ballrepresentation,PatternRecognition
+177(2026)113283. doi:10.1016/j.patcog.2026.113283.
+[40] S.Xia,X.Ma,Z.Liu,C.Liu,S.Zhao,G.Wang,Graphcoarseningviasupervised
+granular-ballforscalablegraphneuralnetworktraining,in: Proceedingsofthe
+AAAIConferenceonArtificialIntelligence,Vol.39,2025,pp.12872–12880.
+[41] S.Xia,G.Wang,G.Xu,S.Zhao,G.Wang,GBGC:Efficientandadaptivegraph
+coarseningviagranular-ballcomputing,in: ProceedingsoftheInternationalJoint
+ConferenceonArtificialIntelligence,2025,pp.3489–3497.
+[42] W.Hoeffding, Probabilityinequalitiesforsumsofboundedrandomvariables,
+JournaloftheAmericanStatisticalAssociation58(301)(1963)13–30.
+[43] P.Sen,G.Namata,M.Bilgic,L.Getoor,B.Gallagher,T.Eliassi-Rad,Collective
+classificationinnetworkdata,AIMagazine29(3)(2008)93–106.
+[44] O.Shchur,M.Mumme,A.Bojchevski,S.Günnemann,Pitfallsofgraphneural
+networkevaluation,in: RelationalRepresentationLearningWorkshop,NeurIPS,
+2018.
+[45] D.Arthur,S.Vassilvitskii,k-means++: Theadvantagesofcarefulseeding,in:
+Proceedings of the Eighteenth Annual ACM-SIAM Symposium on Discrete
+Algorithms,2007,pp.1027–1035.
+[46] S.Holm,Asimplesequentiallyrejectivemultipletestprocedure,Scandinavian
+JournalofStatistics6(2)(1979)65–70.
+[47] G.W.Brier,Verificationofforecastsexpressedintermsofprobability,Monthly
+WeatherReview78(1)(1950)1–3.
+[48] L.Hubert,P.Arabie,Comparingpartitions,JournalofClassification2(1)(1985)
+193–218.
+35

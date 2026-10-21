@@ -1,0 +1,42 @@
+{
+  "upstream": {
+    "repository": "https://github.com/h-4777/PiNGDA",
+    "branch": "main",
+    "source_files": [
+      "pi_noise_generator.py",
+      "models.py",
+      "train.py",
+      "arguments.py",
+      "utils.py"
+    ],
+    "retrieved_on": "2026-10-14",
+    "retrieval_note": "Sources were inspected on the public GitHub main branch using GitHub file pages and raw-file views. Direct shell HTTPS retrieval was unavailable in this environment. Vendored files preserve the inspected implementation with normalized whitespace; the hashes below identify these local snapshots, not Git blob hashes. The upstream repository page listed no LICENSE file at retrieval time.",
+    "commit": null,
+    "paper_url": "https://arxiv.org/html/2505.19024"
+  },
+  "local_sha256": {
+    "pi_noise_generator.py": "37785fb344de1d3785e270d31dfee01a2e1ef2350449bbfdcce1ec7027e48121",
+    "models.py": "ef990d83d563c4dc080abc7a7ce742d1f22faafb13a8347b367911e65605c7d4",
+    "train.py": "e9f57507e19d91d8711b4e65d2e02bfd1e87c94a9c6de0805cee122e39222177",
+    "arguments.py": "ec80eaf918b3fbc0c48f6ee630932eba2c606f045e7f6689d2c9cea29d9aa7e3",
+    "utils.py": "2b385afd867339454530ed533ea5f49262ce451fc5a0275976336250d26bbbaf"
+  },
+  "adapted_module_sha256": "f1e7e56ebb41e23d63380a90ed40c6fad36194969ecbe2fca92498d900b38ef4",
+  "adapted_test_sha256": "e4ad973efd284890413613126e3eb014c46b4cdb8507265fc2903c871e882fe4",
+  "adaptation": {
+    "scope": "PiNGDA augmentation adaptation inside the existing GRACE encoder, preprocessing, evaluation, and experiment budget; this is not a full paper reproduction.",
+    "upstream_edge_head_issue": "The source embeds each endpoint to 64 dimensions, concatenates them to 128 dimensions, but initializes the edge MLP input as 2 * input_dim. For common graph feature widths this fails at runtime. The adapter sets the edge-head input width to 128, preserving the stated endpoint-embedding architecture.",
+    "upstream_single_edge_issue": "The source applies squeeze() to edge weights, producing a scalar for a one-edge graph. The adapter reshapes to [E] so PyG receives one weight per edge.",
+    "noise_behavior": "The feature generator returns learned mu and abs(fc_variance(x)); the source directly multiplies this quantity by standard normal noise and adds mu to x. The learned quantity therefore acts as a standard-deviation/scale despite its variable name. The paper's Section 4.2 likewise writes feature noise as mu + sigma * epsilon with diagonal covariance. Its abstract's Gaussian auxiliary variable is a separate theoretical variable used to relate loss to task entropy. The edge generator uses temperature-1 logistic noise and sigmoid to produce soft gates; it does not threshold edges.",
+    "edge_paper_code_difference": "Paper Section 4.1 describes the generator output as a Bernoulli edge-dropping probability. The public node-task code passes the relaxed sigmoid gate directly as GCNConv edge_weight, without hard thresholding or an explicit 1-gate conversion. This adapter follows the executable code as a soft edge multiplier.",
+    "two_view_behavior": "In the author's node-task train.py, both views receive independently sampled feature noise; the first view uses original topology and only the second view uses the learned soft edge weights.",
+    "paper_code_distinction": "The paper abstract describes a Gaussian auxiliary variable in its information-theoretic derivation. The code's augmentation implementation is a learned, per-node/per-feature diagonal-Gaussian-style additive perturbation; its variable named variance is used as the noise scale directly. The adapter follows the code path.",
+    "parameter_defaults": {
+      "feature_hidden_dim": 256,
+      "edge_learnable_lr": 0.0001,
+      "feature_learnable_lr": 0.001,
+      "edge_weight_decay": 0.0001,
+      "feature_weight_decay": 0.0001
+    }
+  }
+}

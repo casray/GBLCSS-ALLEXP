@@ -1,0 +1,1588 @@
+GraphTARIF: Linear Graph Transformer with Augmented Rank and Improved Focus
+Report GitHub Issue
+×
+Title:
+Content selection saved. Describe the issue below:
+Description:
+Submit without GitHub
+Submit in GitHub
+arXiv is now an independent nonprofit!
+Learn more
+×
+Back to arXiv
+Why HTML?
+Report Issue
+Back to Abstract
+Download PDF
+Abstract.
+1 Introduction
+2 Related Work
+3 Preliminaries
+3.1 Graph Neural Networks
+3.2 Graph Transformers
+3.2.1 Standard Self-Attention.
+3.2.2 Linear Attention.
+3.3 Entropy
+4 Motivation
+5 Methodology
+5.1 High-Rank Linear Attention
+5.2 Learnable Log-Power Sharpening Function
+6 Experiments
+6.1 Experimental Setup
+6.1.1 Datasets
+6.1.2 Baselines
+6.2 Main Comparison
+6.2.1 Results on Heterophilic Datasets
+6.2.2 Results on Homophilic Datasets
+6.2.3 Results on Large-scale Graphs
+6.3 Ablation Study
+6.4 Additional Experiments
+6.4.1 Model Scalability
+6.4.2 Hyperparameter Analysis
+6.4.3 Efficiency Comparison
+7 Conclusion
+Acknowledgements
+References
+A Datasets and Experimental Details
+B Theoretical Proof
+B.1 Proof for Theorem 1
+B.2 Proof for Theorem 2
+Notation.
+B.3 Proof for Theorem 3
+(1) Convexity.
+(2) Asymptotic growth.
+B.4 Theoretical Analysis of Node-wise Post-modulation Effects on Output Features
+C Additional Results
+License: arXiv.org perpetual non-exclusive license
+arXiv:2510.10631v2 [cs.CV] 28 Jan 2026
+GraphTARIF: Linear Graph Transformer with Augmented Rank and Improved Focus
+Conference: Proceedings of the ACM Web Conference 2026; April 13–17, 2026; Dubai, United Arab Emirates.Proceedings of the ACM Web Conference 2026 (WWW ’26), April 13–17, 2026, Dubai, United Arab EmiratesISBN: 979-8-4007-2307-0/2026/04DOI: 10.1145/xxxxxxxxxxxxCCS: Mathematics of computing Graph algorithmsCCS: Computing methodologies Neural networks
+Zhaolin Hu
+Affiliation: Zhejiang University, Hangzhou, Zhejiang, China
+email: 12321165@zju.edu.cn
+,
+Kun Li
+Affiliation: United Arab Emirates University, Al Ain, United Arab Emirates
+email: kunli.hfut@gmail.com
+,
+Hehe Fan
+Note: Corresponding author.
+Affiliation: Zhejiang University, Hangzhou, Zhejiang, China
+email: hehefan@zju.edu.cn
+and
+Yi Yang
+Affiliation: Zhejiang University, Hangzhou, Zhejiang, China
+email: yangyics@zju.edu.cn
+© cc
+Abstract.
+Linear attention mechanisms have emerged as efficient alternatives to full self-attention in Graph Transformers, offering linear time complexity. However, existing linear attention models often suffer from a significant drop in expressiveness due to low-rank projection structures and overly uniform attention distributions. We theoretically prove that these properties reduce the class separability of node representations, limiting the model’s classification ability. To address this, we propose a novel hybrid framework that enhances both the rank and focus of attention. Specifically, we enhance linear attention by attaching a gated local graph network branch to the value matrix, thereby increasing the rank of the resulting attention map. Furthermore, to alleviate the excessive smoothing effect inherent in linear attention, we introduce a learnable log-power function into the attention scores to reduce entropy and sharpen focus. We theoretically show that this function decreases entropy in the attention distribution, enhancing the separability of learned embeddings. Extensive experiments on both homophilic and heterophilic graph benchmarks demonstrate that our method achieves competitive performance while preserving the scalability of linear attention.
+Keywords: Graph, Graph Transformers, Node Classification
+††cc-license: by
+1. Introduction
+Graph Neural Networks (GNNs) (Scarselli et al., 2008; Kipf, 2016; Hamilton et al., 2017; Veličković et al., 2017; Jian et al., 2025) have emerged as a powerful paradigm for analyzing graph-structured data in a variety of Web-related domains, including social networks (Chen et al., 2017), recommender systems (Ying et al., 2018), communication networks (Lu et al., 2024a), and anomaly detection  (Dou et al., 2020). By leveraging message passing across graph neighborhoods, GNNs effectively capture local structural patterns and have achieved remarkable success in node classification, link prediction, and graph-level inference tasks. Nevertheless, their reliance on strictly local aggregation makes it inherently difficult to model long-range dependencies across distant nodes (Alon and Yahav, 2020), thereby restricting expressiveness and limiting their ability to approximate complex relational functions in large-scale Web graphs (Xu et al., 2018).
+Inspired by recent advances in Transformer-based models in language and vision domains (Vaswani et al., 2017; Dosovitskiy et al., 2021; Fan et al., 2022; Li et al., 2023; Chen et al., 2025), Graph Transformers (GTs)  (Ying et al., 2021; Ma et al., 2023) have gained increasing popularity in recent years. Unlike GNNs, GTs allow each node to directly attend to every other node in the graph, effectively creating a fully connected graph to mitigate locality bias and capture long-range interactions between distant nodes. The global self-attention (SA) mechanism can enhance the expressivity of the model and has demonstrated considerable success, especially in graph-level tasks such as molecular property prediction (Ma et al., 2023).
+Nevertheless, the quadratic complexity of full self-attention (O⁡(N2)O(N^{2}) for NN nodes) poses a significant bottleneck for scaling Graph Transformers to node-level tasks on large-scale Web graphs, such as social networks or e-commerce interaction graphs, which often contain millions of nodes and edges. To address this challenge, recent works introduce linear self-attention (LSA) mechanisms (Wu et al., 2023; Wu et al., 2022; Deng et al., 2024), which approximate full softmax attention through kernel feature mappings or low-rank projections. This design reduces both memory and runtime costs from O⁡(N2)O(N^{2}) to O⁡(N+|E|)O(N+|E|), enabling GTs to process much larger graphs more efficiently. Despite these computational benefits, empirical studies show that LSA-based Graph Transformers underperform even classical GNNs across a variety of benchmarks (Luo et al., 2024; Zhou et al., 2024), raising concerns about their effectiveness in Web applications where both scalability and accuracy are critical.
+To study the limitations of linear GT and improve its performance, we first discover the loss of rank in overly uniform (high-entropy) attention distribution issues of LSA compared to full SA through empirical studies. Intuitively, a low-rank LSA matrix restricts the model to express only a limited subset of distinct attention patterns, potentially collapsing the representations of different nodes or even different classes into similar embeddings. At the same time, high-entropy attention distributions lead to nearly uniform weights across nodes, preventing the model from sharply focusing on the most informative neighbors. To analyze the above two issues, we provide a theoretical analysis showing that the low-rank property of LSA matrices significantly reduces the differences between inter-class node representations, which has negative impact on node distinguishability. In addition, we conduct extensive experiments to demonstrate that high-entropy attention distributions hurt the performance of LSA by overly smoothing node representations.
+To address these issues, we propose a novel linear Graph Transformer architecture (GraphTARIF) designed to increase the rank of attention scores and lower their entropy. Our method integrates a local module into linear attention to enhance expressiveness and introduces a learnable log-power function to sharpen attention distributions while maintaining training stability. The resulting model is a High-Rank Low-Entropy linear graph transformer, tailored explicitly for node-level tasks. We achieve competitive results in a wide range of homophilic and heterophilic graph learning tasks. Our contributions are summarized below:
+•
+We theoretically prove that the low-rank and high-entropy properties of linear self-attention significantly reduce inter-class distinguishability, providing a principled explanation for the underperformance of linear Graph Transformers on node-level tasks.
+•
+We introduce GraphTARIF, a linear Graph Transformer that integrates a local enhancement module and a learnable log-power function to simultaneously improve attention rank and reduce entropy, striking a balance between scalability and expressiveness.
+•
+We evaluate GraphTARIF across a wide spectrum of Web-related datasets, i.e., e-commerce, social networks, crowdsourcing platforms, and Wikipedia-based graphs, and it consistently outperforms existing baselines.
+GraphTARIF (Ours)
+Figure 1. Comparisons among Graph Transformers(GT) in terms of accuracy, runtime, and GPU memory usage on Minesweeper.
+The proposed GraphTARIF achieves consistently superior accuracy with shorter runtime, demonstrating both effectiveness and efficiency.
+2. Related Work
+Graph Neural Networks. Graph Neural Networks (GNNs) have emerged as powerful methods for node classification tasks, primarily relying on local neighborhood aggregation through message passing. For example, Graph Convolutional Networks (GCNs) (Kipf, 2016) aggregate neighborhood information by leveraging a normalized adjacency matrix to propagate features. GraphSAGE (Hamilton et al., 2017) generalizes this approach by sampling and aggregating neighboring nodes, enabling inductive learning. Graph Attention Networks (GATs) (Veličković et al., 2017) introduce attention mechanisms at the edge level, adaptively weighting neighbors based on their importance. Despite their success, these methods inherently suffer from local heterophily (Luan et al., 2024a; Luan et al., 2024b; Lu et al., 2024b; Zheng et al., 2024; Zheng et al., 2025), oversmoothing (Li et al., 2018; Luan et al., 2019), and oversquashing (Alon and Yahav, 2020; Topping et al., 2021), limiting their capability to represent complex node interactions across long-range distances.
+Graph Transformer. Graph Transformers (GTs) employ global self-attention mechanisms, which allow direct interactions between distant nodes, thus mitigating locality bias. Early graph transformer models, such as Graph-BERT (Zhang et al., 2020) and Graph Transformer (Dwivedi and Bresson, 2020), demonstrated the potential of self-attention for capturing long-range dependencies. However, the quadratic complexity of standard Transformer attention (Vaswani et al., 2017) is computationally prohibitive for large-scale graphs. Recent works have addressed this through linear attention approximations, such as Nodeformer (Wu et al., 2022) and SGformer (Wu et al., 2023), significantly improving computational efficiency. Nonetheless, studies have highlighted limitations of linear attention, specifically low-rank attention matrices (Fan et al., 2024) and uniformity (high-entropy ) (Han et al., 2023; Meng et al., 2025) of attention score distributions, leading to suboptimal node classification performance. However, these problems are underexplored for linear graph transformers.
+In this paper, we empirically demonstrate and theoretically analyze the negative impacts of these limitations. Then, we propose a novel Graph Transformer architecture to enhance attention rank and reduce attention entropy.
+3. Preliminaries
+Define a graph as 𝒢=(𝒱,ℰ,𝑿,𝒀){\mathcal{G}}=(\mathcal{V},\mathcal{E},{\bm{X}},{\bm{Y}}), where 𝒱\mathcal{V} is the set of nodes with |𝒱|=n|\mathcal{V}|=n, and ℰ⊆𝒱×𝒱\mathcal{E}\subseteq\mathcal{V}\times\mathcal{V} denotes the set of edges. Let 𝑿∈ℝn×d{\bm{X}}\in\mathbb{R}^{n\times d} be the node feature matrix, where dd is the feature dimension, and 𝒀∈ℝn×C{\bm{Y}}\in\mathbb{R}^{n\times C} the one-hot encoded label matrix with CC classes. The adjacency matrix of 𝒢{\mathcal{G}} is denoted by 𝑨∈ℝn×n{\bm{A}}\in\mathbb{R}^{n\times n}.
+3.1. Graph Neural Networks
+In the message passing framework (Gilmer et al., 2017), Graph Neural Networks (GNNs) update node representations by aggregating information from their neighbors. A typical GNN layer updates the representation of node ii as:
+| (1)
+|
+| hi(l+1)=f(l)​(hi(l),AGG(l)​({hj(l):j∈𝒩i})),h_{i}^{(l+1)}=f^{(l)}\left(h_{i}^{(l)},\text{AGG}^{(l)}\left(\{h_{j}^{(l)}:j\in\mathcal{N}_{i}\}\right)\right),
+|
+where hi(l)h_{i}^{(l)} is the embedding of node ii at the ll-th layer, 𝒩i\mathcal{N}_{i} denotes the neighbors of node ii, f(l)f^{(l)} is the activation function, and AGG(l)​(⋅)\text{AGG}^{(l)}(\cdot) is an aggregation function such as sum, mean, or max pooling (Xu et al., 2018).
+3.2. Graph Transformers
+3.2.1. Standard Self-Attention.
+Transformers (Vaswani et al., 2017) use self-attention to capture global dependencies between all pairs of nodes. The attention mechanism is defined as:
+| (2)
+|
+| Attention​(𝑸,𝑲,𝑽)=softmax​(𝑸​𝑲⊤dk)​𝑽,\text{Attention}({\bm{Q}},{\bm{K}},{\bm{V}})=\text{softmax}\left(\frac{{\bm{Q}}{\bm{K}}^{\top}}{\sqrt{d_{k}}}\right){\bm{V}},
+|
+| (3)
+|
+| 𝑸=𝑯​𝑾Q,𝑲=𝑯​𝑾K,𝑽=𝑯​𝑾V,{\bm{Q}}={\bm{H}}{\bm{W}}_{Q},{\bm{K}}={\bm{H}}{\bm{W}}_{K},{\bm{V}}={\bm{H}}{\bm{W}}_{V},
+|
+where 𝑸,𝑲,𝑽{\bm{Q}},{\bm{K}},{\bm{V}} are query, key, and value matrices obtained via learned projections of input node features HH, and dkd_{k} is the dimension of queries/keys. Although powerful, this formulation has 𝒪⁡(N2)\mathcal{O}(N^{2}) time and space complexity, making it unsuitable for large-scale graphs.
+3.2.2. Linear Attention.
+To address the challenge of scalability, linear attention mechanisms approximate softmax attention with a kernel function that allows rearranging the computation to linear complexity (Katharopoulos et al., 2020):
+| (4)
+|
+| LinearAttention​(𝑸,𝑲,𝑽)=Sim​(𝑸,𝑲)​𝑽=ϕ⁡(𝑸)​(ϕ​(𝑲)⊤​𝑽),\text{LinearAttention}({\bm{Q}},{\bm{K}},{\bm{V}})=\text{Sim}({\bm{Q}},{\bm{K}}){\bm{V}}=\phi({\bm{Q}})\left(\phi({\bm{K}})^{\top}{\bm{V}}\right),
+|
+where ϕ⁡(⋅)\phi(\cdot) is a kernel feature map, such as positive random features or ReLU-based transformations (Katharopoulos et al., 2020). This reduces the complexity from 𝒪⁡(N2)\mathcal{O}(N^{2}) to 𝒪⁡(N)\mathcal{O}(N), enabling applications to large graphs. However, in the following section, we will show that such an approximation often leads to low-rank attention matrices and high-entropy attention distributions, which can limit expressiveness and harm model performance on node classification tasks.
+3.3. Entropy
+Entropy measures the uncertainty or dispersion of a sequence. Lower entropy indicates a more concentrated distribution, which often implies clearer semantic focus. In contrast, high entropy corresponds to smoother distributions that may dilute important signals. In this work, we adopt the definition of entropy for nonnegative sequences as proposed in prior work (Meng et al., 2025).
+Definition 0 (Positive Sequence Entropy (PSE) (Meng et al., 2025)).
+Let a sequence 𝐱=(x1,…,xN)\mathbf{x}=(x_{1},\dots,x_{N}) with xi≥0x_{i}\geq 0, and s=∑i=1Nxi>0s=\sum_{i=1}^{N}x_{i}>0. Then the entropy of this positive sequence is defined by:
+| (5)
+|
+| PSE(𝐱)=−∑i=1Nxislog(xis).\mathrm{PSE}(\mathbf{x})=-\sum_{i=1}^{N}\frac{x_{i}}{s}\log\left(\frac{x_{i}}{s}\right).
+|
+4. Motivation
+In this section, we empirically and theoretically analyze the inherent limitations of linear attention in the context of node classification.
+We build a minimal vanilla Graph Transformer architecture and evaluate it on three datasets: two homophilic graphs (WikiCS (Mernyei and Cangea, 2020) and CS (Shchur et al., 2018)) and one heterophilic graph (Toloker (Platonov et al., 2023)). To incorporate structural information, we adopt Random Walk Structural Encoding (Dwivedi et al., 2021) (RWSE) as the positional encoding method.
+(a) Node classification accuracy
+(b) Visualization of normalized attention matrices
+Figure 2. (a) Node classification performance on homophilic graphs (WikiCS, CS) and a heterophilic graph (Toloker) shows that softmax attention consistently outperforms linear attention.
+(b) Visualization of normalized attention matrices for 120 evenly-sampled nodes reveals that linear attention produces low-rank, high-entropy attention distributions across both homophilic and heterophilic graphs.
+As shown in Fig. 2 (a), across all three datasets, the variant with softmax attention significantly outperforms its linear counterpart. This trend holds true across both homophilic and heterophilic graphs.
+Similar to its behavior in textual and visual transformers, linear attention also underperforms compared to softmax attention in graph-based tasks.
+To better understand the underlying reasons, we visualize the attention score matrices for both attention types. For clarity, we uniformly sample approximately 120 nodes from the graph and normalize the attention vectors row-wise for visualization. As shown in Fig. 2 (b), we observe that:
+•
+Linear attention consistently produces low-rank attention matrices—much lower than the number of nodes NN;
+•
+The attention weights are smooth and uniform, indicating high entropy compared to softmax attention.
+These phenomena are observed in both homophilic and heterophilic graphs, suggesting that the issues are fundamental rather than dataset-specific.
+Figure 3.
+The overall framework of GraphTARIF. It mainly consists of GNN layers and high-rank linear attention. ① is the gated local attention that mitigates the low-rank limitation of linear attention. ② is a learnable log-power function f⁡(⋅,p,q)f(\cdot;p,q) that sharpens the attention distribution and reduces entropy, and ③ is a node-wise post-modulation module that produces clearer and more discriminative node representations.
+Here, 𝑸,𝑲,𝑽{\bm{Q}},{\bm{K}},{\bm{V}} denote the standard query, key, and value projections of node features 𝑿{\bm{X}},
+𝑨{\bm{A}} is the graph adjacency matrix, and ψ⁡(⋅)\psi(\cdot) denotes a simple linear projection applied for node-wise post-modulation.
+To understand this behavior, let us examine the structural limitation of linear attention. Suppose ϕ⁡(𝑸),ϕ⁡(𝑲)∈ℝN×d\phi({\bm{Q}}),\phi({\bm{K}})\in\mathbb{R}^{N\times d}. The attention score matrix is computed as:
+| (6)
+|
+| 𝑴=ϕ⁡(𝑸)​ϕ​(𝑲)⊤withrank⁡(𝑴)≤min⁡{N,d}.{\bm{M}}=\phi({\bm{Q}})\phi({\bm{K}})^{\top}\quad\text{with}\quad\operatorname{rank}({\bm{M}})\leq\min\{N,d\}.
+|
+Since dd is typically small in practice, and 𝑵{\bm{N}} can range from tens to hundreds of thousands in large-scale graph datasets, the resulting attention matrix 𝑴{\bm{M}} suffers from a severe rank bottleneck. This limitation significantly restricts the model’s capacity to capture diverse and fine-grained interactions among nodes.
+Furthermore, Zhang et al. (Zhang et al., 2024) demonstrate that linear attention tends to produce smooth and high-entropy attention distributions. This issue becomes even more pronounced in graph-based tasks with a large number of nodes, where the attention weights are excessively dispersed. Such diffuse attention exacerbates the rank deficiency of the attention matrix, ultimately hindering the model’s expressiveness.
+We now present two theoretical results that formally characterize how low-rank attention impacts the model’s ability to preserve class separability.
+In node classification, the objective is to learn node representations such that nodes belonging to the same class are embedded closely together, while those from different classes are well-separated. A fundamental metric for evaluating this separability is the inter-class scatter matrix 𝑺B{\bm{S}}_{B}, defined in its unweighted form as:
+| (7)
+|
+| 𝑺B:=1K​∑k=1K(𝝁k−𝝁)​(𝝁k−𝝁)⊤,{\bm{S}}_{B}:=\frac{1}{K}\sum_{k=1}^{K}(\bm{\mu}_{k}-\bm{\mu})(\bm{\mu}_{k}-\bm{\mu})^{\top},
+|
+where KK is the number of classes, 𝝁k\bm{\mu}_{k} denotes the mean embedding of nodes in class kk, and 𝝁\bm{\mu} is the global mean of all node embeddings. The trace tr⁡(𝑺B)\mathrm{tr}({\bm{S}}_{B}) quantifies the total variance among class centroids. In this work, we adopt the trace of the inter-class scatter matrix, tr⁡(𝑺B)\mathrm{tr}({\bm{S}}_{B}), as a quantitative measure of inter-class variance in node classification tasks. Specifically, tr⁡(𝑺B)\mathrm{tr}({\bm{S}}_{B}) quantifies the total variance among class centroids. A larger tr⁡(𝑺B)\mathrm{tr}({\bm{S}}_{B}) indicates greater inter-class separation, which typically implies stronger discriminative power and higher classification accuracy.
+Theorem 1.
+Let 𝐗∈ℝn×d{\bm{X}}\in\mathbb{R}^{n\times d} be the node feature matrix and 𝐌∈ℝn×n{\bm{M}}\in\mathbb{R}^{n\times n} an attention matrix applied to transform the embeddings. Suppose that the rows of 𝐗{\bm{X}} are drawn from a Gaussian mixture model. The expected inter-class variance after applying the attention transformation, measured by the trace of the between-class scatter matrix, is upper bounded by a term that scales linearly with the rank of 𝐌{\bm{M}}:
+| (8)
+|
+| 𝔼⁡[tr⁡(𝑺B​(𝑴​𝑿))]≤C⋅r,\mathbb{E}[\mathrm{tr}({\bm{S}}_{B}({\bm{M}}{\bm{X}}))]\leq C\cdot r,
+|
+where rr is the rank of the attention matrix 𝐌{\bm{M}}, and CC is a constant that depends on the underlying graph data and feature distribution.
+The proof is provided in Appendix B.1. This theorem suggests that severely low-rank attention mechanisms may limit the ability to preserve class-discriminative information.
+Theorem 2.
+Let 𝐌1{\bm{M}}_{1} be an attention matrix, and let 𝐌2{\bm{M}}_{2} be obtained by applying a low-rank and smoothing transformation to 𝐌1{\bm{M}}_{1}, e.g., 𝐌2=𝐏​𝐌1{\bm{M}}_{2}={\bm{P}}{\bm{M}}_{1}, where 𝐏∈ℝn×n{\bm{P}}\in\mathbb{R}^{n\times n} is a low-rank and smoothing operator. Then,
+| (9)
+|
+| 𝔼⁡[tr⁡(𝑺B​(𝑴2​𝑿))]<𝔼⁡[tr⁡(𝑺B​(𝑴1​𝑿))].\mathbb{E}[\mathrm{tr}({\bm{S}}_{B}({\bm{M}}_{2}{\bm{X}}))]<\mathbb{E}[\mathrm{tr}({\bm{S}}_{B}({\bm{M}}_{1}{\bm{X}}))].
+|
+The proof is given in Appendix B.2. This result formalizes the intuition that applying a smoother and lower-rank transformation to the attention matrix reduces its ability to preserve discriminative structure.
+These results support our core hypothesis: the low-rank, overly smooth nature of linear attention limits its ability to preserve inter-class variation in node representations, explaining its degraded performance in node classification.
+Motivated by this, the remainder of the paper introduces architectural modifications designed to increase the effective rank of the attention matrix and sharpen attention distributions, thereby enhancing class separability and improving classification accuracy.
+5. Methodology
+Based on the observations and theoretical analysis presented in the previous section, we propose a novel Graph Transformer architecture specifically designed to address the low-rank and high-entropy limitations of linear attention.
+As illustrated in Fig. 3, our method comprises two core components: a High-Rank Linear Attention mechanism and a learnable log-power function aimed at reducing.
+5.1. High-Rank Linear Attention
+To address the inherent low-rank limitation of standard linear attention mechanisms, we propose a simple yet effective strategy to enhance the rank of the attention output. In its conventional form, linear attention is computed as:
+| (10)
+|
+| 𝒁=ϕ⁡(𝑸)​(ϕ​(𝑲)⊤​𝑽).{\bm{Z}}=\phi({\bm{Q}})\left(\phi({\bm{K}})^{\top}{\bm{V}}\right).
+|
+Inspired by the previous works (Han et al., 2023), we introduce an additional complementary branch to enrich the representation by injecting higher-rank local context. Specifically, we modify the attention output as follows:
+| (11)
+|
+| 𝒁=ϕ⁡(𝑸)​(ϕ​(𝑲)⊤​𝑽)+GAT​(𝑽),{\bm{Z}}=\phi({\bm{Q}})\left(\phi({\bm{K}})^{\top}{\bm{V}}\right)+\text{GAT}({\bm{V}}),
+|
+where GAT​(𝑽)\text{GAT}({\bm{V}}) denotes the local features generated by a Graph Attention Network (GAT). This modification is equivalent to implicitly augmenting the attention score matrix from =ϕ⁡(𝑸)​ϕ​(𝑲)⊤=\phi({\bm{Q}})\phi({\bm{K}})^{\top} to 𝑴eq:=ϕ⁡(𝑸)​ϕ​(𝑲)⊤+MGAT{\bm{M}}_{\text{eq}}:=\phi({\bm{Q}})\phi({\bm{K}})^{\top}+M_{\text{GAT}},
+in which 𝑴GAT{\bm{M}}_{\text{GAT}} corresponds to the attention matrix produced by the GAT module, and 𝑴eq{\bm{M}}_{\text{eq}} refers to the resulting equivalent attention matrix. Since GAT assigns attention weights based on the local neighborhood defined by the graph structure, 𝑴GAT{\bm{M}}_{\text{GAT}} is typically sparse, with each row normalized over the corresponding node’s immediate neighbors. Despite this sparsity, 𝑴GAT{\bm{M}}_{\text{GAT}} can, in principle, attain a rank as high as n−1n-1. This greater rank capacity enables 𝑴eq{\bm{M}}_{\text{eq}} to capture more expressive and diverse node-level interactions, thus enhancing the model’s representational power.
+However, we observe that simply incorporating GAT attention does not consistently improve performance (Deng et al., 2024). We attribute this to the numerical dominance of GAT-derived attention scores in node classification tasks. Unlike vision transformers, where attention score matrices typically have only a few hundred dimensions, attention matrices in graph-based models often span tens of thousands of dimensions due to the large number of nodes. Moreover, since GAT assigns non-zero attention weights only to a node’s local neighbors, the resulting attention values tend to be significantly larger in magnitude than those from global linear attention. When combined without proper regulation, this disparity can lead to the suppression of global signals, thereby undermining the benefits of global context modeling.
+To mitigate the dominance of local GAT attention in the hybrid formulation, we introduce a principled gating mechanism referred to as the Gating Mechanism that modulates its influence in a soft and learnable manner. Specifically, we incorporate a scalar gate into the GAT branch, resulting in the following enhanced formulation:
+| (12)
+|
+| 𝒁=ϕ⁡(𝑸)​(ϕ​(𝑲)⊤​𝑽)+λ⋅σ⁡(a)⋅GAT​(𝑽),{\bm{Z}}=\phi({\bm{Q}})\left(\phi({\bm{K}})^{\top}{\bm{V}}\right)+\lambda\cdot\sigma(a)\cdot\text{GAT}({\bm{V}}),
+|
+where λ>0\lambda>0 is a global scaling hyperparameter, and σ⁡(a)\sigma(a) is a gating function (e.g., sigmoid) applied to a learnable scalar aa. This design introduces a trainable regulator that balances global and local contributions during training.
+Overall, the proposed hybrid attention mechanism retains the computational efficiency of linear attention while incorporating an interpretable and controllable local inductive bias. This formulation effectively increases the rank of the attention score matrix and enhances the model’s representational capacity. Moreover, based on our experiments and prior studies (Xing et al., 2024), global graph attention often allocates excessive weights to distant nodes, which leads to overly smooth output representations and weakens the preservation of node-specific information.
+To alleviate this issue, we adopt a node-wise post-modulation strategy following the global attention propagation. Specifically, inspired by (Fan et al., 2024), we reweight the output of the attention mechanism using a transformed version of the original node features, denoted by ψ⁡(𝑿)\psi({\bm{X}}). The complete form of our module is:
+| (13)
+|
+| 𝒁¯=ψ⁡(𝑿)⊙𝒁.\bar{{\bm{Z}}}=\psi({\bm{X}})\odot{\bm{Z}}.
+|
+We use a simple linear projection to serve as the function ψ⁡(⋅)\psi(\cdot).
+This modulation adjusts each node’s output based on its own features, helping to retain node-specific information while incorporating contextual signals. Previous works (Fan et al., 2024) have shown that this operation can increase the rank of the output representations. We theoretically demonstrate that it also reduces the entropy of the output representations, resulting in sharper and more discriminative embeddings, as detailed in Appendix B.4.
+In summary, we propose a simple yet effective architecture that increases the rank of the attention scores matrix and reduces the entropy of the output representations, thereby enhancing the model’s capacity to produce discriminative node embeddings. Detailed visualizations can be found in Figs. 8, and  9 of Appendix C.
+5.2. Learnable Log-Power Sharpening Function
+(a) Linear Attention
+(b) GraphTARIF (Ours)
+Figure 4. (a) Linear attention yields high-entropy attention maps with smooth, overly uniform outputs. (b) After applying the Learnable Log-Power Functions, the attention map becomes significantly sharper with lower entropy, allowing nodes to focus on more relevant regions and produce more diverse representations.
+To mitigate the high-entropy problem commonly observed in standard linear attention mechanisms, we propose a novel attention modulation function that explicitly reduces the row-wise entropy of the attention distribution while maintaining training stability.
+According to the theoretical results established in (Meng et al., 2025), using a modulation function f⁡(x)f(x) that satisfies f′​(x)>0f^{\prime}(x)>0 and f′′​(x)>0f^{\prime\prime}(x)>0 to transform the queries and keys, e.g., setting 𝑸¯=f⁡(𝑸)\overline{{\bm{Q}}}=f({\bm{Q}}), 𝑲¯=f⁡(𝑲)\overline{{\bm{K}}}=f({\bm{K}}), can effectively reduce the Positive Sequence Entropy of the resulting attention matrix during attention computation.
+| Category
+| Model
+| Squirrel
+| Amazon-Ratings
+| Roman-Empire
+| Minesweeper
+| Questions
+| Tolokers
+| Avg. Rank
+| GNN
+| GCN  (Kipf, 2016)
+| 38.67 ± 1.84
+| 48.70 ± 0.63
+| 73.69 ± 0.74
+| 89.75 ± 0.52
+| 76.09 ± 1.27
+| 83.64 ± 0.67
+| 11.2
+| GAT (Veličković et al., 2017)
+| 35.62 ± 2.06
+| 52.70 ± 0.62
+| 88.75 ± 0.41
+| 93.91 ± 0.35
+| 76.79 ± 0.71
+| 83.78 ± 0.43
+| 8.5
+| GraphSAGE (Hamilton et al., 2017)
+| 36.09 ± 1.99
+| 53.63 ± 0.39
+| 85.74 ± 0.67
+| 93.51 ± 0.57
+| 76.44 ± 0.62
+| 82.43 ± 0.44
+| 8.8
+| H2GCN  (Zhu et al., 2020)
+| 35.10 ± 1.15
+| 36.47 ± 0.20
+| 60.11 ± 0.52
+| 89.71 ± 0.31
+| 63.59 ± 1.46
+| 73.35 ± 1.01
+| 16.3
+| CPGNN  (Zhu et al., 2021)
+| 30.04 ± 2.03
+| 39.79 ± 0.77
+| 63.96 ± 0.62
+| 52.03 ± 5.46
+| 65.96 ± 1.95
+| 73.36 ± 1.01
+| 16.1
+| GPRGNN  (Chien et al., 2020)
+| 38.95 ± 1.99
+| 44.88 ± 0.34
+| 64.85 ± 0.27
+| 86.24 ± 0.61
+| 55.48 ± 0.91
+| 72.94 ± 0.97
+| 14.8
+| FSGNN  (Maurya et al., 2022)
+| 35.92 ± 1.32
+| 52.74 ± 0.83
+| 79.92 ± 0.56
+| 90.08 ± 0.70
+| 78.86 ± 0.92
+| 82.76 ± 0.61
+| 9.7
+| GloGNN  (Li et al., 2022)
+| 35.11 ± 1.24
+| 36.89 ± 0.14
+| 59.63 ± 0.69
+| 51.08 ± 1.23
+| 65.74 ± 1.19
+| 73.39 ± 1.17
+| 16.5
+| Tuned-GNN
+| tuned-GCN  (Luo et al., 2024)
+| 45.01 ± 1.63
+| 53.80 ± 0.60
+| 91.27 ± 0.20
+| 97.86 ± 0.24
+| 79.02 ± 0.60
+| –
+| 3.0
+| tuned-SAGE  (Luo et al., 2024)
+| 40.78 ± 1.40
+| 55.40 ± 0.21
+| 91.06 ± 0.27
+| 97.77 ± 0.62
+| 77.21 ± 1.28
+| –
+| 4.8
+| tuned-GAT  (Luo et al., 2024)
+| 41.73 ± 2.07
+| 55.54 ± 0.51
+| 90.63 ± 0.14
+| 97.73 ± 0.73
+| 77.95 ± 0.51
+| –
+| 4.6
+| GT
+| GraphGPS  (Rampášek et al., 2022)
+| 39.67 ± 2.84
+| 53.10 ± 0.42
+| 82.00 ± 0.61
+| 90.63 ± 0.67
+| 71.73 ± 1.47
+| 83.71 ± 0.48
+| 9.5
+| NAGphormer (Chen et al., 2023)
+| –
+| 51.26 ± 0.72
+| 74.34 ± 0.77
+| 84.19 ± 0.66
+| 68.17 ± 1.53
+| 78.32 ± 0.95
+| 13.2
+| Exphormer  (Shirzad et al., 2023)
+| –
+| 53.51 ± 0.46
+| 89.03 ± 0.37
+| 90.74 ± 0.53
+| 73.94 ± 1.06
+| 83.77 ± 0.78
+| 8.2
+| NodeFormer  (Wu et al., 2022)
+| 38.52 ± 1.57
+| 43.86 ± 0.35
+| 74.83 ± 0.81
+| 87.71 ± 0.69
+| 74.27 ± 1.46
+| 78.10 ± 1.03
+| 12.8
+| SGFormer  (Wu et al., 2023)
+| 41.80 ± 2.27
+| 48.01 ± 0.49
+| 79.10 ± 0.32
+| 90.89 ± 0.58
+| 72.15 ± 1.31
+| –
+| 10.4
+| Polynormer  (Deng et al., 2024)
+| 40.87 ± 1.96
+| 54.81 ± 0.49
+| 92.55 ± 0.37
+| 97.46 ± 0.36
+| 78.92 ± 0.89
+| 85.91 ± 0.74
+| 3.8
+| GQT  (Wang et al., 2025)
+| 42.72 ± 1.69
+| 54.32 ± 0.41
+| 90.98 ± 0.24
+| 97.36 ± 0.35
+| 78.94 ± 0.86
+| –
+| 4.4
+|
+| GraphTARIF (Ours)
+| 45.58 ± 1.91
+| 55.86 ± 0.42
+| 93.23 ± 0.38
+| 99.03 ± 0.19
+| 79.64 ± 0.71
+| 86.60 ± 0.51
+| 1.0
+Table 1. Performance (Accuracy or ROC AUC % ±\pm std) on heterophilic datasets with average rank (lower is better). We report ROC AUC for the Minesweeper, Tolokers, and Questions datasets, while Accuracy is reported for Roman-Empire, Amazon-Ratings, and Squirrel. We highlight the top first, second, and third results per dataset.
+Previous approaches (Meng et al., 2025; Han et al., 2023) have explored simple power functions such as f⁡(x)=xpf(x)=x^{p} to sharpen attention distributions. While effective in compressing entropy in the small-value regime, these functions tend to grow rapidly for large xx, leading to exploding gradients and instability during training.
+To overcome these limitations, we propose the following entropy-shaping function:
+| (14)
+|
+| f⁡(x,p,q)=x⋅(log⁡(1+xp))q,{f(x;p,q)=x\cdot\left(\log(1+x^{p})\right)^{q},}
+|
+where the exponents pp and qq are parameterized as p=1+α⋅σ⁡(w)p=1+\alpha\cdot\sigma(w) and q=1+β⋅σ⁡(w)q=1+\beta\cdot\sigma(w).
+with σ⁡(⋅)\sigma(\cdot) denoting the sigmoid function, ww learnable weights, and α,β>0\alpha,\beta>0 as hyperparameters.
+This function possesses several desirable properties for attention modulation, as formally stated in Theorem 1.
+The detailed proof is provided in Appendix B.3.
+This function is applied element-wise to the transformed queries and keys before the attention map is computed. As illustrated in Fig. 4, it modulates the magnitude of each feature dimension to generate more concentrated and discriminative attention weights.
+Theorem 1.
+Let f⁡(x)=x⋅(log⁡(1+xp))qf(x)=x\cdot\left(\log(1+x^{p})\right)^{q} with p,q>1p,q>1. Then:
+(1)
+f′​(x)>0f^{\prime}(x)>0 and f′′​(x)>0f^{\prime\prime}(x)>0 for all x>0x>0, implying reduced attention entropy (Meng et al., 2025).
+(2)
+As x→∞x\to\infty, f′​(x)=𝒪⁡((log⁡x)q)f^{\prime}(x)=\mathcal{O}\left((\log x)^{q}\right), which grows slower than power functions (e.g., xpx^{p}), promoting smoother gradients and improved training stability.
+Moreover, our function introduces learnable degrees of freedom through the parameters of both inner (pp) and outer (qq) transformations, enabling more fine-grained control over attention sharpness. This enables adaptive attention sharpening where needed, while preserving numerical stability.
+6. Experiments
+| Category
+| Model
+| Computer
+| Photo
+| CS
+| Physics
+| WikiCS
+| Avg. Rank
+| GNN
+| GCN  (Kipf, 2016)
+| 89.65 ± 0.52
+| 92.70 ± 0.20
+| 92.92 ± 0.12
+| 96.18 ± 0.07
+| 77.47 ± 0.85
+| 17.2
+| GAT  (Veličković et al., 2017)
+| 90.78 ± 0.13
+| 93.87 ± 0.11
+| 93.61 ± 0.14
+| 96.17 ± 0.08
+| 76.91 ± 0.82
+| 16.8
+| GraphSAGE  (Hamilton et al., 2017)
+| 91.20 ± 0.29
+| 94.59 ± 0.14
+| 93.91 ± 0.13
+| 96.49 ± 0.06
+| 74.77 ± 0.95
+| 14.4
+| APPNP (Gasteiger et al., 2018)
+| 90.18 ± 0.17
+| 94.32 ± 0.14
+| 94.49 ± 0.07
+| 96.54 ± 0.07
+| 78.87 ± 0.11
+| 13.4
+| GCNII  (Chen et al., 2020)
+| 91.04 ± 0.41
+| 94.30 ± 0.20
+| 92.22 ± 0.14
+| 95.97 ± 0.11
+| 78.68 ± 0.55
+| 15.8
+| GPRGNN (Chien et al., 2020)
+| 89.32 ± 0.29
+| 94.49 ± 0.14
+| 95.13 ± 0.09
+| 96.85 ± 0.08
+| 78.12 ± 0.23
+| 13.4
+| GGCN  (Yan et al., 2022)
+| 91.81 ± 0.20
+| 94.50 ± 0.11
+| 95.25 ± 0.05
+| 97.07 ± 0.05
+| 78.44 ± 0.53
+| 10.4
+| OrderedGNN  (Song et al., 2023)
+| 92.03 ± 0.13
+| 95.10 ± 0.20
+| 95.00 ± 0.10
+| 97.00 ± 0.08
+| 79.01 ± 0.68
+| 8.8
+| tGNN  (Hua et al., 2022)
+| 83.40 ± 1.33
+| 89.92 ± 0.72
+| 92.85 ± 0.48
+| 96.24 ± 0.24
+| 71.49 ± 1.05
+| 19.2
+| Tuned-GNN
+| tuned-GCN  (Luo et al., 2024)
+| 93.99 ± 0.12
+| 96.10 ± 0.46
+| 96.17 ± 0.06
+| 97.46 ± 0.10
+| 80.30 ± 0.62
+| 3.6
+| tuned-SAGE  (Luo et al., 2024)
+| 93.25 ± 0.14
+| 96.78 ± 0.23
+| 96.38 ± 0.11
+| 97.19 ± 0.05
+| 80.69 ± 0.31
+| 4.0
+| tuned-GAT  (Luo et al., 2024)
+| 94.09 ± 0.37
+| 96.60 ± 0.33
+| 96.21 ± 0.14
+| 97.25 ± 0.06
+| 81.07 ± 0.54
+| 3.0
+| GT
+| GraphGPS  (Rampášek et al., 2022)
+| 91.19 ± 0.54
+| 95.06 ± 0.13
+| 93.93 ± 0.12
+| 97.12 ± 0.19
+| 78.66 ± 0.49
+| 11.4
+| NAGphormer  (Chen et al., 2023)
+| 91.22 ± 0.14
+| 95.49 ± 0.11
+| 95.75 ± 0.09
+| 97.34 ± 0.03
+| 77.16 ± 0.72
+| 8.6
+| Exphormer  (Shirzad et al., 2023)
+| 91.47 ± 0.17
+| 95.35 ± 0.22
+| 94.93 ± 0.01
+| 96.89 ± 0.09
+| 78.54 ± 0.49
+| 10.4
+| NodeFormer  (Wu et al., 2022)
+| 86.98 ± 0.62
+| 93.46 ± 0.35
+| 95.64 ± 0.22
+| 96.45 ± 0.28
+| 74.73 ± 0.94
+| 15.6
+| SGFormer  (Wu et al., 2023)
+| 91.99 ± 0.70
+| 95.10 ± 0.47
+| 94.78 ± 0.20
+| 96.60 ± 0.18
+| 73.46 ± 0.56
+| 12.4
+| Polynormer  (Deng et al., 2024)
+| 93.68 ± 0.21
+| 96.46 ± 0.26
+| 95.53 ± 0.16
+| 97.27 ± 0.08
+| 80.10 ± 0.67
+| 5.4
+| GQT  (Wang et al., 2025)
+| 93.37 ± 0.44
+| 95.73 ± 0.18
+| 96.11 ± 0.09
+| 97.53 ± 0.06
+| 80.14 ± 0.57
+| 4.4
+|
+| GraphTARIF (Ours)
+| 94.61 ± 0.17
+| 97.03 ± 0.19
+| 96.51 ± 0.11
+| 97.39 ± 0.07
+| 80.93 ± 0.57
+| 1.6
+Table 2. Performance (Accuracy % ±\pm std) on homophilic datasets with average rank (lower is better).
+6.1. Experimental Setup
+6.1.1. Datasets
+We evaluate our model on five widely used homophilic graph datasets and six heterophilous graph datasets. The homophilic graphs include Computer, Photo (McAuley et al., 2015), CS, Physics (Shchur et al., 2018), and WikiCS (Mernyei and Cangea, 2020). The heterophilic graphs in our study are Squirrel (Rozemberczki et al., 2021), Roman-Empire, Amazon-ratings, Minesweeper, Tolokers, and Questions (Platonov et al., 2023). For these datasets, we adopt the data splitting strategy proposed in (Luo et al., 2024; Deng et al., 2024).
+In addition, to examine the scalability of our approach, we evaluate it on three large-scale graphs: ogbn-arxiv, ogbn-products, and Pokec. These datasets contain node sizes ranging from 0.16M up to 2.4M, and we follow the standard evaluation settings of (Deng et al., 2024).
+6.1.2. Baselines
+We compare the proposed model against a broad set of baselines covering both classical GNNs and recent Graph Transformer architectures. Specifically, we include: (i) classical GNNs such as GCN, and GraphSAGE.
+; (ii) heterophily-specialized GNNs, such as H2GCN, CPGNN, and TunedGNN, which is a recent framework that enhances traditional GNNs through skip-connections and hyperparameter optimization.
+and (iii) Graph Transformer models, such as GraphGPS, Exphormer, and NodeFormer.
+These baselines span a wide range of model paradigms and design philosophies, and collectively represent the current state-of-the-art under both homophilic and heterophilic settings. For baseline methods, we report the results as documented in prior work. For our method, we report the average performance over five independent runs.
+6.2. Main Comparison
+We evaluate the proposed model, GraphTARIF, on a comprehensive set of node classification benchmarks, including both homophilic and heterophilic graph datasets. The results are summarized in Tab. 1 and Tab. 2, where we report the classification accuracy (%) or ROC-AUC score, along with the average rank across datasets. We compare against three major categories of baselines: GNNs, Graph Transformers (GT), and Tuned-GNN.
+6.2.1. Results on Heterophilic Datasets
+As shown in Tab. 1, our model consistently achieves the best or comparable performance across all six heterophilic datasets: Squirrel, Amazon-Ratings, Roman-Empire, Minesweeper, Questions, and Tolokers. It ranks first on every dataset where evaluation is available, clearly outperforming both tuned GNN variants and state-of-the-art graph transformers. The overall average rank is 1.0, highlighting the robustness and effectiveness of our approach in handling heterophilic graph structures, where traditional GNNs and attention mechanisms often struggle to generalize.
+6.2.2. Results on Homophilic Datasets
+As shown in Tab. 2, our model achieves the best or comparable performance across all five homophilic datasets. Our method achieves the highest average accuracy on the Computer (94.61%), Photo (97.03%), and CS (96.51%) datasets, and obtains the best average rank of 1.4 among all 19 baseline models. Considering that these baselines—such as the Tuned-GNN (Luo et al., 2024) models—have been carefully optimized on these mature benchmarks, the improvements achieved by our model are noteworthy and demonstrate its significant potential.
+These results validate that our model not only maintains high expressiveness on classical heterophilic graphs but also generalizes well to classical homophilic graphs.
+| Model
+| ogbn-arxiv
+| pokec
+| ogbn-products
+| GCN (Kipf, 2016)
+| 71.74 ±\pm 0.29
+| 75.45 ±\pm 0.17
+| 75.64 ±\pm 0.21
+| GAT (Veličković et al., 2017)
+| 72.01 ±\pm 0.20
+| 72.23 ±\pm 0.18
+| 79.45 ±\pm 0.59
+| GPRGNN (Chien et al., 2020)
+| 71.10 ±\pm 0.12
+| 78.83 ±\pm 0.06
+| 79.76 ±\pm 0.59
+| LINKX (Lim et al., 2021)
+| 66.18 ±\pm 0.33
+| 82.04 ±\pm 0.07
+| 71.59 ±\pm 0.71
+| Tuned-GCN (Luo et al., 2024)
+| 73.53 ± 0.12
+| 86.33 ±\pm 0.17
+| 82.33 ±\pm 0.19
+| Tuned-SAGE (Luo et al., 2024)
+| 73.00 ± 0.28
+| 85.97 ±\pm 0.21
+| 83.89 ±\pm 0.36
+| Tuned-GAT (Luo et al., 2024)
+| 73.30 ± 0.18
+| 86.19 ±\pm 0.23
+| 80.99 ±\pm 0.16
+| GraphGPS (Rampášek et al., 2022)
+| 70.97 ±\pm 0.41
+| OOM
+| OOM
+| NAGphormer (Chen et al., 2023)
+| 70.13 ±\pm 0.55
+| 76.59 ±\pm 0.25
+| 73.55 ±\pm 0.21
+| Exphormer (Shirzad et al., 2023)
+| 72.14 ±\pm 0.28
+| OOM
+| OOM
+| NodeFormer (Wu et al., 2022)
+| 67.19 ±\pm 0.83
+| 71.01 ±\pm 0.20
+| 72.93 ±\pm 0.13
+| GOAT (Kong et al., 2023)
+| 72.41 ±\pm 0.40
+| 66.37 ±\pm 0.94
+| 82.00 ±\pm 0.43
+| SGFormer (Wu et al., 2023)
+| 72.63 ±\pm 0.13
+| 73.76 ±\pm 0.24
+| 74.16 ±\pm 0.31
+| Polynormer (Deng et al., 2024)
+| 73.46 ±\pm 0.16
+| 86.10 ±\pm 0.05
+| 83.82 ±\pm 0.11
+| GQT (Wang et al., 2025)
+| 73.14 ±\pm 0.16
+| 83.76 ±\pm 0.24
+| 82.46 ±\pm 0.17
+| GraphTARIF (Ours)
+| 73.81 ±\pm 0.11
+| 86.55 ±\pm 0.07
+| 83.65 ±\pm 0.27
+Table 3. Performance (Accuracy % ±\pm std) on large-scale datasets.
+OOM indicates out of memory.
+6.2.3. Results on Large-scale Graphs
+To further demonstrate the scalability of our approach on large-scale graphs, we evaluate GraphTARIF on three widely used benchmarks: ogbn-arxiv, pokec, and ogbn-products. Among these benchmarks, ogbn-arxiv and ogbn-products are homophilic graphs, while pokec is heterophilic. As shown in Tab. 3, GraphTARIF achieves the best performance on ogbn-arxiv and on pokec. On ogbn-products, GraphTARIF also delivers highly competitive results. These results demonstrate that GraphTARIF can effectively scale to large-scale graphs and consistently achieves superior or competitive performance compared to strong baselines.
+| Model Variant
+| ψ⁡(𝑿)⊙𝒁\psi({\bm{X}})\odot{\bm{Z}}
+| f⁡(⋅)f(\cdot)
+| Rank-Aug.
+| Gating Mechanism
+| Minesweeper
+| Roman-Empire
+| Computer
+| Photo
+| GraphTARIF (Full)
+| ✓\checkmark
+| ✓\checkmark
+| ✓\checkmark
+| ✓\checkmark
+| 99.03 ± 0.19
+| 93.23 ± 0.38
+| 94.61 ± 0.17
+| 97.03 ± 0.19
+| w/o Post-Modu.
+|
+| ✓\checkmark
+| ✓\checkmark
+| ✓\checkmark
+| 97.93 ± 0.44
+| 90.76 ± 0.55
+| 94.24 ± 0.16
+| 96.69 ± 0.10
+| w/o Post-Modu. & Sharpening Func.
+|
+|
+| ✓\checkmark
+| ✓\checkmark
+| 94.46 ± 0.89
+| 90.44 ± 0.88
+| 94.10 ± 0.35
+| 96.34 ± 0.25
+| w/o Gating Mechanism
+| ✓\checkmark
+| ✓\checkmark
+| ✓\checkmark
+|
+| 98.05 ± 0.44
+| 92.23 ± 0.34
+| 94.23 ± 0.25
+| 96.61 ± 0.27
+| Vanilla Linear attention
+|
+|
+|
+|
+| 91.62 ± 0.54
+| 89.39 ± 0.42
+| 93.75 ± 0.48
+| 96.30 ± 0.29
+Table 4. Ablation study of GraphTARIF.
+“ψ⁡(𝑿)⊙𝒁\psi({\bm{X}})\odot{\bm{Z}}” denotes node-wise post-modulation, and “f⁡(⋅)f(\cdot)” denotes the sharpening function, “Rank-Aug.” represents the GAT-based rank augmentation branch.
+6.3. Ablation Study
+To assess the contribution of each component in GraphTARIF, we conduct an ablation study by progressively removing key modules, as summarized in Tab. 4. We evaluated four critical components: (1) the node-wise post-modulation ψ⁡(𝑿)⊙𝒁\psi({\bm{X}})\odot{\bm{Z}}, which reweights the attention output based on transformed node features; (2) the sharpening function f⁡(⋅)f(\cdot), a learnable log-power transformation that reduces attention entropy; (3) the rank augmentation branch, implemented via a GAT module, increases the rank of the attention map.; and (4) the learnable GAT gate mechanism, which regulates the influence of the GAT branch through a gated scalar.
+We observe that removing any single component leads to a consistent performance drop across all datasets. In particular, removing both post-modulation and the sharpening function further exacerbates the decline, confirming the importance of entropy reduction (third row). Additionally, removing the learnable GAT gate (fourth row) while keeping the GAT branch active also leads to a decline in performance, suggesting that unregulated local attention can interfere with global signal modeling. The full model, which combines all components, consistently achieves the best results across all datasets.
+These results collectively validate that each component in GraphTARIF plays a complementary and non-redundant role.
+Figure 5. Training time and GPU memory usage of GraphTARIF on the pokec dataset.
+Figure 6. Impact of the hyperparameters λ\lambda (left), qq, and pp (right) on the Roman-Empire dataset.
+6.4. Additional Experiments
+6.4.1. Model Scalability
+This experiment aims to comprehensively evaluate the scalability of GraphTARIF. Specifically, we randomly sampled nodes from the training set, incrementally increasing the sample size from 20,000 to 100,000, and monitored the corresponding training time and GPU memory consumption as the dataset size changed. Fig. 5 (left) and (right) illustrate the variation in runtime and GPU memory usage, respectively, on the pokec dataset. Evidently, both the runtime and memory consumption of GraphTARIF increase linearly with the growth in graph size, indicating that GraphTARIF exhibits linear time and space complexity. These results clearly demonstrate the scalability of GraphTARIF.
+6.4.2. Hyperparameter Analysis
+These experiments aim to intuitively illustrate the effects of hyperparameter selection. Specifically, we test three key hyperparameters of our method (λ\lambda, qq, and pp) on the Roman-Empire dataset. As shown in Fig. 6, the left panel presents the influence of the coefficient λ\lambda. Evidently, a moderate value (λ=0.1\lambda=0.1) yields the highest accuracy. The right panel of Fig. 6 illustrates the impact of the hyperparameters pp and qq in the Learnable Log-Power Functions on the Roman-Empire dataset. We observe that the model performance peaks when pp and qq are set around 1–2. Beyond this range, the performance gradually stabilizes, indicating that moderate values of pp and qq are sufficient to enhance the model’s expressiveness. Through automated hyperparameter optimization, we further determined that the optimal values of pp and qq across different datasets typically lie within the range of 1 to 3. At the same time, the model maintains competitive performance even with larger values, further validating the stability of our approach.
+6.4.3. Efficiency Comparison
+As shown in Fig. 1, compared with recent Graph Transformers, GraphTARIF achieves superior performance while requiring less runtime and memory.
+It attains the best results, and it incurs lower computational costs than Polynormer and Exphormer, demonstrating its effectiveness and efficiency. Moreover, our method achieves strong performance with a relatively small number of parameters, as detailed in Table 6 of Appendix C.
+7. Conclusion
+In this paper, we introduced GraphTARIF, a hybrid linear Graph Transformer that augments the rank of attention matrices and reduces entropy through a gated local branch and a learnable log-power function. Theoretical analysis and extensive experiments demonstrate that GraphTARIF achieves competitive expressiveness while preserving linear scalability, consistently outperforming strong baselines on both homophilic and heterophilic benchmarks as well as large-scale graphs.
+Acknowledgements.
+This work was supported by the National Natural Science
+Foundation of China (92570101) and the Fundamental Research Funds for the Central Universities (226-202500080).
+References
+Alon and Yahav (2020)
+U. Alon and E. Yahav
+On the bottleneck of graph neural networks and its practical implications.
+In International Conference on Learning Representations,
+Cited by: §1,
+§2.
+Chen et al. (2023)
+J. Chen, K. Gao, G. Li, and K. He
+NAGphormer: a tokenized graph transformer for node classification in large graphs.
+In The Eleventh International Conference on Learning Representations,
+Cited by: Figure 1,
+Table 1,
+Table 2,
+Table 3.
+Chen et al. (2025)
+K. Chen, Z. Wu, W. Hou, K. Li, H. Fan, and Y. Yang
+Prompt-aware controllable shadow removal.
+arXiv preprint arXiv:2501.15043.
+Cited by: §1.
+Chen et al. (2020)
+M. Chen, Z. Wei, Z. Huang, B. Ding, and Y. Li
+Simple and deep graph convolutional networks.
+In International conference on machine learning,
+pp. 1725–1735.
+Cited by: Table 2.
+Chen et al. (2017)
+Z. Chen, X. Li, and J. Bruna
+Supervised community detection with line graph neural networks.
+arXiv preprint arXiv:1705.08415.
+Cited by: §1.
+Chien et al. (2020)
+E. Chien, J. Peng, P. Li, and O. Milenkovic
+Adaptive universal generalized pagerank graph neural network.
+arXiv preprint arXiv:2006.07988.
+Cited by: Table 1,
+Table 2,
+Table 3.
+Deng et al. (2024)
+C. Deng, Z. Yue, and Z. Zhang
+Polynormer: polynomial-expressive graph transformer in linear time.
+In The Twelfth International Conference on Learning Representations,
+Cited by: Table 6,
+Figure 1,
+§1,
+§5.1,
+Table 1,
+§6.1.1,
+Table 2,
+Table 3.
+Dosovitskiy et al. (2021)
+A. Dosovitskiy, L. Beyer, A. Kolesnikov, D. Weissenborn, X. Zhai, T. Unterthiner, M. Dehghani, M. Minderer, G. Heigold, S. Gelly, J. Uszkoreit, and N. Houlsby
+An image is worth 16x16 words: transformers for image recognition at scale.
+In International Conference on Learning Representations,
+Cited by: §1.
+Dou et al. (2020)
+Y. Dou, Z. Liu, L. Sun, Y. Deng, H. Peng, and P. S. Yu
+Enhancing graph neural network-based fraud detectors against camouflaged fraudsters.
+In Proceedings of the 29th ACM international conference on information & knowledge management,
+pp. 315–324.
+Cited by: §1.
+Dwivedi and Bresson (2020)
+V. P. Dwivedi and X. Bresson
+A generalization of transformer networks to graphs.
+arXiv preprint arXiv:2012.09699.
+Cited by: §2.
+Dwivedi et al. (2021)
+V. P. Dwivedi, A. T. Luu, T. Laurent, Y. Bengio, and X. Bresson
+Graph neural networks with learnable structural and positional representations.
+arXiv preprint arXiv:2110.07875.
+Cited by: §4.
+Fan et al. (2022)
+H. Fan, Y. Yang, and M. Kankanhalli
+Point spatio-temporal transformer networks for point cloud video modeling.
+IEEE Transactions on Pattern Analysis and Machine Intelligence 45 (2), pp. 2181–2192.
+Cited by: §1.
+Fan et al. (2024)
+Q. Fan, H. Huang, and R. He
+Breaking the low-rank dilemma of linear attention.
+arXiv preprint arXiv:2411.07635.
+Cited by: §B.4,
+§2,
+§5.1,
+§5.1.
+Gasteiger et al. (2018)
+J. Gasteiger, A. Bojchevski, and S. Günnemann
+Predict then propagate: graph neural networks meet personalized pagerank.
+arXiv preprint arXiv:1810.05997.
+Cited by: Table 2.
+Gilmer et al. (2017)
+J. Gilmer, S. S. Schoenholz, P. F. Riley, O. Vinyals, and G. E. Dahl
+Neural message passing for quantum chemistry.
+In International conference on machine learning,
+pp. 1263–1272.
+Cited by: §3.1.
+Hamilton et al. (2017)
+W. Hamilton, Z. Ying, and J. Leskovec
+Inductive representation learning on large graphs.
+Advances in Neural Information Processing Systems 30.
+Cited by: §1,
+§2,
+Table 1,
+Table 2.
+Han et al. (2023)
+D. Han, X. Pan, Y. Han, S. Song, and G. Huang
+Flatten transformer: vision transformer using focused linear attention.
+In Proceedings of the IEEE/CVF international conference on computer vision,
+pp. 5961–5971.
+Cited by: §2,
+§5.1,
+§5.2.
+Hua et al. (2022)
+C. Hua, G. Rabusseau, and J. Tang
+High-order pooling for graph neural networks with tensor decomposition.
+Advances in Neural Information Processing Systems 35, pp. 6021–6033.
+Cited by: Table 2.
+Jian et al. (2025)
+Y. Jian, Y. Zhang, Y. Wei, H. Fan, and Y. Yang
+Reaction graph: towards reaction-level modeling for chemical reactions with 3d structures.
+In Forty-second International Conference on Machine Learning,
+Cited by: §1.
+Katharopoulos et al. (2020)
+A. Katharopoulos, A. Vyas, N. Pappas, and F. Fleuret
+Transformers are rnns: fast autoregressive transformers with linear attention.
+In International conference on machine learning,
+pp. 5156–5165.
+Cited by: §3.2.2,
+§3.2.2.
+Kipf (2016)
+T. Kipf
+Semi-supervised classification with graph convolutional networks.
+arXiv preprint arXiv:1609.02907.
+Cited by: §1,
+§2,
+Table 1,
+Table 2,
+Table 3.
+Kong et al. (2023)
+K. Kong, J. Chen, J. Kirchenbauer, R. Ni, C. B. Bruss, and T. Goldstein
+GOAT: a global transformer on large-scale graphs.
+In International Conference on Machine Learning,
+pp. 17375–17390.
+Cited by: Figure 1,
+Table 3.
+Li et al. (2023)
+K. Li, D. Guo, and M. Wang
+ViGT: proposal-free video grounding with a learnable token in the transformer.
+Science China Information Sciences 66 (10), pp. 202102.
+Cited by: §1.
+Li et al. (2018)
+Q. Li, Z. Han, and X. Wu
+Deeper insights into graph convolutional networks for semi-supervised learning.
+In Proceedings of the AAAI Conference on Artificial Intelligence,
+Vol. 32.
+Cited by: §2.
+Li et al. (2022)
+X. Li, R. Zhu, Y. Cheng, C. Shan, S. Luo, D. Li, and W. Qian
+Finding global homophily in graph neural networks when meeting heterophily.
+In International conference on machine learning,
+pp. 13242–13256.
+Cited by: Table 1.
+Lim et al. (2021)
+D. Lim, F. Hohne, X. Li, S. L. Huang, V. Gupta, O. Bhalerao, and S. N. Lim
+Large scale learning on non-homophilous graphs: new benchmarks and strong simple methods.
+Advances in Neural Information Processing Systems 34, pp. 20887–20902.
+Cited by: Table 3.
+Lu et al. (2024a)
+Q. Lu, S. Luan, and X. Chang
+GCEPNet: graph convolution-enhanced expectation propagation for massive mimo detection.
+arXiv preprint arXiv:2404.14886.
+Cited by: §1.
+Lu et al. (2024b)
+Q. Lu, J. Zhu, S. Luan, and X. Chang
+Flexible diffusion scopes with parameterized laplacian for heterophilic graph learning.
+arXiv preprint arXiv:2409.09888.
+Cited by: §2.
+Luan et al. (2024a)
+S. Luan, C. Hua, Q. Lu, L. Ma, L. Wu, X. Wang, M. Xu, X. Chang, D. Precup, R. Ying, et al.
+The heterophilic graph learning handbook: benchmarks, models, theoretical analysis, applications and challenges.
+arXiv preprint arXiv:2407.09618.
+Cited by: §2.
+Luan et al. (2024b)
+S. Luan, C. Hua, M. Xu, Q. Lu, J. Zhu, X. Chang, J. Fu, J. Leskovec, and D. Precup
+When do graph neural networks help with node classification? investigating the homophily principle on node distinguishability.
+Advances in Neural Information Processing Systems 36.
+Cited by: §2.
+Luan et al. (2019)
+S. Luan, M. Zhao, X. Chang, and D. Precup
+Break the ceiling: stronger multi-scale deep graph convolutional networks.
+Advances in Neural Information Processing Systems 32.
+Cited by: §2.
+Luo et al. (2024)
+Y. Luo, L. Shi, and X. Wu
+Classic gnns are strong baselines: reassessing gnns for node classification.
+Advances in Neural Information Processing Systems 37, pp. 97650–97669.
+Cited by: §1,
+Table 1,
+Table 1,
+Table 1,
+§6.1.1,
+§6.2.2,
+Table 2,
+Table 2,
+Table 2,
+Table 3,
+Table 3,
+Table 3.
+Ma et al. (2023)
+L. Ma, C. Lin, D. Lim, A. Romero-Soriano, P. K. Dokania, M. Coates, P. Torr, and S. Lim
+Graph inductive biases in transformers without message passing.
+In International Conference on Machine Learning,
+pp. 23321–23337.
+Cited by: §1.
+Maaten and Hinton (2008)
+L. v. d. Maaten and G. Hinton
+Visualizing data using t-sne.
+Journal of machine learning research 9 (Nov), pp. 2579–2605.
+Cited by: Appendix C.
+Maurya et al. (2022)
+S. K. Maurya, X. Liu, and T. Murata
+Simplifying approach to node classification in graph neural networks.
+Journal of Computational Science 62, pp. 101695.
+Cited by: Table 1.
+McAuley et al. (2015)
+J. McAuley, C. Targett, Q. Shi, and A. Van Den Hengel
+Image-based recommendations on styles and substitutes.
+In Proceedings of the 38th international ACM SIGIR conference on research and development in information retrieval,
+pp. 43–52.
+Cited by: §6.1.1.
+Meng et al. (2025)
+W. Meng, Y. Luo, X. Li, D. Jiang, and Z. Zhang
+PolaFormer: polarity-aware linear attention for vision transformers.
+arXiv preprint arXiv:2501.15061.
+Cited by: §2,
+§3.3,
+Definition 1,
+item 1,
+§5.2,
+§5.2.
+Mernyei and Cangea (2020)
+P. Mernyei and C. Cangea
+Wiki-cs: a wikipedia-based benchmark for graph neural networks.
+arXiv preprint arXiv:2007.02901.
+Cited by: §4,
+§6.1.1.
+Platonov et al. (2023)
+O. Platonov, D. Kuznedelev, M. Diskin, A. Babenko, and L. Prokhorenkova
+A critical look at the evaluation of gnns under heterophily: are we really making progress?.
+arXiv preprint arXiv:2302.11640.
+Cited by: §4,
+§6.1.1.
+Rampášek et al. (2022)
+L. Rampášek, M. Galkin, V. P. Dwivedi, A. T. Luu, G. Wolf, and D. Beaini
+Recipe for a general, powerful, scalable graph transformer.
+Advances in Neural Information Processing Systems 35, pp. 14501–14515.
+Cited by: Table 1,
+Table 2,
+Table 3.
+Rozemberczki et al. (2021)
+B. Rozemberczki, C. Allen, and R. Sarkar
+Multi-scale attributed node embedding.
+Journal of Complex Networks 9 (2), pp. cnab014.
+Cited by: §6.1.1.
+Scarselli et al. (2008)
+F. Scarselli, M. Gori, A. C. Tsoi, M. Hagenbuchner, and G. Monfardini
+The graph neural network model.
+IEEE Transactions on Neural Networks 20 (1), pp. 61–80.
+Cited by: §1.
+Shchur et al. (2018)
+O. Shchur, M. Mumme, A. Bojchevski, and S. Günnemann
+Pitfalls of graph neural network evaluation.
+arXiv preprint arXiv:1811.05868.
+Cited by: §4,
+§6.1.1.
+Shirzad et al. (2023)
+H. Shirzad, A. Velingker, B. Venkatachalam, D. J. Sutherland, and A. K. Sinop
+Exphormer: sparse transformers for graphs.
+In International Conference on Machine Learning,
+pp. 31613–31632.
+Cited by: Table 6,
+Figure 1,
+Table 1,
+Table 2,
+Table 3.
+Song et al. (2023)
+Y. Song, C. Zhou, X. Wang, and Z. Lin
+Ordered gnn: ordering message passing to deal with heterophily and over-smoothing.
+arXiv preprint arXiv:2302.01524.
+Cited by: Table 2.
+Topping et al. (2021)
+J. Topping, F. Di Giovanni, B. P. Chamberlain, X. Dong, and M. M. Bronstein
+Understanding over-squashing and bottlenecks on graphs via curvature.
+arXiv preprint arXiv:2111.14522.
+Cited by: §2.
+Vaswani et al. (2017)
+A. Vaswani, N. Shazeer, N. Parmar, J. Uszkoreit, L. Jones, A. N. Gomez, L. Kaiser, and I. Polosukhin
+Attention is all you need.
+Advances in Neural Information Processing Systems 30.
+Cited by: §1,
+§2,
+§3.2.1.
+Veličković et al. (2017)
+P. Veličković, G. Cucurull, A. Casanova, A. Romero, P. Lio, and Y. Bengio
+Graph attention networks.
+arXiv preprint arXiv:1710.10903.
+Cited by: §1,
+§2,
+Table 1,
+Table 2,
+Table 3.
+Wang et al. (2025)
+L. Wang, K. Hassani, S. Zhang, D. Fu, B. Yuan, W. Cong, Z. Hua, H. Wu, N. Yao, and B. Long
+Learning graph quantized tokenizers.
+In The Thirteenth International Conference on Learning Representations,
+Cited by: Table 1,
+Table 2,
+Table 3.
+Wu et al. (2022)
+Q. Wu, W. Zhao, Z. Li, D. P. Wipf, and J. Yan
+Nodeformer: a scalable graph structure learning transformer for node classification.
+Advances in Neural Information Processing Systems 35, pp. 27387–27401.
+Cited by: Figure 1,
+§1,
+§2,
+Table 1,
+Table 2,
+Table 3.
+Wu et al. (2023)
+Q. Wu, W. Zhao, C. Yang, H. Zhang, F. Nie, H. Jiang, Y. Bian, and J. Yan
+Sgformer: simplifying and empowering transformers for large-graph representations.
+Advances in Neural Information Processing Systems 36, pp. 64753–64773.
+Cited by: Figure 1,
+§1,
+§2,
+Table 1,
+Table 2,
+Table 3.
+Xing et al. (2024)
+Y. Xing, X. Wang, Y. Li, H. Huang, and C. Shi
+Less is more: on the over-globalizing problem in graph transformers.
+arXiv preprint arXiv:2405.01102.
+Cited by: §5.1.
+Xu et al. (2018)
+K. Xu, W. Hu, J. Leskovec, and S. Jegelka
+How powerful are graph neural networks?.
+arXiv preprint arXiv:1810.00826.
+Cited by: §1,
+§3.1.
+Yan et al. (2022)
+Y. Yan, M. Hashemi, K. Swersky, Y. Yang, and D. Koutra
+Two sides of the same coin: heterophily and oversmoothing in graph convolutional neural networks.
+In 2022 IEEE International Conference on Data Mining,
+pp. 1287–1292.
+Cited by: Table 2.
+Ying et al. (2021)
+C. Ying, T. Cai, S. Luo, S. Zheng, G. Ke, D. He, Y. Shen, and T. Liu
+Do transformers really perform badly for graph representation?.
+Advances in Neural Information Processing Systems 34, pp. 28877–28888.
+Cited by: §1.
+Ying et al. (2018)
+R. Ying, R. He, K. Chen, P. Eksombatchai, W. L. Hamilton, and J. Leskovec
+Graph convolutional neural networks for web-scale recommender systems.
+In Proceedings of the 24th ACM SIGKDD international conference on knowledge discovery & data mining,
+pp. 974–983.
+Cited by: §1.
+Zhang et al. (2020)
+J. Zhang, H. Zhang, C. Xia, and L. Sun
+Graph-bert: only attention is needed for learning graph representations.
+arXiv preprint arXiv:2001.05140.
+Cited by: §2.
+Zhang et al. (2024)
+M. Zhang, K. Bhatia, H. Kumbong, and C. Ré
+The hedgehog & the porcupine: expressive linear attentions with softmax mimicry.
+arXiv preprint arXiv:2402.04347.
+Cited by: §4.
+Zheng et al. (2025)
+Y. Zheng, X. Li, S. Luan, X. Peng, and L. Chen
+Let your features tell the differences: understanding graph convolution by feature splitting.
+In The Thirteenth International Conference on Learning Representations,
+Cited by: §2.
+Zheng et al. (2024)
+Y. Zheng, S. Luan, and L. Chen
+What is missing for graph homophily? disentangling graph homophily for graph neural networks.
+Advances in Neural Information Processing Systems 37, pp. 68406–68452.
+Cited by: §2.
+Zhou et al. (2024)
+J. Zhou, X. Chen, C. Xie, Y. Shanqing, Q. Xuan, and X. Yang
+Rethinking graph transformer architecture design for node classification.
+arXiv preprint arXiv:2410.11189.
+Cited by: §1.
+Zhu et al. (2021)
+J. Zhu, R. A. Rossi, A. Rao, T. Mai, N. Lipka, N. K. Ahmed, and D. Koutra
+Graph neural networks with heterophily.
+In Proceedings of the AAAI Conference on Artificial Intelligence,
+Vol. 35, pp. 11168–11176.
+Cited by: Table 1.
+Zhu et al. (2020)
+J. Zhu, Y. Yan, L. Zhao, M. Heimann, L. Akoglu, and D. Koutra
+Beyond homophily in graph neural networks: current limitations and effective designs.
+Advances in neural information processing systems 33, pp. 7793–7804.
+Cited by: Table 1.
+Appendix A Datasets and Experimental Details
+Table  5 summarizes the statistics of all thirteen datasets used in our experiments, along with the corresponding major hyperparameter settings.
+We adopt GATConv as the base GNN operator preceding the attention layer, combined with residual connections, layer normalization, and ReLU activation.
+The attention module employs a linear attention mechanism with a sigmoid kernel feature map, enabling efficient global information aggregation. After the attention layer, one or two additional GNN layers are stacked to refine node representations and perform classification.
+All models are trained in a semi-supervised framework using the PyTorch Geometric (PyG) library. Experiments are conducted on a GPU cluster equipped with NVIDIA RTX 4090, RTX A6000, and L40S devices. Hyperparameters are optimized using Bayesian optimization via Optuna toolkit.
+| Dataset
+| Type
+| # nodes
+| # edges
+| # Features
+| Classes
+| Metric
+| GNN Layers
+| Attention Layers (LAL_{A})
+| λ\lambda
+| pp
+| qq
+| Computer
+| Homophily
+| 13,752
+| 245,861
+| 767
+| 10
+| Accuracy
+| 5
+| 1
+| 0.1
+| 2.0
+| 1.0
+| Photo
+| Homophily
+| 7,650
+| 119,081
+| 745
+| 8
+| Accuracy
+| 8
+| 1
+| 0.1
+| 2.0
+| 2.0
+| CS
+| Homophily
+| 18,333
+| 81,894
+| 6,805
+| 15
+| Accuracy
+| 5
+| 3
+| 0.1
+| 1.0
+| 2.0
+| Physics
+| Homophily
+| 34,493
+| 247,962
+| 8,415
+| 5
+| Accuracy
+| 5
+| 3
+| 0.1
+| 3.0
+| 2.0
+| WikiCS
+| Homophily
+| 11,701
+| 216,123
+| 300
+| 10
+| Accuracy
+| 5
+| 2
+| 0.1
+| 1.0
+| 2.0
+| Squirrel
+| Heterophily
+| 2,223
+| 46,998
+| 2,089
+| 5
+| Accuracy
+| 4
+| 1
+| 0.1
+| 2.0
+| 1.0
+| tolokers
+| Heterophily
+| 11,758
+| 519,000
+| 10
+| 2
+| ROC-AUC
+| 10
+| 2
+| 0.1
+| 3.0
+| 2.0
+| Roman-Empire
+| Heterophily
+| 22,662
+| 32,927
+| 300
+| 18
+| Accuracy
+| 10
+| 3
+| 0.1
+| 1.0
+| 1.0
+| Amazon-Ratings
+| Heterophily
+| 24,492
+| 493,005
+| 300
+| 5
+| Accuracy
+| 5
+| 1
+| 0.1
+| 1.0
+| 1.0
+| Minesweeper
+| Heterophily
+| 10,000
+| 39,304
+| 7
+| 5
+| ROC-AUC
+| 10
+| 2
+| 0.1
+| 2.0
+| 1.5
+| Questions
+| Heterophily
+| 48,921
+| 153,540
+| 301
+| 2
+| ROC-AUC
+| 8
+| 1
+| 0.3
+| 2.0
+| 1.0
+| ogbn-arxiv
+| Homophily (Large graphs)
+| 169,343
+| 1,166,243
+| 128
+| 40
+| Accuracy
+| 7
+| 1
+| 0.2
+| 3.0
+| 0.1
+| ogbn-products
+| Homophily (Large graphs)
+| 2,449,029
+| 61,859,140
+| 100
+| 47
+| Accuracy
+| 7
+| 2
+| 0.1
+| 2.0
+| 1.0
+| pokec
+| Heterophily (Large graphs)
+| 1,632,803
+| 30,622,564
+| 65
+| 2
+| Accuracy
+| 7
+| 2
+| 0.1
+| 2.0
+| 1.0
+Table 5. Overview of the datasets used for node classification.
+Appendix B Theoretical Proof
+B.1. Proof for Theorem 1
+We make the following assumptions and define the symbols used in the theorem:
+•
+Attention Matrix: Let 𝑴∈ℝn×n{\bm{M}}\in\mathbb{R}^{n\times n} be the attention matrix, where the elements 𝑴i​j∈[0,1]{\bm{M}}_{ij}\in[0,1] for all i,ji,j, and each row of the matrix is normalized, e.g., for all ii,
+| (15)
+|
+| ∑j=1n𝑴i​j=1.\sum_{j=1}^{n}{\bm{M}}_{ij}=1.
+|
+•
+Node Feature Matrix: Let 𝑿∈ℝn×d{\bm{X}}\in\mathbb{R}^{n\times d} be the node feature matrix, where nn is the number of nodes and dd is the dimensionality of the node features. There are KK classes, and the ii-th row of 𝑿{\bm{X}} is denoted by 𝐱i{\mathbf{x}}_{i}. The set of nodes in class kk is denoted as CkC_{k}, and its size is nk=|Ck|n_{k}=|C_{k}|. The node labels are yi∈{1,2,…,K}y_{i}\in\{1,2,\dots,K\}, and the features of each node are drawn from a class-conditional Gaussian distribution:
+| (16)
+|
+| 𝐱i∼𝒩⁡(𝝁yi,Σ),\mathbf{x}_{i}\sim\mathcal{N}(\bm{\mu}_{y_{i}},\Sigma),
+|
+where 𝝁yi\bm{\mu}_{y_{i}} is the mean of class yiy_{i}, and Σ\Sigma is the shared covariance matrix for all classes.
+•
+Class Centers: The class centers are assumed to be orthogonal to each other, e.g., for any i≠ji\neq j,
+| (17)
+|
+| 𝝁i⊤​𝝁j=0.\bm{\mu}_{i}^{\top}\bm{\mu}_{j}=0.
+|
+•
+Covariance Matrix: The covariance matrix is assumed to be 𝚺=σ2​𝑰\bm{\Sigma}=\sigma^{2}{\bm{I}}, where 𝑰{\bm{I}} is the identity matrix and σ2\sigma^{2} is a constant scalar value.
+With the above assumptions, we now state the complete form of Theorem 1:
+Theorem 1: Let 𝑴∈ℝn×n{\bm{M}}\in\mathbb{R}^{n\times n} be the attention matrix, and 𝑿∈ℝn×d{\bm{X}}\in\mathbb{R}^{n\times d} be the node feature matrix. Under the assumption that the attention matrix 𝑴{\bm{M}} is normalized and data-independent, and the node features 𝑿{\bm{X}} follow a class-conditional Gaussian distribution, we have the following relationship between the rank of the attention matrix and the expected value of the trace of the between-class scatter matrix:
+| (18)
+|
+| 𝔼⁡[tr​(𝑺B)]≤C⋅r,\mathbb{E}[\text{tr}({\bm{S}}_{B})]\leq C\cdot r,
+|
+where r=rank​(𝑴)r=\text{rank}({\bm{M}}) is the rank of the attention matrix, and CC is a constant.
+Proof.
+We first consider the feature transformation 𝑿′=𝑴​𝑿{\bm{X}}^{\prime}={\bm{M}}{\bm{X}}.
+Each transformed feature 𝐱i′=∑j𝑴i​j​𝐱j{\mathbf{x}}_{i}^{\prime}=\sum_{j}{\bm{M}}_{ij}{\mathbf{x}}_{j} is still Gaussian since 𝐱j∼𝒩⁡(𝝁yj,Σ){\mathbf{x}}_{j}\sim\mathcal{N}(\bm{\mu}_{y_{j}},\Sigma).
+For class kk, the empirical center after transformation can be written as
+|
+| 𝝁k′=(𝜶(k))⊤​𝑿,with ​αj(k)=1nk​∑i∈Ck𝑴i​j,\bm{\mu}_{k}^{\prime}=(\bm{\alpha}^{(k)})^{\top}{\bm{X}},\quad\text{with }\alpha_{j}^{(k)}=\tfrac{1}{n_{k}}\sum_{i\in C_{k}}{\bm{M}}_{ij},
+|
+and the global mean as 𝝁′=𝜸⊤​𝑿\bm{\mu}^{\prime}=\bm{\gamma}^{\top}{\bm{X}}, where γj=1n​∑i=1n𝑴i​j\gamma_{j}=\tfrac{1}{n}\sum_{i=1}^{n}{\bm{M}}_{ij}.
+The between-class scatter becomes
+|
+| 𝑺B=1K​∑k=1K(𝝁k′−𝝁′)​(𝝁k′−𝝁′)⊤=𝑿⊤​𝑨​𝑿,{\bm{S}}_{B}=\frac{1}{K}\sum_{k=1}^{K}(\bm{\mu}_{k}^{\prime}-\bm{\mu}^{\prime})(\bm{\mu}_{k}^{\prime}-\bm{\mu}^{\prime})^{\top}={\bm{X}}^{\top}{\bm{A}}{\bm{X}},
+|
+where
+|
+| 𝑨=1K​∑k=1K(𝜶(k)−𝜸)​(𝜶(k)−𝜸)⊤.{\bm{A}}=\frac{1}{K}\sum_{k=1}^{K}(\bm{\alpha}^{(k)}-\bm{\gamma})(\bm{\alpha}^{(k)}-\bm{\gamma})^{\top}.
+|
+Hence
+|
+| 𝔼⁡[tr⁡(𝑺B)]=tr⁡(𝑨​𝔼​[𝑿​𝑿⊤]).\mathbb{E}[\operatorname{tr}({\bm{S}}_{B})]=\operatorname{tr}({\bm{A}}\,\mathbb{E}[{\bm{X}}{\bm{X}}^{\top}]).
+|
+We decompose 𝑿=𝒀+𝑬{\bm{X}}={\bm{Y}}+{\bm{E}}, with 𝒀{\bm{Y}} the deterministic class means and 𝑬{\bm{E}} Gaussian noise.
+This gives
+|
+| 𝔼⁡[𝑿​𝑿⊤]=𝒀​𝒀⊤+d​σ2​𝑰n,\mathbb{E}[{\bm{X}}{\bm{X}}^{\top}]={\bm{Y}}{\bm{Y}}^{\top}+d\sigma^{2}{\bm{I}}_{n},
+|
+so that
+|
+| 𝔼⁡[tr⁡(𝑺B)]=tr⁡(𝑨​𝒀​𝒀⊤)+d​σ2​tr⁡(𝑨).\mathbb{E}[\operatorname{tr}({\bm{S}}_{B})]=\operatorname{tr}({\bm{A}}{\bm{Y}}{\bm{Y}}^{\top})+d\sigma^{2}\operatorname{tr}({\bm{A}}).
+|
+Two auxiliary bounds are needed:
+Lemma 1. ‖𝜶(k)−𝜸‖≤n\|\bm{\alpha}^{(k)}-\bm{\gamma}\|\leq\sqrt{n}, since both are convex combinations of {Mi​j}\{M_{ij}\}.
+Lemma 2. From Lemma 1,
+|
+| ‖𝑨‖F≤nK,λmax​(𝑨)≤‖𝑨‖F≤nK.\|{\bm{A}}\|_{F}\leq\tfrac{n}{\sqrt{K}},\quad\lambda_{\max}({\bm{A}})\leq\|{\bm{A}}\|_{F}\leq\tfrac{n}{\sqrt{K}}.
+|
+Thus tr⁡(𝑨)≤r​λmax​(𝑨)≤n​rK\operatorname{tr}({\bm{A}})\leq r\,\lambda_{\max}({\bm{A}})\leq\tfrac{nr}{\sqrt{K}}, with r=rank⁡(𝑨)≤rank⁡(𝑴)r=\operatorname{rank}({\bm{A}})\leq\operatorname{rank}({\bm{M}}).
+Finally, since both 𝒀​𝒀⊤{\bm{Y}}{\bm{Y}}^{\top} and 𝑨{\bm{A}} are PSD,
+|
+| tr⁡(𝑨​𝒀​𝒀⊤)≤λmax​(𝒀​𝒀⊤)​tr⁡(𝑨).\operatorname{tr}({\bm{A}}{\bm{Y}}{\bm{Y}}^{\top})\leq\lambda_{\max}({\bm{Y}}{\bm{Y}}^{\top})\operatorname{tr}({\bm{A}}).
+|
+Combining the two terms yields
+|
+| 𝔼⁡[tr⁡(𝑺B)]≤(λmax​(𝒀​𝒀⊤)+d​σ2)⋅n​rK.\mathbb{E}[\operatorname{tr}({\bm{S}}_{B})]\leq\big(\lambda_{\max}({\bm{Y}}{\bm{Y}}^{\top})+d\sigma^{2}\big)\cdot\tfrac{nr}{\sqrt{K}}.
+|
+Let C=nK​(λmax​(𝒀​𝒀⊤)+d​σ2)C=\tfrac{n}{\sqrt{K}}(\lambda_{\max}({\bm{Y}}{\bm{Y}}^{\top})+d\sigma^{2}), independent of 𝑴{\bm{M}}, we conclude
+|
+| 𝔼⁡[tr⁡(𝑺B)]≤C⋅rank⁡(𝑴).\mathbb{E}[\operatorname{tr}({\bm{S}}_{B})]\leq C\cdot\operatorname{rank}({\bm{M}}).
+|
+∎
+Although Theorem 1 provides a upper bound on the inter-group variance, it still offers valuable insight in practice. Real-world data often exhibit complex, multi-modal, or manifold-structured distributions rather than simple class-wise Gaussian clusters. In such cases, a higher-rank attention matrix is still necessary to retain discriminative features across these intricate structures.
+B.2. Proof for Theorem 2
+Notation.
+We write 𝑨⪯𝑩{\bm{A}}\preceq{\bm{B}} to indicate that 𝑩−𝑨{\bm{B}}-{\bm{A}} is positive semidefinite (PSD), that is, for all 𝐯∈ℝn\mathbf{v}\in\mathbb{R}^{n},
+| (19)
+|
+| 𝐯⊤​(𝑩−𝑨)​𝐯≥0.\mathbf{v}^{\top}({\bm{B}}-{\bm{A}})\mathbf{v}\geq 0.
+|
+Equivalently, this means all eigenvalues of 𝑩−𝑨{\bm{B}}-{\bm{A}} are nonnegative. When 𝑨≺𝑩{\bm{A}}\prec{\bm{B}}, the difference is positive definite (PD).
+Theorem 2:
+Let 𝑴1=𝑷​𝑴2{\bm{M}}_{1}={\bm{P}}{\bm{M}}_{2} with 𝑷∈ℝn×n{\bm{P}}\in\mathbb{R}^{n\times n}. Since 𝑷{\bm{P}} is a smoothing operator, it is reasonable to assume that 𝑷{\bm{P}} satisfies 𝑷⊤​𝑷⪯𝑰{\bm{P}}^{\top}{\bm{P}}\preceq{\bm{I}}. Moreover, assume that rank⁡(𝑴1)<rank⁡(𝑴2)\operatorname{rank}({\bm{M}}_{1})<\operatorname{rank}({\bm{M}}_{2}). Let the input feature matrix be 𝑿=𝒀+𝑬{\bm{X}}={\bm{Y}}+{\bm{E}}, where:
+•
+𝒀∈ℝn×d{\bm{Y}}\in\mathbb{R}^{n\times d} is the matrix of class centers with Y​Y⊤≻0YY^{\top}\succ 0;
+•
+𝑬∼𝒩⁡(0,σ2​I){\bm{E}}\sim\mathcal{N}(0,\sigma^{2}I) is isotropic Gaussian noise.
+Then the expected inter-class variance after applying 𝑴1{\bm{M}}_{1} is strictly smaller than that of 𝑴2{\bm{M}}_{2}:
+| (20)
+|
+| 𝔼⁡[tr⁡(𝑺B​(𝑴1))]<𝔼⁡[tr⁡(𝑺B​(𝑴2))].\mathbb{E}[\operatorname{tr}({\bm{S}}_{B}({\bm{M}}_{1}))]<\mathbb{E}[\operatorname{tr}({\bm{S}}_{B}({\bm{M}}_{2}))].
+|
+Proof.
+For any attention matrix 𝑴∈ℝn×n{\bm{M}}\in\mathbb{R}^{n\times n}, define
+|
+| 𝜶(k)=1nk∑i∈Ck𝑴i,:,𝜸=1n∑i=1n𝑴i,:,\bm{\alpha}^{(k)}=\tfrac{1}{n_{k}}\sum_{i\in C_{k}}{\bm{M}}_{i,:},\quad\bm{\gamma}=\tfrac{1}{n}\sum_{i=1}^{n}{\bm{M}}_{i,:},
+|
+and
+|
+| 𝑨=1K​∑k=1K(𝜶(k)−𝜸)​(𝜶(k)−𝜸)⊤.{\bm{A}}=\tfrac{1}{K}\sum_{k=1}^{K}(\bm{\alpha}^{(k)}-\bm{\gamma})(\bm{\alpha}^{(k)}-\bm{\gamma})^{\top}.
+|
+Under 𝑴{\bm{M}}, the between-class scatter is
+|
+| 𝑺B=𝑿⊤​𝑨​𝑿,𝔼⁡[tr⁡(𝑺B)]=tr⁡(𝑨⁡(𝒀​𝒀⊤+d​σ2​𝑰)).{\bm{S}}_{B}={\bm{X}}^{\top}{\bm{A}}{\bm{X}},\quad\mathbb{E}[\operatorname{tr}({\bm{S}}_{B})]=\operatorname{tr}({\bm{A}}({\bm{Y}}{\bm{Y}}^{\top}+d\sigma^{2}{\bm{I}})).
+|
+Now consider 𝑴1=𝑷​𝑴2{\bm{M}}_{1}={\bm{P}}{\bm{M}}_{2}, inducing 𝑨1=𝑷​𝑨2​𝑷⊤{\bm{A}}_{1}={\bm{P}}{\bm{A}}_{2}{\bm{P}}^{\top}. Then
+|
+| 𝔼⁡[tr⁡(𝑺B​(𝑴1))]=tr⁡(𝑷​𝑨2​𝑷⊤​𝒀​𝒀⊤)+d​σ2​tr⁡(𝑷​𝑨2​𝑷⊤).\mathbb{E}[\operatorname{tr}({\bm{S}}_{B}({\bm{M}}_{1}))]=\operatorname{tr}({\bm{P}}{\bm{A}}_{2}{\bm{P}}^{\top}{\bm{Y}}{\bm{Y}}^{\top})+d\sigma^{2}\operatorname{tr}({\bm{P}}{\bm{A}}_{2}{\bm{P}}^{\top}).
+|
+Let 𝑸=𝑷⊤​𝑷⪯𝑰{\bm{Q}}={\bm{P}}^{\top}{\bm{P}}\preceq{\bm{I}}. For the signal term,
+|
+| tr⁡(𝑷​𝑨2​𝑷⊤​𝒀​𝒀⊤)=tr⁡(𝑨2​𝑷⊤​𝒀​𝒀⊤​𝑷)<tr⁡(𝑨2​𝒀​𝒀⊤),\operatorname{tr}({\bm{P}}{\bm{A}}_{2}{\bm{P}}^{\top}{\bm{Y}}{\bm{Y}}^{\top})=\operatorname{tr}({\bm{A}}_{2}{\bm{P}}^{\top}{\bm{Y}}{\bm{Y}}^{\top}{\bm{P}})<\operatorname{tr}({\bm{A}}_{2}{\bm{Y}}{\bm{Y}}^{\top}),
+|
+since 𝒀​𝒀⊤≻0{\bm{Y}}{\bm{Y}}^{\top}\succ 0 and 𝑸≺𝑰{\bm{Q}}\prec{\bm{I}}.
+For the noise term,
+|
+| tr⁡(𝑷​𝑨2​𝑷⊤)=tr⁡(𝑨2​𝑸)<tr⁡(𝑨2).\operatorname{tr}({\bm{P}}{\bm{A}}_{2}{\bm{P}}^{\top})=\operatorname{tr}({\bm{A}}_{2}{\bm{Q}})<\operatorname{tr}({\bm{A}}_{2}).
+|
+Thus both terms under 𝑴1{\bm{M}}_{1} are strictly smaller than under 𝑴2{\bm{M}}_{2}, giving
+|
+| 𝔼⁡[tr⁡(𝑺B​(𝑴1))]<𝔼⁡[tr⁡(𝑺B​(𝑴2))].\mathbb{E}[\operatorname{tr}({\bm{S}}_{B}({\bm{M}}_{1}))]<\mathbb{E}[\operatorname{tr}({\bm{S}}_{B}({\bm{M}}_{2}))].
+|
+∎
+B.3. Proof for Theorem 3
+Theorem 3:
+Let f⁡(x)=x⋅(log⁡(1+xp))qf(x)=x\cdot\left(\log(1+x^{p})\right)^{q}, where p>1p>1, q>1q>1. Then:
+(1)
+f′​(x)>0f^{\prime}(x)>0 and f′′​(x)>0f^{\prime\prime}(x)>0 for all x>0x>0;
+(2)
+As x→∞x\to\infty, it holds that
+| (21)
+|
+| f′​(x)=𝒪⁡((log⁡x)q).f^{\prime}(x)=\mathcal{O}((\log x)^{q}).
+|
+Proof.
+We prove two claims.
+(1) Convexity.
+Let f⁡(x)=x​(log⁡(1+xp))qf(x)=x(\log(1+x^{p}))^{q} with L⁡(x)=log⁡(1+xp)L(x)=\log(1+x^{p}). Then
+|
+| f′​(x)=L​(x)q+x​q​L​(x)q−1​p​xp−11+xp>0(x>0).f^{\prime}(x)=L(x)^{q}+xqL(x)^{q-1}\frac{px^{p-1}}{1+x^{p}}>0\quad(x>0).
+|
+Differentiating again and writing f′′​(x)=A′​(x)+B′​(x)f^{\prime\prime}(x)=A^{\prime}(x)+B^{\prime}(x) with
+A⁡(x)=L​(x)qA(x)=L(x)^{q}, B⁡(x)=x​q​L​(x)q−1​L′​(x)B(x)=xqL(x)^{q-1}L^{\prime}(x), one obtains
+|
+| B′​(x)=p​q​[L​(x)q−1​(L′​(x)+x​L′′​(x))+(q−1)​x​L​(x)q−2​(L′​(x))2].B^{\prime}(x)=pq\Big[L(x)^{q-1}(L^{\prime}(x)+xL^{\prime\prime}(x))+(q-1)xL(x)^{q-2}(L^{\prime}(x))^{2}\Big].
+|
+A direct calculation shows L′​(x)+x​L′′​(x)=p2​xp−1(1+xp)2>0L^{\prime}(x)+xL^{\prime\prime}(x)=\tfrac{p^{2}x^{p-1}}{(1+x^{p})^{2}}>0.
+Since every term is nonnegative, we have B′​(x)>0B^{\prime}(x)>0 and A′​(x)>0A^{\prime}(x)>0, hence
+|
+| f′′​(x)>0for all ​x>0.f^{\prime\prime}(x)>0\quad\text{for all }x>0.
+|
+(2) Asymptotic growth.
+As x→∞x\to\infty, log⁡(1+xp)∼p​log⁡x\log(1+x^{p})\sim p\log x, and
+|
+| p​xp−11+xp∼px,x⋅px=p.\frac{px^{p-1}}{1+x^{p}}\sim\frac{p}{x},\qquad x\cdot\frac{p}{x}=p.
+|
+Thus
+|
+| f′​(x)∼(p​log⁡x)q+q​p​(p​log⁡x)q−1=𝒪⁡((log⁡x)q).f^{\prime}(x)\sim(p\log x)^{q}+qp(p\log x)^{q-1}=\mathcal{O}((\log x)^{q}).
+|
+Combining (1) and (2) proves the claim.
+∎
+Figure 7. Comparison between x⋅(log⁡(1+xp))qx\cdot(\log(1+x^{p}))^{q} and xpx^{p}. Left: function values; Right: growth rates.
+The proposed low-power function f⁡(x,p,q)=x⋅(log⁡(1+xp))qf(x;p,q)=x\cdot\left(\log(1+x^{p})\right)^{q}, similar to the power function, amplifies differences in input values and thus reduces the entropy of the attention distribution, as shown in Fig. 7 (left). However, as illustrated in Fig. 7 (right), its derivative grows significantly more slowly when xx is large. This property effectively mitigates the risk of exploding gradients during backpropagation and ensures more stable training.
+B.4. Theoretical Analysis of Node-wise Post-modulation Effects on Output Features
+In our framework, the node-wise post-modulation operation (Eq. 13) performs an element-wise transformation on the attention outputs. Prior work (Fan et al., 2024) demonstrates that such post-modulation can increase the rank of the feature matrix, thereby enhancing its representational capacity. Complementing this view, we theoretically show that post-modulation also reduces the entropy of node features—sharpening their distribution while preserving diversity, which ultimately benefits downstream classification.
+Theorem 4.
+Let 𝑿∈ℝn×d{\bm{X}}\in\mathbb{R}^{n\times d} denote node features, and 𝑴∈ℝn×n{\bm{M}}\in\mathbb{R}^{n\times n} be an attention matrix emphasizing same-class nodes. Define
+| (22)
+|
+| 𝒀1=𝑴​𝑿,𝒀2=(𝑴​𝑿)⊙𝑿.{\bm{Y}}_{1}={\bm{M}}{\bm{X}},\quad{\bm{Y}}_{2}=({\bm{M}}{\bm{X}})\odot{\bm{X}}.
+|
+Then for each feature dimension kk,
+| (23)
+|
+| PSE(𝒀2(:,k))<PSE(𝒀1(:,k)),\mathrm{PSE}({\bm{Y}}_{2}^{(:,k)})<\mathrm{PSE}({\bm{Y}}_{1}^{(:,k)}),
+|
+where PSE⁡(⋅)\mathrm{PSE}(\cdot) denotes the Positive Sequence Entropy.
+Proof.
+We analyze one feature dimension 𝐱=(x1,…,xn)\mathbf{x}=(x_{1},\dots,x_{n}).
+For two nodes x=(a,b)x=(a,b) with a>b>0a>b>0, define c=a/b>1c=a/b>1.
+The normalized entropy is
+|
+| PSE⁡(a,b)=log⁡(c+1)−cc+1​log⁡c.\mathrm{PSE}(a,b)=\log(c+1)-\tfrac{c}{c+1}\log c.
+|
+Because 𝑴{\bm{M}} assigns higher weights to same-class nodes, (𝑴​𝐱)1>(𝑴​𝐱)2({\bm{M}}\mathbf{x})_{1}>({\bm{M}}\mathbf{x})_{2} whenever x1>x2x_{1}>x_{2}.
+After post-modulation 𝐲=𝑴​𝐱⊙𝐱\mathbf{y}={\bm{M}}\mathbf{x}\odot\mathbf{x},
+|
+| y1y2=(𝑴​𝐱)1​x1(𝑴​𝐱)2​x2>x1x2=c>1.\frac{y_{1}}{y_{2}}=\frac{({\bm{M}}\mathbf{x})_{1}x_{1}}{({\bm{M}}\mathbf{x})_{2}x_{2}}>\frac{x_{1}}{x_{2}}=c>1.
+|
+Let h⁡(x)=log⁡(x+1)−xx+1​log⁡xh(x)=\log(x+1)-\frac{x}{x+1}\log x, with derivative h′​(x)=−log⁡x(x+1)2<0h^{\prime}(x)=-\frac{\log x}{(x+1)^{2}}<0 for x>1x>1.
+Since h⁡(x)h(x) is strictly decreasing, enlarging the ratio y1/y2y_{1}/y_{2} decreases entropy:
+|
+| PSE⁡(y1,y2)<PSE⁡(x1,x2).\mathrm{PSE}(y_{1},y_{2})<\mathrm{PSE}(x_{1},x_{2}).
+|
+The result extends to higher dimensions by coordinate-wise analysis, proving that node-wise post-modulation reduces feature entropy.
+∎
+Appendix C Additional Results
+Tab. 6 and Fig. 8–9 provide additional results validating the effectiveness and efficiency of GraphTARIF. As shown in Tab. 6, GraphTARIF achieves superior performance on two heterophilic graphs with substantially fewer parameters than Polynormer and Exphormer. Fig. 8 visualizes the first-layer attention features on the Photo dataset, where our method produces representations with higher rank and lower entropy. The t-SNE (Maaten and Hinton, 2008) projection in Fig. 9 further reveals clearer decision boundaries and greater inter-class separability.
+| Model
+| Roman-Empire
+| Questions
+| ROC-AUC
+| Params
+| Accuracy
+| Params
+| Exphormer (Shirzad et al., 2023)
+| 88.42±\pm0.41
+| 15.9M
+| 73.94±\pm1.06
+| 10.7M
+| Polynormer (Deng et al., 2024)
+| 92.55±\pm0.37
+| 9.91M
+| 78.92±\pm0.89
+| 6.74M
+| GraphTARIF (Ours)
+| 93.23±\pm0.38
+| 4.07M
+| 79.64±\pm0.71
+| 5.17M
+Table 6.
+ROC-AUC or Accuracy (%) and parameter counts (M) on two heterophilic graph datasets.
+(a) GraphTARIF, Entropy=3.77
+(b) Linear Attention, Entropy=3.97
+Figure 8. Visualization of the output features on the Photo dataset with
+entropy analysis.
+Figure 9. t-SNE visualizations of output features.
+Experimental support, please
+view the build logs
+for errors. Generated by
+L
+A
+T
+E
+xml
+.
+Instructions for reporting errors
+We are continuing to improve HTML versions of papers, and your feedback helps enhance accessibility and mobile
+support. To report errors in the HTML that will help us improve conversion and rendering, choose any of the
+methods listed below:
+Click the "Report Issue" (
+) button, located in the page header.
+Tip: You can select the relevant text first, to include it in your report.
+Our team has already identified the following issues. We appreciate your time reviewing and reporting rendering errors we
+may not have found yet. Your efforts will help us improve the HTML versions for all readers, because disability
+should not be a barrier to accessing research. Thank you for your continued support in championing open access for
+all.
+Have a free development cycle? Help support accessibility at arXiv! Our collaborators at LaTeXML maintain a list of packages that need conversion, and welcome developer contributions.
+We gratefully acknowledge support from
+our major funders,
+member institutions, ,
+and all contributors.
+About
+·
+Help
+·
+Contact
+·
+Subscribe
+·
+Copyright
+·
+Privacy
+·
+Accessibility
+·
+Operational Status (opens in new tab)
+Major funding support from

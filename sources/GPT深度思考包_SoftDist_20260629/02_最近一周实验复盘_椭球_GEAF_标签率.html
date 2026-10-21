@@ -1,0 +1,135 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <title>最近一周实验复盘：椭球、参数网格、GEAF、标签率</title>
+  <style>
+    body{font-family:Segoe UI,Microsoft YaHei,Arial,sans-serif;line-height:1.65;margin:0;background:#f6f7f9;color:#20242a}
+    main{max-width:1180px;margin:0 auto;padding:36px 24px 64px}
+    h1{font-size:30px;margin:0 0 8px}
+    h2{font-size:22px;margin-top:34px;border-left:5px solid #2f6fed;padding-left:10px}
+    h3{font-size:18px;margin-top:24px}
+    .card{background:#fff;border:1px solid #d8dde6;border-radius:8px;padding:18px 22px;margin:16px 0}
+    .pass{border-left:5px solid #15803d;background:#f0fdf4}
+    .fail{border-left:5px solid #b91c1c;background:#fef2f2}
+    .warn{border-left:5px solid #d97706;background:#fff7ed}
+    code{background:#eef2f7;padding:2px 5px;border-radius:4px}
+    table{border-collapse:collapse;width:100%;background:#fff;margin:12px 0;font-size:14px}
+    th,td{border:1px solid #d8dde6;padding:8px 10px;text-align:left;vertical-align:top}
+    th{background:#eef2ff}
+  </style>
+</head>
+<body>
+<main>
+  <h1>最近一周实验复盘：椭球、参数网格、GEAF、标签率</h1>
+  <p>本文件压缩 2026-06-24 到 2026-06-29 的关键实验链，重点说明哪些正信号没有转成 downstream，哪些方向应停止。</p>
+
+  <h2>1. 图节点标签错误检测：不换题</h2>
+  <table>
+    <tr><th>数据集</th><th>s_ball_loo AUROC</th><th>更强 baseline</th><th>结论</th></tr>
+    <tr><td>Cora</td><td>0.9016</td><td>s_knn 0.9474；s_gcn_conf 0.9253</td><td>球检测强，但被 H-kNN 压制</td></tr>
+    <tr><td>CiteSeer</td><td>0.8257</td><td>s_knn 0.8850</td><td>被 H-kNN 压制</td></tr>
+    <tr><td>Coauthor-CS</td><td>0.9614</td><td>s_gcn_conf 0.9938；s_knn 0.9808</td><td>被 GCN 置信度与 kNN 压制</td></tr>
+  </table>
+  <div class="card fail">
+    结论：暂不把论文换题为“图节点标签错误检测与清洗”。kNN + ball 的 rank/z 集成也没有稳定超过 s_knn，oracle logistic 只有 +0.0011 到 +0.0031 AUROC 的很小上界。
+  </div>
+
+  <h2>2. 椭球 SoftDist：offline 有信号，downstream 大多失败</h2>
+  <h3>2.1 椭球机制</h3>
+  <div class="card">
+    椭球版不重新划分椭球簇，而是保留原 hard ball assignment，在每个球内用 frozen GRACE H 估计协方差，用 Mahalanobis distance 给 train noisy-label vote 加权。目标是降低边界点/离群点投票权重。
+  </div>
+
+  <h3>2.2 小图几何解释</h3>
+  <table>
+    <tr><th>Dataset</th><th>Balls</th><th>Root split gain</th><th>H-kNN agree</th><th>Lift</th><th>Eff. support</th><th>Weighted true purity delta</th><th>解释</th></tr>
+    <tr><td>Cora</td><td>52.4</td><td>0.0721</td><td>0.8146</td><td>4.54</td><td>0.9849</td><td>+0.0049</td><td>H 空间不差，但椭球权重几乎等权</td></tr>
+    <tr><td>CiteSeer</td><td>63.8</td><td>0.0914</td><td>0.6546</td><td>3.68</td><td>0.9829</td><td>+0.0066</td><td>形状存在，但与标签结构对齐弱</td></tr>
+  </table>
+
+  <h3>2.3 大图/边界数据集 offline 参数网格</h3>
+  <table>
+    <tr><th>Dataset</th><th>分类</th><th>最佳 offline setting</th><th>mass_delta</th><th>positive seeds</th><th>说明</th></tr>
+    <tr><td>DBLP</td><td>collapse-fixed</td><td>max_balls=128, split=0.001</td><td>+2.9623</td><td>5/5</td><td>默认 split=0.05 导致单球塌缩</td></tr>
+    <tr><td>PubMed</td><td>ball-count-sensitive</td><td>max_balls=512, split=0.01</td><td>+1.8385</td><td>4/5</td><td>64 球粒度可能不足</td></tr>
+    <tr><td>AmazonPhoto</td><td>ball-count-sensitive</td><td>max_balls=64, split=0.05</td><td>+7.9166</td><td>5/5</td><td>没有球数上限过低证据</td></tr>
+    <tr><td>AmazonCom</td><td>ball-count-sensitive</td><td>max_balls=64, split=0.001</td><td>+10.9144</td><td>5/5</td><td>offline 强，但需看 downstream</td></tr>
+  </table>
+
+  <h3>2.4 默认椭球 downstream seed0</h3>
+  <table>
+    <tr><th>Dataset</th><th>GCN[X‖H]</th><th>SoftDist</th><th>SoftDist shuffled</th><th>Ellipsoid</th><th>Ellipsoid shuffled</th><th>结论</th></tr>
+    <tr><td>Coauthor-CS</td><td>0.9189</td><td>0.9208</td><td>0.9199</td><td>0.9235</td><td>0.9203</td><td>seed0 pass</td></tr>
+    <tr><td>AmazonPhoto</td><td>0.9109</td><td>0.8964</td><td>0.9001</td><td>0.8986</td><td>0.8949</td><td>低于 GCN 和 ordinary shuffled</td></tr>
+    <tr><td>AmazonCom</td><td>0.8564</td><td>0.8558</td><td>0.8578</td><td>0.8558</td><td>0.8616</td><td>低于 ellipsoid shuffled</td></tr>
+  </table>
+
+  <h3>2.5 selected 椭球 DBLP 5-seed</h3>
+  <table>
+    <tr><th>方法</th><th>Mean</th><th>Std</th><th>ok seeds</th></tr>
+    <tr><td>GCN[XH]</td><td>0.8391</td><td>0.0032</td><td>5</td></tr>
+    <tr><td>Current SoftDist</td><td>0.8391</td><td>0.0036</td><td>5</td></tr>
+    <tr><td>Current shuffled</td><td>0.8391</td><td>0.0036</td><td>5</td></tr>
+    <tr><td>Selected ellipsoid</td><td>0.8392</td><td>0.0031</td><td>5</td></tr>
+    <tr><td>Selected shuffled</td><td>0.8374</td><td>0.0041</td><td>5</td></tr>
+  </table>
+  <div class="card fail">
+    DBLP selected ellipsoid vs selected shuffled 只有 +0.19pp，3/5 seeds；vs current SoftDist 只有 +0.01pp，2/5 seeds。结论：STOP。
+  </div>
+
+  <h2>3. Offline-to-downstream 断裂复盘</h2>
+  <div class="card warn">
+    旧 offline gate 主要判断 target 更像 clean label，不等于 target 能改变 GCN[X‖H] 的决策边界。大图上的 <code>soft_clean_mass_delta</code> 是总量，不是每节点平均增量。例如 DBLP +2.9623 / 3543 ≈ +0.00084 per train node，PubMed +1.8385 / 3943 ≈ +0.00047 per train node，太弱。
+  </div>
+  <ul>
+    <li>以后进入 downstream 前，不能只看 clean mass 总量。</li>
+    <li>需要 <code>mass_delta_per_train</code>、<code>hard_net_delta</code>、baseline logits/loss/margin 的 <code>gradient_weighted_target_gain</code>。</li>
+    <li>还要看 baseline headroom、real-vs-shuffled downstream gap、effective support ratio。</li>
+  </ul>
+
+  <h2>4. GEAF-style hard correction bridge</h2>
+  <h3>4.1 方法</h3>
+  <div class="card">
+    GEAF bridge 不是 SoftDist 替代版，而是诊断桥：粒椭球生成后，不直接给 soft target，而是显式做 train-label hard correction，再训练 GCN[X‖H]。clean labels 只用于离线 NCR/CDR/hard-net/gate，不参与构球或 correction。
+  </div>
+
+  <h3>4.2 主四数据集离线 gate</h3>
+  <table>
+    <tr><th>Dataset</th><th>Confidence</th><th>Gate</th><th>hard_net</th><th>NCR</th><th>CDR</th><th>说明</th></tr>
+    <tr><td>AmazonCom</td><td>0.7</td><td>PASS</td><td>0.0574</td><td>0.0646</td><td>0.0072</td><td>通过</td></tr>
+    <tr><td>AmazonPhoto</td><td>0.6/0.7</td><td>PASS</td><td>0.1963 / 0.0739</td><td>0.2220 / 0.0809</td><td>0.0257 / 0.0070</td><td>通过</td></tr>
+    <tr><td>DBLP</td><td>0.6/0.7</td><td>PASS</td><td>0.1955 / 0.0685</td><td>0.2209 / 0.0761</td><td>0.0254 / 0.0076</td><td>通过</td></tr>
+    <tr><td>PubMed</td><td>0.7</td><td>PASS</td><td>0.0642</td><td>0.0736</td><td>0.0094</td><td>通过</td></tr>
+  </table>
+  <p><code>confidence=0.0</code> 在四个主数据集上都因 CDR 过高失败，说明无阈值 hard correction 不可用。</p>
+
+  <h3>4.3 GEAF downstream seed0</h3>
+  <table>
+    <tr><th>Dataset</th><th>Conf</th><th>GCN[X‖H]</th><th>SoftDist</th><th>GEAF</th><th>GEAF shuffled</th><th>结论</th></tr>
+    <tr><td>AmazonCom</td><td>0.7</td><td>0.8564</td><td>0.8558</td><td><strong>0.8642</strong></td><td>0.8564</td><td>唯一明确 seed0 正例</td></tr>
+    <tr><td>AmazonPhoto</td><td>0.6</td><td>0.9109</td><td>0.8964</td><td>0.9115</td><td>0.9109</td><td>只比 GCN 高约 0.06pp，太弱</td></tr>
+    <tr><td>AmazonPhoto</td><td>0.7</td><td>0.9109</td><td>0.8964</td><td>0.9046</td><td>0.9109</td><td>失败</td></tr>
+    <tr><td>DBLP</td><td>0.6</td><td>0.8429</td><td>0.8426</td><td>0.8349</td><td>0.8429</td><td>失败</td></tr>
+    <tr><td>DBLP</td><td>0.7</td><td>0.8429</td><td>0.8426</td><td>0.8429</td><td>0.8429</td><td>持平</td></tr>
+    <tr><td>PubMed</td><td>0.7</td><td>0.8249</td><td>0.8252</td><td>0.8243</td><td>0.8249</td><td>低于 GCN/SoftDist</td></tr>
+  </table>
+
+  <h3>4.4 Coauthor-CS 补充</h3>
+  <table>
+    <tr><th>Confidence</th><th>GCN[X‖H]</th><th>SoftDist</th><th>SoftDist shuffled</th><th>GEAF</th><th>GEAF shuffled</th><th>结论</th></tr>
+    <tr><td>0.6</td><td>0.9189</td><td><strong>0.9208</strong></td><td>0.9199</td><td>0.9185</td><td>0.9189</td><td>GEAF 负于 SoftDist</td></tr>
+    <tr><td>0.7</td><td>0.9189</td><td><strong>0.9208</strong></td><td>0.9199</td><td>0.9189</td><td>0.9189</td><td>GEAF 持平 GCN，负于 SoftDist</td></tr>
+  </table>
+
+  <div class="card warn">
+    GEAF 只剩一个可选确认：AmazonCom confidence=0.7 的 5-seed sanity。若不稳定，GEAF 就写成 offline-positive 但 downstream 不稳的负结果；若稳定，也只能写成 AmazonCom-specific bridge case，不能替代 SoftDist 主方法。
+  </div>
+
+  <h2>5. 标签率敏感性</h2>
+  <div class="card">
+    完整曲线覆盖 Cora/CiteSeer/Coauthor-CS，train ratio 0.05 到 0.40，uniform 0.4，seeds 0..4。核心结论：SoftDist 增量不是 train ratio 越大越好；低/中标签率更显著，20/10/70 主协议仍合理。
+  </div>
+</main>
+</body>
+</html>

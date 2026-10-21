@@ -1,0 +1,29 @@
+model:
+  method: linear_ct
+  n_hidden: 64
+  n_layer: 1
+  act: F.relu
+  dropout: 0.5
+  norm_info: ~
+  input_layer: false
+  output_layer: false
+  forget_rate: auto
+  num_gradual: 10
+  exponent: 1.0
+  ct_ema_decay: 0.9
+  ct_warmup: 5
+
+training:
+  lr: 1e-2
+  weight_decay: 5e-4
+  n_epochs: 200
+  patience: ~
+  criterion: metric
+
+dataset:
+  sparse: true
+
+analysis:
+  flag: false
+  project: gnn-with-label-noise
+  save_graph: false

@@ -1,0 +1,47 @@
+{
+  "datasets": [
+    "corafull",
+    "roman",
+    "coauthorcs"
+  ],
+  "protocol_seeds": [
+    0,
+    1,
+    2,
+    3,
+    4
+  ],
+  "noise": {
+    "clean": 0.0,
+    "uniform": 0.4,
+    "pair": 0.4
+  },
+  "arms": [
+    "CE",
+    "OLD64",
+    "BFS",
+    "H_GEOM",
+    "X_GEOM",
+    "RANDOM",
+    "H_KNN"
+  ],
+  "bfs_capacity": "floor_sqrt_N",
+  "geometric_control": {
+    "n_init": 1,
+    "max_iter": 50,
+    "tol": 0.0001,
+    "init": "k-means++",
+    "bisecting_strategy": "biggest_inertia",
+    "random_state": 0
+  },
+  "geometry_seed": 0,
+  "geometry_sparse_X": true,
+  "min_other_votes": 2,
+  "beta": 0.5,
+  "relation_device": "cpu",
+  "existing_ssl_seeds": [
+    0
+  ],
+  "stage": "target_diagnostic",
+  "downstream_gate": "PLAN.md"
+}

@@ -1,0 +1,34 @@
+encoder:
+  type: GIN
+  num_layers: 5
+  hidden_dim: 128
+  pooling: mean
+
+contrastive:
+  aug1: node_dropping
+  aug2: edge_perturbation
+  drop_ratio: 0.2
+  perturb_ratio: 0.2
+  temperature: 0.2
+  epochs: 100
+  lr: 0.001
+  batch_size: 128
+
+classifier:
+  epochs: 200
+  lr: 0.01
+  weight_decay: 0.0005
+  patience: 30
+
+selection:
+  warmup: 20
+  ramp: 20
+
+granular_ball:
+  purity_threshold: 0.7
+  min_samples: 5
+  max_size: 100
+
+sce:
+  alpha: 1.0
+  beta: 1.0

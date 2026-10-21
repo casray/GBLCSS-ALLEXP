@@ -1,0 +1,2206 @@
+{
+  "archive_sha256": "3ada0d6c4436cfd23b9c0abced31d0302bb510a4229989c664af252da86d8265",
+  "files": [
+    "algorithm1.tex",
+    "algorithm2.tex",
+    "elsarticle-num.bst",
+    "elsarticle.cls",
+    "fig1.pdf",
+    "fig2.pdf",
+    "fig3.pdf",
+    "fig4.pdf",
+    "fig5.pdf",
+    "highlights.docx",
+    "main.bbl",
+    "main.pdf",
+    "main.tex",
+    "notation.tex",
+    "references.bib",
+    "supplementary.pdf",
+    "supplementary.tex",
+    "table_1.tex",
+    "table_2.tex",
+    "table_3.tex",
+    "table_4.tex",
+    "table_5.tex",
+    "table_6.tex",
+    "table_7_combined.tex",
+    "table_A_1.tex",
+    "table_A_2.tex",
+    "table_A_3.tex",
+    "table_A_4.tex",
+    "table_A_5.tex",
+    "table_B_1.tex",
+    "table_C_1.tex",
+    "table_D_1.tex",
+    "table_E_1.tex",
+    "table_F_1.tex",
+    "table_F_2.tex",
+    "table_F_3.tex",
+    "table_G_1.tex",
+    "table_G_2.tex",
+    "table_G_3.tex",
+    "table_I_1.tex",
+    "table_I_2.tex"
+  ],
+  "font_and_layout_commands": {
+    "algorithm1.tex": [],
+    "algorithm2.tex": [],
+    "main.tex": [
+      "2: \\usepackage[letterpaper,top=4.3cm,bottom=4.3cm,left=4.8cm,right=4.8cm]{geometry}",
+      "41: \\author[inst1]{{\\footnotesize Silei Cao}}",
+      "42: \\author[inst1]{{\\footnotesize Kun Wang}}",
+      "43: \\author[inst2]{{\\footnotesize Jingyu Zhu}}",
+      "44: \\author[inst3]{{\\footnotesize Tianxing Wang}}",
+      "45: \\author[inst1]{{\\footnotesize Bing Huang}\\corref{cor1}}",
+      "63: \\renewcommand{\\baselinestretch}{1.5}\\selectfont",
+      "79: One way to address this challenge is to combine an observed label with evidence from nearby training nodes. When their labels provide consistent evidence for the underlying class, aggregating them can reduce the influence of isolated annotation errors. Related methods use neighborhood consistency to identify potentially mislabeled samples or encourage agreement between neighboring predictions \\cite{ref10,ref11}. For graph data, a graph contrastive representation learned from node attributes and connectivity without class labels provides a basis for identifying such local groups \\cite{ref12}. The remaining challenge is to form local regions from the representation geometry before aggregating labels, so that annotation errors do not determine which nodes contribute evidence.",
+      "81: Granular ball computing offers one way to construct such regions. It groups samples into coarse-grained units summarized by their centers and radii \\cite{ref13}. Subsequent studies have investigated granular ball sampling for noisy or imbalanced classification \\cite{ref15} and refined adaptive ball generation \\cite{ref16}. Unlike supervised granular ball classifiers that use label purity to guide splitting, GB-LCSS forms balls from representation geometry under size and ball-count constraints before aggregating training labels.",
+      "103: Methods for learning with noisy labels reduce the influence of corrupted annotations by selecting training samples, encouraging consistent predictions, or modifying the training objective. Sample-selection methods use the training loss to assess label reliability: Co-teaching \\cite{ref17} exchanged small-loss samples between two networks, and JoCoR \\cite{ref18} additionally encouraged prediction agreement. Local relationships offer another source of evidence. Deep k-NN \\cite{ref11} filtered out samples whose labels disagreed with those of their neighbors, while neighbor-consistency regularization \\cite{ref10} encouraged the prediction for each sample to match those of its neighbors. Affinity-aware uncertainty quantification (AUQ) \\cite{pr2026auq} instead examined sample--prototype relationships to quantify uncertainty and refine pseudo-labels.",
+      "157: GB-LCSS first learns a label-free graph representation and then uses its geometry to partition the nodes into granular balls.",
+      "185: The mean radius is the average Euclidean distance from the member representations to the ball center. A smaller value indicates a more compact ball.",
+      "537: The usefulness of local evidence depends on both its class composition and the number of available votes. Proposition~\\ref{prop:local_vote} relates these quantities to voting reliability under independent symmetric noise. Agreement alone is insufficient when the local labels favor an incorrect class, since the consensus can then move the target away from the true class. The representation and parameter studies show lower accuracy when local groups fail to form or voting support becomes sparse. Under uniform 0.4 noise, CoraFull has both the lowest proportion of training nodes with a positive clean-vote margin (36.13\\%) and the smallest net reduction in target Brier score among the five datasets (Appendix~I.2). With clean training labels, refinement raises mean accuracy on one dataset and lowers it on four, with all changes within 2.00 percentage points (Appendix~D). These results indicate that the benefit varies across datasets and supervision conditions."
+    ],
+    "notation.tex": [
+      "5: \\renewcommand{\\baselinestretch}{1}\\selectfont",
+      "6: \\footnotesize"
+    ],
+    "supplementary.tex": [
+      "17: {\\footnotesize Silei Cao, Kun Wang, Jingyu Zhu, Tianxing Wang, and Bing Huang\\par}",
+      "202: Reducing the minimum child-ball size \\(n_{\\min}\\) from 32 to 1 changes mean accuracy by \\(-1.61\\), \\(+0.70\\), \\(-0.23\\), \\(-0.34\\), and \\(-1.02\\) points on Cora, CiteSeer, CoraFull, Coauthor-CS, and Amazon-Photo, respectively. Allowing smaller child balls thus improves the mean only on CiteSeer."
+    ],
+    "table_1.tex": [
+      "5: \\renewcommand{\\baselinestretch}{1}\\selectfont",
+      "6: \\footnotesize"
+    ],
+    "table_2.tex": [
+      "5: \\renewcommand{\\baselinestretch}{1}\\selectfont",
+      "6: \\footnotesize"
+    ],
+    "table_3.tex": [
+      "5: \\renewcommand{\\baselinestretch}{1}\\selectfont",
+      "6: \\footnotesize"
+    ],
+    "table_4.tex": [
+      "5: \\renewcommand{\\baselinestretch}{1}\\selectfont",
+      "6: \\footnotesize"
+    ],
+    "table_5.tex": [
+      "5: \\renewcommand{\\baselinestretch}{1}\\selectfont",
+      "6: \\footnotesize",
+      "21: \\par\\smallskip\\noindent\\begin{minipage}{\\linewidth}\\footnotesize GB denotes granular ball grouping. Differences are in percentage points.\\end{minipage}"
+    ],
+    "table_6.tex": [
+      "5: \\renewcommand{\\baselinestretch}{1}\\selectfont",
+      "6: \\footnotesize"
+    ],
+    "table_7_combined.tex": [
+      "2: \\renewcommand{\\baselinestretch}{1}\\selectfont",
+      "3: \\footnotesize"
+    ],
+    "table_A_1.tex": [
+      "2: \\fontsize{9}{11}\\selectfont",
+      "11: \\multicolumn{6}{l}{\\small\\itshape Table \\thetable{} (continued)}\\\\",
+      "15: \\midrule\\multicolumn{6}{r}{\\small\\itshape Continued on the next page}\\\\\\endfoot"
+    ],
+    "table_A_2.tex": [
+      "2: \\fontsize{9}{11}\\selectfont",
+      "11: \\multicolumn{6}{l}{\\small\\itshape Table \\thetable{} (continued)}\\\\",
+      "15: \\midrule\\multicolumn{6}{r}{\\small\\itshape Continued on the next page}\\\\\\endfoot"
+    ],
+    "table_A_3.tex": [
+      "2: \\fontsize{9}{11}\\selectfont",
+      "11: \\multicolumn{6}{l}{\\small\\itshape Table \\thetable{} (continued)}\\\\",
+      "15: \\midrule\\multicolumn{6}{r}{\\small\\itshape Continued on the next page}\\\\\\endfoot"
+    ],
+    "table_A_4.tex": [
+      "2: \\fontsize{9}{11}\\selectfont",
+      "11: \\multicolumn{6}{l}{\\small\\itshape Table \\thetable{} (continued)}\\\\",
+      "15: \\midrule\\multicolumn{6}{r}{\\small\\itshape Continued on the next page}\\\\\\endfoot"
+    ],
+    "table_A_5.tex": [
+      "2: \\fontsize{9}{11}\\selectfont",
+      "11: \\multicolumn{6}{l}{\\small\\itshape Table \\thetable{} (continued)}\\\\",
+      "15: \\midrule\\multicolumn{6}{r}{\\small\\itshape Continued on the next page}\\\\\\endfoot"
+    ],
+    "table_B_1.tex": [
+      "2: \\footnotesize",
+      "11: \\multicolumn{7}{l}{\\small\\itshape Table \\thetable{} (continued)}\\\\",
+      "15: \\midrule\\multicolumn{7}{r}{\\small\\itshape Continued on the next page}\\\\\\endfoot",
+      "17: \\multicolumn{7}{@{}p{\\linewidth}@{}}{\\footnotesize Random grouping preserves the number and sizes of the granular balls.}\\\\"
+    ],
+    "table_C_1.tex": [
+      "2: \\fontsize{9}{11}\\selectfont",
+      "11: \\multicolumn{4}{l}{\\small\\itshape Table \\thetable{} (continued)}\\\\",
+      "15: \\midrule\\multicolumn{4}{r}{\\small\\itshape Continued on the next page}\\\\\\endfoot"
+    ],
+    "table_D_1.tex": [
+      "5: \\fontsize{9}{11}\\selectfont",
+      "19: \\par\\smallskip\\noindent\\begin{minipage}{\\linewidth}\\footnotesize"
+    ],
+    "table_E_1.tex": [
+      "2: \\fontsize{9}{11}\\selectfont",
+      "11: \\multicolumn{6}{l}{\\small\\itshape Table \\thetable{} (continued)}\\\\",
+      "15: \\midrule\\multicolumn{6}{r}{\\small\\itshape Continued on the next page}\\\\\\endfoot"
+    ],
+    "table_F_1.tex": [
+      "2: \\fontsize{9}{11}\\selectfont",
+      "11: \\multicolumn{3}{l}{\\small\\itshape Table \\thetable{} (continued)}\\\\",
+      "15: \\midrule\\multicolumn{3}{r}{\\small\\itshape Continued on the next page}\\\\\\endfoot"
+    ],
+    "table_F_2.tex": [
+      "2: \\fontsize{9}{11}\\selectfont",
+      "11: \\multicolumn{3}{l}{\\small\\itshape Table \\thetable{} (continued)}\\\\",
+      "15: \\midrule\\multicolumn{3}{r}{\\small\\itshape Continued on the next page}\\\\\\endfoot"
+    ],
+    "table_F_3.tex": [
+      "2: \\footnotesize",
+      "11: \\multicolumn{7}{l}{\\small\\itshape Table \\thetable{} (continued)}\\\\",
+      "15: \\midrule\\multicolumn{7}{r}{\\small\\itshape Continued on the next page}\\\\\\endfoot"
+    ],
+    "table_G_1.tex": [
+      "2: \\footnotesize",
+      "11: \\multicolumn{7}{l}{\\small\\itshape Table \\thetable{} (continued)}\\\\",
+      "15: \\midrule\\multicolumn{7}{r}{\\small\\itshape Continued on the next page}\\\\\\endfoot"
+    ],
+    "table_G_2.tex": [
+      "2: \\footnotesize",
+      "11: \\multicolumn{8}{l}{\\small\\itshape Table \\thetable{} (continued)}\\\\",
+      "15: \\midrule\\multicolumn{8}{r}{\\small\\itshape Continued on the next page}\\\\\\endfoot"
+    ],
+    "table_G_3.tex": [
+      "2: \\fontsize{9}{11}\\selectfont",
+      "11: \\multicolumn{7}{l}{\\small\\itshape Table \\thetable{} (continued)}\\\\",
+      "15: \\midrule\\multicolumn{7}{r}{\\small\\itshape Continued on the next page}\\\\\\endfoot"
+    ],
+    "table_I_1.tex": [
+      "2: \\footnotesize",
+      "11: \\multicolumn{6}{l}{\\small\\itshape Table \\thetable{} (continued)}\\\\",
+      "16: \\midrule\\multicolumn{6}{r}{\\small\\itshape Continued on the next page}\\\\"
+    ],
+    "table_I_2.tex": [
+      "5: \\fontsize{9}{11}\\selectfont"
+    ]
+  },
+  "missing_inputs": [],
+  "bibliography": {
+    "cited": 48,
+    "bib": 48,
+    "bbl": 48,
+    "missing": [],
+    "unused": [],
+    "bbl_missing": []
+  },
+  "highlights": [
+    {
+      "text": "Highlights",
+      "characters": 10
+    },
+    {
+      "text": "Granular ball local consensus for graph-free node classification under label noise",
+      "characters": 82
+    },
+    {
+      "text": "Construct granular balls from graph contrastive representations without labels.",
+      "characters": 79
+    },
+    {
+      "text": "Transfer training graph structure into soft targets for attribute-only prediction.",
+      "characters": 82
+    },
+    {
+      "text": "Refine noisy supervision using leave-one-out consensus within granular balls.",
+      "characters": 77
+    },
+    {
+      "text": "Achieve the highest mean accuracy in 24 of 25 controlled settings.",
+      "characters": 66
+    }
+  ],
+  "source_flags": {
+    "main.tex": [
+      "295: Here, \\(a_{n,i}\\) is the fraction of nodes in \\(U_n\\) whose clean label is \\(i\\), and \\(a_{n,y_n}\\) selects the proportion for the true class of \\(v_n\\). A positive \\(\\Delta_n\\) means that this class receives more clean votes than any competing class. We use \\(\\Pr\\) to denote probability over the independent label corruptions.",
+      "307: Fix a competing class \\(i\\ne y_n\\). For each voting node \\(v_\\ell\\in U_n\\), define \\(\\xi_\\ell=\\mathbb I(z_\\ell=y_n)-\\mathbb I(z_\\ell=i)\\). These variables are independent and lie in \\([-1,1]\\), and their average is \\(\\bar\\xi=r_{n,y_n}-r_{n,i}\\). Under symmetric label corruption,",
+      "316: Taking the union bound over the \\(C-1\\) competing classes and capping the bound at one yields Eq.~\\eqref{eq:15}.",
+      "550: \\section*{CRediT authorship contribution statement}"
+    ],
+    "supplementary.tex": [
+      "143: The expected vote difference between the true class of node \\(v_n\\) and any competing class \\(i\\ne y_n\\) is therefore",
+      "150: For a competing class \\(i\\ne y_n\\), define \\(\\xi_\\ell=\\mathbb I(z_\\ell=y_n)-\\mathbb I(z_\\ell=i)\\) for each voting node \\(v_\\ell\\in U_n\\). This variable equals \\(+1\\) for a vote for the true class of \\(v_n\\), \\(-1\\) for a vote for class \\(i\\), and 0 otherwise. The variables are independent across nodes and lie in \\([-1,1]\\), and their average is \\(r_{n,y_n}-r_{n,i}\\). Using the expected difference in Eq.~\\eqref{eq:H.2}, Hoeffding's inequality [H1] bounds the probability that class \\(i\\) ties or exceeds the true class:",
+      "156: Applying the union bound to the \\(C-1\\) competing classes and capping the result at one gives Eq.~(15), proving Proposition~1."
+    ]
+  },
+  "abstract_words": 192,
+  "title_words": 11,
+  "pdf": {
+    "main.pdf": {
+      "pages": 35,
+      "metadata": {
+        "/Producer": "pdfTeX-1.40.26",
+        "/Creator": "TeX",
+        "/CreationDate": "D:20260930054956Z",
+        "/ModDate": "D:20260930054956Z",
+        "/Trapped": "/False",
+        "/PTEX.Fullbanner": "This is pdfTeX, Version 3.141592653-2.6-1.40.26 (TeX Live 2025/dev/Debian) kpathsea version 6.4.0/dev"
+      },
+      "page_details": [
+        {
+          "page": 1,
+          "width": 612.0,
+          "height": 792.0,
+          "sizes": [
+            [
+              9.96,
+              1293
+            ],
+            [
+              7.97,
+              371
+            ],
+            [
+              14.35,
+              71
+            ],
+            [
+              6.97,
+              7
+            ]
+          ],
+          "captions": [],
+          "bounds": [
+            135.7,
+            120.63,
+            477.6,
+            701.64
+          ],
+          "unresolved": false,
+          "last_lines": [
+            "Emailaddress:huangbing@nau.edu.cn(BingHuang)",
+            "PreprintsubmittedtoPatternRecognition September30,2026"
+          ]
+        },
+        {
+          "page": 2,
+          "width": 612.0,
+          "height": 792.0,
+          "sizes": [
+            [
+              9.96,
+              1921
+            ]
+          ],
+          "captions": [],
+          "bounds": [
+            135.75,
+            148.66,
+            477.68,
+            702.17
+          ],
+          "unresolved": false,
+          "last_lines": [
+            "Theremainingchallengeistoformlocalregionsfromtherepresentationgeometry",
+            "2"
+          ]
+        },
+        {
+          "page": 3,
+          "width": 612.0,
+          "height": 792.0,
+          "sizes": [
+            [
+              9.96,
+              1929
+            ]
+          ],
+          "captions": [],
+          "bounds": [
+            135.73,
+            124.06,
+            477.6,
+            702.17
+          ],
+          "unresolved": false,
+          "last_lines": [
+            "label learning methods and graph-assisted MLP methods. Controlled com-",
+            "3"
+          ]
+        },
+        {
+          "page": 4,
+          "width": 612.0,
+          "height": 792.0,
+          "sizes": [
+            [
+              9.96,
+              802
+            ],
+            [
+              7.97,
+              403
+            ],
+            [
+              2.73,
+              328
+            ],
+            [
+              2.94,
+              202
+            ]
+          ],
+          "captions": [],
+          "bounds": [
+            135.7,
+            126.07,
+            477.6,
+            702.17
+          ],
+          "unresolved": false,
+          "last_lines": [
+            "agedthepredictionforeachsampletomatchthoseofitsneighbors. Affinity-aware",
+            "4"
+          ]
+        },
+        {
+          "page": 5,
+          "width": 612.0,
+          "height": 792.0,
+          "sizes": [
+            [
+              9.96,
+              1886
+            ]
+          ],
+          "captions": [],
+          "bounds": [
+            136.06,
+            124.06,
+            477.6,
+            702.17
+          ],
+          "unresolved": false,
+          "last_lines": [
+            "ingwhileavoidingonlinemessagepassingatinference. Graph-MLP[2]incorporated",
+            "5"
+          ]
+        },
+        {
+          "page": 6,
+          "width": 612.0,
+          "height": 792.0,
+          "sizes": [
+            [
+              9.96,
+              2056
+            ]
+          ],
+          "captions": [],
+          "bounds": [
+            135.7,
+            124.06,
+            477.68,
+            702.17
+          ],
+          "unresolved": false,
+          "last_lines": [
+            "masking,withasharedgraphencoderprocessingthetwoviews. Becauseitsobjective",
+            "6"
+          ]
+        },
+        {
+          "page": 7,
+          "width": 612.0,
+          "height": 792.0,
+          "sizes": [
+            [
+              9.96,
+              1622
+            ]
+          ],
+          "captions": [],
+          "bounds": [
+            135.7,
+            124.06,
+            477.68,
+            702.17
+          ],
+          "unresolved": false,
+          "last_lines": [
+            "describeGB-LCSS.",
+            "7"
+          ]
+        },
+        {
+          "page": 8,
+          "width": 612.0,
+          "height": 792.0,
+          "sizes": [
+            [
+              9.96,
+              1453
+            ],
+            [
+              6.97,
+              32
+            ]
+          ],
+          "captions": [],
+          "bounds": [
+            135.7,
+            121.89,
+            477.19,
+            702.17
+          ],
+          "unresolved": false,
+          "last_lines": [
+            "1 N",
+            "8"
+          ]
+        },
+        {
+          "page": 9,
+          "width": 612.0,
+          "height": 792.0,
+          "sizes": [
+            [
+              7.97,
+              1207
+            ],
+            [
+              9.96,
+              402
+            ],
+            [
+              5.98,
+              42
+            ],
+            [
+              6.97,
+              17
+            ]
+          ],
+          "captions": [],
+          "bounds": [
+            135.7,
+            131.0,
+            477.68,
+            702.17
+          ],
+          "unresolved": false,
+          "last_lines": [
+            "isthe j-thballand M isthefinalballcount. Eachnodebelongstoexactlyoneball.",
+            "9"
+          ]
+        },
+        {
+          "page": 10,
+          "width": 612.0,
+          "height": 792.0,
+          "sizes": [
+            [
+              9.96,
+              1437
+            ],
+            [
+              6.97,
+              70
+            ],
+            [
+              4.98,
+              4
+            ]
+          ],
+          "captions": [],
+          "bounds": [
+            135.81,
+            121.89,
+            477.18,
+            702.17
+          ],
+          "unresolved": false,
+          "last_lines": [
+            "theobservedlabelsoftheothertrainingnodesinthesameballandcombiningtheir",
+            "10"
+          ]
+        },
+        {
+          "page": 11,
+          "width": 612.0,
+          "height": 792.0,
+          "sizes": [
+            [
+              9.96,
+              766
+            ],
+            [
+              6.97,
+              56
+            ]
+          ],
+          "captions": [
+            "Algorithm 1: Recursive granular ball partitioning in the frozen representation"
+          ],
+          "bounds": [
+            136.06,
+            123.24,
+            476.6,
+            702.17
+          ],
+          "unresolved": false,
+          "last_lines": [
+            "n j L n",
+            "11"
+          ]
+        },
+        {
+          "page": 12,
+          "width": 612.0,
+          "height": 792.0,
+          "sizes": [
+            [
+              9.96,
+              1358
+            ],
+            [
+              6.97,
+              56
+            ],
+            [
+              4.98,
+              4
+            ]
+          ],
+          "captions": [],
+          "bounds": [
+            135.7,
+            123.38,
+            477.6,
+            702.17
+          ],
+          "unresolved": false,
+          "last_lines": [
+            "n n",
+            "12"
+          ]
+        },
+        {
+          "page": 13,
+          "width": 612.0,
+          "height": 792.0,
+          "sizes": [
+            [
+              9.96,
+              1304
+            ],
+            [
+              6.97,
+              65
+            ],
+            [
+              4.98,
+              8
+            ]
+          ],
+          "captions": [],
+          "bounds": [
+            136.06,
+            123.93,
+            477.6,
+            702.17
+          ],
+          "unresolved": false,
+          "last_lines": [
+            "ℓ n n,yn i(cid:44)yn n,i",
+            "13"
+          ]
+        },
+        {
+          "page": 14,
+          "width": 612.0,
+          "height": 792.0,
+          "sizes": [
+            [
+              9.96,
+              797
+            ],
+            [
+              6.97,
+              63
+            ],
+            [
+              4.98,
+              10
+            ]
+          ],
+          "captions": [],
+          "bounds": [
+            136.06,
+            123.23,
+            475.94,
+            702.17
+          ],
+          "unresolved": false,
+          "last_lines": [
+            "γ=1−Cη/(C−1)>0. Eachvotinglabelisindependentlyflippedwithprobabilityη",
+            "14"
+          ]
+        },
+        {
+          "page": 15,
+          "width": 612.0,
+          "height": 792.0,
+          "sizes": [
+            [
+              9.96,
+              1446
+            ],
+            [
+              6.97,
+              71
+            ],
+            [
+              4.98,
+              10
+            ]
+          ],
+          "captions": [],
+          "bounds": [
+            135.75,
+            123.94,
+            476.6,
+            702.17
+          ],
+          "unresolved": false,
+          "last_lines": [
+            "improvementinexpectation.",
+            "15"
+          ]
+        },
+        {
+          "page": 16,
+          "width": 612.0,
+          "height": 792.0,
+          "sizes": [
+            [
+              9.96,
+              1308
+            ],
+            [
+              6.97,
+              40
+            ],
+            [
+              4.98,
+              2
+            ]
+          ],
+          "captions": [],
+          "bounds": [
+            135.7,
+            123.38,
+            477.68,
+            702.17
+          ],
+          "unresolved": false,
+          "last_lines": [
+            "A.",
+            "16"
+          ]
+        },
+        {
+          "page": 17,
+          "width": 612.0,
+          "height": 792.0,
+          "sizes": [
+            [
+              9.96,
+              1423
+            ],
+            [
+              6.97,
+              43
+            ]
+          ],
+          "captions": [],
+          "bounds": [
+            135.7,
+            124.06,
+            477.6,
+            702.17
+          ],
+          "unresolved": false,
+          "last_lines": [
+            "denseN×Ctargetmatrix,whichaddsO(NC)timeandspace.",
+            "17"
+          ]
+        },
+        {
+          "page": 18,
+          "width": 612.0,
+          "height": 792.0,
+          "sizes": [
+            [
+              9.96,
+              1157
+            ],
+            [
+              7.97,
+              281
+            ],
+            [
+              6.97,
+              2
+            ]
+          ],
+          "captions": [],
+          "bounds": [
+            135.7,
+            123.94,
+            477.68,
+            702.17
+          ],
+          "unresolved": false,
+          "last_lines": [
+            "Amazon-Photo 7,650 119,081 745 8 1,530 0.827",
+            "18"
+          ]
+        },
+        {
+          "page": 19,
+          "width": 612.0,
+          "height": 792.0,
+          "sizes": [
+            [
+              9.96,
+              1846
+            ]
+          ],
+          "captions": [],
+          "bounds": [
+            135.7,
+            124.06,
+            477.68,
+            702.17
+          ],
+          "unresolved": false,
+          "last_lines": [
+            "response-distillationbaselinebasedonGLNN[3],FF-G2M[5],KRD[30],VQGraph",
+            "19"
+          ]
+        },
+        {
+          "page": 20,
+          "width": 612.0,
+          "height": 792.0,
+          "sizes": [
+            [
+              9.96,
+              1798
+            ],
+            [
+              6.97,
+              11
+            ]
+          ],
+          "captions": [],
+          "bounds": [
+            135.75,
+            124.06,
+            477.68,
+            702.17
+          ],
+          "unresolved": false,
+          "last_lines": [
+            "25 tests, with one family for each reference method: random size-matched group-",
+            "20"
+          ]
+        },
+        {
+          "page": 21,
+          "width": 612.0,
+          "height": 792.0,
+          "sizes": [
+            [
+              9.96,
+              1129
+            ],
+            [
+              7.97,
+              585
+            ]
+          ],
+          "captions": [],
+          "bounds": [
+            135.7,
+            131.0,
+            477.6,
+            702.17
+          ],
+          "unresolved": false,
+          "last_lines": [
+            "constructsofttargetsortoshapetherepresentationoftheMLP.",
+            "21"
+          ]
+        },
+        {
+          "page": 22,
+          "width": 612.0,
+          "height": 792.0,
+          "sizes": [
+            [
+              9.96,
+              564
+            ],
+            [
+              7.97,
+              537
+            ],
+            [
+              5.45,
+              125
+            ],
+            [
+              4.31,
+              113
+            ]
+          ],
+          "captions": [],
+          "bounds": [
+            135.7,
+            127.78,
+            477.68,
+            702.17
+          ],
+          "unresolved": false,
+          "last_lines": [
+            "ItexceedsGSDNonallfivedatasets. Theseresultshighlightthedataset-dependent",
+            "22"
+          ]
+        },
+        {
+          "page": 23,
+          "width": 612.0,
+          "height": 792.0,
+          "sizes": [
+            [
+              7.97,
+              1154
+            ],
+            [
+              9.96,
+              806
+            ]
+          ],
+          "captions": [],
+          "bounds": [
+            135.7,
+            131.0,
+            477.6,
+            702.17
+          ],
+          "unresolved": false,
+          "last_lines": [
+            "smoothingrecoverlittleofthisgain. Thesecontrolssupporttheimportanceofwhich",
+            "23"
+          ]
+        },
+        {
+          "page": 24,
+          "width": 612.0,
+          "height": 792.0,
+          "sizes": [
+            [
+              9.96,
+              986
+            ],
+            [
+              7.97,
+              393
+            ],
+            [
+              4.77,
+              100
+            ],
+            [
+              4.25,
+              91
+            ]
+          ],
+          "captions": [],
+          "bounds": [
+            135.73,
+            129.17,
+            477.68,
+            702.17
+          ],
+          "unresolved": false,
+          "last_lines": [
+            "0.4noiseintoerrorremovedoncorruptedlabelsanderrorintroducedoncorrectlabels.",
+            "24"
+          ]
+        },
+        {
+          "page": 25,
+          "width": 612.0,
+          "height": 792.0,
+          "sizes": [
+            [
+              9.96,
+              1473
+            ],
+            [
+              7.97,
+              406
+            ],
+            [
+              6.97,
+              2
+            ]
+          ],
+          "captions": [],
+          "bounds": [
+            135.75,
+            131.0,
+            477.6,
+            702.17
+          ],
+          "unresolved": false,
+          "last_lines": [
+            "drawsitsconsensusfromallothertrainingnodes. TheA2Xrepresentationproduces",
+            "25"
+          ]
+        },
+        {
+          "page": 26,
+          "width": 612.0,
+          "height": 792.0,
+          "sizes": [
+            [
+              9.96,
+              1481
+            ],
+            [
+              7.97,
+              345
+            ],
+            [
+              5.98,
+              2
+            ]
+          ],
+          "captions": [],
+          "bounds": [
+            135.7,
+            129.26,
+            477.19,
+            702.17
+          ],
+          "unresolved": false,
+          "last_lines": [
+            "improvesitsdistilledMLPstudent(Section3.5). Table8comparesdirectMLPtraining",
+            "26"
+          ]
+        },
+        {
+          "page": 27,
+          "width": 612.0,
+          "height": 792.0,
+          "sizes": [
+            [
+              9.96,
+              1050
+            ],
+            [
+              7.97,
+              942
+            ]
+          ],
+          "captions": [],
+          "bounds": [
+            135.59,
+            131.0,
+            476.11,
+            702.17
+          ],
+          "unresolved": false,
+          "last_lines": [
+            "Python3.12.10,PyTorch2.9.1+rocm7.2.1,andPyTorchGeometric2.7.0. GRACE",
+            "27"
+          ]
+        },
+        {
+          "page": 28,
+          "width": 612.0,
+          "height": 792.0,
+          "sizes": [
+            [
+              9.96,
+              1369
+            ],
+            [
+              7.97,
+              164
+            ],
+            [
+              5.22,
+              45
+            ],
+            [
+              4.64,
+              45
+            ]
+          ],
+          "captions": [],
+          "bounds": [
+            135.7,
+            127.64,
+            477.68,
+            702.17
+          ],
+          "unresolved": false,
+          "last_lines": [
+            "labelsexceedstheerrorintroducedoncorrectlylabelednodes(AppendixI.2).",
+            "28"
+          ]
+        },
+        {
+          "page": 29,
+          "width": 612.0,
+          "height": 792.0,
+          "sizes": [
+            [
+              9.96,
+              1914
+            ]
+          ],
+          "captions": [],
+          "bounds": [
+            135.7,
+            124.06,
+            477.68,
+            702.17
+          ],
+          "unresolved": false,
+          "last_lines": [
+            "ballsinafrozen,label-freegraphrepresentationandcombineseachobservedlabel",
+            "29"
+          ]
+        },
+        {
+          "page": 30,
+          "width": 612.0,
+          "height": 792.0,
+          "sizes": [
+            [
+              9.96,
+              1817
+            ]
+          ],
+          "captions": [],
+          "bounds": [
+            135.7,
+            124.06,
+            477.68,
+            702.17
+          ],
+          "unresolved": false,
+          "last_lines": [
+            "ofChina(Nos. 62276136,62206129,and62375133).",
+            "30"
+          ]
+        },
+        {
+          "page": 31,
+          "width": 612.0,
+          "height": 792.0,
+          "sizes": [
+            [
+              9.96,
+              1639
+            ]
+          ],
+          "captions": [],
+          "bounds": [
+            136.06,
+            123.93,
+            477.68,
+            702.17
+          ],
+          "unresolved": false,
+          "last_lines": [
+            "Research,2024,pp.53944–53972.",
+            "31"
+          ]
+        },
+        {
+          "page": 32,
+          "width": 612.0,
+          "height": 792.0,
+          "sizes": [
+            [
+              9.96,
+              1643
+            ]
+          ],
+          "captions": [],
+          "bounds": [
+            136.06,
+            124.06,
+            477.6,
+            702.17
+          ],
+          "unresolved": false,
+          "last_lines": [
+            "[19] Y.Wang,X.Ma,Z.Chen,Y.Luo,J.Yi,J.Bailey,Symmetriccrossentropyfor",
+            "32"
+          ]
+        },
+        {
+          "page": 33,
+          "width": 612.0,
+          "height": 792.0,
+          "sizes": [
+            [
+              9.96,
+              1757
+            ]
+          ],
+          "captions": [],
+          "bounds": [
+            136.06,
+            121.89,
+            477.68,
+            702.17
+          ],
+          "unresolved": false,
+          "last_lines": [
+            "self: Graph self-distillation on neighborhood for node classification (2022).",
+            "33"
+          ]
+        },
+        {
+          "page": 34,
+          "width": 612.0,
+          "height": 792.0,
+          "sizes": [
+            [
+              9.96,
+              1629
+            ]
+          ],
+          "captions": [],
+          "bounds": [
+            136.06,
+            124.06,
+            477.68,
+            702.17
+          ],
+          "unresolved": false,
+          "last_lines": [
+            "networks: Aunifiedreview,IEEETransactionsonPatternAnalysisandMachine",
+            "34"
+          ]
+        },
+        {
+          "page": 35,
+          "width": 612.0,
+          "height": 792.0,
+          "sizes": [
+            [
+              9.96,
+              1692
+            ]
+          ],
+          "captions": [],
+          "bounds": [
+            136.06,
+            124.06,
+            477.32,
+            702.17
+          ],
+          "unresolved": false,
+          "last_lines": [
+            "193–218.",
+            "35"
+          ]
+        }
+      ],
+      "all_fonts": [
+        [
+          "JNRLWF+NimbusRomNo9L-Regu",
+          51529
+        ],
+        [
+          "OJABRJ+NimbusRomNo9L-ReguItal",
+          2633
+        ],
+        [
+          "PPLZHH+NimbusRomNo9L-Medi",
+          1266
+        ],
+        [
+          "GZROMK+ArialMT",
+          790
+        ],
+        [
+          "BAAAAA+Arial-BoldMT",
+          719
+        ],
+        [
+          "GJFGIJ+txsy",
+          477
+        ],
+        [
+          "AAAAAA+ArialMT",
+          428
+        ],
+        [
+          "AFRREF+rtxmi",
+          259
+        ],
+        [
+          "OKBHQQ+ArialMT",
+          203
+        ],
+        [
+          "XMRIQQ+rtxr",
+          150
+        ],
+        [
+          "GZROMK+Arial-BoldMT",
+          132
+        ],
+        [
+          "RKHDEK+txex",
+          58
+        ],
+        [
+          "MSHJMH+Arial-BoldMT",
+          47
+        ],
+        [
+          "VTLUVP+SFTT1000",
+          33
+        ],
+        [
+          "QWYPCL+SFTT0800",
+          20
+        ],
+        [
+          "DGHJJU+MSBM10",
+          12
+        ],
+        [
+          "DAAAAA+Noto-Sans-SC",
+          5
+        ],
+        [
+          "LSEODZ+rtxbmi",
+          5
+        ],
+        [
+          "CAAAAA+LucidaSansUnicode",
+          4
+        ],
+        [
+          "EAAAAA+CambriaMath",
+          4
+        ],
+        [
+          "CXLQND+txsyc",
+          3
+        ],
+        [
+          "PNTOYF+rtxi",
+          2
+        ],
+        [
+          "FAAAAA+Arial-Black",
+          1
+        ]
+      ],
+      "all_sizes": [
+        [
+          9.96,
+          48953
+        ],
+        [
+          7.97,
+          6788
+        ],
+        [
+          6.97,
+          545
+        ],
+        [
+          2.73,
+          328
+        ],
+        [
+          2.94,
+          202
+        ],
+        [
+          3.15,
+          200
+        ],
+        [
+          4.31,
+          167
+        ],
+        [
+          5.45,
+          149
+        ],
+        [
+          3.99,
+          139
+        ],
+        [
+          3.36,
+          122
+        ],
+        [
+          4.54,
+          100
+        ],
+        [
+          4.77,
+          100
+        ],
+        [
+          4.25,
+          91
+        ],
+        [
+          4.98,
+          80
+        ],
+        [
+          3.57,
+          75
+        ],
+        [
+          14.35,
+          71
+        ],
+        [
+          4.02,
+          62
+        ],
+        [
+          6.36,
+          50
+        ],
+        [
+          5.98,
+          48
+        ],
+        [
+          5.22,
+          45
+        ],
+        [
+          4.64,
+          45
+        ],
+        [
+          4.99,
+          43
+        ],
+        [
+          2.1,
+          35
+        ],
+        [
+          4.59,
+          34
+        ],
+        [
+          4.48,
+          31
+        ],
+        [
+          4.35,
+          27
+        ],
+        [
+          3.78,
+          19
+        ],
+        [
+          2.58,
+          16
+        ],
+        [
+          2.31,
+          15
+        ],
+        [
+          2.7,
+          15
+        ],
+        [
+          2.52,
+          14
+        ],
+        [
+          5.74,
+          13
+        ],
+        [
+          4.85,
+          12
+        ],
+        [
+          4.52,
+          12
+        ],
+        [
+          1.89,
+          10
+        ],
+        [
+          5.31,
+          10
+        ],
+        [
+          5.2,
+          8
+        ],
+        [
+          1.54,
+          8
+        ],
+        [
+          2.49,
+          7
+        ],
+        [
+          1.29,
+          7
+        ],
+        [
+          2.42,
+          6
+        ],
+        [
+          4.29,
+          6
+        ],
+        [
+          4.41,
+          6
+        ],
+        [
+          2.3,
+          5
+        ],
+        [
+          1.49,
+          5
+        ],
+        [
+          2.32,
+          5
+        ],
+        [
+          1.61,
+          4
+        ],
+        [
+          2.55,
+          4
+        ],
+        [
+          2.99,
+          4
+        ],
+        [
+          1.03,
+          4
+        ],
+        [
+          1.53,
+          3
+        ],
+        [
+          3.09,
+          3
+        ],
+        [
+          3.23,
+          2
+        ],
+        [
+          1.08,
+          2
+        ],
+        [
+          1.35,
+          2
+        ],
+        [
+          1.24,
+          2
+        ],
+        [
+          2.24,
+          2
+        ],
+        [
+          6.32,
+          2
+        ],
+        [
+          5.09,
+          2
+        ],
+        [
+          5.54,
+          2
+        ],
+        [
+          4.86,
+          2
+        ],
+        [
+          5.8,
+          2
+        ],
+        [
+          5.24,
+          1
+        ],
+        [
+          5.03,
+          1
+        ],
+        [
+          2.81,
+          1
+        ],
+        [
+          1.28,
+          1
+        ],
+        [
+          4.08,
+          1
+        ],
+        [
+          3.48,
+          1
+        ],
+        [
+          0.99,
+          1
+        ],
+        [
+          3.35,
+          1
+        ],
+        [
+          3.86,
+          1
+        ]
+      ]
+    },
+    "supplementary.pdf": {
+      "pages": 16,
+      "metadata": {
+        "/Producer": "pdfTeX-1.40.26",
+        "/Author": "",
+        "/Title": "",
+        "/Subject": "",
+        "/Creator": "LaTeX with hyperref",
+        "/Keywords": "",
+        "/CreationDate": "D:20260929104902Z",
+        "/ModDate": "D:20260929104902Z",
+        "/Trapped": "/False",
+        "/PTEX.Fullbanner": "This is pdfTeX, Version 3.141592653-2.6-1.40.26 (TeX Live 2025/dev/Debian) kpathsea version 6.4.0/dev"
+      },
+      "page_details": [
+        {
+          "page": 1,
+          "width": 612.0,
+          "height": 792.0,
+          "sizes": [
+            [
+              8.97,
+              636
+            ],
+            [
+              9.96,
+              568
+            ],
+            [
+              11.96,
+              71
+            ],
+            [
+              7.97,
+              52
+            ]
+          ],
+          "captions": [],
+          "bounds": [
+            133.77,
+            122.86,
+            477.48,
+            704.81
+          ],
+          "unresolved": false,
+          "last_lines": [
+            "AppendixA.2. CiteSeer",
+            "1"
+          ]
+        },
+        {
+          "page": 2,
+          "width": 612.0,
+          "height": 792.0,
+          "sizes": [
+            [
+              8.97,
+              1647
+            ],
+            [
+              9.96,
+              44
+            ]
+          ],
+          "captions": [],
+          "bounds": [
+            133.77,
+            126.38,
+            476.85,
+            704.81
+          ],
+          "unresolved": false,
+          "last_lines": [
+            "Continuedonthenextpage",
+            "2"
+          ]
+        },
+        {
+          "page": 3,
+          "width": 612.0,
+          "height": 792.0,
+          "sizes": [
+            [
+              8.97,
+              1015
+            ],
+            [
+              9.96,
+              564
+            ]
+          ],
+          "captions": [],
+          "bounds": [
+            133.77,
+            126.27,
+            477.48,
+            704.81
+          ],
+          "unresolved": false,
+          "last_lines": [
+            "seedsin22ofthe25settings.",
+            "3"
+          ]
+        },
+        {
+          "page": 4,
+          "width": 612.0,
+          "height": 792.0,
+          "sizes": [
+            [
+              7.97,
+              1831
+            ],
+            [
+              8.97,
+              22
+            ],
+            [
+              9.96,
+              1
+            ]
+          ],
+          "captions": [],
+          "bounds": [
+            133.77,
+            125.99,
+            475.28,
+            704.81
+          ],
+          "unresolved": false,
+          "last_lines": [
+            "Continuedonthenextpage",
+            "4"
+          ]
+        },
+        {
+          "page": 5,
+          "width": 612.0,
+          "height": 792.0,
+          "sizes": [
+            [
+              7.97,
+              1696
+            ],
+            [
+              8.97,
+              41
+            ],
+            [
+              9.96,
+              1
+            ]
+          ],
+          "captions": [],
+          "bounds": [
+            133.77,
+            125.1,
+            475.28,
+            704.81
+          ],
+          "unresolved": false,
+          "last_lines": [
+            "Continuedonthenextpage",
+            "5"
+          ]
+        },
+        {
+          "page": 6,
+          "width": 612.0,
+          "height": 792.0,
+          "sizes": [
+            [
+              7.97,
+              818
+            ],
+            [
+              9.96,
+              435
+            ],
+            [
+              8.97,
+              308
+            ]
+          ],
+          "captions": [],
+          "bounds": [
+            133.77,
+            125.1,
+            477.48,
+            704.81
+          ],
+          "unresolved": false,
+          "last_lines": [
+            "Continuedonthenextpage",
+            "6"
+          ]
+        },
+        {
+          "page": 7,
+          "width": 612.0,
+          "height": 792.0,
+          "sizes": [
+            [
+              9.96,
+              1354
+            ],
+            [
+              8.97,
+              536
+            ],
+            [
+              6.97,
+              2
+            ]
+          ],
+          "captions": [
+            "Table D.1 summarizes the leave-one-out and clean-label checks. Excluding each",
+            "Table E.1 reports GB-LCSS, PosteL, ALS, and SALS on the five main datasets"
+          ],
+          "bounds": [
+            133.77,
+            126.27,
+            477.48,
+            704.81
+          ],
+          "unresolved": false,
+          "last_lines": [
+            "freeinferenceprotocol(AppendixF).GB-LCSShasthehighestmeanin24ofthe25",
+            "7"
+          ]
+        },
+        {
+          "page": 8,
+          "width": 612.0,
+          "height": 792.0,
+          "sizes": [
+            [
+              8.97,
+              1463
+            ],
+            [
+              7.97,
+              266
+            ],
+            [
+              9.96,
+              76
+            ]
+          ],
+          "captions": [],
+          "bounds": [
+            133.77,
+            132.17,
+            477.48,
+            704.81
+          ],
+          "unresolved": false,
+          "last_lines": [
+            "Continuedonthenextpage",
+            "8"
+          ]
+        },
+        {
+          "page": 9,
+          "width": 612.0,
+          "height": 792.0,
+          "sizes": [
+            [
+              8.97,
+              1069
+            ],
+            [
+              9.96,
+              606
+            ]
+          ],
+          "captions": [],
+          "bounds": [
+            133.77,
+            126.27,
+            477.48,
+            704.81
+          ],
+          "unresolved": false,
+          "last_lines": [
+            "ofthemainpaper.",
+            "9"
+          ]
+        },
+        {
+          "page": 10,
+          "width": 612.0,
+          "height": 792.0,
+          "sizes": [
+            [
+              8.97,
+              1880
+            ],
+            [
+              5.98,
+              9
+            ],
+            [
+              9.96,
+              2
+            ]
+          ],
+          "captions": [],
+          "bounds": [
+            133.77,
+            126.38,
+            475.71,
+            704.81
+          ],
+          "unresolved": false,
+          "last_lines": [
+            "Continuedonthenextpage",
+            "10"
+          ]
+        },
+        {
+          "page": 11,
+          "width": 612.0,
+          "height": 792.0,
+          "sizes": [
+            [
+              7.97,
+              1018
+            ],
+            [
+              9.96,
+              422
+            ],
+            [
+              8.97,
+              416
+            ],
+            [
+              5.98,
+              12
+            ]
+          ],
+          "captions": [],
+          "bounds": [
+            133.77,
+            126.27,
+            477.48,
+            704.81
+          ],
+          "unresolved": false,
+          "last_lines": [
+            "Continuedonthenextpage",
+            "11"
+          ]
+        },
+        {
+          "page": 12,
+          "width": 612.0,
+          "height": 792.0,
+          "sizes": [
+            [
+              9.96,
+              846
+            ],
+            [
+              7.97,
+              675
+            ],
+            [
+              8.97,
+              432
+            ]
+          ],
+          "captions": [],
+          "bounds": [
+            133.77,
+            125.1,
+            477.48,
+            704.81
+          ],
+          "unresolved": false,
+          "last_lines": [
+            "Instance0.4 61.49±3.01 JoCoR 59.92±4.19 +1.57 3/5 47.51±2.21",
+            "12"
+          ]
+        },
+        {
+          "page": 13,
+          "width": 612.0,
+          "height": 792.0,
+          "sizes": [
+            [
+              9.96,
+              2066
+            ],
+            [
+              6.97,
+              113
+            ],
+            [
+              4.98,
+              16
+            ]
+          ],
+          "captions": [],
+          "bounds": [
+            133.77,
+            126.84,
+            477.48,
+            704.81
+          ],
+          "unresolved": false,
+          "last_lines": [
+            "n yn 2 n zn yn 2 n n yn 2 n n zn yn n yn",
+            "13"
+          ]
+        },
+        {
+          "page": 14,
+          "width": 612.0,
+          "height": 792.0,
+          "sizes": [
+            [
+              9.96,
+              2324
+            ],
+            [
+              6.97,
+              83
+            ],
+            [
+              4.98,
+              24
+            ]
+          ],
+          "captions": [],
+          "bounds": [
+            133.77,
+            124.8,
+            477.48,
+            704.81
+          ],
+          "unresolved": false,
+          "last_lines": [
+            "variantsreusethefrozenrepresentationsfromthemaincomparisons.",
+            "14"
+          ]
+        },
+        {
+          "page": 15,
+          "width": 612.0,
+          "height": 792.0,
+          "sizes": [
+            [
+              9.96,
+              1455
+            ],
+            [
+              7.97,
+              1106
+            ],
+            [
+              5.98,
+              22
+            ],
+            [
+              6.97,
+              16
+            ]
+          ],
+          "captions": [],
+          "bounds": [
+            133.77,
+            126.97,
+            477.48,
+            704.81
+          ],
+          "unresolved": false,
+          "last_lines": [
+            "andaccuracyfallsbymorethan5points(TableI.1).",
+            "15"
+          ]
+        },
+        {
+          "page": 16,
+          "width": 612.0,
+          "height": 792.0,
+          "sizes": [
+            [
+              9.96,
+              934
+            ],
+            [
+              8.97,
+              288
+            ],
+            [
+              7.97,
+              84
+            ],
+            [
+              6.97,
+              1
+            ]
+          ],
+          "captions": [],
+          "bounds": [
+            133.77,
+            126.85,
+            477.48,
+            704.81
+          ],
+          "unresolved": false,
+          "last_lines": [
+            "datasetorder,whileTableI.2includesalltrainingnodes.",
+            "16"
+          ]
+        }
+      ],
+      "all_fonts": [
+        [
+          "DQGXLV+NimbusRomNo9L-Regu",
+          24707
+        ],
+        [
+          "OPXMBZ+NimbusRomNo9L-Medi",
+          2652
+        ],
+        [
+          "GYSIFG+NimbusRomNo9L-ReguItal",
+          839
+        ],
+        [
+          "BJPDGL+txsy",
+          595
+        ],
+        [
+          "OOTUFF+rtxr",
+          450
+        ],
+        [
+          "DLIUTA+rtxmi",
+          120
+        ],
+        [
+          "MNCYDJ+txex",
+          8
+        ],
+        [
+          "OQPHIQ+rtxb",
+          7
+        ],
+        [
+          "VKVSNG+MSBM10",
+          6
+        ],
+        [
+          "CXLQND+txsyc",
+          3
+        ]
+      ],
+      "all_sizes": [
+        [
+          9.96,
+          11698
+        ],
+        [
+          8.97,
+          9753
+        ],
+        [
+          7.97,
+          7546
+        ],
+        [
+          6.97,
+          215
+        ],
+        [
+          11.96,
+          71
+        ],
+        [
+          5.98,
+          43
+        ],
+        [
+          4.98,
+          40
+        ],
+        [
+          17.22,
+          21
+        ]
+      ]
+    }
+  },
+  "archive_unchanged": true
+}

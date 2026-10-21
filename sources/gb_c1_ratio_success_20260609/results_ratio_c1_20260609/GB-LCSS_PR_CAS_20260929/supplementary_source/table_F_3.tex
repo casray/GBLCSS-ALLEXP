@@ -1,0 +1,24 @@
+\begingroup
+\fontsize{8.5}{10.5}\selectfont
+\setlength{\tabcolsep}{3pt}
+\renewcommand{\arraystretch}{1.12}
+\setlength{\TableWidth}{\dimexpr\linewidth-12\tabcolsep\relax}
+\begin{longtable}{@{}>{\raggedright\arraybackslash}p{\dimexpr 0.190000\TableWidth\relax}>{\raggedright\arraybackslash}p{\dimexpr 0.160000\TableWidth\relax}>{\raggedright\arraybackslash}p{\dimexpr 0.120000\TableWidth\relax}>{\raggedright\arraybackslash}p{\dimexpr 0.080000\TableWidth\relax}>{\raggedright\arraybackslash}p{\dimexpr 0.150000\TableWidth\relax}>{\raggedright\arraybackslash}p{\dimexpr 0.150000\TableWidth\relax}>{\raggedright\arraybackslash}p{\dimexpr 0.150000\TableWidth\relax}@{}}
+\caption{GRACE settings for the five main datasets.}\label{tab:F.3}\\
+\toprule
+\textbf{Dataset} & \textbf{Dimensions} & \textbf{Learning rate} & \textbf{Epochs} & \textbf{Edge dropping} & \textbf{Feature masking} & \textbf{Temperature} \\
+\midrule\endfirsthead
+\multicolumn{7}{l}{\small\itshape Table \thetable{} (continued)}\\
+\toprule
+\textbf{Dataset} & \textbf{Dimensions} & \textbf{Learning rate} & \textbf{Epochs} & \textbf{Edge dropping} & \textbf{Feature masking} & \textbf{Temperature} \\
+\midrule\endhead
+\midrule\multicolumn{7}{r}{\small\itshape Continued on the next page}\\\endfoot
+\bottomrule\endlastfoot
+Cora & (128, 128) & \(5\times10^{-4}\) & 200 & (0.2, 0.4) & (0.3, 0.4) & 0.4 \\*
+CiteSeer & (256, 256) & \(10^{-3}\) & 200 & (0.2, 0.0) & (0.3, 0.2) & 0.9 \\
+CoraFull & (256, 256) & \(10^{-3}\) & 1000 & (0.1, 0.4) & (0.1, 0.0) & 0.7 \\
+Coauthor-CS & (256, 256) & \(10^{-3}\) & 1000 & (0.1, 0.4) & (0.1, 0.0) & 0.7 \\*
+Amazon-Photo & (256, 256) & \(10^{-3}\) & 1500 & (0.4, 0.1) & (0.0, 0.2) & 0.7 \\
+\end{longtable}
+\noindent Public GRACE configurations provide presets for Cora, CiteSeer, DBLP, and PubMed. We use the corresponding presets for Cora and CiteSeer. CoraFull and Coauthor-CS use the DBLP preset, and Amazon-Photo uses the PubMed preset. In the Dimensions column, each pair gives the output dimensions of the encoder and projection head, respectively. The two rates in each augmentation column apply to the first and second augmented graph views. All configurations use a two-layer GCN with weight decay \(10^{-5}\).\par
+\endgroup

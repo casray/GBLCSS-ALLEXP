@@ -1,0 +1,271 @@
+﻿python.exe : C:\Users\Admin\Desktop\ʵ��8ȥ��5.19-\external\NoisyGL\predictor\CGNN_Predictor.py:43: UserWarning: 'dropout
+_adj' is deprecated, use 'dropout_edge' instead
+At line:2 char:86
++ ... ython.exe'; & $py scripts\run_standard_downstream.py --datasets cites ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (C:\Users\Admin\...t_edge' instead:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+  edge_index, _ = dropout_adj(adj, p=0.5, force_undirected=True, training=True)
+C:\Users\Admin\Desktop\�������ں�\�������ں�\GRACE-master\.venv-rocm\Lib\site-packages\torch_geometric\nn\conv\gcn_conv.p
+y:274: UserWarning: Converting sparse tensor to CSR format for more efficient processing. Consider converting your spar
+se tensor to CSR format beforehand to avoid repeated conversion (got 'torch.sparse_coo')
+  return spmm(adj_t, x, reduce=self.aggr)
+C:\Users\Admin\Desktop\�������ں�\�������ں�\GRACE-master\.venv-rocm\Lib\site-packages\torch_geometric\utils\_spmm.py:71:
+ UserWarning: Sparse CSR tensor support is in beta state. If you miss a functionality in the sparse tensor support, ple
+ase submit a feature request to https://github.com/pytorch/pytorch/issues. (Triggered internally at C:\b\pytorch\aten\s
+rc\ATen\SparseCsrTensorImpl.cpp:55.)
+  src = src.to_sparse_csr()
+C:\Users\Admin\Desktop\ʵ��8ȥ��5.19-\external\NoisyGL\predictor\CRGNN_Predictor.py:34: UserWarning: 'dropout_adj' is dep
+recated, use 'dropout_edge' instead
+  edge_index1, _ = dropout_adj(adj, p=0.3)
+C:\Users\Admin\Desktop\ʵ��8ȥ��5.19-\external\NoisyGL\predictor\CRGNN_Predictor.py:35: UserWarning: 'dropout_adj' is dep
+recated, use 'dropout_edge' instead
+  edge_index2, _ = dropout_adj(adj, p=0.3)
+STANDARD_RUN dataset=citeseer method=tss seed=0
+----Data statistics------'
+                Name: citeseer
+                #Nodes 3327
+                #Edges 4552
+                #Classes 6
+                #Ave_degree 2.74
+----Split statistics------'
+                #Train samples 665 (20.0 % of nodes)
+                #Val samples 332 (10.0 % of nodes)
+                #Test samples 2328 (70.0 % of nodes)
+FAILED dataset=citeseer method=tss seed=0 error=RuntimeError: CUDA error: HIPBLAS_STATUS_ALLOC_FAILED when calling `hipblasStrsm( handle, side, uplo, trans, diag, m, n, alpha, A, lda, B, ldb)`
+STANDARD_RUN dataset=citeseer method=tss seed=1
+----Data statistics------'
+                Name: citeseer
+                #Nodes 3327
+                #Edges 4552
+                #Classes 6
+                #Ave_degree 2.74
+----Split statistics------'
+                #Train samples 665 (20.0 % of nodes)
+                #Val samples 332 (10.0 % of nodes)
+                #Test samples 2328 (70.0 % of nodes)
+FAILED dataset=citeseer method=tss seed=1 error=RuntimeError: CUDA error: HIPBLAS_STATUS_ALLOC_FAILED when calling `hipblasStrsm( handle, side, uplo, trans, diag, m, n, alpha, A, lda, B, ldb)`
+STANDARD_RUN dataset=citeseer method=tss seed=2
+----Data statistics------'
+                Name: citeseer
+                #Nodes 3327
+                #Edges 4552
+                #Classes 6
+                #Ave_degree 2.74
+----Split statistics------'
+                #Train samples 665 (20.0 % of nodes)
+                #Val samples 332 (10.0 % of nodes)
+                #Test samples 2328 (70.0 % of nodes)
+FAILED dataset=citeseer method=tss seed=2 error=RuntimeError: CUDA error: HIPBLAS_STATUS_ALLOC_FAILED when calling `hipblasStrsm( handle, side, uplo, trans, diag, m, n, alpha, A, lda, B, ldb)`
+STANDARD_RUN dataset=citeseer method=tss seed=3
+----Data statistics------'
+                Name: citeseer
+                #Nodes 3327
+                #Edges 4552
+                #Classes 6
+                #Ave_degree 2.74
+----Split statistics------'
+                #Train samples 665 (20.0 % of nodes)
+                #Val samples 332 (10.0 % of nodes)
+                #Test samples 2328 (70.0 % of nodes)
+FAILED dataset=citeseer method=tss seed=3 error=RuntimeError: CUDA error: HIPBLAS_STATUS_ALLOC_FAILED when calling `hipblasStrsm( handle, side, uplo, trans, diag, m, n, alpha, A, lda, B, ldb)`
+STANDARD_RUN dataset=citeseer method=tss seed=4
+----Data statistics------'
+                Name: citeseer
+                #Nodes 3327
+                #Edges 4552
+                #Classes 6
+                #Ave_degree 2.74
+----Split statistics------'
+                #Train samples 665 (20.0 % of nodes)
+                #Val samples 332 (10.0 % of nodes)
+                #Test samples 2328 (70.0 % of nodes)
+FAILED dataset=citeseer method=tss seed=4 error=RuntimeError: CUDA error: HIPBLAS_STATUS_ALLOC_FAILED when calling `hipblasStrsm( handle, side, uplo, trans, diag, m, n, alpha, A, lda, B, ldb)`
+STANDARD_RUN dataset=citeseer method=cgnn seed=0
+----Data statistics------'
+                Name: citeseer
+                #Nodes 3327
+                #Edges 4552
+                #Classes 6
+                #Ave_degree 2.74
+----Split statistics------'
+                #Train samples 665 (20.0 % of nodes)
+                #Val samples 332 (10.0 % of nodes)
+                #Test samples 2328 (70.0 % of nodes)
+RESULT dataset=citeseer method=cgnn seed=0 test=0.5855
+STANDARD_RUN dataset=citeseer method=cgnn seed=1
+----Data statistics------'
+                Name: citeseer
+                #Nodes 3327
+                #Edges 4552
+                #Classes 6
+                #Ave_degree 2.74
+----Split statistics------'
+                #Train samples 665 (20.0 % of nodes)
+                #Val samples 332 (10.0 % of nodes)
+                #Test samples 2328 (70.0 % of nodes)
+RESULT dataset=citeseer method=cgnn seed=1 test=0.6190
+STANDARD_RUN dataset=citeseer method=cgnn seed=2
+----Data statistics------'
+                Name: citeseer
+                #Nodes 3327
+                #Edges 4552
+                #Classes 6
+                #Ave_degree 2.74
+----Split statistics------'
+                #Train samples 665 (20.0 % of nodes)
+                #Val samples 332 (10.0 % of nodes)
+                #Test samples 2328 (70.0 % of nodes)
+RESULT dataset=citeseer method=cgnn seed=2 test=0.6074
+STANDARD_RUN dataset=citeseer method=cgnn seed=3
+----Data statistics------'
+                Name: citeseer
+                #Nodes 3327
+                #Edges 4552
+                #Classes 6
+                #Ave_degree 2.74
+----Split statistics------'
+                #Train samples 665 (20.0 % of nodes)
+                #Val samples 332 (10.0 % of nodes)
+                #Test samples 2328 (70.0 % of nodes)
+RESULT dataset=citeseer method=cgnn seed=3 test=0.6658
+STANDARD_RUN dataset=citeseer method=cgnn seed=4
+----Data statistics------'
+                Name: citeseer
+                #Nodes 3327
+                #Edges 4552
+                #Classes 6
+                #Ave_degree 2.74
+----Split statistics------'
+                #Train samples 665 (20.0 % of nodes)
+                #Val samples 332 (10.0 % of nodes)
+                #Test samples 2328 (70.0 % of nodes)
+RESULT dataset=citeseer method=cgnn seed=4 test=0.5898
+STANDARD_RUN dataset=citeseer method=crgnn seed=0
+----Data statistics------'
+                Name: citeseer
+                #Nodes 3327
+                #Edges 4552
+                #Classes 6
+                #Ave_degree 2.74
+----Split statistics------'
+                #Train samples 665 (20.0 % of nodes)
+                #Val samples 332 (10.0 % of nodes)
+                #Test samples 2328 (70.0 % of nodes)
+RESULT dataset=citeseer method=crgnn seed=0 test=0.6624
+STANDARD_RUN dataset=citeseer method=crgnn seed=1
+----Data statistics------'
+                Name: citeseer
+                #Nodes 3327
+                #Edges 4552
+                #Classes 6
+                #Ave_degree 2.74
+----Split statistics------'
+                #Train samples 665 (20.0 % of nodes)
+                #Val samples 332 (10.0 % of nodes)
+                #Test samples 2328 (70.0 % of nodes)
+RESULT dataset=citeseer method=crgnn seed=1 test=0.6379
+STANDARD_RUN dataset=citeseer method=crgnn seed=2
+----Data statistics------'
+                Name: citeseer
+                #Nodes 3327
+                #Edges 4552
+                #Classes 6
+                #Ave_degree 2.74
+----Split statistics------'
+                #Train samples 665 (20.0 % of nodes)
+                #Val samples 332 (10.0 % of nodes)
+                #Test samples 2328 (70.0 % of nodes)
+RESULT dataset=citeseer method=crgnn seed=2 test=0.6607
+STANDARD_RUN dataset=citeseer method=crgnn seed=3
+----Data statistics------'
+                Name: citeseer
+                #Nodes 3327
+                #Edges 4552
+                #Classes 6
+                #Ave_degree 2.74
+----Split statistics------'
+                #Train samples 665 (20.0 % of nodes)
+                #Val samples 332 (10.0 % of nodes)
+                #Test samples 2328 (70.0 % of nodes)
+RESULT dataset=citeseer method=crgnn seed=3 test=0.6581
+STANDARD_RUN dataset=citeseer method=crgnn seed=4
+----Data statistics------'
+                Name: citeseer
+                #Nodes 3327
+                #Edges 4552
+                #Classes 6
+                #Ave_degree 2.74
+----Split statistics------'
+                #Train samples 665 (20.0 % of nodes)
+                #Val samples 332 (10.0 % of nodes)
+                #Test samples 2328 (70.0 % of nodes)
+RESULT dataset=citeseer method=crgnn seed=4 test=0.6190
+STANDARD_RUN dataset=citeseer method=r2lp seed=0
+----Data statistics------'
+                Name: citeseer
+                #Nodes 3327
+                #Edges 4552
+                #Classes 6
+                #Ave_degree 2.74
+----Split statistics------'
+                #Train samples 665 (20.0 % of nodes)
+                #Val samples 332 (10.0 % of nodes)
+C:\Users\Admin\Desktop\ʵ��8ȥ��5.19-\external\NoisyGL\utils\functional.py:23: RuntimeWarning: invalid value encountered 
+in scalar divide
+  return np.sum(logits.argmax(1)==labels)/len(labels)
+C:\Users\Admin\Desktop\ʵ��8ȥ��5.19-\external\NoisyGL\predictor\module\R2LP.py:84: UserWarning: Implicit dimension choic
+e for softmax has been deprecated. Change the call to include dim=X as an argument.
+  y_predict = F.softmax(x)
+                #Test samples 2328 (70.0 % of nodes)
+RESULT dataset=citeseer method=r2lp seed=0 test=0.5146
+STANDARD_RUN dataset=citeseer method=r2lp seed=1
+----Data statistics------'
+                Name: citeseer
+                #Nodes 3327
+                #Edges 4552
+                #Classes 6
+                #Ave_degree 2.74
+----Split statistics------'
+                #Train samples 665 (20.0 % of nodes)
+                #Val samples 332 (10.0 % of nodes)
+                #Test samples 2328 (70.0 % of nodes)
+RESULT dataset=citeseer method=r2lp seed=1 test=0.5374
+STANDARD_RUN dataset=citeseer method=r2lp seed=2
+----Data statistics------'
+                Name: citeseer
+                #Nodes 3327
+                #Edges 4552
+                #Classes 6
+                #Ave_degree 2.74
+----Split statistics------'
+                #Train samples 665 (20.0 % of nodes)
+                #Val samples 332 (10.0 % of nodes)
+                #Test samples 2328 (70.0 % of nodes)
+RESULT dataset=citeseer method=r2lp seed=2 test=0.4051
+STANDARD_RUN dataset=citeseer method=r2lp seed=3
+----Data statistics------'
+                Name: citeseer
+                #Nodes 3327
+                #Edges 4552
+                #Classes 6
+                #Ave_degree 2.74
+----Split statistics------'
+                #Train samples 665 (20.0 % of nodes)
+                #Val samples 332 (10.0 % of nodes)
+                #Test samples 2328 (70.0 % of nodes)
+RESULT dataset=citeseer method=r2lp seed=3 test=0.4300
+STANDARD_RUN dataset=citeseer method=r2lp seed=4
+----Data statistics------'
+                Name: citeseer
+                #Nodes 3327
+                #Edges 4552
+                #Classes 6
+                #Ave_degree 2.74
+----Split statistics------'
+                #Train samples 665 (20.0 % of nodes)
+                #Val samples 332 (10.0 % of nodes)
+                #Test samples 2328 (70.0 % of nodes)
+RESULT dataset=citeseer method=r2lp seed=4 test=0.4394
+WROTE runs\baseline_completion_20260612\baseline_completion_citeseer_rest_summary.csv

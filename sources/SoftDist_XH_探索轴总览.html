@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SoftDist [X‖H] 全部探索轴总览</title>
+<style>
+  :root{--ink:#1a1a2e;--accent:#c0392b;--accent2:#2c5f8a;--ok:#1e7e34;--bad:#a11;--gray:#666;--soft:#f5f6f8;--amber:#b8860b;}
+  body{font-family:-apple-system,"Segoe UI","Microsoft YaHei",sans-serif;max-width:1180px;margin:0 auto;padding:28px 40px;color:#222;line-height:1.6;background:#fff;}
+  h1{color:var(--ink);border-bottom:3px solid var(--accent);padding-bottom:12px;font-size:1.8em;}
+  h2{color:#fff;background:var(--ink);padding:9px 16px;margin-top:34px;font-size:1.25em;border-radius:5px;}
+  h3{color:var(--accent2);margin-top:24px;font-size:1.08em;border-left:4px solid var(--accent2);padding-left:10px;}
+  table{border-collapse:collapse;width:100%;margin:12px 0;font-size:0.85em;}
+  th,td{border:1px solid #d4d8dd;padding:6px 10px;text-align:center;vertical-align:top;}
+  th{background:#3a3f58;color:#fff;font-weight:600;}
+  td:first-child{text-align:left;}
+  tr:nth-child(even){background:var(--soft);}
+  .ok{color:var(--ok);font-weight:700;}
+  .bad{color:var(--bad);font-weight:700;}
+  .amber{color:var(--amber);font-weight:700;}
+  .ours{background:#eaf4ea !important;}
+  code{background:#eef0f2;padding:1px 5px;border-radius:3px;font-size:0.92em;color:#a3324a;}
+  .legend{background:#fafbfc;border:1px solid #e0e3e7;padding:10px 16px;border-radius:6px;font-size:0.9em;margin:14px 0;}
+  .keep{background:#eaf4ea;border-left:4px solid var(--ok);padding:10px 16px;margin:12px 0;}
+  .kill{background:#fdf3f3;border-left:4px solid var(--accent);padding:10px 16px;margin:12px 0;}
+  .note{background:#fffbe8;border-left:4px solid var(--amber);padding:10px 16px;margin:12px 0;font-size:0.92em;}
+  .meta{color:var(--gray);font-size:0.85em;}
+  .axis{border:1px solid #dde;border-radius:7px;padding:4px 18px 14px;margin:16px 0;box-shadow:0 1px 4px rgba(0,0,0,.05);}
+  .verdict-kill{display:inline-block;background:#fdecea;color:var(--bad);font-size:.78em;padding:2px 9px;border-radius:11px;font-weight:700;}
+  .verdict-keep{display:inline-block;background:#e7f4e7;color:var(--ok);font-size:.78em;padding:2px 9px;border-radius:11px;font-weight:700;}
+  .verdict-bound{display:inline-block;background:#fbf2dd;color:var(--amber);font-size:.78em;padding:2px 9px;border-radius:11px;font-weight:700;}
+  ul.tight li{margin:2px 0;}
+</style>
+</head>
+<body>
+
+<h1>SoftDist [X‖H]：全部探索轴总览<br><span class="meta">图节点噪声标签鲁棒分类 · 2026-06 完整探索地图 · 协议 percent split 0.2/0.1/0.7, uniform 0.4, 5 seeds（诊断 3 seeds）, ROCm GPU</span></h1>
+
+<div class="note">
+<b>文档用途</b>：完整记录本项目探索过的每一条技术轴——假设、做法、关键数字、判定。绿=保留为论文资产，红=判死（含机制原因），黄=边界/条件性。所有判死项都有预注册门槛 + 诊断数据，不应再"换皮复活"。这是给论文写作、答辩、以及未来接续者的探索全图。
+</div>
+
+<div class="legend">
+<b>图例</b>：<span class="verdict-keep">KEEP 论文资产</span> · <span class="verdict-bound">BOUNDARY 边界/条件性</span> · <span class="verdict-kill">KILL 判死</span> ｜
+<b>核心对照</b>：<code>gcn_xh_ce</code>=H拼接但无球 ｜ <code>shuffled</code>=随机球（同尺寸） ｜ <code>NRGNN[X‖H]</code>=给最强baseline同样的H（公平性对照）
+</div>
+
+<!-- ================= 第一部分：方法主线的演化 ================= -->
+<h2>一、方法主线的演化（从 C1 到 SoftDist [X‖H]）</h2>
+<p class="meta">这条线不是"探索轴"，而是主方法本身怎么一步步收敛出来的。每一步都修了上一步的一个明确缺陷。</p>
+<table>
+<tr><th>阶段</th><th>形态</th><th>关键缺陷 / 发现</th><th>结果</th><th>去向</th></tr>
+<tr><td>C1（起点）</td><td>GRACE 预训练 + GB 微调（Phase 2 fine-tune encoder）</td><td>ratio split 下球机制有效(vs noball +19pp)，但整个微调框架弱于端到端 GCN</td><td>Cora 0.744 输 GCN+CE 0.810</td><td><span class="verdict-kill">微调范式判死</span></td></tr>
+<tr><td>框架迁移</td><td>frozen GRACE 只建球+预处理标签，分类器换全新端到端 GCN</td><td>GRACE frozen linear-eval 0.837 > noisy GCN 0.810；是微调把表示用坏了(noball 0.804→0.570)</td><td>本项目最大转折</td><td><span class="verdict-keep">冻结框架成立</span></td></tr>
+<tr><td>target 打磨</td><td>hard → gated → soft-v1 → SoftDist</td><td>hard CDR 高(22%)；二值gate两数据集要相反松紧；binary-alpha 校正太弱；<b>multiclass-alpha + 完整分布</b>是唯一双赢形式</td><td>SoftDist：Cora/CiteSeer 首次双赢 GCN+CE</td><td><span class="verdict-keep">SoftDist 定型</span></td></tr>
+<tr><td>[X‖H] 拼接</td><td>把 frozen H 也拼进分类器输入</td><td>H 对 CE 分类器即有 +1.9/+2.3pp 独立增量，与球增量可叠加</td><td>SoftDist[X‖H] 5-seed Cora 0.8137±0.0067</td><td><span class="verdict-keep">最终主方法</span></td></tr>
+</table>
+
+<!-- ================= 第二部分：SoftDist 之上的机制增强（7轴，全判死） ================= -->
+<h2>二、SoftDist 之上的机制增强（7 轴，全部判死）</h2>
+<p class="meta">在 SoftDist 定型后，尝试在它之上叠加增强。核心结论：在低覆盖(20%)+高噪声(40%)下，球校正候选集内部"干净 vs 噪声"在多个信号维度上<b>本质不可分</b>，软分布校正已是最优形态。</p>
+<table>
+<tr><th>轴</th><th>假设/做法</th><th>关键数字</th><th>判死机理</th><th>判定</th></tr>
+<tr><td>二值 gate<br>(C1_gated)</td><td>球内 train≥τ 且 margin≥τ 才校正</td><td>最佳 0.714 < C1 0.744</td><td>"全改/不改"无中间态，两数据集需相反松紧，无 universal 阈值</td><td><span class="verdict-kill">KILL</span></td></tr>
+<tr><td>可靠性加权 CE<br>(C1_weighted)</td><td>按球可靠性加权 train loss</td><td>0.7433 ≈ C1 0.7443</td><td>ratio 0.2 下多数球权重本就≈1，降权的球太少</td><td><span class="verdict-kill">KILL</span></td></tr>
+<tr><td>动态 alpha<br>(dynalpha)</td><td>GCN 预测同意球票则 α×1.5，否则×0.5</td><td>no-op 或反伤 Cora</td><td>自强化 confirmation bias；GCN 记忆噪声太早(best epoch 3-6)</td><td><span class="verdict-kill">KILL</span></td></tr>
+<tr><td>ball consistency 正则</td><td>球内 GCN 预测分布方差惩罚 (λ=0.1)</td><td>零增量(0.803 vs 0.804)</td><td>球粒度太粗，球内恒定约束无逐节点信息</td><td><span class="verdict-kill">KILL</span></td></tr>
+<tr><td>NRGNN 杂交<br>(BallAux)</td><td>NRGNN loss 加 λ·球 soft target</td><td>最大 +0.22pp，Cora shuffled 反超 real</td><td>球信号与图传播冗余（H 本身来自图结构）</td><td><span class="verdict-kill">KILL</span></td></tr>
+<tr><td>自适应纯度粒度<br>(E1, 3 变体)</td><td>noisy 标签驱动球分裂粒度（混类分细、干净保粗）</td><td>CDR 不降反升；v3 Cora shuffled 反超 real</td><td>20%覆盖票密度不足：纯度天花板0.66、每球5-15票std±0.15，标签信号驱动不了粒度</td><td><span class="verdict-kill">KILL</span></td></tr>
+<tr><td>无标签扩展</td><td>球级伪监督扩到无标签节点 (λ=0.05/0.1)</td><td>precision 0.87 过门，但训练全负</td><td>球级恒定 target 无逐节点分辨率，输给模型自身 81% 的逐节点预测</td><td><span class="verdict-kill">KILL</span></td></tr>
+</table>
+<div class="kill"><b>合并机理（论文 §7 核心论点）</b>：上述机制各依据不同信号试图区分"该翻的噪声"与"不该动的干净标签"，但<b>没有一个能将 CDR 相对降 30% 而保持 NCR 损失 ≤10%</b>。在该数据稀疏度下，硬性二分必然误伤过多或放过过多。SoftDist 的连续 α 软组合<b>不做这个不可能的二分</b>——这正是它最优的根本原因。</div>
+
+<!-- ================= 第三部分：三类独立 gate 信号（全否定） ================= -->
+<h2>三、三类独立置信信号的系统否定（"不可分性"的硬证据）</h2>
+<p class="meta">为验证"球校正候选内干净/噪声不可分"，用三个<b>相互独立</b>的信号维度做裁决诊断，预注册门槛：CDR 相对降≥30%、NCR 损失≤10%、保护精度≥70%。</p>
+<table>
+<tr><th>信号维度</th><th>实验</th><th>关键数字</th><th>失败机理</th><th>判定</th></tr>
+<tr><td>票数统计</td><td>gated hard correction</td><td>两数据集需相反松紧</td><td>不存在通用阈值</td><td><span class="verdict-kill">KILL</span></td></tr>
+<tr><td>时间维度</td><td>early-learning 裁决<br>(4a XH-warmup / 4a-2 X-only)</td><td>保护精度 ≤0.69 < 0.70（双 warmup 一致）</td><td>早期置信不可靠：Cora 保护太少、CiteSeer 精度不足</td><td><span class="verdict-kill">KILL</span></td></tr>
+<tr><td>尺度维度</td><td>多粒度一致性裁决<br>(fine256/mid64/coarse16)</td><td>保护精度 0.52 < 0.70</td><td>跨尺度分歧标记"投票含糊区"，非"干净标签边界"</td><td><span class="verdict-kill">KILL</span></td></tr>
+<tr><td>逐节点分辨率</td><td>相似度加权投票 / 球心距离调制 α</td><td>CDR 与 NCR 同步崩塌</td><td>球内仅 5-10 票，软加权无逐节点分辨率</td><td><span class="verdict-kill">KILL</span></td></tr>
+</table>
+<div class="note"><b>意外正资产</b>：逐节点诊断产出的 <code>distance_bins.csv</code> 首次量化了 CDR 的空间分布——误伤随到球心距离单调上升（Cora bin0=0.000→bin3=0.015），成为论文 §7 的图证。</div>
+
+<!-- ================= 第四部分：表示侧（SSL）探索 ================= -->
+<h2>四、表示侧（SSL encoder / 目标）探索（揭示 C3：可分性 ≠ 可聚类性）</h2>
+<table>
+<tr><th>轴</th><th>做法</th><th>关键数字</th><th>发现/机理</th><th>判定</th></tr>
+<tr><td>换 SSL 方法</td><td>BGRL / GraphMAE / CCA-SSG / 可学习τ 替换 GRACE</td><td>CCA-SSG probe 更高(0.857>0.829)，但下游球<b>塌缩到1</b>，real-shuffled 归零</td><td><b>C3：probe 可分性 ≠ 球可聚类性</b>；512维表示几何不可分球</td><td><span class="verdict-kill">KILL（GRACE 保留）</span></td></tr>
+<tr><td>可学习温度 τ</td><td>GRACE InfoNCE 温度参与训练</td><td>双数据集双 probe 全负</td><td>预训练侧改动的又一次失败（与历史一致）</td><td><span class="verdict-kill">KILL</span></td></tr>
+<tr><td>定制 SSL：<br>显式 uniformity 正则</td><td>GRACE + λ·uniformity（纯几何，label-free）</td><td>uniformity 指标变强(-1.0→-3.6)，但球塌缩到1，purity 0.79→0.30</td><td><b>第三次确认 C3</b>：GRACE 的价值是 alignment/uniformity/局部可分性的<b>平衡</b>，非 uniformity 最大化</td><td><span class="verdict-kill">KILL</span></td></tr>
+</table>
+<div class="keep"><b>C3 是强论文资产</b>：三次独立确认（换SSL × 显式uniformity × probe≠clusterability）——把"为什么是 GRACE"从工程选择升级为有原理的分析。GRACE 的隐式几何对递归 2-means 球分裂器局部最优。</div>
+
+<!-- ================= 第五部分：数据集广度 / 大图（含戏剧性反转） ================= -->
+<h2>五、数据集广度 / 大图适配（戏剧性反转：从"只适用小图"到"类数才是变量"）</h2>
+<p class="meta">这是探索最曲折的一条线，经历了"误判→纠正→再纠正"，最终把适用边界从模糊观察变成有网格证据的刻画。</p>
+<table>
+<tr><th>子轴</th><th>做法 / 数据集</th><th>关键数字</th><th>结论</th><th>判定</th></tr>
+<tr><td>PubMed(19.7k,3类)</td><td>直接跑主方法</td><td>SoftDist 0.832 输 GCN+CE 0.839，但赢 NRGNN +2.4pp</td><td>球本身健康但收益<基线饱和</td><td><span class="verdict-bound">BOUNDARY</span></td></tr>
+<tr><td>Amazon-Photo(7.6k,8类)</td><td>直接跑主方法</td><td>real≈shuffled，球贡献消失</td><td>共购图强同质，球被吸收</td><td><span class="verdict-bound">BOUNDARY</span></td></tr>
+<tr><td>DBLP(17.7k,4类)</td><td>探路 + 大图球参数缩放(Phase32)</td><td>默认 num_balls=1 塌缩；调参后 purity 0.84 但下游 real≈shuffled</td><td>两层边界：构造可修复，但 soft-target 下游仍被吸收</td><td><span class="verdict-bound">BOUNDARY</span></td></tr>
+<tr><td>大图 clean-sample selection<br>(GBSelect, Phase 33-34)</td><td>球+GCN 双视角取交集选干净样本</td><td>离线降噪 40%→6%！但下游：DBLP/PubMed 命门(vs gcn_only)不过；Amazon 命门过却输全样本 -12pp</td><td>球正交噪声信息真实存在，但大图下游被样本损失+GCN单视角+强基线三杀手抵消</td><td><span class="verdict-kill">KILL（命门对照拦下假阳性）</span></td></tr>
+<tr><td>★规模×类数判别<br>(Coauthor-CS, Phase 35)</td><td>CS(18.3k,15类) vs DBLP(17.7k,4类)同规模只差类数</td><td><b>CS 球有效</b>：SoftDist−GCN[X‖H] +0.53pp 5/5、−shuffled +0.55pp 5/5</td><td><b>推翻"只适用小图"！类数(非规模)是关键调节变量，大图大门重开</b></td><td><span class="verdict-keep">KEEP 第3个成功数据集</span></td></tr>
+<tr><td>Amazon-Computers(13.7k,10类)</td><td>Q2 扩展确认</td><td>real>shuffled +1.8pp 5/5、赢 NRGNN[X‖H] +3.95pp，但输全样本 -0.70pp</td><td>类数充足是必要非充分：强同质+强基线仍吸收</td><td><span class="verdict-bound">BOUNDARY</span></td></tr>
+<tr><td>LastFM-Asia(7.6k,<b>18类</b>)<br>(Phase 39, 诊断止损)</td><td>18类该成功？诊断先行</td><td>球纯度 0.254、正交AUC 0.600 双失门 → 下游未跑</td><td><b>类数高仍失败</b>：标签(国家)与H几何(音乐兴趣)弱对齐→球不纯；同质0.87基线吸收。印证真变量是球标签纯度非类数</td><td><span class="verdict-bound">BOUNDARY</span></td></tr>
+<tr><td>LastFM-Asia(7.6k,18类)<br>(Phase 39)</td><td>GRACE H + 3-seed 诊断门控；未过门则停止下游</td><td>homophily 0.874；145.3 球但 true purity 仅 0.254；正交 AUC 0.600&lt;0.70；GCN AUC 0.951</td><td><b>18 类仍失败</b>：类数不是充分条件；artist 几何与 country 标签弱对齐，且高同质强 GCN 吸收信号</td><td><span class="verdict-bound">BOUNDARY（预注册停止39b）</span></td></tr>
+</table>
+<div class="keep"><b>成功数据集（球增量稳定 5/5 over GCN[X‖H] 和 shuffled）</b>：Cora(2.7k,7) · CiteSeer(3.3k,6) · <b>Coauthor-CS(18.3k,15，大图)</b>。Coauthor-CS 的加入直接消灭"只在小图验证"的质疑。</div>
+
+<!-- ================= 第六部分：适用域多变量刻画 + 可部署 proxy ================= -->
+<h2>六、适用域多变量刻画 + 可部署 proxy（ball-clusterability 中介证据）</h2>
+<h3>6.1 九数据集 × 五变量网格（Phase 37）：真变量是球可聚类性，不是规模/类数</h3>
+<table>
+<tr><th>被解释量</th><th>vs 球纯度/正交AUC<br>(诊断量，clean依赖)</th><th>vs 类数</th><th>vs 规模</th><th>vs 同质性</th></tr>
+<tr><td>SoftDist 增量 (Pearson)</td><td class="ok">0.97 / 0.99</td><td>-0.38</td><td>-0.60</td><td>0.51</td></tr>
+<tr><td>GBSelect 增量 (Spearman)</td><td class="ok">1.00 (n=4)</td><td>0.20</td><td>-0.37</td><td>0.43</td></tr>
+</table>
+<div class="note"><b>关键发现</b>：决定球有没有用的是 <b>ball-clusterability（球纯度/正交AUC）</b>，不是表面的规模/类数/同质性——后者只是代理变量。WikiCS(同质0.65、正交AUC 0.528≈随机) 球处处负增量，是干净反例。<b>但这几个高相关变量是 clean-label 诊断量，只能解释、不能部署。</b></div>
+<div class="note"><b>Phase 39 外部确认</b>：LastFM-Asia 有 18 类且球数不塌缩，但 true purity 仅 0.254、正交 AUC 仅 0.600，因此仍未进入下游。它强化了“类数只是代理、球语义对齐才是门槛”的解释。由于没有下游球增量，LastFM 不加入 Phase 37 的相关性重算。</div>
+
+<h3>6.2 可部署 proxy 相关性（Phase 37d→38，冻结3候选，扩到 n=7-8）</h3>
+<table>
+<tr><th>可部署 proxy（只用 H+noisy）</th><th>vs GBSelect 增量 Spearman</th><th>n</th><th>说明</th></tr>
+<tr><td>mean_vote_entropy_weighted</td><td>-0.79</td><td>8</td><td>方向对（球越纯增量越大），但 n=8 未达 adaptive 门槛</td></tr>
+<tr><td>mean_vote_margin_weighted</td><td>+0.67</td><td>8</td><td>方向对</td></tr>
+<tr><td>ball_gcn_disagree_confident</td><td>-0.54</td><td>7</td><td>37d 时 n=5 曾达 -1.00，扩样本后<b>塌缩</b>——证实早期"完美相关"是小样本假象</td></tr>
+</table>
+<div class="note"><b>诚实结论</b>：可部署 proxy 方向正确但 n≤8 未达预注册的 n≥10 门槛 → <b>adaptive layer 不评估，降级 future work</b>。冻结 proxy + 不 cherry-pick 的纪律拆穿了 37d 的假信号，反而强化了论文诚信。</div>
+
+<!-- ================= 第七部分：外部对比 + 公平性 ================= -->
+<h2>七、外部 baseline 对比 + 公平性对照（校准了核心 claim）</h2>
+<table>
+<tr><th>对照</th><th>关键数字</th><th>对 claim 的影响</th></tr>
+<tr><td>NoisyGL 自带 7 方法<br>(NRGNN/RTGNN/UnionNET/TSS/CGNN/CRGNN/R2LP)</td><td>SoftDist 在 Cora/CiteSeer 赢除 NRGNN 外全部</td><td>外部对比扎实，UnionNET(最近邻机制)也输</td></tr>
+<tr><td>★NRGNN + [X‖H]（公平性核心）</td><td>Cora SoftDist 0.8137 vs NRGNN[X‖H] 0.8139（-0.02pp 持平）；CiteSeer/Coauthor-CS 输 ~1.2-2pp</td><td><b>给对手同样的 H 后 SoftDist 不再领先</b>→主 claim 降级：不声称超 SOTA</td></tr>
+<tr><td>TFR (CIKM 2025)</td><td>同协议迁移配置：Cora 0.776、CiteSeer 0.698（均输 SoftDist）</td><td>对标 2025 方法（迁移配置，标注 caveat）</td></tr>
+<tr><td>ProCon / GD² (2025)</td><td>无官方代码 → related work 引用</td><td>诚实标注"参考结果，非同协议"</td></tr>
+</table>
+<div class="keep"><b>公平性对照是论文最诚实的一笔</b>：主动暴露"H 是共同资产、任何方法都能用"，把 claim 收缩到<b>受控粒球增量</b>（同 H 下 vs CE +1.1/+1.3pp、vs shuffled +2.2/+1.9pp，全5/5）——这才是防得住反驳的核心。</div>
+
+<!-- ================= 第八部分：收尾验证 ================= -->
+<h2>八、收尾验证（论文必需的稳健性补强）</h2>
+<table>
+<tr><th>轴</th><th>结果</th><th>论文用途</th></tr>
+<tr><td>噪声谱 (uniform 0.2-0.6 / pair / instance)</td><td><b>倒U钟形</b>：球增量 Cora −0.37→+1.10→<b>+1.52(0.5峰)</b>→+0.66(0.6崩)；pair 跨数据集系统性弱(伪多数)</td><td>核心适用条件曲线 + pair future work</td></tr>
+<tr><td>覆盖率曲线 (train_ratio 0.05-0.4)</td><td><b>非单调</b>：低覆盖最强，高覆盖[X‖H]饱和转负</td><td>修正旧 C1 单调说法</td></tr>
+<tr><td>球数敏感性 (max_balls 16-128)</td><td>Cora 16-128 仅 0.05pp 波动，真实球全面赢 shuffled</td><td>证明 64 是稳健平台非精调</td></tr>
+<tr><td>效率表</td><td>SoftDist 7.9s/100k参数/非迭代 vs NRGNN 24.7s/465k/迭代（3.1×/4.6×）；UnionNET 超时</td><td>简洁性硬数字</td></tr>
+<tr><td>oracle gap-closure</td><td>Cora 37.8% / CiteSeer 47.4% / PubMed -32.6%</td><td>量化闭合多少噪声损失</td></tr>
+<tr><td>backbone 泛化 (GAT/APPNP)</td><td>Cora 球增量正(3/3)，CiteSeer 不稳(GAT −1.22/APPNP −0.16pp)</td><td>条件性附录证据(保留负结果)</td></tr>
+<tr><td><b>SoftDist-MLP(X) 机制变体</b><br>(下游无H+无图传播)</td><td><b>球增量 +6~9pp</b>(5/5)；6 噪声条件 6/6 稳定(clean安全/uniform 0.2-0.6/pair/instance)；下游 92k参数/5.7s/140MiB</td><td><b>双层定位的轻量变体</b>：证明球软目标独立于 H 输入和图传播</td></tr>
+<tr><td>X-ball 完全无 H (raw-X 建球)</td><td>退化单球(纯度0.30/0.21)，real==shuffled，未过门</td><td>负结果：固定几何下 raw-X 不可替代 H 建球(未证理论必需/未跑下游)</td></tr>
+<tr><td>文献甄别 (13篇 GB+DL)</td><td>12篇换皮/域不匹配，1篇(MGNR)进多粒度诊断后判负</td><td>证明机制空间探尽</td></tr>
+<tr><td>pair 噪声 future work</td><td>系统性 A→B 翻转可能在球内制造“伪多数”；候选为 label-free H 几何校验投票</td><td>未验证假设，不开新机制实验；后续须重新预注册</td></tr>
+</table>
+
+<!-- ================= 总结 ================= -->
+<h2>九、总结：探索全图与最终定位</h2>
+<h3>探索轴计数（全部探尽，无正 ROI 开放方向）</h3>
+<div class="legend">
+机制增强 ×7 · gate 信号 ×3 · 逐节点分辨率 ×1 · SSL 方法 ×4 · SSL 目标(uniformity)×1 · 噪声类型 ×3 · 噪声率 ×3 · 覆盖率 ×4 · backbone ×2 · 外部对比 ×9方法 · 数据集广度 ×10数据集（含 LastFM 诊断边界） · 大图两种用法(soft-target/selection) · adaptive proxy ×3候选
+</div>
+
+<h3>论文资产（KEEP）</h3>
+<div class="keep"><ul class="tight">
+<li><b>主方法</b>：SoftDist [X‖H]——frozen GRACE 双重利用（球几何 + [X‖H] 分类）+ multiclass-α 软分布校正 + 端到端 GCN，非迭代单遍</li>
+<li><b>3 个成功数据集</b>：Cora / CiteSeer / Coauthor-CS（含 18k 大图），球增量 5/5 over CE 与 shuffled</li>
+<li><b>完整外部对比 + 公平性对照</b>：NRGNN[X‖H]/TFR/7 NoisyGL 方法；claim 诚实校准为"受控增量"非 SOTA</li>
+<li><b>C3 表示二维性</b>：可分性≠可聚类性，三次独立确认，"为什么是 GRACE"的原理分析</li>
+<li><b>二维 size×class 适用域边界</b> + ball-clusterability 中介证据（诊断量强相关，proxy preliminary）</li>
+<li><b>异常彻底的负结果分析</b>：每个判死轴都有预注册门槛 + 机理 + 诊断——方法论严谨度的展示</li>
+<li><b>效率/敏感性/oracle/噪声谱</b>等稳健性补强</li>
+</ul></div>
+
+<h3>判死清单（KILL，附机理，勿复活）</h3>
+<div class="kill"><ul class="tight">
+<li>GRACE encoder 微调（破坏 frozen 表示 0.80→0.57）· 二值 gate（无 universal 阈值）· 可靠性加权（权重≈1）</li>
+<li>动态α/模型预测反馈（自强化）· ball consistency（无逐节点信息）· NRGNN杂交（信号冗余）</li>
+<li>自适应粒度 E1（票密度不足）· 无标签扩展（无逐节点分辨率）· 多粒度/early-learning/逐节点裁决（干净噪声不可分）</li>
+<li>换 SSL 方法 / 可学习τ / 显式uniformity（probe≠clusterability，球塌缩）</li>
+<li>大图 soft-target 与 selection 两种用法（下游被吸收/样本损失抵消）· 伪标签回流（precision不足）</li>
+</ul></div>
+
+<h3>最终定位</h3>
+<div class="note">
+<b>诚实定位</b>：一个<b>简单、非迭代、低方差</b>的粒球去噪管线，在 3 个数据集（含大图）上有<b>受控粒球增量</b>，配<b>异常彻底的适用域刻画与边界机制分析</b>。<b>不声称 SOTA</b>（给对手同样 H 后持平/略逊）。贡献 = 概念 + 效率 + 分析。适合 <b>KBS / Neural Networks / Pattern Recognition</b>。<br>
+实验已收口，无正 ROI 开放方向 → 进入正文写作。
+</div>
+
+<hr>
+<p class="meta">数据来源：<code>external/NoisyGL/runs/</code> 各 Phase 实测报告，逐一核对。完整实验史见 <code>02_experiment_history_and_lessons 11.md</code>；论文初稿 <code>SoftDist_XH_论文初稿雏形.html</code>；执行计划 <code>external/NoisyGL/docs/execution_plan_*.md</code>。</p>
+
+</body>
+</html>

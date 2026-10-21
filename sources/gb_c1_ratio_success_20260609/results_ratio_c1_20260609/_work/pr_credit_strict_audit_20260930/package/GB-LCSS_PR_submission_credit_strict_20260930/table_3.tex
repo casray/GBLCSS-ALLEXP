@@ -1,0 +1,23 @@
+\begin{table}[!ht]
+\centering
+\caption{Test accuracy of methods that use the graph during MLP training, under uniform 0.4 noise.}\label{tab:3}
+\begingroup
+\renewcommand{\baselinestretch}{1}\selectfont
+\footnotesize
+\setlength{\tabcolsep}{3pt}
+\renewcommand{\arraystretch}{1.05}
+\setlength{\TableWidth}{\dimexpr\linewidth-12\tabcolsep\relax}
+\begin{tabular}{@{}>{\raggedright\arraybackslash}p{\dimexpr 0.140000\TableWidth\relax}>{\raggedright\arraybackslash}p{\dimexpr 0.235000\TableWidth\relax}>{\centering\arraybackslash}p{\dimexpr 0.125000\TableWidth\relax}>{\centering\arraybackslash}p{\dimexpr 0.125000\TableWidth\relax}>{\centering\arraybackslash}p{\dimexpr 0.125000\TableWidth\relax}>{\centering\arraybackslash}p{\dimexpr 0.125000\TableWidth\relax}>{\centering\arraybackslash}p{\dimexpr 0.125000\TableWidth\relax}@{}}
+\toprule
+\textbf{Method} & \textbf{Use of graph structure in training} & \textbf{Cora} & \textbf{CiteSeer} & \textbf{CoraFull} & \textbf{Coauthor-CS} & \textbf{Amazon-Photo} \\
+\midrule
+PosteL & Posterior soft labels & 47.09\ensuremath{\pm}1.81 & 45.84\ensuremath{\pm}2.48 & 36.51\ensuremath{\pm}1.01 & 84.74\ensuremath{\pm}1.51 & \underline{80.59\ensuremath{\pm}0.94} \\
+ALS & Neighborhood label smoothing & 45.20\ensuremath{\pm}1.24 & 43.77\ensuremath{\pm}2.76 & 31.91\ensuremath{\pm}1.05 & 88.55\ensuremath{\pm}0.86 & 73.41\ensuremath{\pm}2.75 \\
+SALS & Structure-aware label smoothing & 48.27\ensuremath{\pm}2.50 & 47.20\ensuremath{\pm}1.69 & \underline{37.06\ensuremath{\pm}0.78} & 88.85\ensuremath{\pm}0.82 & 77.86\ensuremath{\pm}0.79 \\
+Graph-MLP & Multi-hop neighborhood-contrastive objective & \textbf{63.23\ensuremath{\pm}3.07} & \textbf{57.23\ensuremath{\pm}1.85} & 37.05\ensuremath{\pm}0.91 & \underline{88.95\ensuremath{\pm}0.43} & 77.05\ensuremath{\pm}1.24 \\
+GSDN & Neighborhood self-distillation & 55.97\ensuremath{\pm}4.29 & 50.36\ensuremath{\pm}3.39 & 35.80\ensuremath{\pm}0.66 & 86.55\ensuremath{\pm}0.78 & 73.31\ensuremath{\pm}2.00 \\
+GB-LCSS & Label consensus within granular balls & \underline{57.49\ensuremath{\pm}0.76} & \underline{55.24\ensuremath{\pm}2.04} & \textbf{37.39\ensuremath{\pm}0.51} & \textbf{90.71\ensuremath{\pm}0.59} & \textbf{82.12\ensuremath{\pm}1.08} \\
+\bottomrule
+\end{tabular}
+\endgroup
+\end{table}

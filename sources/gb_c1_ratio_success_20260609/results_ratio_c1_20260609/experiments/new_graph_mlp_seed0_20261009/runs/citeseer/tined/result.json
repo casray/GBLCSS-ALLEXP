@@ -1,0 +1,151 @@
+{
+  "best_epoch": 9,
+  "best_val": 0.5090361445783133,
+  "parameters": 241648,
+  "config": {
+    "seed": 0,
+    "epochs": 200,
+    "hidden": 64,
+    "dropout": 0.5,
+    "learning_rate": 0.01,
+    "weight_decay": 0.0005,
+    "noise": "uniform0.4",
+    "validation_selection": "clean validation accuracy; last tie",
+    "device": "cuda",
+    "smoke": false,
+    "lamb": 0.5,
+    "DE_regularization_rate": 10.0,
+    "DE_sampling_ratio": 0.1,
+    "DE_log": true,
+    "sqrt_DER": true,
+    "learned_MLP_lr_ratio": 0.5,
+    "GA_init_type": "identity",
+    "norm_type": "none",
+    "teacher": "SAGE",
+    "teacher_layers": 2,
+    "teacher_epochs": 200,
+    "student_epochs": 200,
+    "batch_size": 512,
+    "teacher_norm_type": "none",
+    "author_preset": "citeseer",
+    "preset_fallback": false,
+    "dataset": "citeseer",
+    "from_MLP_mode": "same_as_teacher",
+    "DE_mode": "same_as_teacher",
+    "from_learned_MLP": true,
+    "DE_regularization": true,
+    "dw": false,
+    "position_encoding": false,
+    "feat_distill": false,
+    "adv": false,
+    "cpu_fallback": false,
+    "early_stopping": false,
+    "teacher_training": "full-neighbor sparse SAGE-gcn (not sampled fan_out=5,5)",
+    "student_updates": "ordered CE batches, ordered all-node KL batches, separate DE step",
+    "non_main_budget": false,
+    "author_original_base": {
+      "learning_rate": "0.0001",
+      "dropout_ratio": "0.0",
+      "weight_decay": "0.01",
+      "max_epoch": "500",
+      "patience": 50
+    }
+  },
+  "probabilities_file": "C:\\Users\\Admin\\Desktop\\实验8去噪5.19-\\gb_c1_ratio_success_20260609\\results_ratio_c1_20260609\\experiments\\new_graph_mlp_seed0_20261009\\runs\\citeseer\\tined\\probabilities.pt",
+  "checkpoint_file": "C:\\Users\\Admin\\Desktop\\实验8去噪5.19-\\gb_c1_ratio_success_20260609\\results_ratio_c1_20260609\\experiments\\new_graph_mlp_seed0_20261009\\runs\\citeseer\\tined\\checkpoint.pt",
+  "diagnostics": {
+    "implementation": "torch sparse SAGE port + AST official sequence constructor/forward",
+    "direct_official_execution": false,
+    "source_sha256": {
+      "models.py": "83cf0250a584b73fb41b1187002e234cbd790021724f3a071003a4dd508929a0",
+      "utils_gnn_property.py": "9ed77f8375600b4b2e3e4d9214abc0006a9960f818e120e938feb84339c0fc16",
+      "train_and_eval.py": "e26feac2f7afc37fc3b8f5dd04c259eaa018feb4771fca5eb8bc9f0d3f8b7f6e",
+      "train_student.py": "3bd53edfa433b2cbd0d840a6d389f119382c91f9bf9d252ada25d1668ed65508",
+      "tran.conf.yaml": "5d9ae77d3fb1d07bdac6c058c2097e5a2a401786db0e499388e3ce2f44475833",
+      "best_records/best_records.json": "61ebc896b52764c20ec641398e663a7f9eeb780997bebf61a23d5f5927f64159",
+      "tasks/3_run_all_TINED.py": "26bf4c6035cfe50c5b59aaade5bb218b7b0c821a0e46fbb11c69b37e2d84ea2c"
+    },
+    "device": "cuda:0",
+    "torch": "2.9.1+rocm7.2.1",
+    "teacher_best_epoch": 4,
+    "teacher_best_val": 0.6626506024096386,
+    "teacher_parameters": 237446,
+    "student_parameters_including_unused_heads": 241732,
+    "student_deploy_parameters": 241648,
+    "student_fc_layers": 4,
+    "sequence": [
+      "TeacherMLP",
+      "TeacherGA",
+      "TeacherMLP",
+      "TeacherGA"
+    ],
+    "ft_shapes_in_out": [
+      [
+        3703,
+        64
+      ],
+      [
+        64,
+        6
+      ]
+    ],
+    "gp_shapes_in_out": [
+      [
+        64,
+        64
+      ],
+      [
+        6,
+        6
+      ]
+    ],
+    "teacher_log_de_targets": [
+      -0.8815518021583557,
+      -1.738382339477539,
+      0.4279075264930725,
+      -0.6646046042442322
+    ],
+    "teacher_zero_energy_layers": [
+      false,
+      false,
+      false,
+      false
+    ],
+    "author_preset": "citeseer",
+    "preset_fallback": false,
+    "train_supervision": "noisy y[train_index] only; val_y is selection/evaluation only",
+    "student_kl_nodes": 3327,
+    "test_labels_read": false,
+    "deployment_input": "raw x only",
+    "graph_dense_n_by_n": false,
+    "energy_feature_chunk": 64,
+    "no_cpu_fallback": true,
+    "raw_input_energy_cached": false,
+    "sampling_rng": "torch GPU randperm instead of upstream numpy choice",
+    "budget": {
+      "teacher_epochs": 200,
+      "student_epochs": 200
+    }
+  },
+  "dataset": "citeseer",
+  "seed": 0,
+  "noise_type": "uniform",
+  "noise_rate": 0.4,
+  "noise_scope": "train",
+  "split_hash": "98b2579310f10cf25b9ac8fb2b7497efa4c1e9279b738170860a2542b966de6a",
+  "noise_hash": "23c3e3d7b44f1cb0b68be8068b765d38c09a0e18928f24287f9f730c2c7381a1",
+  "num_nodes": 3327,
+  "num_classes": 6,
+  "modified_train_count": 294,
+  "modified_val_count": 0,
+  "modified_test_count": 0,
+  "features": "raw main-experiment attributes",
+  "data_file": "C:\\Users\\Admin\\Desktop\\实验8去噪5.19-\\external\\NoisyGL\\data\\CiteSeer\\processed\\data.pt",
+  "status": "ok",
+  "method": "tined",
+  "smoke": false,
+  "test": 0.48238831615120276,
+  "valid": 0.5090361445783133,
+  "wall_seconds": 13.006398800003808,
+  "peak_allocated_gib": 0.22754192352294922
+}

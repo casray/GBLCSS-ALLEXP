@@ -1,0 +1,93 @@
+{
+  "audit_date": "2026-07-14",
+  "python": "C:\\Users\\Admin\\AppData\\Local\\Programs\\Python\\Python312\\python.exe",
+  "bootstrap": {
+    "type": "paired stratified nonparametric bootstrap over known/unknown test samples",
+    "replicates": 3000,
+    "seed_full": 20260714,
+    "seed_all_safe": 20260715,
+    "comparison": "real granular-ball dist+margin AUROC minus mean AUROC of three size-matched KMeans controls",
+    "warning": "Sample-level bootstrap is not a substitute for independent encoder/model seeds."
+  },
+  "banking77": {
+    "source_npz": "开放意图粒球新方向0630/runs/gb_score_conditional_gain_20260630/banking77_r25_seed0_20260630_172920/features_logits_seed0.npz",
+    "model_seed": 0,
+    "n_test": 3080,
+    "n_unknown": 2320,
+    "n_known": 760,
+    "n_known_classes": 19,
+    "n_real_balls": 150,
+    "kmeans_seeds": [13, 14, 15],
+    "full": {
+      "real_auroc": 0.77412092,
+      "kmeans_aurocs": [0.7906924909255899, 0.792583938294011, 0.7768330308529946],
+      "kmeans_mean": 0.78670315,
+      "kmeans_sample_sd": 0.00859993,
+      "real_minus_kmeans_mean": -0.01258224,
+      "paired_bootstrap_mean_delta": -0.012597788679673323,
+      "paired_bootstrap_ci95": [-0.020773257902298913, -0.004111752306412374],
+      "paired_bootstrap_two_sided_p": 0.002,
+      "shuffled_auroc": 0.68669238
+    },
+    "all_safe": {
+      "n": 944,
+      "n_unknown": 532,
+      "n_known": 412,
+      "real_auroc": 0.75253668,
+      "kmeans_aurocs": [0.7910157675742755, 0.804292284108329, 0.7694037885977079],
+      "kmeans_mean": 0.78823728,
+      "kmeans_sample_sd": 0.01760942,
+      "real_minus_kmeans_mean": -0.03570060,
+      "paired_bootstrap_mean_delta": -0.03562687564380206,
+      "paired_bootstrap_ci95": [-0.05136205957855812, -0.02046610001946616],
+      "paired_bootstrap_two_sided_p": "<0.001 (0/3000 bootstrap deltas >= 0)",
+      "shuffled_auroc": 0.60755347
+    },
+    "hyperparameter_robustness": {
+      "n_grids": 7,
+      "kmeans_seeds_per_grid": 3,
+      "real_wins_dist_plus_margin": 0,
+      "real_wins_s_dist": 3,
+      "real_wins_all_safe": 0
+    }
+  },
+  "stackoverflow": {
+    "source_npz": "开放意图粒球新方向0630/runs/gb_score_conditional_gain_20260630/stackoverflow_r25_seed0_20260630_201825/features_logits_seed0.npz",
+    "model_seed": 0,
+    "n_test": 6000,
+    "n_unknown": 4500,
+    "n_known": 1500,
+    "n_known_classes": 5,
+    "n_real_balls": 6,
+    "kmeans_seeds": [13, 14, 15],
+    "full": {
+      "real_auroc": 0.8570463703703702,
+      "kmeans_aurocs": [0.8570463703703702, 0.8570463703703702, 0.8570463703703702],
+      "kmeans_mean": 0.8570463703703702,
+      "kmeans_sample_sd": 0.0,
+      "real_minus_kmeans_mean": 0.0,
+      "paired_bootstrap_ci95": [-1.1102230246251565e-16, 1.1102230246251565e-16],
+      "paired_bootstrap_two_sided_p": 1.0,
+      "shuffled_auroc": 0.85692607
+    },
+    "all_safe": {
+      "n": 2185,
+      "n_unknown": 989,
+      "n_known": 1196,
+      "real_auroc": 0.8592663106884761,
+      "kmeans_aurocs": [0.8592663106884761, 0.8592663106884761, 0.8592663106884761],
+      "kmeans_mean": 0.8592663106884761,
+      "kmeans_sample_sd": 0.0,
+      "real_minus_kmeans_mean": 0.0,
+      "paired_bootstrap_ci95": [-1.1102230246251565e-16, 1.1102230246251565e-16],
+      "paired_bootstrap_two_sided_p": 1.0,
+      "shuffled_auroc": 0.86174086
+    }
+  },
+  "tests": {
+    "command": "py -3.12 -m pytest 开放意图粒球新方向0630/tests -q --ignore=开放意图粒球新方向0630/tests/test_stackoverflow_runner.py",
+    "result": "13 passed, 3 warnings",
+    "excluded_test": "test_stackoverflow_runner.py",
+    "exclusion_reason": "Current Python 3.12 environment lacks the optional transformers package; full collection fails before assertions with ModuleNotFoundError."
+  }
+}

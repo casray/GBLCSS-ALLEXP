@@ -1,0 +1,1011 @@
+                                               Advanced Engineering Informatics 60 (2024) 102425
+                                                    Contents lists available at ScienceDirect
+
+                                       Advanced Engineering Informatics
+
+                                            journal homepage: www.elsevier.com/locate/aei
+
+Full length article
+
+Like draws to like: A Multi-granularity Ball-Intra Fusion approach for fault
+diagnosis models to resists misleading by noisy labels‚ú©
+
+Fir Dunkin a,b,c, Xinde Li a,b,c,d,‚àó, Chuanfei Hu a,b, Guoliang Wu a, Heqing Li a, Xiaoyan Lu a,
+Zhentong Zhang a,b
+
+a School of Automation, Southeast University, Nanjing, 210008, China
+b Nanjing Center for Applied Mathematics, Nanjing, 211135, China
+c Key Laboratory of Measurement and Control of CSE, Ministry of Education, Nanjing, 210096, China
+d Southeast University Shenzhen Research Institute, Shenzhen, 518063, China
+
+ARTICLE INFO                           ABSTRACT
+
+Keywords:                              Although data-driven fault diagnosis methods have achieved remarkable results, these achievements often
+Industrial time series classification  rely on high-quality datasets without noisy labels, which can mislead the model into producing inaccurate or
+Noisy labels                           overfitting classification boundaries in the latent feature space, leading to a significant decrease in the accuracy
+Information fusion                     or even complete failure. To address this challenge, this study proposes a label correction and sample selection
+Label correction                       approach named MgBIF. The aim is to enable models to robustly perform supervised learning under unknown
+Sample separation                      ratios of noisy labels and achieve the performance of high accuracy and strong generalization. Specifically,
+Granular computing                     MgBIF first creates an exclusive granular ball for each sample in the latent feature space, then fuses labels
+                                       from other samples within the granular ball to generate pseudo-labels, which are used to correct the current
+                                       labels. Subsequently, samples with high-confidence labels are selected from the training data with corrected
+                                       labels to construct a clean dataset for supervised learning, thus minimizing the misguidance of noisy labels
+                                       on the model during gradient-based parameter updates. A series of experiments validate the effectiveness
+                                       and superiority of the MgBIF, which can effectively suppress the negative impact of noisy labels in low-
+                                       noise environments (achieving an accuracy of over 96%) and significantly improve accuracy in high-noise
+                                       environments (with a maximum improvement of 80%), outperforming the current state-of-the-art methods.
+                                       MgBIF, therefore, provides a competitive and robust training strategy for uncertain label noise ratio datasets,
+                                       which is expected to promote the process of automatic annotators replacing expert annotations to construct
+                                       datasets in the era of large datasets, thereby helping many practical engineering projects reduce costs and
+                                       increase efficiency.
+
+1. Introduction                                                            of noisy labels can mislead the diagnostic model, causing it to use
+                                                                           mapping methods with lower discriminative power for feature extrac-
+1.1. Background                                                            tion, which increases the risk of overfitting, thereby creating incorrect
+                                                                           classification boundaries in the latent feature space (see Fig. 1(a)),
+    With the rapid development of data-driven intelligent fault diagno-    resulting in decreased accuracy or even complete failure.
+sis methods, a large number of diagnostic methods with excellent per-
+formance have emerged recently [1], which is achieved by embedding             Meanwhile, with the advent of the Internet of Things era, it has
+data into a latent representation space and optimizing model parame-       become increasingly easy to acquire equipment status signals dur-
+ters through aligning predictions with label information as closely as     ing industrial production [4]. Regrettably, artificially annotating high-
+possible [2]. However, their success depends on a substantial amount       confidence labels requires specialized knowledge, which leads to ex-
+of high-quality training data without noisy labels (i.e., inconsistencies  travagant dataset construction costs and increasingly difficult to cope
+between labeled attributes and actual attributes) [3]. The presence
+
+  ‚ú© This work was supported by the National Natural Science Foundation of China under Grant 62233003 and 62073072, the Key Projects of Key R&D
+Program of Jiangsu Province, China under Grant BE2020006 and Grant BE2020006-1, and the Shenzhen Science and Technology Program, China under Grant
+JCYJ20210324132202005 and JCYJ20220818101206014.
+
+  ‚àó Corresponding author.
+      E-mail address: xindeli@seu.edu.cn (X. Li).
+
+https://doi.org/10.1016/j.aei.2024.102425
+Received 27 November 2023; Received in revised form 23 January 2024; Accepted 15 February 2024
+Available online 23 February 2024
+1474-0346/¬© 2024 Elsevier Ltd. All rights are reserved, including those for text and data mining, AI training, and similar technologies.
+F. Dunkin et al.                                                               Advanced Engineering Informatics 60 (2024) 102425
+
+Fig. 1. MgBIF generates pseudo labels by aggregating all the label information within each granular ball. Subsequently, DSmT is employed to correct the labels by combining
+pseudo-labels with the original ones. Finally, samples with high-confidence labels are selected from the corrected labels to participate in training, thereby ensuring the robustness
+of supervised learning in the presence of an unknown label noise ratio in the dataset and mitigating the adverse effects of noisy labels on model performance.
+
+with the massive data annotation needs of the big data era [5]. Con-           low loss samples are assumed to have clean labels (i.e., consistencies
+sequently, using annotators for automatic data labeling has become             between labeled attributes and actual attributes), or labels are cleaned
+an essential path for cost reduction and efficiency improvement in             up by introducing nearest neighbor information in the embedding
+many engineering projects, e.g. SAM [6] and Mask Auto-Labelers [7].            space to construct a positive pair [16]. However, clean label selection
+Nonetheless, it is often difficult to avoid introducing noisy labels in        methods implemented through small loss criteria often tend to favor
+these works, due to the limitations of annotators themselves [8]. Fur-         simple categories [14], as clean samples from difficult categories may
+thermore, it is generally considered that the decrease in accuracy             generate high loss values, which is particularly evident in the early
+caused by label noise is more detrimental compared to other types of           stages of training, thus limiting the application of these methods.
+noise, such as input noise [9]. Therefore, in recent years, numerous           Meanwhile, using nearest neighbors to only consider label noise within
+scholars have shown considerable interest in training classification           small neighborhoods is only a suboptimal solution [17], as adjacent
+networks with strong robustness to noise labels, as a serious challenge        examples may also be mislabeled at the same time.
+with significant practical significance [10].
+                                                                                   Thereupon, how to overcome the challenges of the two types of
+1.2. Motivation                                                                diagnostic methods mentioned above has stimulated the research mo-
+                                                                               tivation of this article:
+    To reduce the misleading effect of noisy labels on diagnostic mod-
+els, a large number of methods on combating noisy label have been                  We focus on how to organically combine the advantages of
+reported in recent years, which can be roughly divided into two cat-               label correction and sample separation, to construct a training
+egories: label correction [11] and sample separation [12]. E.g., Wang              paradigm with strong robustness to noisy labels without knowing
+et al. [11] proposed an iterative error self correction algorithm based            the specific noise intensity, thereby obtain the high-accuracy
+on softmax maximum activation. During the training process, labels are             diagnostic model?
+dynamically optimized and no longer fixed. By automatically modeling
+the distribution of correct labels, incorrect labels are gradually identi-     1.3. Innovation
+fied and corrected. INL-SSL [12] filters noisy labels during the training
+process by simultaneously cross training two diagnostic models with                With the aim of integrating the strengths of two anti-noise strate-
+each other.                                                                    gies, MgBIF (Multi-granularity Ball-Intra Fusion) is proposed for la-
+                                                                               bel correction and sample selection, enabling model training without
+    Label correction methods correct labels by using a combination             knowing the proportion of noisy label.
+of noisy labels and model predictions, typically involving a necessary
+iterative sample selection process [13]. Although label calibration has            Specifically, inspired by the idea of ‚Äò‚Äòlike draws to like‚Äô‚Äô (Fig. 1(b)),
+limitations in scenarios with a large number of samples or categories,         we assume that when embedding input samples into the latent feature
+and estimating the noise transfer matrix can be challenging [14], which        space, adjacent samples with similar attributes are likely to belong to
+holds great potential for achieving good performance on datasets with          the same class, so their labels should also be approximately consistent.
+high noise ratios [15].                                                        Subsequently, in the latent feature space, we construct Granular Balls
+                                                                               (GBs) [18] with each sample as the center of a GB. After assessing
+    On the other hand, sample separation attempts to filter out noisy          the consistency between the current label and other label information
+samples from clean samples via the small loss criterion [15], where
+
+                                                                            2
+F. Dunkin et al.                                                                                                                 Advanced Engineering Informatics 60 (2024) 102425
+
+within the GB, we correct and filter out labels with high confidence                    In Eq. (1), Ì†µÌ±ê represents the center of GB, Ì†µÌ±ü means the radius of GB,
+for supervised training, according to the extent of consistency. For                Ì†µÌ±• is the sample belonging to GB, and Ì†µÌ±§ is the weight corresponding to
+example, if a sample is labeled as ‚Äò‚ÄòDog‚Äô‚Äô, and other samples in the                sample Ì†µÌ±•.
+GB constructed around it are also labeled as ‚Äò‚ÄòDog‚Äô‚Äô, then the label
+is considered to have high confidence and can directly participate in                   The radius size of GB can intuitively indicate the granularity size
+the supervised learning process (see Fig. 1(b)). Conversely, when other             during the clustering process. Generally, in application cases based on
+samples in the GB are labeled as different categories (such as ‚Äò‚ÄòCat‚Äô‚Äô,             traditional machine learning, using the average distance as the radius
+‚Äò‚ÄòPerson‚Äô‚Äô, ‚Äò‚ÄòChick‚Äô‚Äô, etc.), then the confidence is regarded as low, and           can better fit the dataset‚Äôs distribution, while using the half diameter
+the label requires correction or is directly discarded.                             determined by the maximum distance can achieve better coverage [19].
+
+    As shown in Fig. 1(c), at the algorithm design level, MgBIF seam-                   In early GB-based works, the label of the majority class sample in
+lessly integrates label correction and sample selection by applying the             GB (i.e. the number of samples belonging to that class is greater than
+principle of ‚Äò‚Äòlike draws to like‚Äô‚Äô with GB. To address the challenge of            any other class) was used as the label of that GB, also known as the
+limited applicability for traditional label correction strategies, primarily        decision attribute, and the percentage of majority class samples in the
+stemming from the difficulty in estimating the noise transfer matrix, we            total number of samples in GB was referred to as the purity of GB
+constructed a simple and easily implementable label correction method,              (Eq. (2)).
+which utilizes information fusion within the GB to generate pseudo
+labels as a reference. With the goal of preventing similar mislabeling              ‚éß                 Ì†µÌ±ù =        ‚àë              1(Ì†µÌ±¶Ì†µÌ±ñ =Ì†µÌ±¶Ì†µÌ∞∫Ì†µÌ∞µ  )
+of neighboring samples from misleading the sample selection process,                ‚é™                                Ì†µÌ±¶Ì†µÌ±ñ ‚ààÌ†µÌ∞∫Ì†µÌ∞µ
+based on the concept of purity in GB, a noise intensity estimation
+strategy is designed to adaptively adjust the granularity of GB and                                               ‚àë              1(Ì†µÌ±¶Ì†µÌ±ñ ‚ààÌ†µÌ∞∫Ì†µÌ∞µ)                        (2)
+the proportion of selected samples. Finally, a series of experiments                                                 Ì†µÌ±¶Ì†µÌ±ñ ‚ààÌ†µÌ∞∫Ì†µÌ∞µ
+validated the effectiveness and superiority of MgBIF, and the primary                                 1 (Ì†µÌ±¶Ì†µÌ±ñ     Ì†µÌ±¶Ì†µÌ∞∫Ì†µÌ∞µ )                          1 (Ì†µÌ±¶Ì†µÌ±ñ = Ì†µÌ±¶Ì†µÌ±ó )
+contributions of this study are as follows:                                         ‚é®  ‚àë                       =            >    ‚àë
+                                                                                    ‚é™
+     1. A simple yet effective strategy for estimating the intensity of                   Ì†µÌ±¶Ì†µÌ±ñ ‚ààÌ†µÌ∞∫Ì†µÌ∞µ                                   Ì†µÌ±¶Ì†µÌ±ñ ‚ààÌ†µÌ∞∫Ì†µÌ∞µ
+         noise labels has been designed through analyzing the purity of                                                               Ì†µÌ±¶Ì†µÌ±ó ‚â†Ì†µÌ±¶Ì†µÌ∞∫Ì†µÌ∞µ
+         GB, which provides an extremely easy to replicate for appli-               ‚é©
+         cations and algorithmic research in other engineering projects
+         where the intensity of label noise is uncertain.                               In Eq. (2), ‚Äò‚Äò1(‚ãÖ)‚Äô‚Äô is the conditional discriminant function, which
+                                                                                    means that when the condition is true, the output is 1. Conversely,
+     2. Unlike the conventional works that only focus on the implemen-              the value is 0. Ì†µÌ±¶Ì†µÌ±ñ represents the corresponding label of the sample Ì†µÌ±•
+         tation of GB based on traditional machine learning (e.g. Ref.              belonging to GB, where Ì†µÌ±¶Ì†µÌ∞∫Ì†µÌ∞µ is the label of GB and Ì†µÌ±ù represents the
+         [19]), this article verified the effectiveness of GB in the field of       purity of the current GB. Meanwhile, purity is commonly employed
+         deep learning by constructing GB for each sample in the latent             to assess GB quality, that is, if a purity of GB falls below the quality
+         feature space, which, to some extent, broadens the application             standards, the GB is reclassified into Ì†µÌ±ò new GBs (Ì†µÌ±ò ‚â• 1), in traditional
+         prospects of granular computing and related theories.                      granular-ball computing.
+
+     3. By fusing the sample distribution and label information within                  Considering the powerful representation capabilities of deep net-
+         GB, a robust supervised training approach, MgBIF, has been                 works that embed data into latent feature spaces, this article diverges
+         explored. MgBIF combines the advantages of label correction                from traditional GB methods. Instead of constructing GB on the entire
+         and sample separation and can effectively resist the negative              dataset at the data-level, GBs of corresponding granularity sizes are
+         applications of label noise, which lays the foundation for future          built at the feature level, specifically in the latent feature space, see
+         automatic annotators to replace manual annotation, aiming to               Fig. 1(c). The features corresponding to each sample are the ‚Äò‚ÄòÌ†µÌ±ê‚Äô‚Äô, and
+         achieve low-cost and efficient construction of datasets.                   the GB with corresponding granularity is constructed based on the
+                                                                                    estimated noise intensity, in order to generate a pseudo label of the
+2. Preliminary                                                                      sample for correcting the original label, for addressing the challenge
+                                                                                    of difficulty in estimating the noise transfer matrix or requiring a large
+                                                                                    amount of computational power estimation.
+
+2.1. Basic knowledge                                                                2.1.2. Multi-granularity information fusion based on DSmT
+                                                                                        In Dezert‚ÄìSmarandache Theory (DSmT) [20,21], the Frame of Dis-
+2.1.1. Granular-ball computing
+                                                                                    crimination (FoD) Ì†µÌª© represents the propositional space, which contains
+Definition 1 (Granular Ball). Let ÓâÑ be denoted as a global dataset, and             the basic information granules that need to be solved for the prob-
+a granular ball GB can be defined as a subset of ÓâÑ, i.e. GB ‚äÜ ÓâÑ, and                lem [22]. Then, the hyperpower set Ì†µÌ∞∑Ì†µÌª© ‚âú (Ì†µÌª©, ‚à™, ‚à©) generated based on
+this subset GB represents an information ‚Äò‚Äògrain‚Äô‚Äô in ÓâÑ, which can select           the Ì†µÌª© can generate information granules of different sizes through in-
+its members based on a specific criterion or attribute.                             tersection and union set operations according to its own definition [23].
+                                                                                    Generally speaking, the intersection operation between information
+Note: When constructing a GB, this work uses the Euclidean distance of              particles generates fine-grained information, while the union operation
+samples in the feature space as the criterion for selecting GB‚Äôs members,           can generate coarse-grained information, making the hyperpower set
+i.e., all features in a GB have a distance from the center of the GB less           space Ì†µÌ∞∑Ì†µÌª© generated based on FoD Ì†µÌª© suitable and beneficial to meet
+than radius of GB.                                                                  the needs of various problems [24].
+
+    Granular ball computing is an efficient and easy-to-implement multi-                Assuming that the FoD Ì†µÌª© is a finite set consisting of Ì†µÌ±õ exhaustive
+granularity method proposed by Xia et al. [18], due to the simple                   focal granules, mathematically represented as Ì†µÌª© = {Ì†µÌºÉ1, Ì†µÌºÉ2, ‚Ä¶ , Ì†µÌºÉÌ†µÌ±õ}, each
+geometric structure of a metasphere, which is defined by only two                   of which ({Ì†µÌºÉÌ†µÌ±ñ ‚à£ Ì†µÌ±ñ ‚àà [1, Ì†µÌ±õ]}) represents an information granule [25]. For
+parameters: radius and center. In conventional GB, the center is the                the general FoD Ì†µÌª©, if there is a given evidence source, define a mapping
+geometric center or centroid of all samples, and the radius can be equal            function Ì†µÌ±ö(‚ãÖ) ‚à∂ Ì†µÌ∞∑Ì†µÌª© ‚Üí [0, 1] that satisfies Eq. (3), where Ì†µÌ±ö(Ì†µÌ∞¥) is referred
+to the average distance from all samples in the GB to the center, but in            to as the basic belief assignment of focal element Ì†µÌ∞¥:
+some specific cases, the radius is also set as the maximum distance.
+                                                                                    Ì†µÌ±ö(‚àÖ) = 0,        ‚àë        Ì†µÌ±ö(Ì†µÌ∞¥) = 1                                             (3)
+
+                                                                                                      Ì†µÌ∞¥‚ààÌ†µÌ∞∑Ì†µÌª©
+
+                                                                                        Finally, for two multi-granularity evidence sources Ì†µÌ±ö1(‚ãÖ) and Ì†µÌ±ö2(‚ãÖ)
+
+                                                                                    belonging to the FoD Ì†µÌª©, the classic DSmT fusion rules, Ì†µÌ±öÌ†µÌ±ì(Ì†µÌª©) ‚âú
+                                                                                    [Ì†µÌ±ö1 ‚äó Ì†µÌ±ö2] (‚ãÖ), are as follows:
+
+{          1   ‚àëÌ†µÌ±õ      Ì†µÌ±•Ì†µÌ±ñ  or  1   ‚àëÌ†µÌ±õ      Ì†µÌ±•Ì†µÌ±ñ  ‚ãÖ  Ì†µÌ±§Ì†µÌ±ñ,  Ì†µÌ±•Ì†µÌ±ñ ‚àà Ì†µÌ∞∫Ì†µÌ∞µ  (1)     ‚àÄÌ†µÌ∞∂ ‚àà Ì†µÌ∞∑Ì†µÌª©, Ì†µÌ±öÌ†µÌ±ì(Ì†µÌª©)(Ì†µÌ∞∂) = ‚àë Ì†µÌ±ö1(Ì†µÌ∞¥)Ì†µÌ±ö2(Ì†µÌ∞µ)                                       (4)
+     Ì†µÌ±ê =  Ì†µÌ±õ                     Ì†µÌ±õ
+                  Ì†µÌ±ñ=1                   Ì†µÌ±ñ=1                                                                     Ì†µÌ∞¥,Ì†µÌ∞µ‚ààÌ†µÌ∞∑Ì†µÌª©
+     Ì†µÌ±ü =
+                  max (|Ì†µÌ±•Ì†µÌ±ñ ‚àí Ì†µÌ±ê|) or mean (|Ì†µÌ±•Ì†µÌ±ñ ‚àí Ì†µÌ±ê|)                                                         Ì†µÌ∞¥‚à©Ì†µÌ∞µ=Ì†µÌ∞∂
+                        ||                                     ||
+
+                                                                                 3
+F. Dunkin et al.                                                                                                                        Advanced Engineering Informatics 60 (2024) 102425
+
+    Among them, Ì†µÌ∞∂ is a focal element in the hyperpower set Ì†µÌ∞∑Ì†µÌª© of the              and sample requirements to complete high-precision diagnostic tasks,
+FoD Ì†µÌª© (similar to a category in classification task or a fault in diagnostic        which is particularly important when the training samples in the target
+task), and Ì†µÌ∞¥ and Ì†µÌ∞µ are both focal elements in the hyperpower set Ì†µÌ∞∑Ì†µÌª©.             domain are limited/insufficient.
+Thereupon, the approximate understanding of Ì†µÌ±öÌ†µÌ±ì(Ì†µÌª©)(Ì†µÌ∞∂) can be: when
+two independent models provide different decision results (Ì†µÌ±ö1 ‚Üí Ì†µÌ∞¥                      Although there are numerous reports proving the effectiveness of
+and Ì†µÌ±ö2 ‚Üí Ì†µÌ∞µ), and the decisions of the two models are fused to output               the aforementioned intelligent fault diagnosis methods, especially in
+decision result, the confidence level Ì†µÌ±öÌ†µÌ±ì(Ì†µÌª©)(Ì†µÌ∞∂) of the decision result is Ì†µÌ∞∂.     extracting fault features from complex and large-scale datasets, their
+In addition, due to the confidence value being between [0, 1], in some               effectiveness largely depends on the accuracy of the training set labels.
+tasks, Ì†µÌ±öÌ†µÌ±ì(Ì†µÌª©)(Ì†µÌ∞∂) is used to represent the probability that the category of        Whilst the issue of noisy labels is widely present in industrial prac-
+input samples given by the fused model belongs to Ì†µÌ∞∂.                                tice, which poses serious challenges to the performance of diagnostic
+                                                                                     models. Ergo, this work focuses on developing fault diagnosis methods
+2.2. Related works                                                                   with strong robustness to noise labels, aiming to expand the application
+                                                                                     scope of intelligent diagnosis algorithms.
+
+2.2.1. Data-driven intelligent fault diagnosis                                       2.2.2. Learning with noisy labels
+    Due to the crucial importance of the safety and reliability of com-                  As a fundamental challenge in the field of pattern recognition,
+
+plex systems for modern industrial operations [26], fault diagnosis                  learning with noisy labels has attracted much attention from both
+has received increasing attention and has been widely applied in                     academia and industry, and has been widely studied in recent works,
+many fields, including intelligent transportation [27], industrial pro-              becoming a hot topic [10]. Currently, the mainstream technological
+cesses [28], and aerospace engineering [29] etc. Traditional fault                   approaches for learning from noisy labels include designing robust loss
+diagnosis methods were roughly divided into five categories [30]: (1)                functions [39], estimating noise transfer matrices [40], selecting high-
+methods based on hardware redundancy; (2) Signal processing based                    confidence examples [41], generating pseudo labels [42], etc. Overall,
+methods; (3) Model based methods; (4) A data-driven approach; (5)                    these methods can be roughly classified into two categories, namely
+Knowledge based methods.                                                             label correction and sample separation.
+
+    In recent years, with the development of deep learning, computer                     Label correction methods have shown promise in various studies,
+science, big data, sensor technology, etc., fault diagnosis technology has           but they may lead to performance degradation in cases of high noise
+undergone tremendous changes [31]. Currently, these fault diagnosis                  rates and a large number of categories. For instance, Ref. [43] estimates
+technologies are evolving into more intelligent and widely used tools,               the noise transfer matrix by correcting losses obtained from deep neural
+which can be collectively referred to as data-driven intelligent fault               networks trained on noisy datasets, while Refs. [44,45] gradually adjust
+diagnosis or deep learning based fault diagnosis. For example, TFT [32]              data labels based on network prediction labels, but they have only
+embeds physically meaningful time‚Äìfrequency transformation methods                   demonstrated competitive results in low noise environments.
+as trainable preprocessing layers into traditional convolutional layers,
+which not only improves diagnostic performance but also reveals the                      Inspired by the fact that noisy samples have higher losses during
+logical basis of convolutional neural network prediction in frequency                early training periods, early sample separation techniques were more
+domain views. LiConvFormer [33] has designed a separable multi-scale                 likely to design loss functions with high discrimination [14,15]. Sim-
+convolution block to address the issue of overly complex intelligent                 ilarly, a series of Co-training methods, such as JoCoR [46], employ
+diagnostic models, which result in higher hardware requirements and                  a strategy of training two networks to perform each other‚Äôs sample
+limited industrial application scenarios. And this block is used to extract          selection and have achieved remarkable results. On the other hand,
+local receptive field features of vibration signals, and a broadcast                 Sel-CL [47] uses contrastive learning to enhance the robustness of
+self attention module has been developed to capture key fine-grained                 classification tasks, which requires training only one network, and
+features of the signal globally while avoiding tedious operations such as            leverages nearest neighbors to select confidence pairs for supervised
+matrix multiplication and multidimensional idempotence. In summary,                  contrastive learning.
+these methods not only improve the accuracy of diagnosis, but also
+accelerate the fault detection process.                                                  Unlike these methods, we do not design any complex loss func-
+                                                                                     tions to estimate the noise transfer matrix or introduce other models
+    However, significant domain changes (including time-varying en-                  to generate pseudo-labels. Instead, MgBIF simply achieves the label
+vironments, different operating modes, differences between homoge-                   correction goal by fusing the feature distribution and label information
+neous systems, and performance degradation) may render previously                    in the corresponding GB of each sample, making the label correction
+established fault diagnosis models ineffective [34]. Accordingly, rea-               strategy adopted by MgBIF highly scalable and easy to implement.
+sonable adjustments to system modeling and feature extraction for                    Furthermore, in the interest of verifying the robustness of the proposed
+domain transition problems [26] are necessary for successful fault diag-             sample separation strategy for supervised learning and minimizing the
+nosis tasks, which has given rise to many transfer learning based fault              number of network parameters to be trained, MgBIF avoids introducing
+diagnosis strategies in the past decade [35]. Such as, maximum mean                  contrastive learning processes or other sample screening strategies
+square discrepancy [36] enhances the transfer diagnostic performance                 based on twin networks. Contrarily, it directly estimates the noise
+of deep domain adaptation methods by comprehensively reflecting                      intensity of dataset based on the purity of GB. Subsequently, MgBIF
+the mean and variance information of data samples in the reproduc-                   separates a certain number of instances with high-confidence labels
+ing kernel Hilbert space; Relationship transfer domain generalization                from the corrected data for supervised training.
+network [37] has achieved indirect measurement and reduced the
+distribution difference between the source domain and the invisible                  3. Multi-granularity ball-intra fusion
+target domain, and thus the diagnostic model meets the requirements of
+real-time diagnosis in practical engineering; Deep discriminative trans-             For  any  dataset  D  =  (ÓâÑ, ÓâÖ)  =  {(Ì†µÌ±•Ì†µÌ±ñ  ,  Ì†µÌ±¶Ì†µÌ±ñ  )}Ì†µÌ±õ      where  the  presence
+fer learning network [38] enhances the distribution alignment of the
+diagnostic model by designing a joint distribution adaptive mechanism.                                                                        Ì†µÌ±ñ=1
+Based on current development, the main characteristics of transfer
+learning based diagnostic methods can be summarized as: by fully                     of noisy labels is uncertain, we define the label information that is
+and effectively utilizing transferable knowledge in the source domain,
+using less target domain data to identify other necessary knowledge,                 consistent with the true target Ì†µÌ±åÌ†µÌ±ñ as the ‚Äò‚Äòtrue label‚Äô‚Äô Ì†µÌ±¶+Ì†µÌ±ñ , while label
+and thus having the advantage of splicing low computational load                     information that is inconsistent is termed the ‚Äò‚Äònoisy label‚Äô‚Äô Ì†µÌ±¶Ì†µ‚àíÌ±ñ .
+
+                                                                                         MgBIF is based on the principle of ‚Äò‚ÄòLike draws to like‚Äô‚Äô, involving
+
+                                                                                     the initial construction of multi-granularity GBs, subsequent correction
+
+                                                                                     of some Ì†µÌ±¶Ì†µ‚àíÌ±ñ to Ì†µÌ±¶Ì†µ+Ì±ñ , and the selection of as many Ì†µÌ±¶+Ì†µÌ±ñ parameters as possible
+                                                                                     during the supervised learning parameter optimization process, which
+
+                                                                                     is done to prevent the misleading influence of Ì†µÌ±¶‚àíÌ†µÌ±ñ on the model, as so to
+
+                                                                                  4
+F. Dunkin et al.                                                                                                                                        Advanced Engineering Informatics 60 (2024) 102425
+
+enhance training robustness. As depicted in Fig. 1(c), MgBIF comprises                               3.2. Fusing information within GBs to correct labels
+three additional components in addition to the parameter optimization
+process: building GBs and estimating noise intensity (Section 3.1), fus-                                 After completing a rough estimation of noise intensity of the dataset,
+ing information within GBs to correct labels (Section 3.2), and selecting                            MgBIF updated the granularity of GBs, Ì†µÌ±õÌ†µÌ±ê of Eq. (9), based on the
+samples (Section 3.3).                                                                               estimated noise intensity. That is, the more noisy the environment, the
+                                                                                                     coarser the GBs are needed to fuse as rich information as possible to
+    In this work, we intentionally refrained from introducing any spe-                               ensure the reliability of the corrected labels. Conversely, fine-grained
+cific modifications to the model parameter optimization process when                                 methods are used to reduce the potential interference that may exist
+compared to traditional supervised learning, to evaluate the effective-                              in samples distributed in the intersection area of different feature
+ness of MgBIF more uncontroversially. In other words, for a model                                    distributions and reduce computational power requirements, under low
+Ì†µÌ±ì (Ì†µÌºÉ; ‚ãÖ) = Ì†µÌ±ì (Ì†µÌºÉÌ†µÌ±ê ; Ì†µÌ±ì (Ì†µÌºÉÌ†µÌ±è; ‚ãÖ)), we utilized cross-entropy as the loss function                or medium noise intensity environments.
+(Eq. (5)), to measure the disparity between the predictions Óàº ‚àà RÌ†µÌ∞µ√óÌ†µÌ∞∂
+and the corresponding input label information from the dataset ÓâÖ ‚àà                                   Ì†µÌ±õÌ†µÌ±ê = Ì†µÌ±õÌ†µÌ±í + (1 ‚àí Ì†µÌ±ÅÌ†µÌ∞º) √ó Ì†µÌ±ÅÌ†µÌ±ê                                                                  (9)
+RÌ†µÌ∞µ√óÌ†µÌ∞∂ . Subsequently, we computed gradients (‚àá(Ì†µÌ±ôÌ†µÌ±úÌ†µÌ±†Ì†µÌ±†Ì†µÌ∞∂Ì†µÌ∞∏ (ÓâÖ, Óàº)) for all
+model parameters (Ì†µÌºÉ) based on this loss and proceeded to optimize the                                   Ì†µÌ±ÅÌ†µÌ±ê is a value for supplementary granularity, which was set to 100
+model parameters using gradient descent (Eq. (6)).                                                   in this study, and the goal of adding Ì†µÌ±õÌ†µÌ±í here is to prevent the updated
+                                                                                                     granularity from being too fine in certain cases where the Ì†µÌ±ÅÌ†µÌ∞º (Eq. (8))
+                           ‚àí1       Ì†µÌ∞µ Ì†µÌ∞∂                                                            is too large, resulting in the constructed GBs losing the ability to reflect
+                             Ì†µÌ∞µ                                                                      adjacent sample information.
+Ì†µÌ±ôÌ†µÌ±úÌ†µÌ±†Ì†µÌ±†Ì†µÌ∞∂Ì†µÌ∞∏ (ÓâÖ,  Óàº)  =             ‚àë‚àë       Ì†µÌ±¶(Ì†µÌ±ñÌ†µÌ±ê)  ‚ãÖ  log(Ì†µÌ±ùÌ†µ(Ì±ñÌ†µÌ±ê ) )     (5)
+                                                                                                         Subsequently, inspired by DSmT [49] (see Eq. (4)), MgBIF measures
+                                      Ì†µÌ±ñ Ì†µÌ±ê                                                          the similarity between samples in GBs in the latent feature space using
+                                                                                                     the normalized Ì†µÌ±ô1 loss (Ì†µÌ±ôÌ†µÌ±úÌ†µÌ±†Ì†µÌ±†Ì†µÌ±ô1 (Ì†µÌ±ù, Ì†µÌ±¶) = |Ì†µÌ±ù ‚àí Ì†µÌ±¶|), and uses this similarity as
+Ì†µÌºÉÌ†µÌ±í  ‚à∂=  Ì†µÌºÉÌ†µÌ±í‚àí1  ‚àí  Ì†µÌªºÌ†µÌ±í  Ì†µÌºï    (Ì†µÌ±ôÌ†µÌ±úÌ†µÌ±†Ì†µÌ±†Ì†µÌ∞∂Ì†µÌ∞∏ (ÓâÖ,  Óàº ))                      (6)                    the weights (also understood as beliefs in DSmT).
+                           Ì†µÌºïÌ†µÌºÉ
+                                                                                                         Using a weighted average strategy (Eq. (10)), the label information
+    Here, ‚Äò‚ÄòÌ†µÌ∞µ‚Äô‚Äô represents the number of samples in a batch during the                              of samples in each GB (Ì†µÌ∞∫Ì†µÌ∞µÌ†µÌ±ñ) except for the center sample of ball (Ì†µÌ±ßÌ†µÌ±ñ) is
+training process, ‚Äò‚ÄòÌ†µÌ∞∂‚Äô‚Äô is the number of categories, Ì†µÌ±ù(Ì†µÌ±ñÌ†µÌ±ê) refers to the                         fused to generate pseudo labels (Ì†µÃÉÌ±¶Ì†µÌ±ñ) for label correction.
+model‚Äôs predicted probability that the Ì†µÌ±ñth sample belongs to category
+c, and Ì†µÌ±¶Ì†µ(Ì±ñÌ†µÌ±ê) is the same. Ì†µÌºÉÌ†µÌ±í represents the parameters of the model after
+the Ì†µÌ±íth iteration optimization, and Ì†µÌªºÌ†µÌ±í is the learning rate during the Ì†µÌ±íth
+
+optimization of the model parameters.
+
+3.1. Building GBs and estimate noise intensity
+
+    Unlike traditional GB, MgBIF allows for overlapping regions be-                                  ‚éß Ì†µÃÉÌ±¶Ì†µÌ±ñ                ‚àë        ‚ààÌ†µÌ∞∫Ì†µÌ∞µÌ†µÌ±ñ Ì†µÌ±§Ì†µÌ±ñÌ†µÌ±ó ‚ãÖone-hot(Ì†µÌ±¶Ì†µÌ±ó       )
+                                                                                                     ‚é™                         Ì†µÌ±ßÌ†µÌ±ó
+tween two GBs, meaning that some samples belong to multiple GBs                                                          =                                                 ,  Ì†µÌ±ßÌ†µÌ±ó ‚â† Ì†µÌ±ßÌ†µÌ±ñ
+                                                                                                                                          ‚àë                Ì†µÌ±§Ì†µÌ±ñÌ†µÌ±ó
+simultaneously, as MgBIF requires constructing corresponding GBs for                                                                         Ì†µÌ±ßÌ†µÌ±ó ‚ààÌ†µÌ∞∫Ì†µÌ∞µÌ†µÌ±ñ                                             (10)
+
+each sample in the latent feature space to generate pseudo label in-                                 ‚é®                                    Ì†µÌ±ôÌ†µÌ±úÌ†µÌ±†Ì†µÌ±†Ì†µÌ±ô1 (Ì†µÌ±ßÌ†µÌ±ñ ‚àíÌ†µÌ±ßÌ†µÌ±ó )
+                                                                                                                                              max Ì†µÌª•Ì†µÌ±ß
+formation for correcting the current label of the sample. In the actual                              ‚é™  Ì†µÌ±§Ì†µÌ±ñÌ†µÌ±ó           =  Ì†µÌ±í(1‚àí2√ó                                  )
+                                                                                                     ‚é©
+operation process, the GB corresponding to the input sample Ì†µÌ±•Ì†µÌ±ñ is
+recorded as Ì†µÌ∞∫Ì†µÌ∞µÌ†µÌ±ñ = (Ì†µÌ±êÌ†µÌ±ñ, Ì†µÌ±üÌ†µÌ±ñ), and the center Ì†µÌ±êÌ†µÌ±ñ is the position of the                            max Ì†µÌª•Ì†µÌ±ß is the value of Ì†µÌ±ôÌ†µÌ±úÌ†µÌ±†Ì†µÌ±†Ì†µÌ±ô1 for the two farthest features on the
+corresponding feature Ì†µÌ±ßÌ†µÌ±ñ = Ì†µÌ±ì (Ì†µÌºÉÌ†µÌ±è; Ì†µÌ±•Ì†µÌ±ñ) in the latent feature space, while                      entire training set in the latent feature space, and Ì†µÌ±§Ì†µÌ±ñÌ†µÌ±ó represents the
+the radius Ì†µÌ±üÌ†µÌ±ñ is equal to the distance from the feature point Ì†µÌ±õth farthest                        weight used in weighted averaging.
+from Ì†µÌ±ßÌ†µÌ†µÌ±ñÌ±õ to Ì†µÌ±ßÌ†µÌ±ñ, i.e. Eq. (7), which ensures that each constructed Ì†µÌ∞∫Ì†µÌ∞µÌ†µÌ±ñ must
+include the feature distribution information of Ì†µÌ±õ samples.                                              Simultaneously, using the estimated noise intensity to assign confi-
+                                                                                                     dence/belief to each current label in the dataset (i.e., the more noisy
+{ Ì†µÌ±üÌ†µÌ±ñ = |Ì†µÌ±ßÌ†µÌ†µÌ±ñÌ±õ ‚àí Ì†µÌ±ßÌ†µÌ±ñ|, Ì†µÌ±êÌ†µÌ±ñ = Ì†µÌ±ßÌ†µÌ±ñ = Ì†µÌ±ßÌ†µ0Ì±ñ                                 (7)                    the dataset, the lower the belief value of the original label, and vice
+    |Ì†µÌ±ßÌ†µÌ†µÌ±ñÌ±õ ‚àí Ì†µÌ±ßÌ†µÌ±ñ| > |Ì†µÌ±ßÌ†µÌ†µÌ±ñÌ±ó ‚àí Ì†µÌ±ßÌ†µÌ±ñ|, Ì†µÌ±õ > Ì†µÌ±ó ‚â• 0                                                   versa, see Eq. (11) for details), we can view the generated pseudo label
+                                                                                                     and original label as two different discriminant frameworks‚Äô decision
+      In this study, the hyperparameter n used to control the granularity                            results for the current sample. Finally, using the idea of fusing multi-
+                                                                                                     source information in classic DSmT to eliminate uncertainty, these two
+of GB includes two: one Ì†µÌ±õÌ†µÌ±í is used to estimate the noise intensity, which                          decision results can be fused to complete label correction .
+is fixed at 30, and the other Ì†µÌ±õÌ†µÌ±ê is used to correct the label, which
+changes linearly with the estimated noise intensity.                                                 {                   = Ì†µÌ±¶‚Ä≤Ì†µÌ±ñ ‚ãÖ Ì†µÃÉÌ±¶Ì†µÌ±ñ                                      1‚àíÌ†µÌ±Å Ì†µÌ∞º        1‚àíÌ†µÌ±Å Ì†µÌ∞º  (11)
+                                                                                                          Ì†µÌ±¶Ì†µÌ±ñ                                                                  Ì†µÌ∞∂             Ì†µÌ∞∂
+    After constructing Ì†µÌ∞∫Ì†µÌ∞µ(Ì†µÌ±í) = {Ì†µÌ∞∫Ì†µÌ∞µÌ†µÌ±ñ ‚à£ Ì†µÌ∞∫Ì†µÌ∞µÌ†µÌ±ñ = (Ì†µÌ±ßÌ†µÌ±ñ, |Ì†µÌ±ßÌ†µÌ†µÌ±ñÌ±õÌ†µÌ±í ‚àí Ì†µÌ±ßÌ†µÌ±ñ|), Ì†µÌ±ñ ‚àà [1, Ì†µÌ±õ]} on                         =  one-hot(Ì†µÌ±¶Ì†µÌ±ó )                 √ó (Ì†µÌ±ÅÌ†µÌ∞º      ‚àí              )  +
+the entire dataset with a unified granularity of ne, we calculated the                                    Ì†µÌ±¶‚Ä≤Ì†µÌ±ñ
+
+purity (see Eq. (8)) of all GBs in Ì†µÌ∞∫Ì†µÌ∞µ(Ì†µÌ±í) and used this to estimate the                                In Eq. (11), Ì†µÌ±¶Ì†µÌ±ñ indicates the original label corresponding to sample
+                                                                                                     Ì†µÌ±•Ì†µÌ±ñ, while Ì†µÌ±¶Ì†µ‚Ä≤Ì±ñ is the revised original label based on the current noise
+noise intensity of the current dataset. Subsequently, considering that                               intensity estimation result, Ì†µÃÉÌ±¶Ì†µÌ±ñ is the pseudo label generated by GB, and
+
+purity was originally used to measure the consistency of sample distri-                              Ì†µÌ±¶Ì†µÌ±ñ represents the corrected label.
+
+bution in a GB, and we argue that the training process of supervised
+
+learning can be seen as a clustering process based on the attributes of
+
+category in feature spaces. We, therefore, counted the purity of all GBs                             3.3. Selecting samples
+
+throughout the entire training and used their mean as the estimated
+
+noise intensity (Eq. (8)). The main purpose of doing so is to estimate                                   The corrected label Ì†µÌ±¶Ì†µÌ±ñ is the fusion decision result of two discrimi-
+                                                                                                     native frameworks in the form of a variant of one hot encoding label.
+the noise intensity as concisely and easily as possible, and subsequent
+
+experimental results also demonstrate the effectiveness of this strategy.
+
+Ì†µÌ±Å Ì†µÌ∞º     =         Mean            (PurityÌ†µÌ±ñ)                                                       Therefore, the maximum value in each label max(Ì†µÌ±¶Ì†µÌ±ñ) can represent the
+                                                                                                     certainty of the label.
+                  Ì†µÌ∞∫Ì†µÌ∞µÌ†µÌ±ñ ‚ààÌ†µÌ∞∫Ì†µÌ∞µ(Ì†µÌ±í)
+                                     (                                     )                            Thereupon, MgBIF, with the aim of minimizing the interference of
+                                                                              (8)
+          =1√ó ‚àë                                                                                      noisy labels on model as much as possible, selects the top Ì†µÌ±õclean (Ì†µÌ±õclean =
+                                             max ‚àë one-hot(Ì†µÌ±¶Ì†µÌ±ó )
+              Ì†µÌ±õ√óÌ†µÌ±õÌ†µÌ±í Ì†µÌ∞∫Ì†µÌ∞µÌ†µÌ±ñ‚ààÌ†µÌ∞∫Ì†µÌ∞µÌ†µÌ±í                                                                  Ì†µÌ±ñÌ†µÌ±õÌ†µÌ±°(Ì†µÌ±õ √ó max(Ì†µÌ±ÅÌ†µÌ∞º, 0.02))) labels with the highest certainty and their corre-
+                                                    Ì†µÌ±¶Ì†µÌ±ó ‚ààÌ†µÌ∞∫Ì†µÌ∞µÌ†µÌ±ñ
+
+    In Eq. (8), Ì†µÌ±ÅÌ†µÌ∞º represents the estimated noise intensity, PurityÌ†µÌ±ñ                              sponding samples from the corrected labels (Ì†µÌ±¶Ì†µÌ±ñ‚Ä≤ = Ì†µÌ±éÌ†µÌ±üÌ†µÌ±îÌ†µÌ±öÌ†µÌ±éÌ†µÌ±•(Ì†µÌ±¶Ì†µÌ±ñ)), based
+denotes the purity of the corresponding Ì†µÌ∞∫Ì†µÌ∞µÌ†µÌ±ñ. The term ‚Äò‚Äòone-hot‚Äô‚Äô refers
+to one-hot encoding [48], employed to ensure the maximum value in                                    on the estimated noise intensity, and a                                                  new     clean dataset DÌ†µÌ±õclean =
+                                                                                                                                                                                              only    the clean dataset DÌ†µÌ±õclean
+label averages accurately reflects the purity of the corresponding GB.                               {(Ì†µÌ±•Ì†µÌ±ñ  ,  Ì†µÌ±¶Ì†µÌ±ñ  ‚Ä≤  )}Ì†µÌ±õclean   is   then  reconstructed                          using
+
+                                                                                                                             Ì†µÌ±ñ=1
+
+                                                                                                     for supervised learning.
+
+                                                                                                  5
+F. Dunkin et al.                                                                                                             Advanced Engineering Informatics 60 (2024) 102425
+
+3.4. Overview
+
+    In summary, as shown in Algorithm 1, MgBIF is equivalent to
+estimating the noise intensity of the current dataset by establishing
+GBs before the training of each epoch in traditional supervised learning
+processes, and correcting the current labels using DSmT‚Äôs multi-source
+uncertainty fusion strategy. Then, a batch of sample pairs with the high-
+est confidence are selected to reconstruct a clean dataset for training,
+thereby avoiding interference from noisy labels.
+
+Algorithm 1: Overview of MgBIF
+
+    Data:  Training  set  D      =  (ÓâÑ ,   ÓâÖ)  =  {(Ì†µÌ±•Ì†µÌ±ñ,  Ì†µÌ±¶Ì†µÌ±ñ  )}Ì†µÌ±õ
+
+                                                                     Ì†µÌ±ñ=1
+
+1 initialization: Model Ì†µÌ±ì (Ì†µÌºÉ; ‚ãÖ) = Ì†µÌ±ì (Ì†µÌºÉÌ†µÌ±ê ; Ì†µÌ±ì (Ì†µÌºÉÌ†µÌ±è; ‚ãÖ)); iterations Ì†µÌ±íÌ†µÌ±ùÌ†µÌ±úÌ†µÌ±ê‚ÑéÌ†µÌ±†;
+
+2 for Ì†µÌ±íÌ†µÌ±ùÌ†µÌ±úÌ†µÌ±ê‚Ñé ‚Üê Ì†µÌ±íÌ†µÌ±ùÌ†µÌ±úÌ†µÌ±ê‚ÑéÌ†µÌ±† do
+    Get ÓâÜ = {Ì†µÌ±ßÌ†µÌ±ñ ‚à£ Ì†µÌ±ßÌ†µÌ±ñ = Ì†µÌ±ì (Ì†µÌºÉÌ†µÌ±è; Ì†µÌ±•Ì†µÌ±ñ)}Ì†µÌ†µÌ±ñÌ±õ=1;
+3
+
+4 Get Ì†µÌ∞∫Ì†µÌ∞µÌ†µÌ±í based on Eq. (7) by ÓâÜ;
+
+5 Update Ì†µÌ±ÅÌ†µÌ∞º based on Eq. (8);
+
+6 Update Ì†µÌ∞∫Ì†µÌ∞µÌ†µÌ±ê based on Eq. (7);
+
+7 Get pseudo labels Ì†µÃÉÌ±¶Ì†µÌ±ñ based on Eq. (10);
+
+8   Update        labels  Ì†µÌ±¶Ì†µ‚Ä≤Ì±ñ  ‚Üê  Ì†µÌ±¶Ì†µÌ±ñ   based on Eq.          (11);
+9   Correct       labels  Ì†µÌ±¶Ì†µÌ±ñ   ‚Üê  Ì†µÌ±¶‚Ä≤Ì†µÌ±ñ  ‚ãÖ Ì†µÃÉÌ±¶Ì†µÌ±ñ and Ì†µÌ±¶Ì†µÌ±ñ‚Ä≤ ‚Üê   Ì†µÌ±éÌ†µÌ±üÌ†µÌ±îÌ†µÌ±öÌ†µÌ±éÌ†µÌ±•(Ì†µÌ±¶Ì†µÌ±ñ);
+
+10 Update Ì†µÌ±õclean ‚Üê Ì†µÌ±ñÌ†µÌ±õÌ†µÌ±°(Ì†µÌ±õ √ó max(Ì†µÌ±ÅÌ†µÌ∞º, 0.02));
+
+11 Select samples to reconstruct dataset DÌ†µÌ±õclean ;
+                  ‚Ä≤
+    for (ÓâÑ , ÓâÖ ) ‚Üê DÌ†µÌ±õclean do
+12
+
+13         Óàº = Ì†µÌ±ì (Ì†µÌºÉÌ†µÌ±ê ; Ì†µÌ±ì (Ì†µÌºÉÌ†µÌ±è; ÓâÑ));
+
+                                                  ‚Ä≤
+           Calculate losses Ì†µÌ±ôÌ†µÌ±úÌ†µÌ±†Ì†µÌ±†Ì†µÌ∞∂Ì†µÌ∞∏ (ÓâÖ , Óàº) based on Eq. (5);
+14
+
+15         Update Ì†µÌºÉ based on Eq. (6).
+
+16 end
+
+17 end
+
+    Result: Output the trained model Ì†µÌ±ì (Ì†µÌºÉ; ‚ãÖ)
+
+4. Experimental verification and discussion                                                                                        Fig. 2. Test rigs for collecting the three datasets used in this work.
+
+4.1. Experimental settings                                                                                                   1. SB dataset : based on the location of the fault, SB includes six
+                                                                                                                                 different types of faults and healthy bearings, totaling seven
+4.1.1. Dataset description                                                                                                       types of signals, i.e. seven classification tasks. Among them, six
+    With the goal of analyzing and verifying the effectiveness and                                                               types of faults are distributed: faults occur in the inner ring, in
+                                                                                                                                 the outer ring, in the ball, in the inner and outer rings, in the
+superiority of MgBIF, we conducted a series of experiments on three                                                              inner ring and ball, and in the outer ring and ball. All faults
+bearing fault diagnosis datasets (see Table 1 and Fig. 2), including two                                                         exist in the form of a gap with a depth of 0.2 mm, a width of
+open-source datasets and a self-made dataset (SM).                                                                               0.1 mm and a length of 0.1 mm. The sampling frequency of the
+                                                                                                                                 original data is 12 kHz, and the motor speed during collection
+    For the open-source datasets, we used a single bearing fault dataset                                                         is 1460 ¬± 17 rpm, including four different load conditions: 0.0,
+(SB1) [50] with a working condition under four different loads, and                                                              0.1, 0.2, and 0.3 NM. After obtaining the raw data, the original
+a multi-bearing fault location dataset (MB2) [51] with three different                                                           time-series signal was divided into 600 signal segments in the
+working conditions under full load. While, the SM dataset is a single                                                            form of every 1024 consecutive sampling points, and divided
+bearing diagnostic dataset for degree of damage as well as type of fault,                                                        into a training set test set in a 1:1 ratio. Therefore, the total
+referred to the experimental settings of the two datasets mentioned                                                              training and testing sets each contain 8400 samples (seven types
+above.                                                                                                                           of samples under four load conditions).
+
+    The similarity among the three datasets is that all data in the                                                          2. MB dataset : As a multi bearing fault location dataset, MB in-
+dataset is stored in the form of one-dimensional time-series signals,                                                            cludes different status data of the proximal and distal bearings.
+which are used to record the vibration intensity of bearings during                                                              Similar to SB, in the MB category, both proximal and distal
+mechanical operation. In addition, the model of all diagnosed bearings                                                           bearings include seven different types of states, namely healthy
+is ssuc204, and the model of the acceleration sensor used for collecting                                                         running bearings, faults occurring in the inner ring, in the outer
+vibration signals is ct1010L. Meanwhile, the magnetic load with HB-                                                              ring, in the ball ring, in the inner and outer ring, in the inner
+05M of model is used to simulate different load conditions. On the other                                                         ring and ball, and in the outer ring and ball. All faults exist in
+hand, there are certain differences among the three datasets in terms                                                            the form of gaps with a depth of 0.2 mm and a width and length
+of operating conditions and the types of faults to be diagnosed.                                                                 of 0.1 mm. Thus, MB is a 49 class diagnostic task. The sampling
+                                                                                                                                 frequency of the original data is 12 kHz, and there are three
+   1 https://github.com/Fir-Dunkin/Open-source-datasets/tree/Dataset/                                                            different operating states of the motor speed during collection,
+Dataset%20of%20SANet
+
+   2 https://github.com/Fir-Dunkin/Open-source-datasets/tree/Dataset/
+Dataset%20of%20MgNet
+
+                                                                                                                          6
+F. Dunkin et al.                                                                                                                    Advanced Engineering Informatics 60 (2024) 102425
+
+                             Table 1                        SB                               MB                            SM
+                             Details of the datasets used.                                                                 16
+                                                            12                               12                            1,772.5¬±2.5
+                               Datasets                                                                                    2368¬±2
+                                                                                             1,772.5¬±2.5                   2960.5¬±1.5
+                               Frequency (kHz)                                                                             0.3
+                                                            1460¬±17                          2368¬±2                        0.3
+                               Motor speed (rpm)
+                                                                                             2960.5¬±1.5                    2048
+                               Load (N‚ãÖM)                                                                                  1 + 4 √ó 6 = 25
+                               Depth of fault (mm)          {0.0, 0.1, 0.2, 0.3}             0.3                           69375(3 √ó 25 √ó 925)
+                               Fault location                                                                              69375(3 √ó 25 √ó 925)
+                               Sample length (Points)       0.2                              0.2
+                               No. of categories
+                               No. of samples for training  {IR, OR, B, IR&OR, IR&B, OR&B}
+                               No. of samples for testing
+                                                            1024                             1024
+
+                                                            7                                7 √ó 7 = 49
+
+                                                            8400(4 √ó 7 √ó 300)                45864(3 √ó 49 √ó 312)
+
+                                                            8400(4 √ó 7 √ó 300)                45864(3 √ó 49 √ó 312)
+
+Table 2                                                     Value                            in the backbone MgNet are set to zero, and weights are randomly
+The implementation details.                                                                  initialized using the ‚Äò‚Äòkaiming_uniform_‚Äô‚Äô function in Ì†µÌ±ùÌ†µÌ±¶Ì†µÌ±°Ì†µÌ±úÌ†µÌ±üÌ†µÌ±ê‚Ñé. Using
+                                                            MgNet [51]                       LAMB [52] as the optimizer with 3 √ó 10‚àí3 √ó Ì†µÌ±èÌ†µÌ±éÌ†µÌ±°Ì†µÌ±ê‚ÑéÌ†µÌ±†Ì†µÌ±ñÌ†µÌ±ßÌ†µÌ±í of initial learning
+  Config                                                    LAMB [52]
+                                                            3 √ó 10‚àí3 √ó Ì†µÌ±èÌ†µÌ±éÌ†µÌ±°Ì†µÌ±ê‚ÑéÌ†µÌ±†Ì†µÌ±ñÌ†µÌ±ßÌ†µÌ±í                                                                                          256
+  Backbone
+  Optimizer                                                                         256      rate, and cosine annealing is used to gradually reduce the learning rate
+  Initial learning rate                                                                      to 0, during the training process. In addition, to ensure the credibility
+  Batch size                                                512                              of the experimental results, all accuracy values in the following text are
+  Weight decay                                              10‚àí2                             statistically obtained after repeating at least three experiments.
+  Optimizer momentum                                        Ì†µÌªΩ1 = 0.9, Ì†µÌªΩ2 = 0.999
+  Learning rate schedule                                    cosine decay [53]                4.2. Case I: Validation of effectiveness
+  Epochs                                                    100
+
+                                                                                             4.2.1. Analysis of overall experimental results
+
+                                                                                             To verify the effectiveness and superiority of MgBIF, we tested
+
+         i.e. [1770, 1775] rpm, [2366, 2370] rpm, and [2959, 2962] rpm,                      the performance of MgBIF and four state-of-the-art methods, i.e. Jo-
+         with a unified load intensity of 0.3 NM. After obtaining the raw
+         data, the original time-series signal was divided into 624 signal                   CoR [46](2020), Sel-CL [47](2022), UNICON [14](2022), and TCL [15]
+         segments in the form of every 1024 consecutive sampling points,
+         and divided into a training set test set in a 1:1 ratio. Therefore,                 (2023), in the environments with different noise intensities, and the
+         the total training and testing sets each contain 45864 samples
+         (312 samples for each type of bearing state at three different                      experimental results are summarized in Fig. 3 and Table 3. Among
+         speeds).
+     3. SM dataset : Following the construction conditions of the two                        them, JoCoR is a representative work based on co-training for anti label
+         open-source datasets mentioned above, there are also six types
+         of faults in SM, namely faults that occur in the inner ring, outer                  noise learning; Sel-CL‚Äôs anti noise approach is similar to MgBIF, which
+         ring, ball ring, inner and outer ring, inner ring and ball, and
+         outer ring and ball. However, unlike SB and MB, the length of                       selects adjacent distributions with consistent labels to construct clean
+         the gaps that make up SM faults is not uniform, with only a
+         uniform depth of 0.3 mm and a uniform width of 0.1 mm. While                        datasets; On the basis of co-training, UNICON solves the problem of
+         there are four types of gap lengths: 0.2 mm, 0.4 mm, 0.6 mm,
+         and 0.8 mm. Hence, the total number of fault types includes 24,                     imbalanced selection between simple and difficult samples through a
+         and with the addition of healthy bearings, the diagnosis of SM
+         has become a 25 classification task. The sampling frequency of                      unified selection mechanism; TCL is a win contrastive learning model
+         SM‚Äôs raw data is 16 kHz. At three different motor speeds ([1770,
+         1775], [2366, 2370], and [2959, 2962] rpm) four minutes of                          based on Gaussian mixture model for clean sample selection. The ‚Äò‚Äònoise
+         bearing operation vibration signals were collected, and the load
+         conditions were fixed at 0.3 NM After obtaining the raw data, the                   rates‚Äô‚Äô here refer to the proportion of the number of samples with noisy
+         original time-series signal was divided into 1850 signal segments                                                                                                number(ÓâÖ‚àí) .
+         in the form of every 2048 consecutive sampling points, and                          labels  in  the  dataset  to  the  total  number  of  samples,  i.e.  Ì†µÌ±ü  =
+         divided into a training set test set in a 1:1 ratio. Therefore, the                                                                                              number(ÓâÖ )
+         training and testing sets each contain 69375 distinct samples                       According to the experimental results in Table 3, compared to
+         (925 samples for each type of bearing state at three different
+         speeds).                                                                            the standard supervised learning (baseline) without any additional
+
+4.1.2. Implemental details                                                                   operations, MgBIF significantly improved the accuracy in each noisy
+    The implementation details of this work are shown in Table 2. In
+                                                                                             environment of all datasets, demonstrating the effectiveness of MgBIF
+order to ensure the fairness and repeatability, we used MgNet [51],3
+a time series data classification framework based on multi-granularity                       in enhancing the robustness of supervised learning under noisy label in-
+feature fusion, as the model in all experiments, and set the training
+iteration to 100 epochs uniformly. In the initialization phase, all biases                   terference. Meanwhile, MgBIF achieved optimal results in the vast ma-
+
+   3 https://github.com/Fir-Dunkin/Open-source-datasets/blob/Dataset/                        jority of noisy environments, and maintained suboptimal performance
+Dataset%20of%20MgNet/The%20code%20of%20MgNet.py
+                                                                                             very close to the optimal value in other cases (e.g. in the SB dataset with
+
+                                                                                             20% of noise rates, the accuracy of MgBIF is 99.963¬±0.022%, while the
+
+                                                                                             optimal accuracy is 99.967¬±0.031% of TCL, with an accuracy of less
+
+                                                                                             than 0.004% for both), which further demonstrates the effectiveness of
+
+                                                                                             MgBIF in combating noisy label. Concurrently, according to the mean
+
+                                                                                             accuracy summarized in Fig. 3, MgBIF achieved higher results than
+
+                                                                                             other methods on all datasets, thus verifying the superiority of MgBIF
+
+                                                                                             in anti noisy label interference tasks.
+
+                                                                                             4.2.2. Discussion on comparison with JoCoR
+                                                                                                 JoCoR is a representative work based on co-training to combat the
+
+                                                                                             interference of noisy labels. Compared to other methods, the accuracy
+                                                                                             of JoCoR decreases significantly in high noise environments, which
+                                                                                             is mainly because the sample screening mechanism based on decision
+                                                                                             differences is prone to significant conflicts in high noise environments,
+                                                                                             resulting in too many samples being eliminated and insufficient training
+                                                                                             sample size, thereby making the model difficult to converge. While
+                                                                                             MgBIF adopts the strategy of estimating the noise intensity with the
+                                                                                             purity of GBs, which can effectively avoid this issue and maintain the
+                                                                                             effectiveness in high noise environments.
+
+                                                                                          7
+F. Dunkin et al.                                                                              Advanced Engineering Informatics 60 (2024) 102425
+
+Fig. 3. Comparisons with state-of-the-art methods on four datasets. Among them, ‚Äò‚ÄòCE‚Äô‚Äô refers to the standard supervised training with loss function of cross entropy, i.e. baseline.
+The specific values for finer details are shown in Table 3.
+
+                  Table 3
+                  Comparison of MgBIF with Baseline(CE), JoCoR, Sel-CL, UNICON, and TCL on four datasets(where bold
+                  represents the optimal result, while underline emphasizes the suboptimal result)
+
+                  Dataset Method   Accuracy(%) under different noise rates
+
+                                   20%            40%                          60%            80%
+
+                      CE(Baseline) 80.273 ¬± 1.513 73.419 ¬± 1.830 62.421 ¬± 3.271 42.449 ¬± 9.016
+
+                      JoCoR [46]   97.238 ¬±0.658 96.281 ¬±0.911 89.203 ¬±1.023 81.823 ¬±3.426
+
+                  SB  Sel-CL [47]  92.428 ¬±1.590  90.081 ¬±1.769                75.249 ¬±2.576  51.482 ¬±4.694
+                                                  99.028 ¬±0.308                92.218 ¬±1.514  84.672¬±3.691
+                      UNICON [14] 99.438 ¬±0.072
+
+                      TCL [15]     99.967¬±0.031   99.182¬±0.451                 91.183¬±1.751   83.398 ¬± 3.243
+
+                      MgBIF(Ours) 99.963¬±0.022    99.881¬±0.019                 99.732¬±0.089   92.738¬±2.024
+
+                      CE(Baseline) 77.832 ¬± 1.270 49.414 ¬± 3.321 34.668 ¬± 4.394 14.551 ¬± 5.293
+
+                      JoCoR [46]   90.853 ¬± 1.125 86.450 ¬± 1.363 78.437 ¬± 1.113 48.657 ¬± 0.393
+
+                  MB  Sel-CL [47]  96.428 ¬± 1.962 93.106 ¬± 1.824 86.681 ¬± 2.379 67.362 ¬± 3.218
+
+                      UNICON [14] 94.976 ¬± 2.038 90.438 ¬± 2.282 81.968 ¬± 1.428 65.210 ¬± 2.194
+
+                      TCL [15]     98.002¬±1.821   92.774¬±2.723                 88.106¬±0.856   69.087¬±3.862
+
+                      MgBIF(Ours) 97.070¬±1.367    95.117¬±1.172                 93.164¬±1.758   77.977¬±2.492
+
+                      CE(Baseline) 88.574 ¬± 1.660 66.113 ¬± 1.074 41.113 ¬± 1.855 17.480 ¬± 1.372
+
+                      JoCoR [46]   91.005 ¬± 0.611 78.249 ¬± 0.659 59.391 ¬± 4.058 34.460 ¬± 2.857
+
+                  SM  Sel-CL [47]  100.000¬±0.00   100.000¬±0.00                 97.573¬±2.159   89.218 ¬± 1.208
+                                                  93.128¬±1.254
+                      UNICON [14] 98.218¬±0.216                                 82.658 ¬± 3.279 63.827 ¬± 5.872
+
+                      TCL [15]     100.000¬±0.00 100.000¬±0.00 96.586 ¬± 0.391 91.338¬±1.254
+
+                      MgBIF(Ours) 100.000¬±0.00 100.000¬±0.00 100.000¬±0.00 98.242¬±0.586
+
+4.2.3. Discussion on comparison with Sel-CL                                    4.2.4. Discussion on comparison with UNICON
+    Similarly, Sel-CL increases the model‚Äôs expressive power in the
+                                                                                   To solve the problem of disproportionate selection between simple
+feature space by contrastive learning, and then selects neighboring            and difficult samples, UNICON introduced a unified selection mecha-
+distributions with consistent labels to construct a clean dataset, thereby     nism based on Jensen‚ÄìShannon divergence on the basis of dual net-
+enhancing the robustness of supervised learning. However, there are            work joint training. From the results, UNICON achieved a significant
+certain differences between the attribute information that the feature         performance improvement compared to JoCoR. However, since Jensen‚Äì
+space constructed by contrastive learning focuses on when clustering           Shannon divergence is composed of two symmetric Kullback‚ÄìLeibler
+samples and the feature space constructed by classification recogni-           divergence, this means that when the two models are highly con-
+tion tasks, resulting in the space constructed based on contrastive            flicting, that is, when the two distributions of the decision results do
+learning failing to pay attention to the attribute information required        not overlap, Jensen‚ÄìShannon divergence is a constant and loses the
+for clustering in some cases, making it difficult to select a sufficient       role in measuring distribution differences, resulting in performance
+number of pure samples in a small amount of data, resulting in low             degradation in high noise environments. MgBIF fuses the information
+model accuracy. For example, in DSA and Throat datasets with fewer             within GB and the original label information based on DSmT, so that
+training samples, Sel-CL did not achieve satisfactory results. Therefore,      the distribution information of the corrected labels can be used to
+MgBIF did not use contrastive learning when constructing latent feature        represent the confidence of the current label in the category it belongs
+spaces, but instead fused feature distribution and label information           to. Besides, without introducing a certain loss function as an evaluation
+based on GBs in the feature space of supervised learning to evaluate the       criterion, the problem of sample screening mechanism failure in highly
+confidence of each label, thereby avoiding performance degradation on          conflicting situations is avoided.
+tasks with limited sample size.
+
+                                                                            8
+F. Dunkin et al.                                                                                                                Advanced Engineering Informatics 60 (2024) 102425
+
+                                                                                       Table 4
+                                                                                       The average accuracy achieved by constructing GBs with different granularity on four
+                                                                                       datasets.
+
+                                                                                       Noise rate           Average accuracy(%) at different granularity
+
+                                                                                                            20         40             60      80          Multi
+
+                                                                                       20%                  98.828     97.628         98.561  98.288      99.011
+                                                                                       40%                  98.137     98.437         98.071  97.771      98.333
+                                                                                       60%                  86.021     90.354         95.688  89.647      97.632
+                                                                                       80%                  74.628     76.961         80.294  86.628      89.652
+
+                                                                                       subsequent fusion of information within GB. Therefore, if similarity is
+                                                                                       not normalized, it can easily lead to significant changes in similarity
+                                                                                       during a training session due to differences in activation level, feature
+                                                                                       mapping method, etc. Whilst, if normalization is based on Eq. (10),
+                                                                                       the global distribution information introduced can be used to ensure
+                                                                                       that all weights generated by similarity are relative information and are
+                                                                                       not prone to drastic fluctuations with iteration, which is also the main
+                                                                                       reason why many current works use dimensionless cosine similarity to
+                                                                                       measure the similarity of features.
+
+                                                                                       Note: In early experimental validation, we also attempted to use cosine
+
+                                                                                       similarity or Wasserstein distance to evaluate the differences between
+
+                                                                                       samples, but the performance achieved was generally one to three
+
+                                                                                       percentage points lower than the performance of Ì†µÌ±ôÌ†µÌ±úÌ†µÌ±†Ì†µÌ±†Ì†µÌ±ô1 . We assume
+                                                                                       that this performance difference comes from the range of normalized
+
+                                                                                       Ì†µÌ±ôÌ†µÌ±úÌ†µÌ±†Ì†µÌ±†Ì†µÌ±ô1  values  ( 1 , Ì†µÌ±í)  greater  than  cosine  similarity  (‚àí1, 1),  making  the
+
+                                                                                                              Ì†µÌ±í
+
+                                                                                       discrimination more obvious and Eq. (10) taking into account certain
+
+                                                                                       global information. Therefore, MgBIF did not use the commonly used
+
+                                                                                       cosine similarity or Wasserstein distance to generate weights for fusing
+
+Fig. 4. Ablation experiment: The shaded part here represents the improved accuracy     information within GB.
+after introducing corresponding operations, i.e. the accuracy of MgBIF.
+                                                                                       Additionally, whether to select samples based on the estimated noise
+4.2.5. Discussion on comparison with TCL
+    TCL is a twin contrastive learning model that injects the predic-                  intensity seems to have the least impact on the accuracy of robustness.
+
+tions of the supervised model into a Gaussian Mixture Model (GMM),                     This is partly due to the fact that during the ablation experiment, the
+linking unlabeled latent variables with labeled noise annotations, and
+constructing the GMMs on the representation. Through GMM and                           selection threshold of the samples here borrowed from the trade off
+contrastive learning, the discriminative representation that is consistent
+with the estimated label is learned to handle noisy labels. The TCL                    strategy of constructing selection thresholds based on the mean of label
+is undoubtedly relatively successful (achieving excellent results on all
+three datasets; In terms of average accuracy, TCL Ì†µÌ±£Ì†µÌ±†. MgBIF is 93.432%               confidence in Sel-CL [47] and SoftMatch [54], to ensure fairness as
+Ì†µÌ±£Ì†µÌ±†.98.078% on SB, 86.992% Ì†µÌ±£Ì†µÌ±†. 90.832% on MB, and 96.981% Ì†µÌ±£Ì†µÌ±†.
+99.560% on MB.), but compared to training a single model, the con-                     much as possible; On the other hand, it also benefits from the corrected
+struction of twin models requires more computational power, and the
+construction of GMM is not as good as the fusion of GB with only two                   labels themselves and their ability to distinguish, which is why the
+hyperparameters. Hence, when facing certain application tasks with
+limited computing power, MgBIF is more competitive.                                    accuracy significantly decreases after removing the label correction
+
+4.3. Case II: Ablation experiments                                                     operation (the step 9 in Algorithm 1).
+
+    With the motivation to further analyze the sources of MgBIF‚Äôs                      Finally, to verify the rationality of MgBIF using multi-granularity
+effectiveness, we conducted a series of ablation experiments on three
+datasets to verify the necessity of normalizing similarity, correcting                 to construct GBs for subsequent label correction and sample screening,
+labels before label screening, and selecting samples based on the es-
+timated noise intensity. In MgBIF, normalizing similarity, correcting                  rather than using fixed granularity sizes. We calculated the average
+labels, and separating samples based on estimated noise intensity all
+have a positive impact on the robustness of supervised learning (see                   accuracy obtained under different noise environments in four datasets
+Fig. 4).
+                                                                                       after fixing the granularity radius of GB to 20, 40, 60, and 80, and the
+    Among them, after excluding the normalization for similarity
+(Eq. (10)), the accuracy decreased the most significantly, as evidenced                difference between the current multi granularity strategy, as shown in
+by the large proportion of shaded parts in all cases in the upper
+part of Fig. 4. The main reason for this phenomenon is that MgBIF                      Table 4.
+used the dimensional Ì†µÌ±ôÌ†µÌ±úÌ†µÌ±†Ì†µÌ±†Ì†µÌ±ô1 to measure the similarity of different
+entities in the feature space, and used the similarity as a weight for                 Obviously, the most intuitive information in Table 4 is that the
+
+                                                                                       more noisy the dataset, the coarser granularity required to synthesize
+
+                                                                                       more information, to comprehensively evaluate the credibility of the
+
+                                                                                       label and enhance the robustness of the training process. Conversely,
+
+                                                                                       finer granularity is needed to avoid the interference of too much
+
+                                                                                       additional information on the model. Simultaneously, the current multi
+
+                                                                                       granularity strategy adopted by MgBIF has achieved almost all the
+
+                                                                                       highest accuracy (‚Äò‚ÄòMulti‚Äô‚Äô in Table 4), which indirectly indicates the ra-
+
+                                                                                       tionality and necessity of constructing GBs with different granularity for
+
+                                                                                       subsequent operations in environments with different noise intensities.
+
+                                                                                       Moreover, the experimental results in Fig. 4 and Table 4 indirectly
+
+                                                                                       demonstrate the effectiveness of the noise intensity estimation strategy
+
+                                                                                       based on GBs purity. Thereupon, to further verify the reliability of the
+
+                                                                                       strategy in estimating noise intensity, we calculated the variation curve
+
+                                                                                       of the noise intensity estimated by MgBIF throughout the entire training
+
+                                                                                       process (see Fig. 5).
+
+                                                                                       During the training process, the proposed noise intensity estimation
+
+                                                                                       strategy, Eq. (8), failed to accurately estimate the proportion of noisy
+
+                                                                                    9
+F. Dunkin et al.                                                                                                                                Advanced Engineering Informatics 60 (2024) 102425
+
+                                                                                             CRediT authorship contribution statement
+
+                                                                                                 Fir Dunkin: Writing ‚Äì original draft, Methodology, Investigation,
+                                                                                             Conceptualization. Xinde Li: Writing ‚Äì review & editing, Supervision,
+                                                                                             Project administration, Funding acquisition. Chuanfei Hu: Validation,
+                                                                                             Software, Investigation. Guoliang Wu: Validation, Supervision, Project
+                                                                                             administration. Heqing Li: Formal analysis, Data curation. Xiaoyan
+                                                                                             Lu: Investigation, Data curation. Zhentong Zhang: Visualization, Data
+                                                                                             curation.
+
+                                                                                             Declaration of competing interest
+
+                                                                                                 The authors declare that they have no known competing finan-
+                                                                                             cial interests or personal relationships that could have appeared to
+                                                                                             influence the work reported in this paper.
+
+Fig. 5. The variation curve during training of estimated label noise intensity based on      Data availability
+the purity of GBs.                                                                               The authors do not have permission to share data.
+
+labels in a timely manner at the beginning of the training process. How-                     Acknowledgments
+ever, as the training progressed and the model‚Äôs representation ability
+gradually improved, Eq. (8) could approach the true noise intensity                              We would like to express our sincere gratitude to associate professor
+and ultimately accurately estimate the actual noise rate at around 80                        Hairui Fang from Northeast Electric Power University for providing us
+epochs, which demonstrates the effectiveness of this simple method,                          with the test rig,Fig. 2(c), which enabled us to complete the collection
+and provides an easy to implement reference/alternative solution for                         of the SM dataset. Meanwhile, we are also deeply thankful to all the re-
+noise intensity estimation for subsequent research about noisy labels.                       viewers and Chun-Hsien Chen, the Receiving editor, for their time and
+                                                                                             effort during the review process, as well as their valuable comments and
+4.4. The limitation and further works                                                        suggestions, which have been indispensable in enhancing the quality of
+                                                                                             our manuscript.
+    Although MgBIF has achieved significant performance improve-
+ments compared to other advanced methods, there are still some details                       References
+worth further research in the future to meet actual engineering needs:
+                                                                                               [1] H. Fang, J. An, B. Sun, D. Chen, J. Bai, H. Liu, J. Xiang, W. Bai, D. Wang,
+     1. MgBIF follows the fusion philosophy of DSmT by using pseudo                                   S. Fan, et al., Empowering intelligent manufacturing with edge computing: A
+         labels to correct original labels. However, it is commonly be-                               portable diagnosis and distance localization approach for bearing faults, Adv.
+         lieved that DSmT‚Äôs fusion performance is not ideal in high-                                  Eng. Inform. 59 (2024) 102246.
+         conflict environments. Consequently, it is possible to further ex-
+         plore the impact of different fusion strategies on label correction                   [2] X. Li, D. Fir, D. Jean, Multi-source information fusion: Progress and future, Chin.
+         to enhance its effectiveness.                                                                J. Aeronaut. Available online (2024) S1000936123004247.
+
+     2. Currently, MgBIF focuses on suppressing the misleading effects                         [3] L. Sun, T. Wang, W. Ding, J. Xu, Partial multilabel learning using fuzzy
+         of noisy labels in balanced datasets, similar to a laboratory                                neighborhood-based ball clustering and kernel extreme learning machine, IEEE
+         condition. However, in the real world, imbalanced datasets are                               Trans. Fuzzy Syst. 31 (7) (2023) 2277‚Äì2291.
+         more common. In fact, how to ensure the effectiveness of di-
+         agnostic models on imbalanced datasets has been a hot topic                           [4] C. Zhang, Z. Wang, G. Zhou, F. Chang, D. Ma, Y. Jing, W. Cheng, K. Ding, D.
+         in the industry. As a consequence, how to resist the misleading                              Zhao, Towards new-generation human-centric smart manufacturing in Industry
+         information of noisy labels in imbalanced or even long tailed                                5.0: A systematic review, Adv. Eng. Inform. 57 (2023) 102121.
+         datasets is also a future challenge worth paying attention to and
+         of great practical significance.                                                      [5] Z. Zhang, Y. Zuo, C. Lin, J. Wu, Language model as an annotator: Unsupervised
+                                                                                                      context-aware quality phrase generation, Knowl.-Based Syst. 283 (2024) 111175.
+5. Conclusion
+                                                                                               [6] A. Kirillov, E. Mintun, N. Ravi, H. Mao, C. Rolland, L. Gustafson, T. Xiao, S.
+    With the initial intent to resist the misleading influence of noisy la-                           Whitehead, A.C. Berg, W.-Y. Lo, et al., Segment anything, 2023, arXiv preprint
+bels on diagnostic models, this work proposes a robust supervised learn-                              arXiv:2304.02643.
+ing novel approach: MgBIF. Based on the fusion of internal information
+from multi-granularity granular balls, MgBIF integrates the advantages                         [7] S. Lan, X. Yang, Z. Yu, Z. Wu, J.M. Alvarez, A. Anandkumar, Vision transformers
+of two anti noisy labels interference techniques: label correction and                                are good mask auto-labelers, in: Proceedings of the IEEE/CVF Conference on
+sample separation. A series of experimental results conducted on three                                Computer Vision and Pattern Recognition, 2023, pp. 23745‚Äì23755.
+datasets confirmed the effectiveness and superiority of MgBIF, and
+verified the rationality of its design, which implies that datasets with                       [8] L. Li, Z. Shu, Z. Yu, X.-J. Wu, Robust online hashing with label semantic
+noise labels can also be used for training diagnostic models without                                  enhancement for cross-modal retrieval, Pattern Recognit. 145 (2024) 109972.
+worrying about model failure, in the future. Hence, MgBIF lays the
+groundwork for replacing expert annotators with automatic annotators                           [9] J. Wei, J. Wang, H. Huang, W. Jiao, Y. Yuan, H. Chen, R. Wu, J. Yi,
+to reduce costs and improve the efficiency of dataset construction.                                   Novel extended NI-MWMOTE-based fault diagnosis method for data-limited and
+                                                                                                      noise-imbalanced scenarios, Expert Syst. Appl. 238 (2024) 121799.
+
+                                                                                             [10] H. Song, M. Kim, D. Park, Y. Shin, J.-G. Lee, Learning from noisy labels with
+                                                                                                      deep neural networks: A survey, IEEE Trans. Neural Netw. Learn. Syst. (2022)
+                                                                                                      1‚Äì19.
+
+                                                                                             [11] H. Wang, Y.-F. Li, Iterative error self-correction for robust fault diagnosis of
+                                                                                                      mechanical equipment with noisy label, IEEE Trans. Instrum. Meas. 71 (2022)
+                                                                                                      1‚Äì13.
+
+                                                                                             [12] C. Cheng, X. Liu, B. Zhou, Y. Yuan, Intelligent fault diagnosis with noisy labels
+                                                                                                      via semisupervised learning on industrial time series, IEEE Trans. Ind. Inform.
+                                                                                                      19 (6) (2023) 7724‚Äì7732.
+
+                                                                                             [13] X. Xia, J. Deng, W. Bao, Y. Du, B. Han, S. Shan, T. Liu, Holistic label correction
+                                                                                                      for noisy multi-label classification, in: Proceedings of the IEEE/CVF International
+                                                                                                      Conference on Computer Vision, 2023, pp. 1483‚Äì1493.
+
+                                                                                         10
+F. Dunkin et al.                                                                                                                                     Advanced Engineering Informatics 60 (2024) 102425
+
+[14] N. Karim, M.N. Rizve, N. Rahnavard, A. Mian, M. Shah, Unicon: Combating label                 [41] F.R. Cordeiro, R. Sachdeva, V. Belagiannis, I. Reid, G. Carneiro, Longremix:
+         noise through uniform selection and contrastive learning, in: Proceedings of the                  Robust learning with high confidence samples in a noisy label environment,
+         IEEE/CVF Conference on Computer Vision and Pattern Recognition, 2022, pp.                         Pattern Recognit. 133 (2023) 109013.
+         9676‚Äì9686.
+                                                                                                   [42] M. Chen, H. Cheng, Y. Du, M. Xu, W. Jiang, C. Wang, Two wrongs don‚Äôt make a
+[15] Z. Huang, J. Zhang, H. Shan, Twin contrastive learning with noisy labels,                             right: Combating confirmation bias in learning with label noise, in: Proceedings
+         in: Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern                         of the AAAI Conference on Artificial Intelligence, Vol. 37, No. 12, 2023, pp.
+         Recognition, 2023, pp. 11661‚Äì11670.                                                               14765‚Äì14773.
+
+[16] Q. Wei, L. Feng, H. Sun, R. Wang, C. Guo, Y. Yin, Fine-grained classification with            [43] D. Hendrycks, M. Mazeika, D. Wilson, K. Gimpel, Using trusted data to train
+         noisy labels, in: Proceedings of the IEEE/CVF Conference on Computer Vision                       deep networks on labels corrupted by severe noise, Adv. Neural Inf. Process.
+         and Pattern Recognition, 2023, pp. 11651‚Äì11660.                                                   Syst. 31 (2018).
+
+[17] J. Wei, Z. Zhu, T. Luo, E. Amid, A. Kumar, Y. Liu, To aggregate or not? learning              [44] X. Ma, Y. Wang, M.E. Houle, S. Zhou, S. Erfani, S. Xia, S. Wijewickrema,
+         with separate noisy labels, in: Proceedings of the 29th ACM SIGKDD Conference                     J. Bailey, Dimensionality-driven learning with noisy labels, in: International
+         on Knowledge Discovery and Data Mining, 2023, pp. 2523‚Äì2535.                                      Conference on Machine Learning, PMLR, 2018, pp. 3355‚Äì3364.
+
+[18] S. Xia, Y. Liu, X. Ding, G. Wang, H. Yu, Y. Luo, Granular ball computing                      [45] D. Tanaka, D. Ikami, T. Yamasaki, K. Aizawa, Joint optimization framework for
+         classifiers for efficient, scalable and robust learning, Inform. Sci. 483 (2019)                  learning with noisy labels, in: Proceedings of the IEEE Conference on Computer
+         136‚Äì152.                                                                                          Vision and Pattern Recognition, 2018, pp. 5552‚Äì5560.
+
+[19] X. Peng, P. Wang, S. Xia, C. Wang, W. Chen, VPGB: A granular-ball based model                 [46] H. Wei, L. Feng, X. Chen, B. An, Combating noisy labels by agree-
+         for attribute reduction and classification with label noise, Inform. Sci. 611 (2022)              ment: A joint training method with co-regularization, in: Proceedings of the
+         504‚Äì521.                                                                                          IEEE/CVF Conference on Computer Vision and Pattern Recognition, 2020, pp.
+                                                                                                           13726‚Äì13735.
+[20] X. Li, J. Dezert, X.-H. Huang, Z.-D. Meng, X.-J. Wu, A fast approximate reasoning
+         method in hierarchical DSmT (A), Acta Electon. Sin. 38 (11) (2010) 2566.                  [47] S. Li, X. Xia, S. Ge, T. Liu, Selective-supervised contrastive learning with noisy
+                                                                                                           labels, in: Proceedings of the IEEE/CVF Conference on Computer Vision and
+[21] X. Li, W.-D. Yang, X.-J. Wu, D. Jean, A fast approximate reasoning method in                          Pattern Recognition, 2022, pp. 316‚Äì325.
+         hierarchical DSmT (B), Acta Electon. Sin. 39 (3A) (2011) 31.
+                                                                                                   [48] S. Okada, M. Ohzeki, S. Taguchi, Efficient partition of integer optimization
+[22] X. Li, X. Dai, J. Dezert, F. Smarandache, Fusion of imprecise qualitative                             problems with one-hot encoding, Sci. Rep. 9 (1) (2019) 13036.
+         information, Appl. Intell. 33 (2010) 340‚Äì351.
+                                                                                                   [49] Y. Dong, X. Li, J. Dezert, R. Zhou, K. Zuo, S.S. Ge, Graph-structure-based
+[23] X. Li, X. Huang, J. Dezert, F. Smarandache, Enrichment of qualitative beliefs                         multigranular belief fusion for human activity recognition, IEEE Trans. Neural
+         for reasoning under uncertainty, in: 2007 10th International Conference on                        Netw. Learn. Syst. (2023) 1‚Äì15.
+         Information Fusion, IEEE, 2007, pp. 1‚Äì8.
+                                                                                                   [50] H. Fang, J. Deng, D. Chen, W. Jiang, S. Shao, M. Tang, J. Liu, You can get
+[24] X. Li, X. Li, H. Pan, Multi-scale vehicle detection in high-resolution aerial images                  smaller: A lightweight self-activation convolution unit modified by transformer
+         with context information, IEEE Access 8 (2020) 208643‚Äì208657.                                     for fault diagnosis, Adv. Eng. Inform. 55 (2023) 101890.
+
+[25] X. Li, W. Yang, J. Dezert, An airplane image target‚Äôs multifeature fusion                     [51] J. Deng, H. Liu, H. Fang, S. Shao, D. Wang, Y. Hou, D. Chen, M. Tang, MgNet:
+         recognition method, Acta Automat. Sinica 38 (8) (2012) 1298‚Äì1307.                                 A fault diagnosis approach for multi-bearing system based on auxiliary bearing
+                                                                                                           and multi-granularity information fusion, Mech. Syst. Signal Process. 193 (2023)
+[26] H. Chen, H. Luo, B. Huang, B. Jiang, O. Kaynak, Transfer learning-motivated                           110253.
+         intelligent fault diagnosis designs: A survey, insights, and perspectives, IEEE
+         Trans. Neural Netw. Learn. Syst. (2023) 1‚Äì15.                                             [52] Y. You, J. Li, S. Reddi, J. Hseu, S. Kumar, S. Bhojanapalli, X. Song, J. Demmel,
+                                                                                                           K. Keutzer, C.-J. Hsieh, Large batch optimization for deep learning: Training bert
+[27] J. Yuan, R. Zhao, K. Wei, P. Chen, T. He, Fault diagnosis of multichannel                             in 76 minutes, 2019, arXiv preprint arXiv:1904.00962.
+         bearing-rotor system via multistructure collaborative discriminative embedding,
+         IEEE/ASME Trans. Mechatronics (2024) 1‚Äì12.                                                [53] I. Loshchilov, F. Hutter, Sgdr: Stochastic gradient descent with warm restarts,
+                                                                                                           2016, arXiv preprint arXiv:1608.03983.
+[28] X. Zhang, X. Deng, Y. Cao, L. Xiao, Nonlinear predictable feature learning
+         with explanatory reasoning for complicated industrial system fault diagnosis,             [54] H. Chen, R. Tao, Y. Fan, Y. Wang, J. Wang, B. Schiele, X. Xie, B. Raj, M. Savvides,
+         Knowl.-Based Syst. (2024) 111404.                                                                 Softmatch: Addressing the quantity-quality trade-off in semi-supervised learning,
+                                                                                                           2023, arXiv preprint arXiv:2301.10921.
+[29] S. Fu, L. Lin, Y. Wang, M. Zhao, F. Guo, S. Zhong, Y. Liu, High imbalance
+         fault diagnosis of aviation hydraulic pump based on data augmentation via local                                               Fir Dunkin received the M.E. degree from the School of Au-
+         wavelet similarity fusion, Mech. Syst. Signal Process. 209 (2024) 111115.                                                     tomation Engineering, Northeast Electric Power University,
+                                                                                                                                       Jilin, China, in 2022.
+[30] S.X. Ding, S.X. Ding, Data-driven design of observer-based fault diagnosis
+         systems, Data-Driven Des. Fault Diagn. Fault-Toler. Control Syst. (2014) 175‚Äì200.                                                   Currently, he is pursuing the Ph.D. degree with the
+                                                                                                                                       Southeast University, and his research interests include
+[31] R. Ma, Z. Hu, H. Yang, Y. Jiang, M. Huo, H. Luo, R. Yang, Adversarial FDI attack                                                  information fusion, mechatronics, and uncertainty reasoning
+         monitoring: Toward secure defense of industrial electronics, IEEE Ind. Electron.                                              etc. Meanwhile, he has published nearly 20 peer-reviewed
+         Mag. (2023).                                                                                                                  papers in journals including IEEE TII, IEEE TIM, MSSP, AEI,
+                                                                                                                                       SNB, ASS, CJA, and EAAI, etc.
+[32] Q. Chen, X. Dong, G. Tu, D. Wang, C. Cheng, B. Zhao, Z. Peng, TFN:
+         An interpretable neural network with time-frequency transform embedded for                                                    Xinde Li received his Ph.D. degree in control theory
+         intelligent fault diagnosis, Mech. Syst. Signal Process. 207 (2024) 110952.                                                   and control engineering from the Department of Control
+                                                                                                                                       Science and Engineering, Huazhong University of Science
+[33] S. Yan, H. Shao, J. Wang, X. Zheng, B. Liu, LiConvFormer: A lightweight                                                           and Technology, Wuhan, China, in 2007. After that, he
+         fault diagnosis framework using separable multiscale convolution and broadcast                                                joined the School of Automation, Southeast University,
+         self-attention, Expert Syst. Appl. 237 (2024) 121338.                                                                         Nanjing, China, where he is currently a professor. He was
+                                                                                                                                       elected as a senior member of Institute of Electrical and
+[34] C. Guo, Z. Zhao, J. Ren, S. Wang, Y. Liu, X. Chen, Causal explaining guided                                                       Electronics Engineers in 2016, an academician with the
+         domain generalization for rotating machinery intelligent fault diagnosis, Expert                                              Russian Academy of Natural Sciences and a cover person of
+         Syst. Appl. 243 (2024) 122806.                                                                                                Scientific Chinese in 2021 and a fellow of the Institution of
+                                                                                                                                       Engineering and Technology in 2022. He is the vice director
+[35] Q. Qian, Y. Qin, J. Luo, D. Xiao, Cross-machine transfer fault diagnosis by                                                       of Intelligent Robot Committee of the Chinese Association
+         ensemble weighting subdomain adaptation network, IEEE Trans. Ind. Electron.                                                   for Artificial Intelligence from 2017, the vice director of
+         70 (12) (2023) 12773‚Äì12783.                                                                                                   Intelligent Products and Industry Working Committee of the
+                                                                                                                                       Chinese Association for Artificial Intelligence from 2019 and
+[36] Q. Qian, Y. Wang, T. Zhang, Y. Qin, Maximum mean square discrepancy: a                                                            the vice director of Intelligent Manufacturing Systems &
+         new discrepancy representation metric for mechanical fault transfer diagnosis,                                                Technology Professional Committee of Chinese Association
+         Knowl.-Based Syst. 276 (2023) 110748.                                                                                         of Automation from 2022. His research interests include
+                                                                                                                                       intelligent robot, and unmanned system, human‚Äìmachine
+[37] Q. Qian, J. Zhou, Y. Qin, Relationship transfer domain generalization network                                                     interaction, computer vision, information fusion. He was
+         for rotating machinery fault diagnosis under different working conditions, IEEE                                               the principal of about 50 projects including key and major
+         Trans. Ind. Inform. (2023).
+
+[38] Q. Qian, Y. Qin, J. Luo, Y. Wang, F. Wu, Deep discriminative transfer learning
+         network for cross-machine fault diagnosis, Mech. Syst. Signal Process. 186 (2023)
+         109884.
+
+[39] T. Wei, J.-X. Shi, W.-W. Tu, Y.-F. Li, Robust long-tailed learning under label
+         noise, 2021, arXiv preprint arXiv:2108.11569.
+
+[40] D. Cheng, T. Liu, Y. Ning, N. Wang, B. Han, G. Niu, X. Gao, M. Sugiyama,
+         Instance-dependent label-noise learning with manifold-regularized transition ma-
+         trix estimation, in: Proceedings of the IEEE/CVF Conference on Computer Vision
+         and Pattern Recognition, 2022, pp. 16630‚Äì16639.
+
+                                                                                               11
+F. Dunkin et al.                                                                                      Advanced Engineering Informatics 60 (2024) 102425
+
+                  projects of NSFC, etc. He published more than 100 papers,              Heqing Li received the M.S. degree from the College of
+                  5 books and won 32 national invention patents. He also                 Engineering, Nanjing Agriculture University, Nanjing, China,
+                  won many prizes including global award for outstanding                 in 2020. He is currently pursuing the Ph.D. degree in School
+                  scientist in artificial intelligence and robotics, Asia award for      of Cyber Science and Engineering, Southeast University,
+                  outstanding researcher, gold award in Geneva international             Nanjing, China. His research interests include information
+                  invention, etc. He was also the associate editors of sev-              fusion, unmanned system security, trustworthy computing,
+                  eral reputative international journals, i.e. IEEE Transactions         intelligent robot and pattern recognition.
+                  on Fuzzy Systems, Journal of Systems Engineering and
+                  Electronics, etc.                                                      Xiaoyan Lu received the B.S. and M.S. degrees in mea-
+                                                                                         surement and control technology from the Anhui University
+                  Chuanfei Hu received the M.S. degree from the School of                of Technology, Ma‚Äôanshan, China, in 2015 and 2018, re-
+                  Optical-Electrical and Computer Engineering, University of             spectively. She is currently pursuing the Ph.D. degree with
+                  Shanghai for Science and Technology, Shanghai, China, in               the School of Cyber Science and Engineering, Southeast
+                  2021.                                                                  University, Nanjing, China. Her research interests include
+                                                                                         computer vision, machine learning, and surveillance video
+                       He is currently pursuing the Ph.D. degree in electronic           analysis.
+                  information engineering with the School of Automation,
+                  Southeast University, Nanjing, China. His research inter-              Zhentong Zhang received the B.S. degree in electrical
+                  ests include deep learning, industrial inspection, attribute           engineering and automation from the School of Internet
+                  learning, and affective computing.                                     of Things Engineering, Jiangnan University, Wuxi, China,
+                                                                                         in 2016, and the M.S. degree in control engineering from
+                  Guoliang Wu received the B.E. degree from the School of                the School of Electrical engineering, Xinjiang University,
+                  Information Science and Technology, Beijing University of              Xinjiang, China, in 2021. He is currently working toward
+                  Chemical Technology, Beijing, China, in 2020.                          the Ph.D. degree in electronic information engineering with
+                                                                                         the School of Cyber Science and Engineering, Southeast
+                       At present, he is pursuing the Ph.D. degree with the              University, Nanjing, China. His research interest includes
+                  School of Automation, Southeast University, Nanjing, China.            computer vision, deep learning, reinforcement learning, and
+                  His current research interests include multi-granular in-              knowledge graph.
+                  formation fusion, intelligent game, neural networks, and
+                  pattern recognition etc.
+
+                                                                                     12
+

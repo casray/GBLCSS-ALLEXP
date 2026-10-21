@@ -1,0 +1,47 @@
+model:
+  method: nrgnn_ballaux_shuffled_l01
+  n_hidden: 128
+  n_layer: 2
+  act: F.relu
+  dropout: 0.5
+  norm_info: ~
+  input_layer: false
+  output_layer: false
+
+  edge_hidden: 64
+  t_small: 0.1
+  n_n: 50
+  n_p: 50
+  p_u: 0.8
+  alpha: 0.03
+  beta: 1
+
+training:
+  lr: 1e-3
+  weight_decay: 5e-4
+  n_epochs: 200
+  patience: ~
+  criterion: metric
+
+dataset:
+  feat_norm: true
+  sparse: true
+  add_loop: true
+  normalize: true
+
+gb:
+  embedding_path: "../../gb_graph_aware_minival_6_1/checkpoints/embeddings/Cora/ratio_train0p2_val0p1_split0_pretrain0/H.pt"
+  max_balls: 64
+  min_ball_size: 32
+  split_improvement: 0.05
+  min_train_per_ball: 2
+  alpha_baseline: multiclass
+  target_mode: distribution
+  lambda_ball: 0.1
+  ball_aux_scope: train
+
+analysis:
+  flag: false
+  project: gnn-with-label-noise
+  save_graph: false
+

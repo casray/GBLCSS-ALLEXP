@@ -1,0 +1,57 @@
+{
+  "dataset": "amazonpho",
+  "noise_rate": 0.4,
+  "student_seed": 0,
+  "family": "DGKD-T",
+  "temperature": 0.7,
+  "region": true,
+  "replay": false,
+  "settings": {
+    "student_seed": 0,
+    "protocol_seed": 0,
+    "hidden": 64,
+    "layers": 2,
+    "dropout": 0.5,
+    "batch_norm": true,
+    "lr": 0.01,
+    "weight_decay": 0.0005,
+    "epochs": 200,
+    "region_strength": 1.0,
+    "candidates": {
+      "KD": [
+        1.0,
+        4.0
+      ],
+      "DIST": [
+        1.0,
+        4.0
+      ],
+      "DGKD-T": [
+        0.7,
+        1.0
+      ]
+    },
+    "scope": "all nodes",
+    "dgkd_alpha": 15.0,
+    "dgkd_beta": 3.0,
+    "dgkd_target": "frozen teacher argmax on ALL nodes",
+    "selection": "first strict maximum clean validation accuracy"
+  },
+  "protocol": {
+    "split_hash": "909e88db3e1b379b547fd41d9cf98915e96501a7c3bfbd98af7e86ed0ab94cbd",
+    "noise_hash": "4958b7861b8147a732813a5ba68f131e9bad29872b1cc3d552bc031e5472a77f",
+    "seed": 0,
+    "modified_train_count": 585,
+    "modified_val_count": 0,
+    "modified_test_count": 0,
+    "features": "raw main-experiment attributes",
+    "data_file": "C:\\Users\\Admin\\Desktop\\实验8去噪5.19-\\external\\NoisyGL\\data\\Photo\\processed\\data.pt",
+    "num_nodes": 7650,
+    "num_classes": 8
+  },
+  "initial_state_hash": "c920aff590e7652c2ad8299a2e24aef361945c35eb92f60eaefd0c1e81cce6f0",
+  "initial_rng_hash": "94ed3b6557c5c0b8b27d182223109ebe8272c3bc1127dd0c43a4acee0b9326c4",
+  "teacher_source": "C:\\Users\\Admin\\Desktop\\实验8去噪5.19-\\gb_c1_ratio_success_20260609\\results_ratio_c1_20260609\\experiments\\robust_graph_seed0_20261006\\runs\\amazonpho\\uniform0.4\\erase",
+  "input_cache": "C:\\Users\\Admin\\Desktop\\实验8去噪5.19-\\gb_c1_ratio_success_20260609\\results_ratio_c1_20260609\\experiments\\gb_regional_distillation_seed0_20261007\\cache\\amazonpho\\uniform0.4\\regional.pt",
+  "assignment_hash": "d1115e13b839a1868914764bab70f9000caceb071fd6d43072c7c29be064717d"
+}

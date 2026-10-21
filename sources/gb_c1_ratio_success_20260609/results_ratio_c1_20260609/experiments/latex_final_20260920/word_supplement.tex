@@ -1,0 +1,1083 @@
+\textbf{Supplementary Material}
+
+Granular ball local consensus for graph-free node classification under label noise
+
+Unless stated otherwise, accuracies in this supplement are percentages, reported as mean \(\pm\) sample standard deviation over five paired seeds. Bold marks the highest mean within each dataset and noise setting. In Table C.1, each validation protocol is compared separately. Equations (H.1)--(H.6) are numbered within Appendix H; other equation references refer to the main paper.
+
+\subsection{Appendix A. Results of the main comparisons under all noise settings}\label{appendix-a.-results-of-the-main-comparisons-under-all-noise-settings}
+
+\subsubsection{A.1 Cora}\label{a.1-cora}
+
+\begin{longtable}[]{@{}
+  >{\raggedright\arraybackslash}p{(\linewidth - 10\tabcolsep) * \real{0.2481}}
+  >{\centering\arraybackslash}p{(\linewidth - 10\tabcolsep) * \real{0.1504}}
+  >{\centering\arraybackslash}p{(\linewidth - 10\tabcolsep) * \real{0.1504}}
+  >{\centering\arraybackslash}p{(\linewidth - 10\tabcolsep) * \real{0.1504}}
+  >{\centering\arraybackslash}p{(\linewidth - 10\tabcolsep) * \real{0.1504}}
+  >{\centering\arraybackslash}p{(\linewidth - 10\tabcolsep) * \real{0.1504}}@{}}
+\caption{Table A.1. Test accuracy on Cora under all five noise settings.}\tabularnewline
+\toprule\noalign{}
+\begin{minipage}[b]{\linewidth}\raggedright
+\textbf{Method}
+\end{minipage} & \begin{minipage}[b]{\linewidth}\centering
+\textbf{Uniform 0.2}
+\end{minipage} & \begin{minipage}[b]{\linewidth}\centering
+\textbf{Uniform 0.4}
+\end{minipage} & \begin{minipage}[b]{\linewidth}\centering
+\textbf{Uniform 0.6}
+\end{minipage} & \begin{minipage}[b]{\linewidth}\centering
+\textbf{Pair 0.4}
+\end{minipage} & \begin{minipage}[b]{\linewidth}\centering
+\textbf{Instance 0.4}
+\end{minipage} \\
+\midrule\noalign{}
+\endfirsthead
+\toprule\noalign{}
+\begin{minipage}[b]{\linewidth}\raggedright
+\textbf{Method}
+\end{minipage} & \begin{minipage}[b]{\linewidth}\centering
+\textbf{Uniform 0.2}
+\end{minipage} & \begin{minipage}[b]{\linewidth}\centering
+\textbf{Uniform 0.4}
+\end{minipage} & \begin{minipage}[b]{\linewidth}\centering
+\textbf{Uniform 0.6}
+\end{minipage} & \begin{minipage}[b]{\linewidth}\centering
+\textbf{Pair 0.4}
+\end{minipage} & \begin{minipage}[b]{\linewidth}\centering
+\textbf{Instance 0.4}
+\end{minipage} \\
+\midrule\noalign{}
+\endhead
+\bottomrule\noalign{}
+\endlastfoot
+MLP+CE & 54.96±2.22 & 44.24±2.62 & 32.51±3.38 & 42.83±2.19 & 45.33±2.22 \\
+Small-loss & 59.84±1.29 & 51.95±1.97 & 36.72±1.09 & 46.99±2.77 & 51.82±0.94 \\
+Co-teaching & 58.62±1.97 & 46.83±1.78 & 33.29±3.48 & 44.26±2.30 & 47.35±2.24 \\
+JoCoR & 60.12±2.25 & 51.72±1.30 & 36.92±2.14 & 45.91±2.38 & 52.26±1.01 \\
+SCE & 53.57±2.17 & 43.60±1.86 & 32.66±3.78 & 41.40±2.04 & 43.29±4.35 \\
+ELR & 52.95±2.38 & 44.28±1.38 & 32.82±3.51 & 41.83±1.75 & 45.93±2.26 \\
+LogitClip & 58.63±1.35 & 47.50±1.50 & 34.44±2.67 & 44.90±1.21 & 48.09±1.73 \\
+Random size-matched grouping & 53.57±1.99 & 43.31±1.40 & 32.18±2.54 & 39.28±1.34 & 43.34±1.70 \\
+GB-LCSS & \textbf{63.25±2.46} & \textbf{57.49±0.76} & \textbf{41.86±2.30} & \textbf{51.45±2.80} & \textbf{56.84±1.67} \\
+\end{longtable}
+
+\subsubsection{A.2 CiteSeer}\label{a.2-citeseer}
+
+\begin{longtable}[]{@{}
+  >{\raggedright\arraybackslash}p{(\linewidth - 10\tabcolsep) * \real{0.2481}}
+  >{\centering\arraybackslash}p{(\linewidth - 10\tabcolsep) * \real{0.1504}}
+  >{\centering\arraybackslash}p{(\linewidth - 10\tabcolsep) * \real{0.1504}}
+  >{\centering\arraybackslash}p{(\linewidth - 10\tabcolsep) * \real{0.1504}}
+  >{\centering\arraybackslash}p{(\linewidth - 10\tabcolsep) * \real{0.1504}}
+  >{\centering\arraybackslash}p{(\linewidth - 10\tabcolsep) * \real{0.1504}}@{}}
+\caption{Table A.2. Test accuracy on CiteSeer under all five noise settings.}\tabularnewline
+\toprule\noalign{}
+\begin{minipage}[b]{\linewidth}\raggedright
+\textbf{Method}
+\end{minipage} & \begin{minipage}[b]{\linewidth}\centering
+\textbf{Uniform 0.2}
+\end{minipage} & \begin{minipage}[b]{\linewidth}\centering
+\textbf{Uniform 0.4}
+\end{minipage} & \begin{minipage}[b]{\linewidth}\centering
+\textbf{Uniform 0.6}
+\end{minipage} & \begin{minipage}[b]{\linewidth}\centering
+\textbf{Pair 0.4}
+\end{minipage} & \begin{minipage}[b]{\linewidth}\centering
+\textbf{Instance 0.4}
+\end{minipage} \\
+\midrule\noalign{}
+\endfirsthead
+\toprule\noalign{}
+\begin{minipage}[b]{\linewidth}\raggedright
+\textbf{Method}
+\end{minipage} & \begin{minipage}[b]{\linewidth}\centering
+\textbf{Uniform 0.2}
+\end{minipage} & \begin{minipage}[b]{\linewidth}\centering
+\textbf{Uniform 0.4}
+\end{minipage} & \begin{minipage}[b]{\linewidth}\centering
+\textbf{Uniform 0.6}
+\end{minipage} & \begin{minipage}[b]{\linewidth}\centering
+\textbf{Pair 0.4}
+\end{minipage} & \begin{minipage}[b]{\linewidth}\centering
+\textbf{Instance 0.4}
+\end{minipage} \\
+\midrule\noalign{}
+\endhead
+\bottomrule\noalign{}
+\endlastfoot
+MLP+CE & 55.10±1.17 & 43.50±3.02 & 33.35±1.36 & 45.15±1.67 & 44.33±2.04 \\
+Small-loss & 59.26±1.94 & 49.70±3.07 & 37.73±2.86 & 48.16±2.56 & 50.75±3.33 \\
+Co-teaching & 57.05±0.82 & 46.24±2.89 & 34.19±2.92 & 46.25±2.29 & 46.81±1.68 \\
+JoCoR & 59.36±1.43 & 49.91±3.37 & 39.07±2.47 & 48.63±2.35 & 50.86±2.45 \\
+SCE & 52.12±3.28 & 42.09±3.47 & 30.59±2.83 & 42.22±1.56 & 40.92±4.23 \\
+ELR & 53.62±1.48 & 43.17±3.95 & 30.80±2.70 & 42.69±2.43 & 41.94±3.27 \\
+LogitClip & 58.75±1.44 & 46.57±3.52 & 34.47±1.69 & 45.78±1.06 & 47.41±2.64 \\
+Random size-matched grouping & 55.13±1.85 & 42.08±2.88 & 30.36±1.88 & 43.92±1.67 & 43.07±2.00 \\
+GB-LCSS & \textbf{63.92±1.12} & \textbf{55.24±2.04} & \textbf{42.02±3.14} & \textbf{51.70±2.14} & \textbf{55.58±2.54} \\
+\end{longtable}
+
+\subsubsection{A.3 CoraFull}\label{a.3-corafull}
+
+\begin{longtable}[]{@{}
+  >{\raggedright\arraybackslash}p{(\linewidth - 10\tabcolsep) * \real{0.2481}}
+  >{\centering\arraybackslash}p{(\linewidth - 10\tabcolsep) * \real{0.1504}}
+  >{\centering\arraybackslash}p{(\linewidth - 10\tabcolsep) * \real{0.1504}}
+  >{\centering\arraybackslash}p{(\linewidth - 10\tabcolsep) * \real{0.1504}}
+  >{\centering\arraybackslash}p{(\linewidth - 10\tabcolsep) * \real{0.1504}}
+  >{\centering\arraybackslash}p{(\linewidth - 10\tabcolsep) * \real{0.1504}}@{}}
+\caption{Table A.3. Test accuracy on CoraFull under all five noise settings.}\tabularnewline
+\toprule\noalign{}
+\begin{minipage}[b]{\linewidth}\raggedright
+\textbf{Method}
+\end{minipage} & \begin{minipage}[b]{\linewidth}\centering
+\textbf{Uniform 0.2}
+\end{minipage} & \begin{minipage}[b]{\linewidth}\centering
+\textbf{Uniform 0.4}
+\end{minipage} & \begin{minipage}[b]{\linewidth}\centering
+\textbf{Uniform 0.6}
+\end{minipage} & \begin{minipage}[b]{\linewidth}\centering
+\textbf{Pair 0.4}
+\end{minipage} & \begin{minipage}[b]{\linewidth}\centering
+\textbf{Instance 0.4}
+\end{minipage} \\
+\midrule\noalign{}
+\endfirsthead
+\toprule\noalign{}
+\begin{minipage}[b]{\linewidth}\raggedright
+\textbf{Method}
+\end{minipage} & \begin{minipage}[b]{\linewidth}\centering
+\textbf{Uniform 0.2}
+\end{minipage} & \begin{minipage}[b]{\linewidth}\centering
+\textbf{Uniform 0.4}
+\end{minipage} & \begin{minipage}[b]{\linewidth}\centering
+\textbf{Uniform 0.6}
+\end{minipage} & \begin{minipage}[b]{\linewidth}\centering
+\textbf{Pair 0.4}
+\end{minipage} & \begin{minipage}[b]{\linewidth}\centering
+\textbf{Instance 0.4}
+\end{minipage} \\
+\midrule\noalign{}
+\endhead
+\bottomrule\noalign{}
+\endlastfoot
+MLP+CE & 41.11±0.46 & 31.98±0.98 & 21.16±0.81 & 28.14±1.17 & 31.33±0.85 \\
+Small-loss & 41.58±0.94 & 33.04±0.50 & 21.51±0.98 & 30.15±1.11 & 32.90±0.87 \\
+Co-teaching & 41.70±1.05 & 34.39±0.24 & 22.84±1.38 & 30.28±0.52 & 33.39±0.90 \\
+JoCoR & 43.33±0.70 & 35.70±0.32 & 24.20±0.98 & 31.45±0.80 & 35.17±0.51 \\
+SCE & 37.93±0.72 & 29.29±0.45 & 17.79±1.33 & 26.98±0.51 & 29.68±1.06 \\
+ELR & 41.08±0.53 & 32.14±0.67 & 21.32±0.98 & 28.91±1.44 & 31.52±0.83 \\
+LogitClip & 41.24±0.78 & 34.69±1.17 & 24.62±0.72 & 31.23±1.84 & 34.19±0.17 \\
+Random size-matched grouping & 41.02±0.92 & 32.30±0.85 & 21.41±0.84 & 28.49±0.78 & 31.43±0.79 \\
+GB-LCSS & \textbf{43.46±0.57} & \textbf{37.39±0.51} & \textbf{27.43±0.89} & \textbf{34.46±1.23} & \textbf{36.95±0.53} \\
+\end{longtable}
+
+\subsubsection{A.4 Coauthor-CS}\label{a.4-coauthor-cs}
+
+\begin{longtable}[]{@{}
+  >{\raggedright\arraybackslash}p{(\linewidth - 10\tabcolsep) * \real{0.2481}}
+  >{\centering\arraybackslash}p{(\linewidth - 10\tabcolsep) * \real{0.1504}}
+  >{\centering\arraybackslash}p{(\linewidth - 10\tabcolsep) * \real{0.1504}}
+  >{\centering\arraybackslash}p{(\linewidth - 10\tabcolsep) * \real{0.1504}}
+  >{\centering\arraybackslash}p{(\linewidth - 10\tabcolsep) * \real{0.1504}}
+  >{\centering\arraybackslash}p{(\linewidth - 10\tabcolsep) * \real{0.1504}}@{}}
+\caption{Table A.4. Test accuracy on Coauthor-CS under all five noise settings.}\tabularnewline
+\toprule\noalign{}
+\begin{minipage}[b]{\linewidth}\raggedright
+\textbf{Method}
+\end{minipage} & \begin{minipage}[b]{\linewidth}\centering
+\textbf{Uniform 0.2}
+\end{minipage} & \begin{minipage}[b]{\linewidth}\centering
+\textbf{Uniform 0.4}
+\end{minipage} & \begin{minipage}[b]{\linewidth}\centering
+\textbf{Uniform 0.6}
+\end{minipage} & \begin{minipage}[b]{\linewidth}\centering
+\textbf{Pair 0.4}
+\end{minipage} & \begin{minipage}[b]{\linewidth}\centering
+\textbf{Instance 0.4}
+\end{minipage} \\
+\midrule\noalign{}
+\endfirsthead
+\toprule\noalign{}
+\begin{minipage}[b]{\linewidth}\raggedright
+\textbf{Method}
+\end{minipage} & \begin{minipage}[b]{\linewidth}\centering
+\textbf{Uniform 0.2}
+\end{minipage} & \begin{minipage}[b]{\linewidth}\centering
+\textbf{Uniform 0.4}
+\end{minipage} & \begin{minipage}[b]{\linewidth}\centering
+\textbf{Uniform 0.6}
+\end{minipage} & \begin{minipage}[b]{\linewidth}\centering
+\textbf{Pair 0.4}
+\end{minipage} & \begin{minipage}[b]{\linewidth}\centering
+\textbf{Instance 0.4}
+\end{minipage} \\
+\midrule\noalign{}
+\endhead
+\bottomrule\noalign{}
+\endlastfoot
+MLP+CE & 91.38±0.54 & 88.42±0.62 & 80.03±1.91 & 75.91±1.34 & 87.44±1.15 \\
+Small-loss & 91.50±0.49 & 89.06±0.88 & 81.65±0.91 & 80.13±1.50 & 88.97±1.02 \\
+Co-teaching & 91.70±0.29 & 88.80±0.97 & 81.88±0.72 & 79.06±1.30 & 88.95±0.97 \\
+JoCoR & \textbf{91.81±0.25} & 89.38±0.61 & 82.58±0.41 & 81.02±1.62 & 89.17±0.85 \\
+SCE & 90.63±0.47 & 88.37±0.53 & 79.43±1.45 & 79.77±2.51 & 87.99±0.56 \\
+ELR & 91.21±0.60 & 88.29±0.73 & 80.54±1.28 & 78.03±1.48 & 87.78±0.94 \\
+LogitClip & 91.32±0.43 & 88.40±0.21 & 79.96±1.64 & 81.57±0.53 & 88.60±0.75 \\
+Random size-matched grouping & 90.26±0.70 & 87.46±1.07 & 78.78±1.82 & 75.99±0.60 & 86.87±1.56 \\
+GB-LCSS & 91.54±0.26 & \textbf{90.71±0.59} & \textbf{87.19±0.69} & \textbf{86.24±1.18} & \textbf{90.51±0.43} \\
+\end{longtable}
+
+\subsubsection{A.5 Amazon-Photo}\label{a.5-amazon-photo}
+
+\begin{longtable}[]{@{}
+  >{\raggedright\arraybackslash}p{(\linewidth - 10\tabcolsep) * \real{0.2481}}
+  >{\centering\arraybackslash}p{(\linewidth - 10\tabcolsep) * \real{0.1504}}
+  >{\centering\arraybackslash}p{(\linewidth - 10\tabcolsep) * \real{0.1504}}
+  >{\centering\arraybackslash}p{(\linewidth - 10\tabcolsep) * \real{0.1504}}
+  >{\centering\arraybackslash}p{(\linewidth - 10\tabcolsep) * \real{0.1504}}
+  >{\centering\arraybackslash}p{(\linewidth - 10\tabcolsep) * \real{0.1504}}@{}}
+\caption{Table A.5. Test accuracy on Amazon-Photo under all five noise settings.}\tabularnewline
+\toprule\noalign{}
+\begin{minipage}[b]{\linewidth}\raggedright
+\textbf{Method}
+\end{minipage} & \begin{minipage}[b]{\linewidth}\centering
+\textbf{Uniform 0.2}
+\end{minipage} & \begin{minipage}[b]{\linewidth}\centering
+\textbf{Uniform 0.4}
+\end{minipage} & \begin{minipage}[b]{\linewidth}\centering
+\textbf{Uniform 0.6}
+\end{minipage} & \begin{minipage}[b]{\linewidth}\centering
+\textbf{Pair 0.4}
+\end{minipage} & \begin{minipage}[b]{\linewidth}\centering
+\textbf{Instance 0.4}
+\end{minipage} \\
+\midrule\noalign{}
+\endfirsthead
+\toprule\noalign{}
+\begin{minipage}[b]{\linewidth}\raggedright
+\textbf{Method}
+\end{minipage} & \begin{minipage}[b]{\linewidth}\centering
+\textbf{Uniform 0.2}
+\end{minipage} & \begin{minipage}[b]{\linewidth}\centering
+\textbf{Uniform 0.4}
+\end{minipage} & \begin{minipage}[b]{\linewidth}\centering
+\textbf{Uniform 0.6}
+\end{minipage} & \begin{minipage}[b]{\linewidth}\centering
+\textbf{Pair 0.4}
+\end{minipage} & \begin{minipage}[b]{\linewidth}\centering
+\textbf{Instance 0.4}
+\end{minipage} \\
+\midrule\noalign{}
+\endhead
+\bottomrule\noalign{}
+\endlastfoot
+MLP+CE & 82.34±1.39 & 73.90±1.80 & 58.60±3.77 & 62.61±4.31 & 69.13±3.00 \\
+Small-loss & 84.96±0.58 & 77.25±1.62 & 61.40±3.72 & 66.70±5.73 & 73.00±1.25 \\
+Co-teaching & 85.21±0.51 & 78.21±1.00 & 63.29±5.00 & 67.24±6.97 & 73.59±1.19 \\
+JoCoR & 85.60±1.26 & 79.57±0.53 & 66.48±4.43 & 66.94±6.36 & 74.80±1.79 \\
+SCE & 84.74±0.94 & 76.08±3.11 & 57.82±4.07 & 66.51±6.96 & 73.08±2.54 \\
+ELR & 82.31±1.98 & 73.93±2.12 & 59.32±4.53 & 66.07±5.25 & 69.41±2.70 \\
+LogitClip & 83.78±1.02 & 74.98±2.38 & 62.42±4.37 & 68.52±4.20 & 72.90±1.05 \\
+Random size-matched grouping & 81.03±1.23 & 71.45±3.29 & 58.30±4.17 & 62.56±4.24 & 67.56±2.89 \\
+GB-LCSS & \textbf{86.07±1.05} & \textbf{82.12±1.08} & \textbf{71.45±3.75} & \textbf{73.89±3.73} & \textbf{79.59±0.88} \\
+\end{longtable}
+
+\subsection{Appendix B. Paired statistical tests}\label{appendix-b.-paired-statistical-tests}
+
+For each setting, we compute the five seed-wise accuracy differences (GB-LCSS minus the reference method) and report their mean and 95\% confidence interval in percentage points. Statistical significance is assessed with a two-sided paired t-test. Holm correction is applied separately to the 25 comparisons against each reference method. Confidence intervals are unadjusted, whereas the reported p-values are Holm-adjusted. Positive differences favor GB-LCSS; "Higher (seeds)" counts the seeds on which GB-LCSS has higher accuracy.
+
+GB-LCSS has higher accuracy than JoCoR on all five seeds in 22 of the 25 settings.
+
+\begin{longtable}[]{@{}
+  >{\raggedright\arraybackslash}p{(\linewidth - 12\tabcolsep) * \real{0.1443}}
+  >{\centering\arraybackslash}p{(\linewidth - 12\tabcolsep) * \real{0.1264}}
+  >{\centering\arraybackslash}p{(\linewidth - 12\tabcolsep) * \real{0.1835}}
+  >{\centering\arraybackslash}p{(\linewidth - 12\tabcolsep) * \real{0.1008}}
+  >{\centering\arraybackslash}p{(\linewidth - 12\tabcolsep) * \real{0.1819}}
+  >{\centering\arraybackslash}p{(\linewidth - 12\tabcolsep) * \real{0.1264}}
+  >{\centering\arraybackslash}p{(\linewidth - 12\tabcolsep) * \real{0.1368}}@{}}
+\caption{Table B.1. Paired statistics for GB-LCSS against the three reference methods.}\tabularnewline
+\toprule\noalign{}
+\begin{minipage}[b]{\linewidth}\raggedright
+\textbf{Dataset}
+\end{minipage} & \begin{minipage}[b]{\linewidth}\centering
+\textbf{Noise}
+\end{minipage} & \begin{minipage}[b]{\linewidth}\centering
+\textbf{Reference method}
+\end{minipage} & \begin{minipage}[b]{\linewidth}\centering
+\textbf{Mean difference (pp)}
+\end{minipage} & \begin{minipage}[b]{\linewidth}\centering
+\textbf{95\% CI (pp)}
+\end{minipage} & \begin{minipage}[b]{\linewidth}\centering
+\textbf{Higher (seeds)}
+\end{minipage} & \begin{minipage}[b]{\linewidth}\centering
+\textbf{Adjusted p}
+\end{minipage} \\
+\midrule\noalign{}
+\endfirsthead
+\toprule\noalign{}
+\begin{minipage}[b]{\linewidth}\raggedright
+\textbf{Dataset}
+\end{minipage} & \begin{minipage}[b]{\linewidth}\centering
+\textbf{Noise}
+\end{minipage} & \begin{minipage}[b]{\linewidth}\centering
+\textbf{Reference method}
+\end{minipage} & \begin{minipage}[b]{\linewidth}\centering
+\textbf{Mean difference (pp)}
+\end{minipage} & \begin{minipage}[b]{\linewidth}\centering
+\textbf{95\% CI (pp)}
+\end{minipage} & \begin{minipage}[b]{\linewidth}\centering
+\textbf{Higher (seeds)}
+\end{minipage} & \begin{minipage}[b]{\linewidth}\centering
+\textbf{Adjusted p}
+\end{minipage} \\
+\midrule\noalign{}
+\endhead
+\bottomrule\noalign{}
+\endlastfoot
+Cora & Uniform 0.2 & Random grouping & +9.68 & {[}+7.16, +12.20{]} & 5/5 & 0.006 \\
+Cora & Uniform 0.2 & MLP+CE & +8.30 & {[}+5.59, +11.00{]} & 5/5 & 0.011 \\
+Cora & Uniform 0.2 & JoCoR & +3.13 & {[}+0.55, +5.72{]} & 5/5 & 0.112 \\
+Cora & Uniform 0.4 & Random grouping & +14.17 & {[}+12.71, +15.63{]} & 5/5 & \textless0.001 \\
+Cora & Uniform 0.4 & MLP+CE & +13.25 & {[}+10.81, +15.68{]} & 5/5 & 0.002 \\
+Cora & Uniform 0.4 & JoCoR & +5.77 & {[}+3.60, +7.95{]} & 5/5 & 0.031 \\
+Cora & Uniform 0.6 & Random grouping & +9.68 & {[}+6.39, +12.96{]} & 5/5 & 0.010 \\
+Cora & Uniform 0.6 & MLP+CE & +9.35 & {[}+4.54, +14.16{]} & 5/5 & 0.011 \\
+Cora & Uniform 0.6 & JoCoR & +4.94 & {[}+1.79, +8.09{]} & 5/5 & 0.082 \\
+Cora & Pair 0.4 & Random grouping & +12.17 & {[}+7.23, +17.11{]} & 5/5 & 0.012 \\
+Cora & Pair 0.4 & MLP+CE & +8.62 & {[}+5.74, +11.50{]} & 5/5 & 0.011 \\
+Cora & Pair 0.4 & JoCoR & +5.54 & {[}+2.90, +8.18{]} & 5/5 & 0.060 \\
+Cora & Instance 0.4 & Random grouping & +13.51 & {[}+12.08, +14.94{]} & 5/5 & \textless0.001 \\
+Cora & Instance 0.4 & MLP+CE & +11.51 & {[}+9.50, +13.53{]} & 5/5 & 0.002 \\
+Cora & Instance 0.4 & JoCoR & +4.58 & {[}+2.27, +6.89{]} & 5/5 & 0.062 \\
+CiteSeer & Uniform 0.2 & Random grouping & +8.79 & {[}+6.87, +10.71{]} & 5/5 & 0.004 \\
+CiteSeer & Uniform 0.2 & MLP+CE & +8.81 & {[}+7.00, +10.63{]} & 5/5 & 0.003 \\
+CiteSeer & Uniform 0.2 & JoCoR & +4.56 & {[}+2.87, +6.26{]} & 5/5 & 0.031 \\
+CiteSeer & Uniform 0.4 & Random grouping & +13.16 & {[}+11.26, +15.06{]} & 5/5 & \textless0.001 \\
+CiteSeer & Uniform 0.4 & MLP+CE & +11.74 & {[}+9.99, +13.50{]} & 5/5 & 0.001 \\
+CiteSeer & Uniform 0.4 & JoCoR & +5.34 & {[}+2.51, +8.16{]} & 5/5 & 0.062 \\
+CiteSeer & Uniform 0.6 & Random grouping & +11.66 & {[}+9.60, +13.72{]} & 5/5 & 0.002 \\
+CiteSeer & Uniform 0.6 & MLP+CE & +8.67 & {[}+4.92, +12.42{]} & 5/5 & 0.011 \\
+CiteSeer & Uniform 0.6 & JoCoR & +2.95 & {[}+1.09, +4.81{]} & 5/5 & 0.082 \\
+CiteSeer & Pair 0.4 & Random grouping & +7.78 & {[}+5.04, +10.53{]} & 5/5 & 0.010 \\
+CiteSeer & Pair 0.4 & MLP+CE & +6.55 & {[}+3.98, +9.13{]} & 5/5 & 0.011 \\
+CiteSeer & Pair 0.4 & JoCoR & +3.07 & {[}+2.06, +4.07{]} & 5/5 & 0.020 \\
+CiteSeer & Instance 0.4 & Random grouping & +12.51 & {[}+9.97, +15.05{]} & 5/5 & 0.003 \\
+CiteSeer & Instance 0.4 & MLP+CE & +11.25 & {[}+8.48, +14.01{]} & 5/5 & 0.006 \\
+CiteSeer & Instance 0.4 & JoCoR & +4.72 & {[}+3.63, +5.80{]} & 5/5 & 0.007 \\
+CoraFull & Uniform 0.2 & Random grouping & +2.44 & {[}+1.48, +3.40{]} & 5/5 & 0.012 \\
+CoraFull & Uniform 0.2 & MLP+CE & +2.35 & {[}+1.46, +3.25{]} & 5/5 & 0.011 \\
+CoraFull & Uniform 0.2 & JoCoR & +0.13 & {[}-0.86, +1.12{]} & 3/5 & 0.852 \\
+CoraFull & Uniform 0.4 & Random grouping & +5.09 & {[}+4.32, +5.87{]} & 5/5 & 0.001 \\
+CoraFull & Uniform 0.4 & MLP+CE & +5.41 & {[}+4.51, +6.32{]} & 5/5 & 0.002 \\
+CoraFull & Uniform 0.4 & JoCoR & +1.69 & {[}+0.86, +2.52{]} & 5/5 & 0.062 \\
+CoraFull & Uniform 0.6 & Random grouping & +6.02 & {[}+5.16, +6.89{]} & 5/5 & \textless0.001 \\
+CoraFull & Uniform 0.6 & MLP+CE & +6.27 & {[}+5.52, +7.03{]} & 5/5 & \textless0.001 \\
+CoraFull & Uniform 0.6 & JoCoR & +3.23 & {[}+1.89, +4.57{]} & 5/5 & 0.042 \\
+CoraFull & Pair 0.4 & Random grouping & +5.98 & {[}+4.75, +7.20{]} & 5/5 & 0.003 \\
+CoraFull & Pair 0.4 & MLP+CE & +6.32 & {[}+4.66, +7.98{]} & 5/5 & 0.007 \\
+CoraFull & Pair 0.4 & JoCoR & +3.02 & {[}+2.10, +3.93{]} & 5/5 & 0.017 \\
+CoraFull & Instance 0.4 & Random grouping & +5.52 & {[}+4.23, +6.80{]} & 5/5 & 0.004 \\
+CoraFull & Instance 0.4 & MLP+CE & +5.62 & {[}+4.37, +6.86{]} & 5/5 & 0.004 \\
+CoraFull & Instance 0.4 & JoCoR & +1.78 & {[}+1.22, +2.34{]} & 5/5 & 0.018 \\
+Coauthor-CS & Uniform 0.2 & Random grouping & +1.28 & {[}+0.70, +1.85{]} & 5/5 & 0.012 \\
+Coauthor-CS & Uniform 0.2 & MLP+CE & +0.16 & {[}-0.33, +0.65{]} & 3/5 & 0.418 \\
+Coauthor-CS & Uniform 0.2 & JoCoR & -0.27 & {[}-0.41, -0.13{]} & 0/5 & 0.062 \\
+Coauthor-CS & Uniform 0.4 & Random grouping & +3.25 & {[}+1.96, +4.55{]} & 5/5 & 0.012 \\
+Coauthor-CS & Uniform 0.4 & MLP+CE & +2.29 & {[}+1.66, +2.93{]} & 5/5 & 0.008 \\
+Coauthor-CS & Uniform 0.4 & JoCoR & +1.33 & {[}+1.07, +1.59{]} & 5/5 & 0.004 \\
+Coauthor-CS & Uniform 0.6 & Random grouping & +8.41 & {[}+5.72, +11.10{]} & 5/5 & 0.009 \\
+Coauthor-CS & Uniform 0.6 & MLP+CE & +7.16 & {[}+4.58, +9.75{]} & 5/5 & 0.011 \\
+Coauthor-CS & Uniform 0.6 & JoCoR & +4.61 & {[}+3.37, +5.85{]} & 5/5 & 0.011 \\
+Coauthor-CS & Pair 0.4 & Random grouping & +10.25 & {[}+8.67, +11.83{]} & 5/5 & 0.001 \\
+Coauthor-CS & Pair 0.4 & MLP+CE & +10.32 & {[}+8.97, +11.67{]} & 5/5 & \textless0.001 \\
+Coauthor-CS & Pair 0.4 & JoCoR & +5.22 & {[}+3.82, +6.62{]} & 5/5 & 0.011 \\
+Coauthor-CS & Instance 0.4 & Random grouping & +3.65 & {[}+2.12, +5.17{]} & 5/5 & 0.012 \\
+Coauthor-CS & Instance 0.4 & MLP+CE & +3.07 & {[}+2.15, +4.00{]} & 5/5 & 0.009 \\
+Coauthor-CS & Instance 0.4 & JoCoR & +1.34 & {[}+0.76, +1.92{]} & 5/5 & 0.045 \\
+Amazon-Photo & Uniform 0.2 & Random grouping & +5.03 & {[}+3.82, +6.25{]} & 5/5 & 0.005 \\
+Amazon-Photo & Uniform 0.2 & MLP+CE & +3.72 & {[}+2.63, +4.81{]} & 5/5 & 0.009 \\
+Amazon-Photo & Uniform 0.2 & JoCoR & +0.46 & {[}-0.99, +1.92{]} & 3/5 & 0.852 \\
+Amazon-Photo & Uniform 0.4 & Random grouping & +10.66 & {[}+6.55, +14.78{]} & 5/5 & 0.012 \\
+Amazon-Photo & Uniform 0.4 & MLP+CE & +8.22 & {[}+5.17, +11.26{]} & 5/5 & 0.011 \\
+Amazon-Photo & Uniform 0.4 & JoCoR & +2.55 & {[}+1.02, +4.07{]} & 5/5 & 0.078 \\
+Amazon-Photo & Uniform 0.6 & Random grouping & +13.15 & {[}+9.63, +16.67{]} & 5/5 & 0.006 \\
+Amazon-Photo & Uniform 0.6 & MLP+CE & +12.85 & {[}+8.39, +17.31{]} & 5/5 & 0.011 \\
+Amazon-Photo & Uniform 0.6 & JoCoR & +4.96 & {[}+0.60, +9.32{]} & 5/5 & 0.112 \\
+Amazon-Photo & Pair 0.4 & Random grouping & +11.32 & {[}+8.02, +14.63{]} & 5/5 & 0.008 \\
+Amazon-Photo & Pair 0.4 & MLP+CE & +11.28 & {[}+9.10, +13.46{]} & 5/5 & 0.003 \\
+Amazon-Photo & Pair 0.4 & JoCoR & +6.95 & {[}+1.90, +12.00{]} & 5/5 & 0.094 \\
+Amazon-Photo & Instance 0.4 & Random grouping & +12.03 & {[}+8.45, +15.61{]} & 5/5 & 0.008 \\
+Amazon-Photo & Instance 0.4 & MLP+CE & +10.46 & {[}+6.95, +13.98{]} & 5/5 & 0.011 \\
+Amazon-Photo & Instance 0.4 & JoCoR & +4.79 & {[}+2.43, +7.15{]} & 5/5 & 0.062 \\
+\end{longtable}
+
+\subsection{Appendix C. Sensitivity to noisy validation labels}\label{appendix-c.-sensitivity-to-noisy-validation-labels}
+
+This experiment checks whether noisy validation labels affect model selection under uniform 0.4 noise. The training split and training-label noise are kept unchanged. Validation labels are independently corrupted with the same uniform noise rate using a separate random seed, while test labels remain unchanged. GB-LCSS and random size-matched grouping use the target construction in \hyperref[Section_3_3]{Section 3.3}; GSDN and PosteL follow the implementations described in \hyperref[Section_4_1_3]{Section 4.1.3} and Appendix F.
+
+\begin{longtable}[]{@{}
+  >{\raggedright\arraybackslash}p{(\linewidth - 6\tabcolsep) * \real{0.1715}}
+  >{\centering\arraybackslash}p{(\linewidth - 6\tabcolsep) * \real{0.3473}}
+  >{\centering\arraybackslash}p{(\linewidth - 6\tabcolsep) * \real{0.2406}}
+  >{\centering\arraybackslash}p{(\linewidth - 6\tabcolsep) * \real{0.2406}}@{}}
+\caption{Table C.1. Test accuracy under clean and noisy validation labels.}\tabularnewline
+\toprule\noalign{}
+\begin{minipage}[b]{\linewidth}\raggedright
+\textbf{Dataset}
+\end{minipage} & \begin{minipage}[b]{\linewidth}\centering
+\textbf{Method}
+\end{minipage} & \begin{minipage}[b]{\linewidth}\centering
+\textbf{Clean validation}
+\end{minipage} & \begin{minipage}[b]{\linewidth}\centering
+\textbf{Noisy validation}
+\end{minipage} \\
+\midrule\noalign{}
+\endfirsthead
+\toprule\noalign{}
+\begin{minipage}[b]{\linewidth}\raggedright
+\textbf{Dataset}
+\end{minipage} & \begin{minipage}[b]{\linewidth}\centering
+\textbf{Method}
+\end{minipage} & \begin{minipage}[b]{\linewidth}\centering
+\textbf{Clean validation}
+\end{minipage} & \begin{minipage}[b]{\linewidth}\centering
+\textbf{Noisy validation}
+\end{minipage} \\
+\midrule\noalign{}
+\endhead
+\bottomrule\noalign{}
+\endlastfoot
+Cora & GB-LCSS & \textbf{57.49±0.76} & \textbf{56.81±1.55} \\
+Cora & Random size-matched grouping & 43.31±1.40 & 43.12±2.07 \\
+Cora & GSDN & 55.97±4.29 & 54.81±4.70 \\
+Cora & MLP+CE & 44.24±2.62 & 43.30±3.65 \\
+Cora & JoCoR & 51.72±1.30 & 50.77±1.98 \\
+Cora & PosteL & 47.09±1.81 & 46.81±1.94 \\
+CiteSeer & GB-LCSS & \textbf{55.24±2.04} & \textbf{54.99±2.18} \\
+CiteSeer & Random size-matched grouping & 42.08±2.88 & 42.65±2.49 \\
+CiteSeer & GSDN & 50.36±3.39 & 50.60±1.84 \\
+CiteSeer & MLP+CE & 43.50±3.02 & 43.06±2.96 \\
+CiteSeer & JoCoR & 49.91±3.37 & 50.67±1.07 \\
+CiteSeer & PosteL & 45.84±2.48 & 46.27±1.76 \\
+CoraFull & GB-LCSS & \textbf{37.39±0.51} & \textbf{36.90±0.81} \\
+CoraFull & Random size-matched grouping & 32.30±0.85 & 32.03±0.77 \\
+CoraFull & GSDN & 35.80±0.66 & 36.13±0.69 \\
+CoraFull & MLP+CE & 31.98±0.98 & 31.99±0.85 \\
+CoraFull & JoCoR & 35.70±0.32 & 35.57±1.04 \\
+CoraFull & PosteL & 36.51±1.01 & 35.74±1.14 \\
+\end{longtable}
+
+Under noisy validation labels, GB-LCSS leads random size-matched grouping by 13.69, 12.35, and 4.87 percentage points on Cora, CiteSeer, and CoraFull, respectively, and leads MLP+CE by 13.51, 11.93, and 4.91 points. The ranking of the six methods is unchanged on Cora (Kendall\textquotesingle s tau = 1.000) and remains similar on CiteSeer and CoraFull (tau = 0.867).
+
+\subsection{Appendix D. Additional target-construction analyses}\label{appendix-d.-additional-target-construction-analyses}
+
+Table 5 gives the uniform 0.4 vote and smoothing controls. Averaged over the five noise settings, the accuracy gain from excluding the current node's vote ranges from 0.08 to 1.03 percentage points across datasets, with a minimum setting-wise difference of −0.49 points.
+
+With clean training labels and otherwise unchanged settings, the accuracy differences from MLP+CE are −0.24, +2.00, −0.38, −0.87, and −1.75 percentage points on Cora, CiteSeer, CoraFull, Coauthor-CS, and Amazon-Photo, respectively.
+
+Ties among the most-voted classes occur in 123 of the 125 dataset-noise-seed runs and in 911 ball instances, affecting 12,788 of 259,000 training-node targets (4.94\%). When several classes tie for the most votes, we keep the full vote distribution instead of choosing one tied class. This prevents the result from depending on arbitrary class numbering.
+
+\subsection{Appendix E. Results of graph-based soft-target methods under all noise settings}\label{appendix-e.-results-of-graph-based-soft-target-methods-under-all-noise-settings}
+
+Table E.1 reports the five-seed means and sample standard deviations of GB-LCSS, PosteL, ALS, and SALS on the five main datasets and five noise settings. All four methods use the same data splits, training-label noise realizations, and graph-free inference protocol. Implementation details are given in Appendix F.
+
+\begin{longtable}[]{@{}
+  >{\raggedright\arraybackslash}p{(\linewidth - 10\tabcolsep) * \real{0.1669}}
+  >{\centering\arraybackslash}p{(\linewidth - 10\tabcolsep) * \real{0.1654}}
+  >{\centering\arraybackslash}p{(\linewidth - 10\tabcolsep) * \real{0.1669}}
+  >{\centering\arraybackslash}p{(\linewidth - 10\tabcolsep) * \real{0.1669}}
+  >{\centering\arraybackslash}p{(\linewidth - 10\tabcolsep) * \real{0.1669}}
+  >{\centering\arraybackslash}p{(\linewidth - 10\tabcolsep) * \real{0.1669}}@{}}
+\caption{Table E.1. Test accuracy of graph-based soft-target methods under all five noise settings.}\tabularnewline
+\toprule\noalign{}
+\begin{minipage}[b]{\linewidth}\raggedright
+\textbf{Dataset}
+\end{minipage} & \begin{minipage}[b]{\linewidth}\centering
+\textbf{Noise setting}
+\end{minipage} & \begin{minipage}[b]{\linewidth}\centering
+\textbf{GB-LCSS}
+\end{minipage} & \begin{minipage}[b]{\linewidth}\centering
+\textbf{PosteL}
+\end{minipage} & \begin{minipage}[b]{\linewidth}\centering
+\textbf{ALS}
+\end{minipage} & \begin{minipage}[b]{\linewidth}\centering
+\textbf{SALS}
+\end{minipage} \\
+\midrule\noalign{}
+\endfirsthead
+\toprule\noalign{}
+\begin{minipage}[b]{\linewidth}\raggedright
+\textbf{Dataset}
+\end{minipage} & \begin{minipage}[b]{\linewidth}\centering
+\textbf{Noise setting}
+\end{minipage} & \begin{minipage}[b]{\linewidth}\centering
+\textbf{GB-LCSS}
+\end{minipage} & \begin{minipage}[b]{\linewidth}\centering
+\textbf{PosteL}
+\end{minipage} & \begin{minipage}[b]{\linewidth}\centering
+\textbf{ALS}
+\end{minipage} & \begin{minipage}[b]{\linewidth}\centering
+\textbf{SALS}
+\end{minipage} \\
+\midrule\noalign{}
+\endhead
+\bottomrule\noalign{}
+\endlastfoot
+Cora & Uniform 0.2 & \textbf{63.25±2.46} & 58.36±1.64 & 55.98±1.42 & 58.23±1.67 \\
+Cora & Uniform 0.4 & \textbf{57.49±0.76} & 47.09±1.81 & 45.20±1.24 & 48.27±2.50 \\
+Cora & Uniform 0.6 & \textbf{41.86±2.30} & 32.33±2.37 & 32.72±2.54 & 35.34±1.74 \\
+Cora & Pair 0.4 & \textbf{51.45±2.80} & 44.36±0.65 & 41.63±3.61 & 44.16±1.52 \\
+Cora & Instance 0.4 & \textbf{56.84±1.67} & 46.62±2.17 & 45.73±1.34 & 48.54±1.17 \\
+CiteSeer & Uniform 0.2 & \textbf{63.92±1.12} & 58.11±1.11 & 56.58±2.04 & 58.36±1.07 \\
+CiteSeer & Uniform 0.4 & \textbf{55.24±2.04} & 45.84±2.48 & 43.77±2.76 & 47.20±1.69 \\
+CiteSeer & Uniform 0.6 & \textbf{42.02±3.14} & 31.88±0.86 & 32.00±1.57 & 35.16±2.58 \\
+CiteSeer & Pair 0.4 & \textbf{51.70±2.14} & 45.06±1.60 & 45.72±2.41 & 45.63±2.70 \\
+CiteSeer & Instance 0.4 & \textbf{55.58±2.54} & 46.02±2.54 & 43.75±2.18 & 47.51±2.50 \\
+CoraFull & Uniform 0.2 & 43.46±0.57 & \textbf{44.54±0.31} & 41.72±0.22 & 44.43±0.75 \\
+CoraFull & Uniform 0.4 & \textbf{37.39±0.51} & 36.51±1.01 & 31.91±1.05 & 37.06±0.78 \\
+CoraFull & Uniform 0.6 & \textbf{27.43±0.89} & 23.90±1.16 & 20.64±0.61 & 26.10±1.07 \\
+CoraFull & Pair 0.4 & \textbf{34.46±1.23} & 32.62±1.71 & 29.83±0.92 & 32.85±1.68 \\
+CoraFull & Instance 0.4 & \textbf{36.95±0.53} & 35.99±0.51 & 31.15±1.18 & 36.58±0.74 \\
+Coauthor-CS & Uniform 0.2 & \textbf{91.54±0.26} & 89.01±0.40 & 91.13±0.57 & 91.08±0.49 \\
+Coauthor-CS & Uniform 0.4 & \textbf{90.71±0.59} & 84.74±1.51 & 88.55±0.86 & 88.85±0.82 \\
+Coauthor-CS & Uniform 0.6 & \textbf{87.19±0.69} & 74.61±1.95 & 79.36±1.67 & 82.99±0.95 \\
+Coauthor-CS & Pair 0.4 & \textbf{86.24±1.18} & 78.45±2.28 & 74.99±2.24 & 77.85±1.51 \\
+Coauthor-CS & Instance 0.4 & \textbf{90.51±0.43} & 85.72±1.35 & 87.53±1.27 & 88.33±0.66 \\
+Amazon-Photo & Uniform 0.2 & \textbf{86.07±1.05} & 84.37±0.96 & 82.63±1.27 & 84.81±1.20 \\
+Amazon-Photo & Uniform 0.4 & \textbf{82.12±1.08} & 80.59±0.94 & 73.41±2.75 & 77.86±0.79 \\
+Amazon-Photo & Uniform 0.6 & \textbf{71.45±3.75} & 64.49±2.99 & 58.14±1.78 & 66.29±3.62 \\
+Amazon-Photo & Pair 0.4 & \textbf{73.89±3.73} & 67.56±3.57 & 62.82±6.11 & 64.83±3.54 \\
+Amazon-Photo & Instance 0.4 & \textbf{79.59±0.88} & 77.23±2.77 & 68.81±2.81 & 72.73±1.78 \\
+\end{longtable}
+
+\subsection{Appendix F. Implementation details and key settings}\label{appendix-f.-implementation-details-and-key-settings}
+
+Table F.1 summarizes how the external graph-based and distillation methods are implemented in our experiments. All methods use the same data splits and noise realizations, and the deployed MLP receives only node attributes. Table F.2 lists the method-specific settings used in the main comparisons.
+
+\begin{longtable}[]{@{}
+  >{\raggedright\arraybackslash}p{(\linewidth - 4\tabcolsep) * \real{0.1925}}
+  >{\raggedright\arraybackslash}p{(\linewidth - 4\tabcolsep) * \real{0.2932}}
+  >{\raggedright\arraybackslash}p{(\linewidth - 4\tabcolsep) * \real{0.5143}}@{}}
+\caption{Table F.1. Implementation used for the external graph-based and distillation methods.}\tabularnewline
+\toprule\noalign{}
+\begin{minipage}[b]{\linewidth}\raggedright
+\textbf{Method}
+\end{minipage} & \begin{minipage}[b]{\linewidth}\centering
+\textbf{Implementation used}
+\end{minipage} & \begin{minipage}[b]{\linewidth}\centering
+\textbf{Main component used}
+\end{minipage} \\
+\midrule\noalign{}
+\endfirsthead
+\toprule\noalign{}
+\begin{minipage}[b]{\linewidth}\raggedright
+\textbf{Method}
+\end{minipage} & \begin{minipage}[b]{\linewidth}\centering
+\textbf{Implementation used}
+\end{minipage} & \begin{minipage}[b]{\linewidth}\centering
+\textbf{Main component used}
+\end{minipage} \\
+\midrule\noalign{}
+\endhead
+\bottomrule\noalign{}
+\endlastfoot
+PosteL & Official target code integrated & Posterior soft-target construction; iterative pseudo-labeling disabled \\
+ALS & Adapted implementation & Adaptive label smoothing, pacing, and KL term \\
+SALS & Adapted implementation & Structure-aware label smoothing \\
+Graph-MLP & Adapted to the common MLP & Multi-hop NContrast objective \\
+GSDN & Adapted implementation & Feature- and label-level neighborhood self-distillation \\
+GCN(X)+CE teacher & Project implementation & GCN-to-MLP response distillation \\
+FF-G2M & Reimplemented with common backbones & Low- and high-frequency distillation \\
+KRD & Adapted implementation & Reliability-based knowledge selection \\
+VQGraph & Adapted implementation & Soft-codebook distillation \\
+\end{longtable}
+
+Other optimizer and MLP settings follow Section 4.1.4.
+
+\begin{longtable}[]{@{}
+  >{\raggedright\arraybackslash}p{(\linewidth - 4\tabcolsep) * \real{0.1880}}
+  >{\raggedright\arraybackslash}p{(\linewidth - 4\tabcolsep) * \real{0.5865}}
+  >{\raggedright\arraybackslash}p{(\linewidth - 4\tabcolsep) * \real{0.2256}}@{}}
+\caption{Table F.2. Key method-specific settings used in the main comparisons.}\tabularnewline
+\toprule\noalign{}
+\begin{minipage}[b]{\linewidth}\raggedright
+\textbf{Method}
+\end{minipage} & \begin{minipage}[b]{\linewidth}\centering
+\textbf{Key settings}
+\end{minipage} & \begin{minipage}[b]{\linewidth}\centering
+\textbf{Source}
+\end{minipage} \\
+\midrule\noalign{}
+\endfirsthead
+\toprule\noalign{}
+\begin{minipage}[b]{\linewidth}\raggedright
+\textbf{Method}
+\end{minipage} & \begin{minipage}[b]{\linewidth}\centering
+\textbf{Key settings}
+\end{minipage} & \begin{minipage}[b]{\linewidth}\centering
+\textbf{Source}
+\end{minipage} \\
+\midrule\noalign{}
+\endhead
+\bottomrule\noalign{}
+\endlastfoot
+Small-loss & Forget rate = known synthetic noise rate; 10-epoch linear ramp-up; exponent 1.0 & Project setting \\
+Co-teaching & Two independent MLPs; same forget-rate schedule as Small-loss & NoisyGL-based \\
+JoCoR & Two independent MLPs; same forget-rate schedule as Small-loss; consistency weight 0.1 & NoisyGL-based \\
+SCE & Cross-entropy weight 0.1; reverse-cross-entropy weight 1.0 & NoisyGL-based \\
+ELR & Moving-average coefficient 0.7; regularization weight 1.0 & Original objective \\
+LogitClip & Logit-clipping threshold 1.0 & Original objective \\
+PosteL & Soft-label ratio 0.8; smoothing ratio 0.4; degree cutoff 1; temperature 1.0; iterative pseudo-labeling disabled & Official target code \\
+ALS & 2 propagation steps; residual coefficient 0.5; KL weight 1e-3; exponential pacing; maximum smoothing weight 0.1 & Fixed project setting \\
+SALS & epsilon = 0.4; gamma = 0.8; unlabeled neighborhoods use the uniform distribution & Fixed project setting \\
+Graph-MLP & Graph batch size 512; neighborhood-contrastive weight 0.5; temperature 0.5 & Fixed project setting \\
+GSDN & Graph batch size 512; feature- and label-level weights 0.8; negative-constraint weight 0.1; initial mixup coefficient 0.5 & Fixed project setting \\
+GB-LCSS & Bmax = 64, nmin = 32, delta = 0.05, smin = 2, beta = 0.5; current node excluded from voting; ties keep the empirical distribution; 2-means uses Euclidean distance, k-means++, and 10 restarts & Set during method development on Cora and CiteSeer; used unchanged in the main comparisons \\
+GCN(X)+CE teacher & Two-layer GCN teacher and two-layer MLP student, both width 64; 200 epochs; temperature 1.0 & GLNN-based \\
+FF-G2M & Two-layer GCN teacher, width 64; low- and high-frequency distillation weights 0.4; temperature 1.5 & Public objective \\
+KRD & 4 feature perturbations, standard deviation 0.01; top 50\% of nodes retained by reliability; temperature 1.0 & Public mechanism \\
+VQGraph & 128 soft codes; codebook temperature 1.0; token/node/edge weights 1.0/0.001/0.03; 4096 edges sampled per epoch & Public mechanism \\
+GCN teacher trained on GB-LCSS targets & Two-layer GCN(X) teacher, width 64; GB-LCSS targets from Eq. (17); student temperature 1.0; student fits teacher predictions over all nodes & Proposed extension \\
+\end{longtable}
+
+The settings above were fixed before the full comparison grid and then kept unchanged across datasets. Complete configurations are provided in the supplementary repository.
+
+Table F.3 lists the GRACE settings used for the five main datasets. Cora and CiteSeer use their public dataset settings; CoraFull and Coauthor-CS use the DBLP setting, and Amazon-Photo uses the PubMed setting. The Dimensions column gives the hidden/projection dimensions. Paired edge-dropping and feature-masking values correspond to the two augmented views. All configurations use a two-layer GCN encoder with weight decay 1e-5.
+
+\begin{longtable}[]{@{}
+  >{\raggedright\arraybackslash}p{(\linewidth - 14\tabcolsep) * \real{0.1549}}
+  >{\centering\arraybackslash}p{(\linewidth - 14\tabcolsep) * \real{0.1684}}
+  >{\centering\arraybackslash}p{(\linewidth - 14\tabcolsep) * \real{0.1218}}
+  >{\centering\arraybackslash}p{(\linewidth - 14\tabcolsep) * \real{0.0902}}
+  >{\centering\arraybackslash}p{(\linewidth - 14\tabcolsep) * \real{0.0782}}
+  >{\centering\arraybackslash}p{(\linewidth - 14\tabcolsep) * \real{0.1263}}
+  >{\centering\arraybackslash}p{(\linewidth - 14\tabcolsep) * \real{0.1339}}
+  >{\centering\arraybackslash}p{(\linewidth - 14\tabcolsep) * \real{0.1263}}@{}}
+\caption{Table F.3. GRACE settings for the five main datasets.}\tabularnewline
+\toprule\noalign{}
+\begin{minipage}[b]{\linewidth}\raggedright
+\textbf{Dataset}
+\end{minipage} & \begin{minipage}[b]{\linewidth}\centering
+\textbf{Configuration}
+\end{minipage} & \begin{minipage}[b]{\linewidth}\centering
+\textbf{Dimensions}
+\end{minipage} & \begin{minipage}[b]{\linewidth}\centering
+\textbf{Learning rate}
+\end{minipage} & \begin{minipage}[b]{\linewidth}\centering
+\textbf{Epochs}
+\end{minipage} & \begin{minipage}[b]{\linewidth}\centering
+\textbf{Edge dropping}
+\end{minipage} & \begin{minipage}[b]{\linewidth}\centering
+\textbf{Feature masking}
+\end{minipage} & \begin{minipage}[b]{\linewidth}\centering
+\textbf{Temperature}
+\end{minipage} \\
+\midrule\noalign{}
+\endfirsthead
+\toprule\noalign{}
+\begin{minipage}[b]{\linewidth}\raggedright
+\textbf{Dataset}
+\end{minipage} & \begin{minipage}[b]{\linewidth}\centering
+\textbf{Configuration}
+\end{minipage} & \begin{minipage}[b]{\linewidth}\centering
+\textbf{Dimensions}
+\end{minipage} & \begin{minipage}[b]{\linewidth}\centering
+\textbf{Learning rate}
+\end{minipage} & \begin{minipage}[b]{\linewidth}\centering
+\textbf{Epochs}
+\end{minipage} & \begin{minipage}[b]{\linewidth}\centering
+\textbf{Edge dropping}
+\end{minipage} & \begin{minipage}[b]{\linewidth}\centering
+\textbf{Feature masking}
+\end{minipage} & \begin{minipage}[b]{\linewidth}\centering
+\textbf{Temperature}
+\end{minipage} \\
+\midrule\noalign{}
+\endhead
+\bottomrule\noalign{}
+\endlastfoot
+Cora & Public Cora config & 128/128 & 1e-4 & 200 & 0.2/0.4 & 0.3/0.4 & 0.4 \\
+CiteSeer & Public CiteSeer config & 256/256 & 1e-3 & 200 & 0.2/0.0 & 0.3/0.2 & 0.9 \\
+CoraFull & Public DBLP config & 256/256 & 1e-3 & 1000 & 0.1/0.4 & 0.1/0.0 & 0.7 \\
+Coauthor-CS & Public DBLP config & 256/256 & 1e-3 & 1000 & 0.1/0.4 & 0.1/0.0 & 0.7 \\
+Amazon-Photo & Public PubMed config & 256/256 & 1e-3 & 1500 & 0.4/0.1 & 0.0/0.2 & 0.7 \\
+\end{longtable}
+
+These settings were fixed before the label-noise experiments. GRACE pretraining does not use labels or data-split masks.
+
+\subsection{Appendix G. Results on additional datasets}\label{appendix-g.-results-on-additional-datasets}
+
+The six additional datasets are evaluated under uniform 0.4 noise. We also evaluate CiteSeerFull under the other four noise settings in an exploratory follow-up. Table G.1 summarizes their basic statistics; data processing and edge homophily follow Table 2.
+
+\begin{longtable}[]{@{}
+  >{\raggedright\arraybackslash}p{(\linewidth - 12\tabcolsep) * \real{0.2000}}
+  >{\centering\arraybackslash}p{(\linewidth - 12\tabcolsep) * \real{0.1083}}
+  >{\centering\arraybackslash}p{(\linewidth - 12\tabcolsep) * \real{0.1534}}
+  >{\centering\arraybackslash}p{(\linewidth - 12\tabcolsep) * \real{0.1053}}
+  >{\centering\arraybackslash}p{(\linewidth - 12\tabcolsep) * \real{0.0797}}
+  >{\centering\arraybackslash}p{(\linewidth - 12\tabcolsep) * \real{0.1669}}
+  >{\centering\arraybackslash}p{(\linewidth - 12\tabcolsep) * \real{0.1865}}@{}}
+\caption{Table G.1. Basic statistics of the six additional datasets.}\tabularnewline
+\toprule\noalign{}
+\begin{minipage}[b]{\linewidth}\raggedright
+\textbf{Dataset}
+\end{minipage} & \begin{minipage}[b]{\linewidth}\centering
+\textbf{Nodes}
+\end{minipage} & \begin{minipage}[b]{\linewidth}\centering
+\textbf{Undirected edges}
+\end{minipage} & \begin{minipage}[b]{\linewidth}\centering
+\textbf{Features}
+\end{minipage} & \begin{minipage}[b]{\linewidth}\centering
+\textbf{Classes}
+\end{minipage} & \begin{minipage}[b]{\linewidth}\centering
+\textbf{Training nodes}
+\end{minipage} & \begin{minipage}[b]{\linewidth}\centering
+\textbf{Edge homophily}
+\end{minipage} \\
+\midrule\noalign{}
+\endfirsthead
+\toprule\noalign{}
+\begin{minipage}[b]{\linewidth}\raggedright
+\textbf{Dataset}
+\end{minipage} & \begin{minipage}[b]{\linewidth}\centering
+\textbf{Nodes}
+\end{minipage} & \begin{minipage}[b]{\linewidth}\centering
+\textbf{Undirected edges}
+\end{minipage} & \begin{minipage}[b]{\linewidth}\centering
+\textbf{Features}
+\end{minipage} & \begin{minipage}[b]{\linewidth}\centering
+\textbf{Classes}
+\end{minipage} & \begin{minipage}[b]{\linewidth}\centering
+\textbf{Training nodes}
+\end{minipage} & \begin{minipage}[b]{\linewidth}\centering
+\textbf{Edge homophily}
+\end{minipage} \\
+\midrule\noalign{}
+\endhead
+\bottomrule\noalign{}
+\endlastfoot
+PubMed & 19,717 & 44,324 & 500 & 3 & 3,943 & 0.802 \\
+Amazon-Computers & 13,752 & 245,861 & 767 & 10 & 2,750 & 0.777 \\
+Cora\_ML & 2,995 & 8,158 & 2,879 & 7 & 599 & 0.789 \\
+Attributed-Wiki & 2,405 & 11,596 & 4,973 & 17 & 481 & 0.610 \\
+CiteSeerFull & 4,230 & 5,337 & 602 & 6 & 846 & 0.949 \\
+Coauthor-Physics & 34,493 & 247,962 & 8,415 & 5 & 6,898 & 0.931 \\
+\end{longtable}
+
+Table G.2 compares GB-LCSS with the strongest of the seven noisy-label baselines in Table 3 and with random size-matched grouping on the six additional datasets under uniform 0.4 noise. Differences are GB-LCSS minus the corresponding method, in percentage points; "Higher (seeds)" counts the seeds on which GB-LCSS has higher accuracy than the strongest baseline. The same definitions apply to Table G.3.
+
+\begin{longtable}[]{@{}
+  >{\raggedright\arraybackslash}p{(\linewidth - 14\tabcolsep) * \real{0.1729}}
+  >{\centering\arraybackslash}p{(\linewidth - 14\tabcolsep) * \real{0.1339}}
+  >{\centering\arraybackslash}p{(\linewidth - 14\tabcolsep) * \real{0.1323}}
+  >{\centering\arraybackslash}p{(\linewidth - 14\tabcolsep) * \real{0.1339}}
+  >{\centering\arraybackslash}p{(\linewidth - 14\tabcolsep) * \real{0.1022}}
+  >{\centering\arraybackslash}p{(\linewidth - 14\tabcolsep) * \real{0.0842}}
+  >{\centering\arraybackslash}p{(\linewidth - 14\tabcolsep) * \real{0.1339}}
+  >{\centering\arraybackslash}p{(\linewidth - 14\tabcolsep) * \real{0.1067}}@{}}
+\caption{Table G.2. Uniform 0.4 results on the six additional datasets.}\tabularnewline
+\toprule\noalign{}
+\begin{minipage}[b]{\linewidth}\raggedright
+\textbf{Dataset}
+\end{minipage} & \begin{minipage}[b]{\linewidth}\centering
+\textbf{GB-LCSS}
+\end{minipage} & \begin{minipage}[b]{\linewidth}\centering
+\textbf{Best baseline}
+\end{minipage} & \begin{minipage}[b]{\linewidth}\centering
+\textbf{Baseline accuracy}
+\end{minipage} & \begin{minipage}[b]{\linewidth}\centering
+\textbf{Difference vs. baseline}
+\end{minipage} & \begin{minipage}[b]{\linewidth}\centering
+\textbf{Higher (seeds)}
+\end{minipage} & \begin{minipage}[b]{\linewidth}\centering
+\textbf{Random grouping}
+\end{minipage} & \begin{minipage}[b]{\linewidth}\centering
+\textbf{Difference vs. random}
+\end{minipage} \\
+\midrule\noalign{}
+\endfirsthead
+\toprule\noalign{}
+\begin{minipage}[b]{\linewidth}\raggedright
+\textbf{Dataset}
+\end{minipage} & \begin{minipage}[b]{\linewidth}\centering
+\textbf{GB-LCSS}
+\end{minipage} & \begin{minipage}[b]{\linewidth}\centering
+\textbf{Best baseline}
+\end{minipage} & \begin{minipage}[b]{\linewidth}\centering
+\textbf{Baseline accuracy}
+\end{minipage} & \begin{minipage}[b]{\linewidth}\centering
+\textbf{Difference vs. baseline}
+\end{minipage} & \begin{minipage}[b]{\linewidth}\centering
+\textbf{Higher (seeds)}
+\end{minipage} & \begin{minipage}[b]{\linewidth}\centering
+\textbf{Random grouping}
+\end{minipage} & \begin{minipage}[b]{\linewidth}\centering
+\textbf{Difference vs. random}
+\end{minipage} \\
+\midrule\noalign{}
+\endhead
+\bottomrule\noalign{}
+\endlastfoot
+PubMed & 72.60±0.66 & JoCoR & \textbf{77.84±1.10} & -5.24 & 0/5 & 63.04±4.49 & +9.56 \\
+Amazon-Computers & 76.20±0.56 & JoCoR & \textbf{76.81±0.85} & -0.60 & 1/5 & 70.49±1.08 & +5.71 \\
+Cora\_ML & \textbf{56.26±2.61} & Small-loss & 55.56±3.42 & +0.70 & 3/5 & 47.81±3.34 & +8.45 \\
+Attributed-Wiki & 65.17±1.42 & LogitClip & \textbf{67.83±1.51} & -2.66 & 0/5 & 59.83±2.13 & +5.34 \\
+CiteSeerFull & \textbf{60.94±1.08} & JoCoR & 59.48±1.60 & +1.46 & 4/5 & 46.69±2.74 & +14.25 \\
+Coauthor-Physics & \textbf{93.13±0.25} & JoCoR & 93.09±0.28 & +0.04 & 3/5 & 88.80±2.12 & +4.33 \\
+\end{longtable}
+
+GB-LCSS has higher mean accuracy than random grouping on all six datasets by 4.33--14.25 percentage points and has higher mean accuracy than the strongest noisy-label baseline on three. The difference from the strongest baseline ranges from -5.24 points on PubMed to +1.46 points on CiteSeerFull. Table G.3 reports all five noise settings for CiteSeerFull; GB-LCSS has mean accuracy at least as high as the strongest baseline in four settings, with a 4.20-point deficit under uniform 0.6.
+
+\begin{longtable}[]{@{}
+  >{\raggedright\arraybackslash}p{(\linewidth - 12\tabcolsep) * \real{0.1443}}
+  >{\centering\arraybackslash}p{(\linewidth - 12\tabcolsep) * \real{0.1579}}
+  >{\centering\arraybackslash}p{(\linewidth - 12\tabcolsep) * \real{0.1473}}
+  >{\centering\arraybackslash}p{(\linewidth - 12\tabcolsep) * \real{0.1579}}
+  >{\centering\arraybackslash}p{(\linewidth - 12\tabcolsep) * \real{0.1308}}
+  >{\centering\arraybackslash}p{(\linewidth - 12\tabcolsep) * \real{0.1038}}
+  >{\centering\arraybackslash}p{(\linewidth - 12\tabcolsep) * \real{0.1579}}@{}}
+\caption{Table G.3. CiteSeerFull results under all five noise settings.}\tabularnewline
+\toprule\noalign{}
+\begin{minipage}[b]{\linewidth}\raggedright
+\textbf{Noise setting}
+\end{minipage} & \begin{minipage}[b]{\linewidth}\centering
+\textbf{GB-LCSS}
+\end{minipage} & \begin{minipage}[b]{\linewidth}\centering
+\textbf{Best baseline}
+\end{minipage} & \begin{minipage}[b]{\linewidth}\centering
+\textbf{Baseline accuracy}
+\end{minipage} & \begin{minipage}[b]{\linewidth}\centering
+\textbf{Difference vs. baseline}
+\end{minipage} & \begin{minipage}[b]{\linewidth}\centering
+\textbf{Higher (seeds)}
+\end{minipage} & \begin{minipage}[b]{\linewidth}\centering
+\textbf{Random grouping}
+\end{minipage} \\
+\midrule\noalign{}
+\endfirsthead
+\toprule\noalign{}
+\begin{minipage}[b]{\linewidth}\raggedright
+\textbf{Noise setting}
+\end{minipage} & \begin{minipage}[b]{\linewidth}\centering
+\textbf{GB-LCSS}
+\end{minipage} & \begin{minipage}[b]{\linewidth}\centering
+\textbf{Best baseline}
+\end{minipage} & \begin{minipage}[b]{\linewidth}\centering
+\textbf{Baseline accuracy}
+\end{minipage} & \begin{minipage}[b]{\linewidth}\centering
+\textbf{Difference vs. baseline}
+\end{minipage} & \begin{minipage}[b]{\linewidth}\centering
+\textbf{Higher (seeds)}
+\end{minipage} & \begin{minipage}[b]{\linewidth}\centering
+\textbf{Random grouping}
+\end{minipage} \\
+\midrule\noalign{}
+\endhead
+\bottomrule\noalign{}
+\endlastfoot
+Uniform 0.2 & \textbf{70.71±0.65} & Small-loss & 67.47±1.98 & +3.24 & 5/5 & 58.70±1.88 \\
+Uniform 0.4 & \textbf{60.94±1.08} & JoCoR & 59.48±1.60 & +1.46 & 4/5 & 46.69±2.74 \\
+Uniform 0.6 & 42.45±3.08 & JoCoR & \textbf{46.65±3.70} & -4.20 & 0/5 & 33.13±3.53 \\
+Pair 0.4 & \textbf{55.02±4.07} & JoCoR & 51.12±5.88 & +3.89 & 4/5 & 43.86±3.51 \\
+Instance 0.4 & \textbf{61.49±3.01} & JoCoR & 59.92±4.19 & +1.57 & 3/5 & 47.51±2.21 \\
+\end{longtable}
+
+\subsection{Appendix H. Analysis of local-consensus supervision}\label{appendix-h.-analysis-of-local-consensus-supervision}
+
+This appendix proves Proposition 1 and derives the soft-target error identity in Section 3.4. All probabilities in Section H.1 condition on the graph, frozen representation, granular ball assignments, training-node set, and clean labels. Randomness comes from the label-corruption process, not from resampling graph nodes.
+
+\subsubsection{H.1 Reliability of the local vote}\label{h.1-reliability-of-the-local-vote}
+
+Fix a training node \(v\) in ball \(B_{j}\), with \(s_{v} = |T_{j, - v}| \geq s_{\min}\). The clean class proportions \(p_{v,c}^{clean}\) and the target-class margin \(\Delta_{v}\) are defined in Eq. (14). Each voting label independently stays unchanged with probability \(1 - \eta\) or changes to any particular incorrect class with probability \(\eta/(C - 1)\). For \(\gamma = 1 - C\eta/(C - 1)\), the expected empirical vote proportion is
+
+\(\mathbb{E}\lbrack p_{j, - v,c}\rbrack = (1 - \eta)p_{v,c}^{clean} + \frac{\eta}{C - 1}(1 - p_{v,c}^{clean}) = \gamma p_{v,c}^{clean} + \frac{\eta}{C - 1}.\) (H.1)
+
+Therefore, the expected vote difference between the current node\textquotesingle s true class and any competing class \(c \neq y_{v}\) is
+
+\(\mathbb{E}\lbrack p_{j, - v,y_{v}} - p_{j, - v,c}\rbrack = \gamma(p_{v,y_{v}}^{clean} - p_{v,c}^{clean}) \geq \gamma\Delta_{v}.\) (H.2)
+
+When \(\gamma > 0\), symmetric noise preserves the ordering of the clean class proportions in expectation. This does not require the true class to hold more than half of the votes: it requires a positive margin over every individual competing class.
+
+For each competing class, define \(Z_{u,c} = \mathbb{I}({\widetilde{y}}_{u} = y_{v}) - \mathbb{I}({\widetilde{y}}_{u} = c)\) for \(u \in T_{j, - v}\). The variables \(Z_{u,c}\) are independent across voting nodes, lie in \(\lbrack - 1,1\rbrack\), and need not be identically distributed. Their average equals \(p_{j, - v,y_{v}} - p_{j, - v,c}\). Applying Hoeffding\textquotesingle s inequality {[}H1{]} gives
+
+\(\begin{aligned}
+\Pr(p_{j, - v,c} \geq p_{j, - v,y_{v}}) & \leq \exp\left\lbrack - \frac{s_{v}\gamma^{2}(p_{v,y_{v}}^{clean} - p_{v,c}^{clean})^{2}}{2} \right\rbrack \\
+ & \leq \exp\left( - \frac{s_{v}\gamma^{2}\Delta_{v}^{2}}{2} \right).
+\end{aligned}\) (H.3)
+
+A union bound over the \(C - 1\) competing classes, capped at one, proves Eq. (15). A tie is included in the failure event. If the empirical winner is unique, Eq. (10) sharpens that winner without changing its identity; if several classes tie, it retains the empirical distribution. Thus the maximizing class set is unchanged for every \(\beta \in \lbrack 0,1\rbrack\), and the same probability bound applies to \(q_{j, - v}\).
+
+The conditioning keeps the clean class composition fixed; it does not assume that clean graph labels are independent. Independent label corruption is the required probabilistic assumption. The positive-margin condition is node-specific: a ball\textquotesingle s dominant clean class need not be the class of every member. With a nonpositive margin, increasing the number of votes can reinforce evidence for a competing class. With few votes or a small positive margin, the bound may equal one and provide no informative numerical guarantee. The symmetric-noise ordering argument does not extend directly to pair or instance-dependent noise.
+
+\subsubsection{H.2 Error of the consensus-weighted target}\label{h.2-error-of-the-consensus-weighted-target}
+
+Fix any realization of the labels. For a node with sufficient voting support, use the abbreviations \(z = e_{{\widetilde{y}}_{v}}\), \(q = q_{j, - v}\), \(\alpha = \alpha_{j, - v}\), and \(e = e_{y_{v}}\). Expanding the square gives
+
+\(\begin{aligned}
+ \parallel t_{v} - e \parallel_{2}^{2} = & (1 - \alpha)^{2} \parallel z - e \parallel_{2}^{2} + \alpha^{2} \parallel q - e \parallel_{2}^{2} \\
+ & + 2\alpha(1 - \alpha)\langle z - e,q - e\rangle.
+\end{aligned}\) (H.4)
+
+Substituting \(2\langle z - e,q - e\rangle = \parallel z - e \parallel_{2}^{2} + \parallel q - e \parallel_{2}^{2} - \parallel z - q \parallel_{2}^{2}\) yields Eq. (16). This identity is pointwise, so it remains valid when \(\alpha\) and \(q\) depend on the same local votes. For a node below the support threshold, Eq. (12) retains \(z\), giving zero change in target error.
+
+If the observed label is correct, \(z = e\) and \(L_{v}(t_{v}) = \alpha^{2}L_{v}(q)\). If it is corrupted, \(L_{v}(z) = 2\), and the soft target can lower this error. Consequently, the change in the mean Brier score can be written exactly as
+
+\(\begin{aligned}
+BS(Z) - BS(T) = & \frac{1}{|\mathcal{V}_{L}|}\sum_{v \in \mathcal{N}}^{}\left( 2 - L_{v}(t_{v}) \right) \\
+ & - \frac{1}{|\mathcal{V}_{L}|}\sum_{v \in \mathcal{K}}^{}L_{v}(t_{v}),
+\end{aligned}\) (H.5)
+
+where \(\mathcal{N} = \{ v \in \mathcal{V}_{L}:{\widetilde{y}}_{v} \neq y_{v}\}\) is the set of corrupted training labels and \(\mathcal{K} = \mathcal{V}_{L}\backslash\mathcal{N}\). The matrices \(Z\) and \(T\) contain the observed one-hot targets and the GB-LCSS targets, respectively; the Brier convention is the sum over classes, averaged over training nodes. Equation (H.5) separates improvement on corrupted labels from the perturbation of correct labels. A reduction in squared probability error need not change the most-probable class of a target.
+
+A conditional sufficient condition follows under the independent symmetric-noise model. Hold the other observed training labels fixed, as well as the quantities conditioned on in Section H.1. Excluding the current node means that \(q\) and \(\alpha\) do not change when only its observed label is varied. Taking expectation over this node\textquotesingle s label corruption gives \(\mathbb{E}_{v}L_{v}(z) = 2\eta\). Equation (16) then implies
+
+\(\mathbb{E}_{v}L_{v}(t_{v}) \leq (1 - \alpha)\, 2\eta + \alpha L_{v}(q).\) (H.6)
+
+Hence \(L_{v}(q) < 2\eta\) and \(\alpha > 0\) are sufficient for lower conditional expected target error than the observed one-hot label. The condition concerns the quality of the local distribution, not merely its concentration. Proposition 1 controls which class receives the most local votes; it does not by itself establish this squared-error condition. The Brier comparisons in Section 4.3.1 evaluate target quality, while the classification experiments assess the performance of the trained MLP.
+
+\subsubsection{Reference for Appendix H}\label{reference-for-appendix-h}
+
+{[}H1{]} W. Hoeffding, Probability inequalities for sums of bounded random variables, J. Am. Stat. Assoc. 58 (1963) 13--30.
+
+\subsection{Appendix I. Parameter sensitivity and target-error decomposition}\label{appendix-i.-parameter-sensitivity-and-target-error-decomposition}
+
+\subsubsection{I.1 Parameter sensitivity and representation controls}\label{i.1-parameter-sensitivity-and-representation-controls}
+
+The representation and parameter comparisons cover the five datasets in Table 2 under uniform 0.4 noise, with seeds 0--4 and the protocol in Section 4.1. Each dataset uses its archived GRACE representation. Variants share the same data split, noisy labels, and initialization seed with the default configuration, and retain the MLP architecture, optimizer, 200-epoch budget, and checkpoint-selection rule.
+
+For these paired reruns, targets were computed on the CPU and the MLP was trained on the AMD Radeon RX 7700 XT. The software and thread settings were PyTorch 2.9.1+rocm7.2.1 with four host threads and scikit-learn 1.8.0 with six threads for 2-means. Tables 7 and I.1 use the rerun default as their reference; its results differ slightly from the main comparisons, which used GPU target construction.
+
+The default parameters are listed in Section 4.1.4. Each sensitivity row changes only the indicated parameter. The threshold \(\mathit{s}_{\min}\) counts votes after excluding the current node. With \(\mathit{\beta = 0}\), the empirical class distribution still contributes to the target. Random grouping preserves the default ball sizes; raw \(\mathit{X}\) and \(\mathit{A}^{2}\mathit{X}\) change the representation used for grouping (Section 4.3.3).
+
+\begin{longtable}[]{@{}
+  >{\raggedright\arraybackslash}p{(\linewidth - 10\tabcolsep) * \real{0.1949}}
+  >{\centering\arraybackslash}p{(\linewidth - 10\tabcolsep) * \real{0.1601}}
+  >{\centering\arraybackslash}p{(\linewidth - 10\tabcolsep) * \real{0.1601}}
+  >{\centering\arraybackslash}p{(\linewidth - 10\tabcolsep) * \real{0.1601}}
+  >{\centering\arraybackslash}p{(\linewidth - 10\tabcolsep) * \real{0.1601}}
+  >{\centering\arraybackslash}p{(\linewidth - 10\tabcolsep) * \real{0.1601}}@{}}
+\caption{Table I.1. Parameter sensitivity and controls under uniform 0.4 noise. Accuracy (\%) is mean ± sample standard deviation over five paired seeds. Bold denotes the highest mean in each column.}\tabularnewline
+\toprule\noalign{}
+\begin{minipage}[b]{\linewidth}\raggedright
+\textbf{Configuration}
+\end{minipage} & \begin{minipage}[b]{\linewidth}\centering
+\textbf{Cora}
+\end{minipage} & \begin{minipage}[b]{\linewidth}\centering
+\textbf{CiteSeer}
+\end{minipage} & \begin{minipage}[b]{\linewidth}\centering
+\textbf{CoraFull}
+\end{minipage} & \begin{minipage}[b]{\linewidth}\centering
+\textbf{Coauthor-CS}
+\end{minipage} & \begin{minipage}[b]{\linewidth}\centering
+\textbf{Amazon-Photo}
+\end{minipage} \\
+\midrule\noalign{}
+\endfirsthead
+\toprule\noalign{}
+\begin{minipage}[b]{\linewidth}\raggedright
+\textbf{Configuration}
+\end{minipage} & \begin{minipage}[b]{\linewidth}\centering
+\textbf{Cora}
+\end{minipage} & \begin{minipage}[b]{\linewidth}\centering
+\textbf{CiteSeer}
+\end{minipage} & \begin{minipage}[b]{\linewidth}\centering
+\textbf{CoraFull}
+\end{minipage} & \begin{minipage}[b]{\linewidth}\centering
+\textbf{Coauthor-CS}
+\end{minipage} & \begin{minipage}[b]{\linewidth}\centering
+\textbf{Amazon-Photo}
+\end{minipage} \\
+\midrule\noalign{}
+\endhead
+\bottomrule\noalign{}
+\endlastfoot
+Default & 57.52 ± 0.71 & 55.24 ± 2.04 & 37.22 ± 0.66 & 90.68 ± 0.58 & 82.32 ± 0.55 \\
+\(\mathit{\beta = 0}\) & 55.13 ± 1.88 & 52.94 ± 3.67 & 37.11 ± 0.36 & 89.97 ± 0.58 & 79.39 ± 0.97 \\
+\(\mathit{\beta = 0.25}\) & 56.44 ± 1.49 & 54.47 ± 2.63 & 37.36 ± 0.44 & 90.24 ± 0.51 & 80.95 ± 0.90 \\
+\(\mathit{\beta = 0.75}\) & \textbf{57.59 ± 1.16} & 56.36 ± 1.83 & 37.02 ± 1.34 & 90.77 ± 0.38 & 82.48 ± 0.81 \\
+\(\mathit{\beta = 1}\) & 57.56 ± 1.11 & \textbf{56.98 ± 2.07} & 37.08 ± 1.18 & \textbf{91.00 ± 0.29} & \textbf{82.98 ± 0.63} \\
+\(\mathit{B}_{\max}\mathit{= 32}\) & 57.55 ± 1.09 & 56.26 ± 1.93 & 35.12 ± 0.61 & 89.84 ± 0.64 & 81.45 ± 0.82 \\
+\(\mathit{B}_{\max}\mathit{= 128}\) & 57.52 ± 0.71 & 55.46 ± 2.07 & \textbf{38.79 ± 0.14} & 90.51 ± 0.54 & 81.86 ± 0.77 \\
+\(\mathit{s}_{\min}\mathit{= 5}\) & 56.09 ± 1.43 & 54.74 ± 2.47 & 37.24 ± 0.67 & 90.53 ± 0.39 & 82.08 ± 0.88 \\
+\(\mathit{s}_{\min}\mathit{= 10}\) & 50.25 ± 1.48 & 50.02 ± 1.92 & 37.12 ± 0.65 & 90.69 ± 0.47 & 81.93 ± 1.15 \\
+\(\mathit{n}_{\min}\mathit{= 1}\) & 55.87 ± 1.71 & 55.94 ± 1.80 & 37.17 ± 0.66 & 90.37 ± 0.54 & 81.85 ± 1.93 \\
+\(\mathit{n}_{\min}\mathit{= 16}\) & 56.58 ± 1.53 & 56.49 ± 1.18 & 36.92 ± 0.59 & 90.32 ± 0.57 & 81.54 ± 1.17 \\
+\(\mathit{n}_{\min}\mathit{= 64}\) & 57.45 ± 1.30 & 56.23 ± 2.78 & 37.60 ± 0.57 & 90.66 ± 0.59 & 82.14 ± 0.46 \\
+\(\mathit{\delta = 0.01}\) & 57.52 ± 0.71 & 55.24 ± 2.04 & 37.22 ± 0.66 & 90.71 ± 0.59 & 82.34 ± 0.58 \\
+\(\mathit{\delta = 0.10}\) & 44.37 ± 2.31 & 42.90 ± 2.50 & 31.86 ± 1.05 & 87.63 ± 1.10 & 82.14 ± 0.91 \\
+MLP+CE & 44.24 ± 2.62 & 43.50 ± 3.02 & 31.98 ± 0.98 & 88.42 ± 0.62 & 73.90 ± 1.80 \\
+Random grouping & 43.31 ± 1.40 & 42.00 ± 2.91 & 32.30 ± 0.85 & 87.49 ± 1.10 & 72.16 ± 3.45 \\
+Raw \(\mathit{X}\) & 44.37 ± 2.31 & 42.90 ± 2.50 & 31.86 ± 1.05 & 87.63 ± 1.10 & 73.38 ± 1.13 \\
+\(\mathit{A}^{2}\mathit{X}\) & 44.37 ± 2.31 & 42.90 ± 2.50 & 31.86 ± 1.05 & 89.20 ± 0.67 & 80.94 ± 1.75 \\
+\end{longtable}
+
+The ball counts help explain the effect of the budget. Increasing \(\mathit{B}_{\max}\) to 128 left Cora at 52--53 balls and CiteSeer at 63--66, while the other three datasets reached 128. The finer partition improved CoraFull on all five seeds, with a paired gain of 1.57 ± 0.54 percentage points and a decrease in target Brier score from 0.6321 to 0.6026. Coauthor-CS and Amazon-Photo instead had small decreases in mean accuracy. Additional groups were therefore useful to different degrees across datasets.
+
+Reducing \(\mathit{n}_{\min}\) from 32 to 1 changed mean accuracy by −1.65, +0.70, −0.05, −0.31, and −0.47 points on Cora, CiteSeer, CoraFull, Coauthor-CS, and Amazon-Photo, respectively. At \(\mathit{s}_{\min}\mathit{= 10}\), the fractions of training nodes receiving a positive consensus weight were 56.53\%, 58.32\%, 99.13\%, 98.98\%, and 89.96\% in the same order. These counts connect the sensitivity results to how many nodes can receive supervision from their local group.
+
+\subsubsection{I.2 Error reduction on training targets}\label{i.2-error-reduction-on-training-targets}
+
+Equation (H.5) separates the change in target error into the reduction on corrupted labels and the increase on initially correct labels. For each seed, both components are divided by the total number of training nodes; their difference is the net reduction in Brier score. Table I.2 reports their means over five seeds for the default configuration. Clean training labels provide the reference for this diagnostic.
+
+\begin{longtable}[]{@{}
+  >{\raggedright\arraybackslash}p{(\linewidth - 10\tabcolsep) * \real{0.1662}}
+  >{\centering\arraybackslash}p{(\linewidth - 10\tabcolsep) * \real{0.1209}}
+  >{\centering\arraybackslash}p{(\linewidth - 10\tabcolsep) * \real{0.1209}}
+  >{\centering\arraybackslash}p{(\linewidth - 10\tabcolsep) * \real{0.2191}}
+  >{\centering\arraybackslash}p{(\linewidth - 10\tabcolsep) * \real{0.2342}}
+  >{\centering\arraybackslash}p{(\linewidth - 10\tabcolsep) * \real{0.1360}}@{}}
+\caption{Table I.2. Decomposition of the reduction in training-target Brier score under uniform 0.4 noise.}\tabularnewline
+\toprule\noalign{}
+\begin{minipage}[b]{\linewidth}\raggedright
+\textbf{Dataset}
+\end{minipage} & \begin{minipage}[b]{\linewidth}\centering
+\textbf{One-hot\\
+label}\strut
+\end{minipage} & \begin{minipage}[b]{\linewidth}\centering
+\textbf{Soft\\
+target}\strut
+\end{minipage} & \begin{minipage}[b]{\linewidth}\centering
+\textbf{Reduction on\\
+corrupted labels}\strut
+\end{minipage} & \begin{minipage}[b]{\linewidth}\centering
+\textbf{Error increase on\\
+correct labels}\strut
+\end{minipage} & \begin{minipage}[b]{\linewidth}\centering
+\textbf{Net\\
+reduction}\strut
+\end{minipage} \\
+\midrule\noalign{}
+\endfirsthead
+\toprule\noalign{}
+\begin{minipage}[b]{\linewidth}\raggedright
+\textbf{Dataset}
+\end{minipage} & \begin{minipage}[b]{\linewidth}\centering
+\textbf{One-hot\\
+label}\strut
+\end{minipage} & \begin{minipage}[b]{\linewidth}\centering
+\textbf{Soft\\
+target}\strut
+\end{minipage} & \begin{minipage}[b]{\linewidth}\centering
+\textbf{Reduction on\\
+corrupted labels}\strut
+\end{minipage} & \begin{minipage}[b]{\linewidth}\centering
+\textbf{Error increase on\\
+correct labels}\strut
+\end{minipage} & \begin{minipage}[b]{\linewidth}\centering
+\textbf{Net\\
+reduction}\strut
+\end{minipage} \\
+\midrule\noalign{}
+\endhead
+\bottomrule\noalign{}
+\endlastfoot
+Cora & 0.8118 & 0.4498 & 0.4034 & 0.0415 & 0.3620 \\
+CiteSeer & 0.8162 & 0.5352 & 0.3304 & 0.0493 & 0.2811 \\
+CoraFull & 0.8011 & 0.6321 & 0.1960 & 0.0269 & 0.1690 \\
+Coauthor-CS & 0.8008 & 0.3130 & 0.5162 & 0.0285 & 0.4877 \\
+Amazon-Photo & 0.8013 & 0.3666 & 0.4656 & 0.0309 & 0.4347 \\
+\end{longtable}
+
+The reduction on corrupted labels exceeded the increase on initially correct labels in all 25 dataset--seed runs. Mean net reductions ranged from 0.1690 on CoraFull to 0.4877 on Coauthor-CS. Random grouping also lowered Brier scores, yet yielded much lower classification accuracy (Table I.1). Target quality and downstream accuracy therefore provide complementary views of the supervision.
+
+For Proposition 1, we also counted training nodes whose true class was more frequent than every competing class among the other training nodes in their ball, using clean labels. The proportions averaged 75.64\%, 65.02\%, 36.13\%, 88.94\%, and 84.76\% on Cora, CiteSeer, CoraFull, Coauthor-CS, and Amazon-Photo, respectively. The proposition applies to these positive-margin nodes. The Brier decomposition in Table I.2 includes all training nodes.

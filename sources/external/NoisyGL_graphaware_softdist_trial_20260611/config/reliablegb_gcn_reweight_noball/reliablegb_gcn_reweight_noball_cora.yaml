@@ -1,0 +1,44 @@
+model:
+  method: reliablegb_gcn_reweight_noball
+  n_hidden: 64
+  n_layer: 2
+  act: F.relu
+  dropout: 0.5
+  norm_info: ~
+  input_layer: false
+  output_layer: false
+
+training:
+  lr: 1e-2
+  weight_decay: 5e-4
+  n_epochs: 200
+  patience: ~
+  criterion: metric
+
+dataset:
+  sparse: true
+
+gb:
+  warmup_epochs: 30
+  gb_refresh_interval: 20
+  gb_ema_decay: 0.8
+  k: 15
+  target_mode: reweight
+  suspicion_mode: no_ball
+  suspicion_top_ratio: 0.2
+  min_ball_conf: 0.0
+  beta: 0.5
+  min_weight: 0.3
+  alpha_max: 0.5
+  gamma: 0.5
+  eta_max: 0.4
+  min_ball_size: 3
+  max_ball_size: 128
+  min_train_per_ball: 2
+  full_train_per_ball: 4
+  label_prior_smoothing: 1.0
+
+analysis:
+  flag: false
+  project: gnn-with-label-noise
+  save_graph: false

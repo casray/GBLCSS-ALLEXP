@@ -1,0 +1,66 @@
+{
+  "datasets": [
+    "cora",
+    "citeseer",
+    "corafull"
+  ],
+  "seeds": [
+    0,
+    1
+  ],
+  "arms": [
+    "grace",
+    "pingda",
+    "pingda_context",
+    "pingda_hreg"
+  ],
+  "spaces": [
+    "grace_h",
+    "pingda_h",
+    "pingda_mean_r",
+    "context_h",
+    "context_r",
+    "hreg_h"
+  ],
+  "budgets": [
+    64,
+    128,
+    256
+  ],
+  "noise": {
+    "clean": 0.0,
+    "uniform": 0.4,
+    "pair": 0.4
+  },
+  "pretrain_epochs": 200,
+  "student_epochs": 200,
+  "device": "cuda",
+  "context_lambda": 0.1,
+  "context_mix": 0.5,
+  "vote_mix": 0.5,
+  "context_neighbors": 16,
+  "context_dim": 128,
+  "node_negatives": "all exact block recomputation",
+  "chunk_size": 1024,
+  "scope": "two complete seeds exploratory; no KNN/KMeans comparator",
+  "data": {
+    "cora": {
+      "path": "C:\\Users\\Admin\\Desktop\\实验8去噪5.19-\\external\\NoisyGL\\data\\Cora\\processed\\data.pt",
+      "sha256": "89854b1cf5e971674aa7355995780f0991b1d25c7fa777dd96af674ad12e4af9"
+    },
+    "citeseer": {
+      "path": "C:\\Users\\Admin\\Desktop\\实验8去噪5.19-\\external\\NoisyGL\\data\\CiteSeer\\processed\\data.pt",
+      "sha256": "f1b1b207fbc88b74dd41c594bcd3d8b884961db791542afb2815d3702912435b"
+    },
+    "corafull": {
+      "path": "C:\\Users\\Admin\\Desktop\\实验8去噪5.19-\\gb_graph_aware_minival_6_1\\data\\CoraFull\\cora\\processed\\data_undirected.pt",
+      "sha256": "f4d8da333e509eacc741845b7237de3a4530c371663df5daf2f0ce32a9ab3b6d"
+    }
+  },
+  "environment": {
+    "python": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]",
+    "torch": "2.9.1+rocm7.2.1",
+    "platform": "Windows-10-10.0.19045-SP0",
+    "gpu": "AMD Radeon RX 7700 XT"
+  }
+}

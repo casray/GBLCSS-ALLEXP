@@ -1,0 +1,62 @@
+{
+  "date": "2026-10-15",
+  "initial_preflight": {
+    "command": "D:\\codex_temp\\noisygl-rocm721\\Scripts\\python.exe -m unittest discover -s experiments/ball_count_diagnostic_20261015 -p test_*.py -v",
+    "tests_run": 27,
+    "exit_code": 0
+  },
+  "subsequent_combined_check": {
+    "tests_run": 30,
+    "exit_code": 0
+  },
+  "validation_only_selection_regression": {
+    "tests_run": 2,
+    "exit_code": 0
+  },
+  "synthetic_trajectory_integration": {
+    "snapshots_independently_verified": 4,
+    "actual_counts": [
+      1,
+      8,
+      8,
+      8
+    ],
+    "status": "passed"
+  },
+  "synthetic_plot_layout": {
+    "status": "passed programmatic clipping check; reviewed image",
+    "data_are_experiment_results": false,
+    "folder": "plot_smoke_synthetic",
+    "reviewed_version": "plot_curves_reviewed.py"
+  },
+  "csv_compatibility_issue": {
+    "root_cause": "keep_default_na=False creates strings for columns with blanks; np.isfinite on numeric string fails",
+    "repair": "finish_diagnostic.py converts scalar numbers; frozen source files are preserved",
+    "regression_passed": true
+  },
+  "embedding_queue": {
+    "exec_session": 67676,
+    "exit_code": 0,
+    "new_representations": 6
+  },
+  "formal_queue": {
+    "command": "D:\\codex_temp\\noisygl-rocm721\\Scripts\\python.exe experiments/ball_count_diagnostic_20261015/run.py --device cuda",
+    "exec_session": 11290,
+    "first_partition_local": "2026-10-15 14:10:04"
+  },
+  "posthoc_diagnostics": {
+    "split_condition_cells": 108,
+    "split_condition_rows": 15537,
+    "endpoint_checks": 216,
+    "status": "passed",
+    "no_student_trained_with_oracle": true
+  },
+  "final_validation": {
+    "status": "passed",
+    "tests_run": 35,
+    "exit_code": 0,
+    "audit": "audit.json",
+    "record": "final_validation.json",
+    "pending_training": false
+  }
+}

@@ -1,0 +1,62 @@
+{
+  "dataset": "cora",
+  "noise_rate": 0.4,
+  "student_seed": 2,
+  "arm": "KM",
+  "settings": {
+    "strength": 1.0,
+    "shuffle_seed": 137,
+    "hidden": 64,
+    "layers": 2,
+    "batch_norm": true,
+    "dropout": 0.5,
+    "lr": 0.01,
+    "weight_decay": 0.0005,
+    "epochs": 200,
+    "temperature": 1,
+    "seed": null,
+    "scope": "all nodes",
+    "selection": "first strict improvement of clean validation accuracy",
+    "student_seeds": [
+      0,
+      1,
+      2
+    ],
+    "teacher_split_noise_seed": 0,
+    "trace_every": 10,
+    "snapshot_epochs": [
+      20,
+      50,
+      100,
+      200
+    ],
+    "regional_reduction": "fixed dense membership matrix multiplication",
+    "grouping": "kmeans",
+    "kmeans": {
+      "init": "k-means++",
+      "n_init": 10,
+      "random_state": 0,
+      "max_iter": 300,
+      "tol": 0.0001,
+      "algorithm": "lloyd"
+    },
+    "clustering_threads": 4
+  },
+  "protocol": {
+    "split_hash": "fe241a5bd04c1aba7c5312aa410fc4c653a2c14dd68e58e9015b5271eb4c67f9",
+    "noise_hash": "eb786f64ad9bf24efea0826e657708af4a1f081023c1eca47b0106fc2765d3a1",
+    "seed": 0,
+    "modified_train_count": 230,
+    "modified_val_count": 0,
+    "modified_test_count": 0,
+    "features": "raw main-experiment attributes",
+    "data_file": "C:\\Users\\Admin\\Desktop\\实验8去噪5.19-\\external\\NoisyGL\\data\\Cora\\processed\\data.pt",
+    "num_nodes": 2708,
+    "num_classes": 7
+  },
+  "initial_state_hash": "254c906c910c0e0725759bcb7ebcf7a48e6521b8990c1d09b1aea2632f39f4be",
+  "initial_rng_hash": "f03585999a7bc922e01535ce32481b28f29c2f7968241b09995b8f2ee378905b",
+  "input_cache": "C:\\Users\\Admin\\Desktop\\实验8去噪5.19-\\gb_c1_ratio_success_20260609\\results_ratio_c1_20260609\\experiments\\gb_regional_distillation_seed0_20261007\\cache\\cora\\uniform0.4\\regional.pt",
+  "assignment_hash": "7718448b5b7c33bb73dec4f93be0951bc1fb6306c7ade2f02e5f06d0b9807ff5",
+  "teacher_source": "C:\\Users\\Admin\\Desktop\\实验8去噪5.19-\\gb_c1_ratio_success_20260609\\results_ratio_c1_20260609\\experiments\\robust_graph_seed0_20261006\\runs\\cora\\uniform0.4\\erase"
+}

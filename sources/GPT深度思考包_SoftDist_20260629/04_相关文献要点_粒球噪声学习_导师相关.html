@@ -1,0 +1,725 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>相关文献要点：粒球噪声学习与导师相关材料</title>
+<style>
+:root{
+  --bg:#f5f6f8;--panel:#ffffff;--ink:#17202a;--muted:#667085;--line:#d8dee8;
+  --blue:#255a9b;--green:#157347;--red:#a33a32;--amber:#9a6a12;--purple:#6f42c1;
+  --chip:#eef4ff;--soft:#f7fbff;--warn:#fff7e6;--danger:#fff1f0;--ok:#eefaf2;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Microsoft YaHei",Arial,sans-serif;line-height:1.72}
+.wrap{max-width:1240px;margin:0 auto;padding:30px 24px 70px}
+header{border-bottom:3px solid #1d2939;margin-bottom:24px;padding-bottom:18px}
+h1{font-size:30px;line-height:1.22;margin:0 0 10px}
+h2{font-size:23px;margin:34px 0 14px;padding-left:10px;border-left:5px solid var(--blue)}
+h3{font-size:19px;margin:22px 0 10px}
+h4{font-size:16px;margin:18px 0 8px;color:#243b53}
+p{margin:8px 0}
+ul{margin:8px 0 0 22px;padding:0}
+li{margin:5px 0}
+table{width:100%;border-collapse:collapse;background:var(--panel);margin:12px 0;border:1px solid var(--line)}
+th,td{border:1px solid var(--line);padding:10px 12px;text-align:left;vertical-align:top}
+th{background:#eef2f7}
+code,.file{font-family:Consolas,"Cascadia Mono",monospace;font-size:12px;background:#f2f4f7;border:1px solid #e4e7ec;border-radius:4px;padding:1px 4px;word-break:break-all}
+.meta{color:var(--muted);font-size:14px}
+.toc{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:14px 16px;margin:18px 0}
+.toc a{display:inline-block;margin:4px 12px 4px 0;color:var(--blue);text-decoration:none}
+.toc a:hover{text-decoration:underline}
+.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:16px;box-shadow:0 1px 2px rgba(16,24,40,.04)}
+.card h3{margin-top:0}
+.tag{display:inline-block;background:var(--chip);border:1px solid #d6e4ff;color:#24466f;border-radius:999px;padding:2px 8px;font-size:12px;margin:2px 5px 2px 0}
+.ok{color:var(--green);font-weight:700}.risk{color:var(--red);font-weight:700}.weak{color:var(--amber);font-weight:700}.purple{color:var(--purple);font-weight:700}
+.callout{background:var(--soft);border:1px solid #bed7f0;border-radius:8px;padding:13px 15px;margin:14px 0}
+.notice{background:var(--warn);border:1px solid #f0d39a;border-radius:8px;padding:13px 15px;margin:14px 0}
+.danger{background:var(--danger);border:1px solid #f0b8b2;border-radius:8px;padding:13px 15px;margin:14px 0}
+.goodbox{background:var(--ok);border:1px solid #b7dfc5;border-radius:8px;padding:13px 15px;margin:14px 0}
+.small{font-size:13px;color:var(--muted)}
+.paper{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:18px;margin:16px 0}
+.paper h3{border-bottom:1px solid var(--line);padding-bottom:8px}
+.split{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.mono{white-space:pre-wrap;font-family:Consolas,"Cascadia Mono",monospace;background:#0f172a;color:#e5edf7;border-radius:8px;padding:14px;overflow:auto;font-size:13px}
+@media(max-width:880px){.grid,.split{grid-template-columns:1fr}.wrap{padding:18px 14px}h1{font-size:24px}}
+</style>
+</head>
+<body>
+<div class="wrap">
+<header>
+  <h1>相关文献要点：粒球噪声学习与导师相关材料</h1>
+  <div class="meta">生成日期：2026-06-29。用途：上传给网页版 GPT，帮助其理解 SoftDist 之后的实验边界、文献启发与不能过度 claim 的地方。</div>
+  <div class="meta">覆盖目录：<span class="file">C:\Users\Admin\Desktop\实验8去噪5.19-\文献文件\粒球噪声学习</span> 与 <span class="file">C:\Users\Admin\Desktop\实验8去噪5.19-\文献文件\导师相关</span>。</div>
+</header>
+
+<section class="notice">
+  <strong>阅读边界：</strong>本文献包是给外部 GPT 的 self-contained 材料。它总结的是“文献如何启发当前 SoftDist/椭球/GEAF 实验”，不是证明当前图节点实验已经成功。尤其注意：很多文献来自图像、故障诊断、多视图聚类、UCI 分类或开放意图识别，不能直接当作图节点噪声学习的实验结论。
+</section>
+
+<section class="toc">
+  <a href="#sources">证据来源</a>
+  <a href="#onepage">一页总览</a>
+  <a href="#taxonomy">文献谱系</a>
+  <a href="#papers">逐篇详解</a>
+  <a href="#common">共同思想</a>
+  <a href="#diff">关键差异</a>
+  <a href="#mapping">对 SoftDist 的映射</a>
+  <a href="#boundaries">实验与论文边界</a>
+  <a href="#questions">给 GPT 的问题</a>
+</section>
+
+<h2 id="sources">一、证据来源与读取状态</h2>
+<table>
+  <thead><tr><th>材料</th><th>读取状态</th><th>本文使用方式</th></tr></thead>
+  <tbody>
+    <tr><td><span class="file">粒球噪声学习文献思想速览.html</span></td><td>可读但原 HTML 存在编码错乱</td><td>只作为线索；逐篇内容优先回到已抽取 PDF 文本。</td></tr>
+    <tr><td><span class="file">tmp_pdf_text\Beneficial-noise-learning-for-open-intent-classification-v_2026_Pattern-Reco.txt</span></td><td>可读</td><td>BNO-GB 文献主证据。</td></tr>
+    <tr><td><span class="file">tmp_pdf_text\G-GBC--A-Gaussian-mixture-based-granular-ball-computing-me_2026_Knowledge-Ba.txt</span></td><td>可读，公式字符部分乱码</td><td>GMM 粒球、Mahalanobis、动态权重、CNN 噪声鲁棒文献主证据。</td></tr>
+    <tr><td><span class="file">tmp_pdf_text\Like-draws-to-like--A-Multi-granularity-Ball-Intra-Fusion_2024_Advanced-Engi.txt</span></td><td>可读，公式字符部分乱码</td><td>MgBIF：球内伪标签、DSmT 融合、高置信样本选择。</td></tr>
+    <tr><td><span class="file">tmp_pdf_text\MgCNL_A_Sample_Separation_Approach...</span></td><td>可读</td><td>MgCNL：对比预热、多粒度球置信选样。</td></tr>
+    <tr><td><span class="file">tmp_pdf_text\Research_on_Classification_Label_Denoising_Algorithm_Based_on_Granular_Ball.txt</span></td><td>可读，排版错位</td><td>GBD：早期粒球硬过滤/采样去噪思想。</td></tr>
+    <tr><td><span class="file">tmp_pdf_text\Three-Level_Noise-Tolerance_Granular-Ball_Distinguishing_Measures...</span></td><td>可读</td><td>三层噪声容忍 GBDM：特征选择中的粒球区分度、熵、依赖度。</td></tr>
+    <tr><td><span class="file">tmp_pdf_text\多粒度标签噪声过滤学习算法研究_王炳贵.txt</span></td><td>可读</td><td>SPRD/MSPRD/GBS：多粒度噪声检测、压缩采样。</td></tr>
+    <tr><td><span class="file">tmp_pdf_text\融合粒度划分的回归标签噪声过滤方法.txt</span></td><td>文本层较弱，另有截图</td><td>GBNF：回归标签噪声过滤，只做谨慎摘要。</td></tr>
+    <tr><td><span class="file">导师相关\_extracted_text\孙旭硕士毕业论文0413.txt</span></td><td>可读，中文主体和英文摘要均可用</td><td>粒椭球模型、GEC、GEB/GED-SMOTE、GEAF、适用边界。</td></tr>
+    <tr><td><span class="file">导师相关\_extracted_text\孙旭硕士毕业论文0413_ch5_extracted.txt</span></td><td>可读</td><td>GEAF 第五章：标签噪声下自适应粒椭球划分与过滤。</td></tr>
+    <tr><td><span class="file">导师相关\_extracted_text\Structure-aware-granular-ball-clustering_2026_Information-Sciences.txt</span></td><td>可读</td><td>SAGBC：soft affiliation graph、dual-constraint connectivity。</td></tr>
+    <tr><td><span class="file">导师相关\_extracted_text\20260619投稿.txt</span></td><td>可读</td><td>IMVGCR：不完整多视图粒球对比聚类、weighted granular-ball contrastive anchors。</td></tr>
+    <tr><td><span class="file">导师相关\一种稳定的加速自适应粒球生成方法_张清华.caj</span></td><td>CAJ 抽取文本不可读</td><td>仅依据孙旭论文中的相关描述总结，细节标记为需复核。</td></tr>
+  </tbody>
+</table>
+
+<h2 id="onepage">二、一页总览：这批文献到底告诉当前项目什么</h2>
+<div class="grid">
+  <div class="card">
+    <h3>最重要的正向启发</h3>
+    <ul>
+      <li><span class="ok">粒球更适合作为局部统计证据，而不是硬标签。</span> BNO-GB、MgBIF、MgCNL、G-GBC、GEAF 都在用球内一致性、纯度、权重或局部密度来判断“可信程度”。</li>
+      <li><span class="ok">先学表征、再构粒球，是主流可迁移模式。</span> G-GBC 在 CNN feature 上构球，MgCNL/MgBIF 在 latent feature space 上构球，当前项目在 frozen GRACE H 上构球是合理同构。</li>
+      <li><span class="ok">硬划分是明确风险。</span> SAGBC 明确指出 hard partition 会制造人工边界；IMVGCR 与 G-GBC 都在用权重、软归属或球级锚点降低单点噪声。</li>
+      <li><span class="ok">椭球解决的是真实局部结构非球形问题。</span> 孙旭论文的粒椭球模型和 G-GBC 的 Mahalanobis/GMM 都支持“同一球内贡献不等、沿主方向偏移不应被过度惩罚”的直觉。</li>
+      <li><span class="ok">噪声过滤必须同时看“修正噪声”和“伤害干净样本”。</span> GEAF 的 NRR/CSIR 思路直接对应当前项目的 NCR/CDR。</li>
+    </ul>
+  </div>
+  <div class="card">
+    <h3>最重要的警告</h3>
+    <ul>
+      <li><span class="risk">这些文献不能直接证明 SoftDist 在图节点分类上有效。</span> 任务域大多不是 citation/coauthor/amazon 图节点。</li>
+      <li><span class="risk">很多方法使用标签纯度或全监督信息。</span> 当前 SoftDist 要保持 train noisy label 限定、clean label 只用于诊断，不能引入泄漏。</li>
+      <li><span class="risk">硬纠正/硬筛样在当前图实验里已经很危险。</span> GEAF 在 UCI 上强，但当前项目的 Coauthor/PubMed/DBLP/Amazon 下游未稳定支持。</li>
+      <li><span class="risk">GMM/椭球/soft affiliation 会增加复杂度和调参。</span> 若 real-vs-shuffled 不稳，不能 claim 几何贡献。</li>
+      <li><span class="risk">offline target diagnostic 不等于 downstream 提升。</span> DBLP 和 Amazon 的椭球实验已经说明 target 指标正信号可被训练过程吸收或抵消。</li>
+    </ul>
+  </div>
+</div>
+
+<h2 id="taxonomy">三、文献谱系：按“粒球在方法中扮演什么角色”分类</h2>
+<table>
+  <thead><tr><th>谱系</th><th>代表文献</th><th>粒球角色</th><th>与 SoftDist 的关系</th><th>风险</th></tr></thead>
+  <tbody>
+    <tr>
+      <td>标签噪声过滤/修正</td>
+      <td>GBD、王炳贵硕士论文、MgBIF、MgCNL、GEAF、GBNF、BNO-GB</td>
+      <td>局部一致性、置信度、噪声识别、伪标签、样本选择</td>
+      <td>直接支持 SoftDist 的“球内分布作为 soft teacher/denoising prior”定位</td>
+      <td>容易滑向硬纠正、硬删除或 clean sample selection；当前项目已多次发现硬规则不稳。</td>
+    </tr>
+    <tr>
+      <td>概率/椭球/软归属粒球</td>
+      <td>G-GBC、孙旭粒椭球、SAGBC</td>
+      <td>GMM 组件、Mahalanobis 权重、粒椭球形状矩阵、soft affiliation graph</td>
+      <td>支持椭球化 SoftDist、GMM-RespSoftDist、球内贡献不等、hard membership 质疑</td>
+      <td>高维协方差、component support、GMM 初始化、soft assignment 调参，且当前椭球下游证据偏弱。</td>
+    </tr>
+    <tr>
+      <td>粒球 + 深度表征/对比学习</td>
+      <td>IMVGCR、MgCNL、G-GBC</td>
+      <td>表征空间中的球级锚点、加权球中心、球级 contrastive anchor、特征噪声过滤</td>
+      <td>与 frozen GRACE H 后构球高度相关；支持“球依赖好表征空间”</td>
+      <td>这些方法通常是端到端或动态训练；当前项目的稳定边界是非迭代、frozen H、静态 target。</td>
+    </tr>
+    <tr>
+      <td>聚类结构与大图/大数据可扩展</td>
+      <td>SAGBC、Ball k-means、GB-DBSCAN 等相关背景</td>
+      <td>代表性采样、球级连通图、点到多个球的软从属关系</td>
+      <td>解释为什么 Amazon/DBLP/PubMed 上需要看 H 空间结构和 ball-clusterability</td>
+      <td>聚类 ACC/NMI/Purity 与节点分类 downstream accuracy 不同，不能偷换指标。</td>
+    </tr>
+    <tr>
+      <td>特征选择/理论度量</td>
+      <td>Three-Level GBDM</td>
+      <td>粒球 fuzzy dependency、entropy、distinguishing measure</td>
+      <td>给论文 related work 和理论语言，不建议直接塞进 SoftDist 方法</td>
+      <td>任务不匹配，公式复杂化会削弱当前方法“简单可复现”的优点。</td>
+    </tr>
+  </tbody>
+</table>
+
+<h2 id="papers">四、逐篇详解</h2>
+
+<article class="paper">
+  <h3>1. BNO-GB：Beneficial Noise Learning for Open Intent Classification via Granular-Ball Representation</h3>
+  <p><span class="tag">Pattern Recognition 2026</span><span class="tag">open intent classification</span><span class="tag">IND/OOD noise</span><span class="tag">granular-ball representation</span></p>
+  <h4>核心问题</h4>
+  <p>开放意图分类不仅要分类已知意图，还要识别未知意图。现实训练数据同时存在两类噪声：IND noise，即已知类样本被错标成另一个已知类；OOD noise，即未知分布样本被错误标为已知类。传统 noisy-label 方法多依赖 small-loss、prediction consistency、prototype distance 等单一标准，缺少局部邻域证据，也很少考虑噪声本身是否能成为有益表征信号。</p>
+  <h4>方法结构</h4>
+  <ul>
+    <li>先进行无监督粒球聚类，得到较抗噪的粒球表示。</li>
+    <li>设计两个互补指标：<strong>G-ODT</strong>（Granular-ball-level Outlier Distribution Tendency）衡量一个球偏离已知类分布、可能被 OOD 噪声主导的程度；<strong>S-ICD</strong>（Sample-level Inlier Consistency Degree）衡量样本与其所属球/邻域的一致程度。</li>
+    <li>用 G-ODT 与 S-ICD 将样本分为 clean、IND noise、OOD noise、uncertain。</li>
+    <li>对不同噪声类型采用不同学习策略：OOD Dispersion Loss、Prototype Softmax Loss、Prototype Margin Loss 联合优化。</li>
+  </ul>
+  <h4>核心创新点</h4>
+  <ul>
+    <li>不是“发现噪声就删除”，而是把噪声细分为 IND/OOD/uncertain，并区分使用。</li>
+    <li>把粒球属性和邻球关系用于噪声类型识别，而不是只看单点损失或单点到 prototype 的距离。</li>
+    <li>强调 beneficial noise：某些噪声可帮助形成更好的表征边界。</li>
+  </ul>
+  <h4>对当前 SoftDist 的启发</h4>
+  <ul>
+    <li>当前 SoftDist 只构造一个 ball label distribution，再用 alpha 混合 noisy one-hot；BNO-GB 启发我们：球级统计可以不止用于投票，还可以输出“噪声类型”或“可信结构类型”。</li>
+    <li>这支持当前项目中 <strong>NCR/CDR、s_ball_loo、pseudo NCR/CDR、soft_clean_mass_delta</strong> 这类诊断指标，而不是只报准确率。</li>
+    <li>它也提醒：噪声不一定都应修正，某些不一致可能是边界信息。当前 GEAF 硬纠正失败的原因之一可能就是过度把边界/有益不一致当成错误。</li>
+  </ul>
+  <h4>不能直接照搬的地方</h4>
+  <ul>
+    <li>任务是文本开放意图分类，不是图节点分类。</li>
+    <li>它包含 OOD intent 的特定训练和测试设定，当前 NoisyGL uniform noise 不等价。</li>
+    <li>Prototype losses 会显著改变训练目标，不适合直接塞进当前轻量 SoftDist 主线。</li>
+  </ul>
+</article>
+
+<article class="paper">
+  <h3>2. G-GBC：Gaussian Mixture-based Granular Ball Computing for Robust CNN Classification under Noisy Labels</h3>
+  <p><span class="tag">Knowledge-Based Systems 2026</span><span class="tag">CNN</span><span class="tag">GMM</span><span class="tag">Mahalanobis</span><span class="tag">purity/weight</span></p>
+  <h4>核心问题</h4>
+  <p>深度 CNN 容易记忆错误标签；已有噪声鲁棒方法常依赖噪声率假设、样本预筛、loss 修正或额外训练复杂度，且缺少可解释的训练过程。G-GBC 试图用粒球的多粒度鲁棒性和可解释性来提高 noisy-label 图像分类表现。</p>
+  <h4>方法结构</h4>
+  <ul>
+    <li>用 CNN 作为 feature extractor。</li>
+    <li>在 CNN feature space 中用 Gaussian Mixture Model 生成概率式粒球/组件。</li>
+    <li>用 GMM 的均值、协方差与 Mahalanobis distance 表达局部椭球结构。</li>
+    <li>计算粒球纯度、权重、score，并把它们用于分类过程。</li>
+    <li>训练中动态调整粒球结构，论文还强调可视化球中心、球大小、球权重随训练变化，以增强解释性。</li>
+  </ul>
+  <h4>核心创新点</h4>
+  <ul>
+    <li>把传统“球形粒球”升级为 GMM 椭球式概率组件，天然建模协方差结构。</li>
+    <li>不用简单丢弃低纯度区域，而是用 purity-weighted adjustment 降低不可靠粒球影响。</li>
+    <li>用 Mahalanobis distance 体现“沿主方向偏离”和“垂直主方向偏离”的差异。</li>
+    <li>把粒球视为动态解释对象：模型训练过程中的粒球演化可被观察。</li>
+  </ul>
+  <h4>对当前 SoftDist 的启发</h4>
+  <ul>
+    <li>G-GBC 最直接启发了两个方向：<strong>椭球化 SoftDist</strong> 和 <strong>GMM-RespSoftDist</strong>。</li>
+    <li>椭球化 SoftDist：保留当前 hard ball assignment，只在球内用协方差/Mahalanobis 给 train vote 加权。</li>
+    <li>GMM-RespSoftDist：用 responsibility 代替 hard membership，令节点 target 为多个组件 label distribution 的加权和。</li>
+    <li>当前项目已有实验证明：椭球 offline target 在 Amazon/DBLP/PubMed 有正信号，但 downstream 不稳定；这说明 G-GBC 的机制不能无条件迁移。</li>
+  </ul>
+  <h4>当前项目的批判性边界</h4>
+  <ul>
+    <li>G-GBC 是 CNN 图像分类，且动态训练中更新 GMM/粒球；当前项目多次发现模型反馈和动态硬纠正容易自强化。</li>
+    <li>GMM 不只是“椭球”，还引入 soft assignment、component 数量、协方差估计、EM 初始化和数值稳定性问题。</li>
+    <li>如果 GMM-RespSoftDist 做实验，必须先 offline diagnostic，且 real 必须优于 shuffled；否则只是复杂化的 H-kNN/cluster smoothing。</li>
+  </ul>
+</article>
+
+<article class="paper">
+  <h3>3. MgBIF：Like Draws to Like: Multi-granularity Ball-Intra Fusion for Fault Diagnosis under Noisy Labels</h3>
+  <p><span class="tag">Advanced Engineering Informatics 2024</span><span class="tag">fault diagnosis</span><span class="tag">pseudo label</span><span class="tag">DSmT fusion</span><span class="tag">sample selection</span></p>
+  <h4>核心问题</h4>
+  <p>工业故障诊断依赖高质量标签，但自动标注或低成本标注容易产生噪声。若直接监督训练，错误标签会误导潜在空间的分类边界，导致过拟合和泛化下降。MgBIF 目标是在不知道具体噪声比例的情况下，通过粒球内部信息融合和高置信样本选择提升鲁棒训练。</p>
+  <h4>方法结构</h4>
+  <ul>
+    <li>在 latent feature space 中，为每个样本构建专属粒球或邻域粒球。</li>
+    <li>聚合球内其他样本标签，形成 pseudo-label。</li>
+    <li>用 DSmT 证据融合思想，将原始标签和球内伪标签融合成 corrected label。</li>
+    <li>从修正后的数据中选择高置信样本用于监督训练。</li>
+    <li>根据估计噪声强度调整粒度：噪声越强，粒度更粗，以提升伪标签可靠性；噪声较低时可以使用更细粒度。</li>
+  </ul>
+  <h4>核心创新点</h4>
+  <ul>
+    <li>把“球内标签分布”与“原标签”作为两个证据源，而不是完全相信其中一个。</li>
+    <li>把标签修正和样本选择结合：先融合修正，再筛高置信训练。</li>
+    <li>用噪声强度控制多粒度，而不是固定单一粒度。</li>
+  </ul>
+  <h4>与 SoftDist 的关系</h4>
+  <ul>
+    <li>SoftDist 的公式本质也是“原 noisy one-hot + ball distribution”的软融合，只是用 alpha 控制，而不是 DSmT。</li>
+    <li>MgBIF 支持当前方法的叙事：球内分布可以作为原标签的局部证据源。</li>
+    <li>但 MgBIF 的高置信硬筛样与当前图实验边界冲突：当前项目已发现强筛样/硬纠正容易造成 clean damage。</li>
+  </ul>
+  <h4>不能直接照搬的地方</h4>
+  <ul>
+    <li>故障诊断时间序列和图节点分类不同。</li>
+    <li>它依赖动态训练和样本选择，当前主线是静态 frozen H target。</li>
+    <li>如果引入“高置信样本”，必须同时报告 NCR/CDR 或 clean damage；不能只看准确率。</li>
+  </ul>
+</article>
+
+<article class="paper">
+  <h3>4. MgCNL：Sample Separation via Multi-Granularity Balls for Fault Diagnosis with Noisy Labels</h3>
+  <p><span class="tag">IEEE TASE 2025</span><span class="tag">fault diagnosis</span><span class="tag">supervised contrastive learning</span><span class="tag">sample separation</span></p>
+  <h4>核心问题</h4>
+  <p>工业故障诊断中，专家标注成本高，自动标注含噪。MgCNL 希望在未知噪声比例下，从 noisy dataset 中选出高置信标签样本用于监督学习，避免错误标签误导模型。</p>
+  <h4>方法结构</h4>
+  <ul>
+    <li>先用对比学习学习较稳定的 representation。该阶段使用全部样本，但忽略标签信息，以保证模型收敛并避免标签噪声直接干扰表征。</li>
+    <li>在 learned representation 上构建多粒度粒球。</li>
+    <li>基于粒球评估标签置信度，动态选择高置信样本进入监督训练。</li>
+    <li>不需要预先知道噪声比例。</li>
+  </ul>
+  <h4>核心创新点</h4>
+  <ul>
+    <li>把对比学习作为“表征预热/去标签化阶段”，再用粒球进行标签置信评估。</li>
+    <li>粒球不直接当正样本标签，而是作为 sample separation 和 confidence estimator。</li>
+    <li>强调多粒度下的样本置信，而不是单一邻域/单一阈值。</li>
+  </ul>
+  <h4>对当前 SoftDist 的启发</h4>
+  <ul>
+    <li>它高度支持当前 frozen GRACE H 的设计：先用 label-free contrastive learning 得到 H，再在 H 上构球。</li>
+    <li>它也支持“粒球的贡献在弱下游更明显”的观察：如果下游本身没有 H 或图传播，粒球 target 能提供更多额外结构。</li>
+    <li>但它偏 sample selection，而当前 SoftDist 更偏 soft target；当前实验已经表明硬选择/硬纠正不应成为主线。</li>
+  </ul>
+</article>
+
+<article class="paper">
+  <h3>5. GBD：Research on Classification Label Denoising Algorithm Based on Granular Ball</h3>
+  <p><span class="tag">classification label denoising</span><span class="tag">purity threshold</span><span class="tag">hard filtering</span><span class="tag">sampling</span></p>
+  <h4>核心问题</h4>
+  <p>传统分类数据存在标签噪声，直接训练会降低分类器准确率。GBD 通过自适应超球覆盖数据空间，移除球外点和球内疑似噪声点，只用去噪后的粒球/采样数据训练分类器。</p>
+  <h4>方法结构</h4>
+  <ul>
+    <li>用 self-adaptive hypersphere 覆盖数据空间。</li>
+    <li>按纯度阈值递归分裂粒球。</li>
+    <li>删除球外点和球内噪声点。</li>
+    <li>用去噪后的球数据/采样数据训练 LR、DT 等分类器。</li>
+  </ul>
+  <h4>核心创新点</h4>
+  <ul>
+    <li>早期明确把粒球用于分类标签去噪。</li>
+    <li>强调粒球作为压缩、过滤、采样单元，具有 classifier-agnostic 特性。</li>
+    <li>文中报告无噪声时可小幅提升，有噪声时提升更明显。</li>
+  </ul>
+  <h4>对 SoftDist 的意义</h4>
+  <ul>
+    <li>它是“粒球用于标签噪声过滤”的基础背景，可用于 related work。</li>
+    <li>但它偏硬删除/硬采样，和当前 SoftDist 的软混合边界不同。</li>
+    <li>当前项目不能回到“删点后训练”的主线，因为图节点任务中删除/硬纠正容易破坏 split 和图传播语义。</li>
+  </ul>
+</article>
+
+<article class="paper">
+  <h3>6. Three-Level Noise-Tolerance Granular-Ball Distinguishing Measures and Feature Subset Selection</h3>
+  <p><span class="tag">IEEE TFS 2026</span><span class="tag">feature selection</span><span class="tag">fuzzy rough set</span><span class="tag">noise-tolerant measure</span></p>
+  <h4>核心问题</h4>
+  <p>传统 fuzzy rough set 特征选择在高聚集区域容易被噪声样本误导，忽略了样本分布和粒度结构。该文献提出三层噪声容忍粒球区分度量，用于特征子集选择。</p>
+  <h4>方法结构</h4>
+  <ul>
+    <li>代数层：基于相对距离粒球 fuzzy dependency。</li>
+    <li>信息论层：基于 variable-precision 粒球 fuzzy entropy。</li>
+    <li>粒计算层：利用粒球化机制刻画局部结构。</li>
+    <li>最终以 dependency + conditional entropy 等综合评价候选特征。</li>
+  </ul>
+  <h4>核心创新点</h4>
+  <ul>
+    <li>把抗噪性定义成可度量的局部区分能力，而不是只做标签投票。</li>
+    <li>引入 variable precision，承认局部不一致可被容忍。</li>
+    <li>把粒球的局部结构转成特征选择判别指标。</li>
+  </ul>
+  <h4>对 SoftDist 的启发</h4>
+  <ul>
+    <li>适合用作 theoretical related work：粒球可作为噪声容忍的局部统计单元。</li>
+    <li>不建议直接把复杂 fuzzy entropy 公式加入 SoftDist。当前方法优势是简单、静态、可复现。</li>
+    <li>可启发未来 diagnostic：用“球内结构区分度”判断哪些 ball target 可被信任。</li>
+  </ul>
+</article>
+
+<article class="paper">
+  <h3>7. 王炳贵硕士论文：多粒度标签噪声过滤学习算法研究</h3>
+  <p><span class="tag">硕士论文</span><span class="tag">SPRD</span><span class="tag">MSPRD</span><span class="tag">GBS</span><span class="tag">multi-granularity</span></p>
+  <h4>核心问题</h4>
+  <p>相对密度 RD 是标签噪声检测中的有效思想，但全局 kNN 计算复杂度高，难以扩展到大数据。该论文围绕“如何低成本、多粒度地过滤标签噪声”设计多条路线。</p>
+  <h4>主要方法线</h4>
+  <ul>
+    <li><strong>SPRD</strong>：基于空间划分的快速相对密度，在局部分区内部计算相对密度，降低全局 kNN 搜索成本。</li>
+    <li><strong>MSPRD</strong>：多层空间划分相对密度，在多个划分粒度下计算 RD，并通过投票降低单一划分误判。</li>
+    <li><strong>GBS</strong>：粒球采样，用粒球边界/采样同时压缩样本、过滤标签噪声并缓解类别不平衡。</li>
+  </ul>
+  <h4>核心创新点</h4>
+  <ul>
+    <li>多粒度共识优于单粒度判断。</li>
+    <li>空间划分/粒球压缩能同时服务效率和抗噪。</li>
+    <li>用投票/集成减少局部划分的不稳定。</li>
+  </ul>
+  <h4>对 SoftDist 的启发</h4>
+  <ul>
+    <li>当前 SoftDist 固定约 64 个 2-means hard balls，可能过度依赖单一粒度；标签率和大图实验已经说明粒度/coverage 影响很大。</li>
+    <li>但多粒度投票会引入更多调参，必须有 real-vs-shuffled 与 downstream 验证，否则只是复杂化。</li>
+    <li>适合作为论文中“多粒度是文献共识，但本文选择最小静态版本”的边界解释。</li>
+  </ul>
+</article>
+
+<article class="paper">
+  <h3>8. GBNF：融合粒度划分的回归标签噪声过滤方法</h3>
+  <p><span class="tag">regression label noise</span><span class="tag">granularity partition</span><span class="tag">noise score</span><span class="tag">cautious summary</span></p>
+  <h4>核心问题</h4>
+  <p>回归任务中的标签是连续值，不能像分类任务一样用多数类投票直接判定噪声。GBNF 试图把粒度划分引入回归标签噪声过滤，用局部粒度结构和泛化误差/噪声评分识别连续标签异常。</p>
+  <h4>核心创新点</h4>
+  <ul>
+    <li>把粒球噪声学习从分类标签扩展到回归标签。</li>
+    <li>强调局部一致性不是离散标签专属，也可以转化为连续标签的局部偏离判断。</li>
+    <li>把粒度划分和模型泛化误差估计结合。</li>
+  </ul>
+  <h4>读取边界</h4>
+  <p>该文献 PDF 文本层较弱，本文只基于已可读摘要/结论/截图线索总结，不建议用它支撑具体公式或实验结论。</p>
+  <h4>对 SoftDist 的启发</h4>
+  <ul>
+    <li>它说明“粒度划分 + 局部一致性”是比分类投票更一般的噪声建模框架。</li>
+    <li>但当前项目是节点分类，GBNF 只能作为 broader context，不应进入方法主线。</li>
+  </ul>
+</article>
+
+<article class="paper">
+  <h3>9. 孙旭硕士论文：Granular Ellipsoid Model and Its Application in Classification Problems</h3>
+  <p><span class="tag">硕士论文 2026</span><span class="tag">granular ellipsoid</span><span class="tag">GEC</span><span class="tag">GEB/GED-SMOTE</span><span class="tag">GEAF</span></p>
+  <h4>核心问题</h4>
+  <p>传统粒球用中心和半径表达局部区域，天然假设局部结构近似球形；面对非球形、不规则或高维局部分布时会损失信息。孙旭论文将粒球扩展为粒椭球，以形状矩阵表达各方向尺度，从而更紧凑、更精确地覆盖数据分布。</p>
+  <h4>三条主线</h4>
+  <ul>
+    <li><strong>粒椭球模型与分类器：</strong>定义粒椭球数学表达，基于 GBkNN 替换为粒椭球，加入基于粒椭球大小的距离加权，提出 GEC。</li>
+    <li><strong>粒椭球 + 不平衡分类：</strong>优化形状矩阵求解，用协方差矩阵 + 正则项解决高维小样本粒椭球构建不稳定；提出 GEB-SMOTE 与 GED-SMOTE。</li>
+    <li><strong>粒椭球 + 标签噪声：</strong>提出无标签信息、无纯度阈值依赖的自适应粒椭球划分，并进一步提出 GEAF 进行标签噪声过滤与修正。</li>
+  </ul>
+  <h4>与当前椭球 SoftDist 的直接关系</h4>
+  <ul>
+    <li>当前“椭球化 SoftDist”只借用了最小部分：在已有 hard balls 内估计 H 空间协方差，用 Mahalanobis distance 降低边界/离群 train vote 权重。</li>
+    <li>孙旭论文中真正的粒椭球划分更彻底：椭球本身是生成/划分对象，而当前项目没有替换 2-means hard balls。</li>
+    <li>因此当前椭球 SoftDist 的负结果不能否定粒椭球模型本身，只能说明“在当前 hard ball 上加 Mahalanobis 投票权重”下游不稳。</li>
+  </ul>
+  <h4>GEAF 第五章要点</h4>
+  <ul>
+    <li>现有粒划分依赖纯度阈值和标签信息；在标签噪声下，用错误标签计算纯度会导致错误划分。</li>
+    <li>GEAF 先忽略标签，只用数据分布进行粒椭球自适应划分。</li>
+    <li>每个局部粒椭球内做多数/一致性修正，把样本标签改为粒椭球标签。</li>
+    <li>GEAF 与全局聚类去噪不同：目标不是一次性找到全局类别簇，而是发现细粒度、内部一致的局部结构。</li>
+    <li>论文引入 NRR（噪声修正率）与 CSIR（纯净样本损伤率），强调不能只看最终分类精度。</li>
+    <li>论文也指出高噪声下失败常来自高维低相关、复杂类边界、噪声集中在边界区域。</li>
+  </ul>
+  <h4>对当前项目的启发</h4>
+  <ul>
+    <li>支持当前使用 NCR/CDR 判断 hard correction 是否伤害干净样本。</li>
+    <li>支持“椭球在 H 空间聚类程度高、局部线性结构明显的数据上更可能有效”的假设。</li>
+    <li>但当前 GEAF 桥接实验显示：Coauthor-CS offline 通过但 downstream 低于 SoftDist；AmazonCom seed0 conf=0.7 有正信号但未 5-seed 验证。不能 claim GEAF 已适合图节点任务。</li>
+  </ul>
+</article>
+
+<article class="paper">
+  <h3>10. 一种稳定的加速自适应粒球生成方法（张清华，CAJ）</h3>
+  <p><span class="tag">CAJ</span><span class="tag">accelerated GB generation</span><span class="tag">adaptive partition</span><span class="tag">需复核</span></p>
+  <h4>读取状态</h4>
+  <p>该 CAJ 文件的抽取文本不可读。因此本文只使用孙旭论文中对相关方法的转述，细节需后续用 CAJ 阅读器或 OCR 复核。</p>
+  <h4>从孙旭论文可确认的相关思想</h4>
+  <ul>
+    <li><strong>加速粒球划分：</strong>以全数据为初始粒球，当粒球纯度低于阈值时，从不同类别中选代表性样本作为 k-means 初始质心，并只执行一次 k-means 迭代生成子粒球；最后通过一次全局划分微调球中心，以降低反复迭代开销。</li>
+    <li><strong>基于加权纯度和的自适应划分：</strong>不直接预设纯度阈值，而是比较父粒球纯度与子粒球加权纯度和。若分裂后加权纯度和提升，则保留子粒球并继续递归；否则停止。</li>
+    <li><strong>局限：</strong>即使不手动设置阈值，仍依赖标签纯度来判断分裂是否成立；在标签噪声存在时，纯度本身可能不可靠。</li>
+  </ul>
+  <h4>对 SoftDist 的启发</h4>
+  <ul>
+    <li>当前 SoftDist 使用固定 max_balls/2-means 结构，未来若重做 ball generation，可考虑“分裂是否真的提升球质量”的自适应准则。</li>
+    <li>但如果准则依赖 noisy label purity，会和当前 label-noise 目标冲突。</li>
+    <li>更适合迁移的是“分裂收益诊断”思想，而不是“纯度阈值本身”。</li>
+  </ul>
+</article>
+
+<article class="paper">
+  <h3>11. SAGBC：Structure-aware Granular Ball Clustering</h3>
+  <p><span class="tag">Information Sciences 2026</span><span class="tag">clustering</span><span class="tag">soft affiliation graph</span><span class="tag">dual-constraint connectivity</span><span class="tag">large-scale</span></p>
+  <h4>核心问题</h4>
+  <p>传统粒球聚类面临三个问题：大规模数据上递归分裂成本高；hard partition 把每个点硬分配给一个球，容易制造人工边界；球间连接常只看单一距离准则，忽略底层拓扑连接信息。</p>
+  <h4>方法结构</h4>
+  <ul>
+    <li>从全数据中采样 representative subset，用其生成结构感知粒球中心，降低 full-data dependency。</li>
+    <li>构建基于 Gaussian kernel 的 <strong>soft affiliation graph</strong>，让每个点可与多个粒球建立非排他关联。</li>
+    <li>用 <strong>dual-constraint connectivity criterion</strong> 连接粒球：同时考虑 spatial proximity 和 structural similarity。</li>
+    <li>最终由粒球连通分量得到 cluster，再通过 soft affiliation graph 把点分配给最强从属的球/簇。</li>
+  </ul>
+  <h4>核心创新点</h4>
+  <ul>
+    <li>明确从 hard membership 转向 soft affiliation。</li>
+    <li>把点-球关系和球-球关系拆开：点到多个球的软归属，球之间用空间和结构双约束连接。</li>
+    <li>在 17 个 synthetic/real-world 数据集和 10 个 baseline 上报告聚类准确率与效率优势。</li>
+    <li>消融显示去掉 soft affiliation 后，硬分配会导致连通性/边界信息严重损失。</li>
+  </ul>
+  <h4>对当前项目的启发</h4>
+  <ul>
+    <li>它是对 GMM-RespSoftDist 的最强文献支持之一：问题可能不在“球内怎么投票”，而在“节点为什么只能属于一个 hard ball”。</li>
+    <li>它也提示可设计 soft affiliation 版 target：节点 target = 多个球 label distribution 的加权和。</li>
+    <li>但 SAGBC 是无监督聚类，不是 noisy-label node classification；soft affiliation 提升聚类 ACC/NMI 不等于提升 GCN downstream。</li>
+  </ul>
+  <h4>可迁移但必须验证的指标</h4>
+  <ul>
+    <li>max affiliation / affiliation entropy：边界节点是否更高熵。</li>
+    <li>dominant support：主从属球是否有足够 train label support。</li>
+    <li>real-vs-shuffled target quality：软从属是否真的利用 H 几何，而非只做平滑。</li>
+  </ul>
+</article>
+
+<article class="paper">
+  <h3>12. IMVGCR：Incomplete Multi-view Granular Ball Contrastive Clustering via View Recovery</h3>
+  <p><span class="tag">投稿稿件 2026</span><span class="tag">incomplete multi-view clustering</span><span class="tag">view recovery</span><span class="tag">weighted GB contrastive learning</span></p>
+  <h4>核心问题</h4>
+  <p>不完整多视图聚类中，缺失视图恢复容易导致 latent space 过平滑和类别边界模糊；实例级 contrastive alignment 又会把不稳定重建视图与原始视图强行对齐，引入 feature pollution 和 false negative conflicts。</p>
+  <h4>方法结构</h4>
+  <ul>
+    <li>用带 self-attention 的 autoencoder 提取高阶语义并恢复缺失视图。</li>
+    <li>引入 weighted granular-ball contrastive learning module。</li>
+    <li>把 fine-grained instances 替换为 coarse-grained granular balls 作为 contrastive anchors。</li>
+    <li>对真实数据和重建缺失数据赋不同权重；计算 weighted centers 和 weighted radii。</li>
+    <li>建立 granular ball correlation relationship，用球级关系定义正负关系并计算 weighted contrastive loss。</li>
+  </ul>
+  <h4>核心创新点</h4>
+  <ul>
+    <li>用球级锚点代替实例级锚点，降低缺失视图恢复噪声。</li>
+    <li>把粒球引入 deep incomplete multi-view clustering 的 joint optimization。</li>
+    <li>用 weighted centers/radii 避免重建数据质量不稳定导致球偏移。</li>
+    <li>论文在 6 个多视图数据集上报告优于 IMVC SOTA，并通过消融证明 weighted granular ball contrastive module 的必要性。</li>
+  </ul>
+  <h4>对当前 SoftDist/GB-GCL 的启发</h4>
+  <ul>
+    <li>它直接支持“粒球作为 contrastive anchor / weak view relation teacher”的研究定位。</li>
+    <li>它也解释了为什么 same-ball hard positive 风险大：实例级对比会有 false negatives，球级锚点的价值是降低噪声而不是强行把所有同球点拉近。</li>
+    <li>对当前项目最可迁移的是“球级结构作为弱教师/软约束”，而不是复制完整多视图恢复框架。</li>
+  </ul>
+  <h4>当前项目边界</h4>
+  <ul>
+    <li>IMVGCR 是聚类和 view recovery，不是 noisy train labels 下的 semi-supervised node classification。</li>
+    <li>当前项目已多次验证强 positive pulling 不稳，因此不能把它作为直接恢复 GB contrastive loss 的理由。</li>
+    <li>它更适合 future work：从 SoftDist target 过渡到 “ball-level weak relation teacher”。</li>
+  </ul>
+</article>
+
+<h2 id="common">五、共同思想：这些文献反复出现的模式</h2>
+<table>
+  <thead><tr><th>共同思想</th><th>代表文献</th><th>具体含义</th><th>对当前项目的判断</th></tr></thead>
+  <tbody>
+    <tr>
+      <td>局部结构比单点标签更可靠</td>
+      <td>GBD、MgBIF、MgCNL、BNO-GB、GEAF</td>
+      <td>单点标签可能错，但局部邻域/球内分布/邻球关系能提供更稳定证据。</td>
+      <td>支持 SoftDist 的核心：ball distribution 作为 noisy one-hot 的软修正源。</td>
+    </tr>
+    <tr>
+      <td>粒球应当输出置信度，而不是只输出标签</td>
+      <td>BNO-GB、MgCNL、G-GBC、GEAF</td>
+      <td>G-ODT/S-ICD、purity/weight、label confidence、NRR/CSIR 都在衡量“信不信”。</td>
+      <td>支持 alpha、pseudo NCR/CDR、ball-clusterability、effective support 等诊断。</td>
+    </tr>
+    <tr>
+      <td>先表征后构球</td>
+      <td>G-GBC、MgBIF、MgCNL、IMVGCR</td>
+      <td>在 CNN/AE/contrastive learned representation 上构球，比 raw feature 更稳。</td>
+      <td>支持 frozen GRACE H，而不是 raw X-space ball。也解释 raw-X ball 失败。</td>
+    </tr>
+    <tr>
+      <td>hard membership 有风险</td>
+      <td>SAGBC、G-GBC、IMVGCR</td>
+      <td>硬划分制造人工边界；边界样本可能应属于多个局部结构。</td>
+      <td>支持 GMM-RespSoftDist 或 soft affiliation diagnostic，但当前尚未完成。</td>
+    </tr>
+    <tr>
+      <td>形状结构重要</td>
+      <td>孙旭粒椭球、G-GBC</td>
+      <td>球形假设过强；椭球/协方差/Mahalanobis 能表达主方向和各向异性。</td>
+      <td>支持椭球化 SoftDist 作为合理试验；但当前下游证据不够稳定。</td>
+    </tr>
+    <tr>
+      <td>多粒度比单粒度稳，但更复杂</td>
+      <td>王炳贵、MgBIF、MgCNL、GBDM</td>
+      <td>多粒度投票/过滤可降低单一划分误判。</td>
+      <td>可作为 future work；当前项目不宜无限调粒度，必须有最小验证门槛。</td>
+    </tr>
+    <tr>
+      <td>噪声修正要防止误伤干净样本</td>
+      <td>GEAF、BNO-GB、MgCNL</td>
+      <td>只看噪声被修正多少不够，还要看 clean 被改坏多少。</td>
+      <td>直接对应当前 NCR/CDR 评价，尤其对 GEAF hard correction 很关键。</td>
+    </tr>
+  </tbody>
+</table>
+
+<h2 id="diff">六、关键差异：为什么这些文献不能混为一谈</h2>
+<table>
+  <thead><tr><th>维度</th><th>硬过滤类</th><th>软融合/置信类</th><th>椭球/概率类</th><th>对比/深度表征类</th><th>当前项目应取什么</th></tr></thead>
+  <tbody>
+    <tr>
+      <td>代表</td>
+      <td>GBD、GBS</td>
+      <td>MgBIF、MgCNL、BNO-GB、GEAF</td>
+      <td>G-GBC、孙旭粒椭球、SAGBC</td>
+      <td>IMVGCR、MgCNL、G-GBC</td>
+      <td>SoftDist 当前最接近“软融合/置信类 + frozen representation”。</td>
+    </tr>
+    <tr>
+      <td>标签使用</td>
+      <td>通常强依赖纯度/多数类，可能删点</td>
+      <td>用标签分布、置信度或伪标签修正</td>
+      <td>几何可 label-free，但 label distribution 常用于最终决策</td>
+      <td>多在训练中动态使用特征/重建/对比损失</td>
+      <td>必须坚持 clean label 不进 target；train noisy label 只用于 vote。</td>
+    </tr>
+    <tr>
+      <td>粒球功能</td>
+      <td>清洗器/采样器</td>
+      <td>soft teacher/confidence estimator</td>
+      <td>局部几何建模/soft assignment</td>
+      <td>contrastive anchor/weak relation</td>
+      <td>优先 soft teacher 与 confidence，不优先 hard positive/hard correction。</td>
+    </tr>
+    <tr>
+      <td>复杂度</td>
+      <td>较低</td>
+      <td>中等</td>
+      <td>中高，尤其 GMM/协方差</td>
+      <td>高，涉及训练目标和架构</td>
+      <td>论文主线应保持轻量，复杂版本只做 diagnostic/future work。</td>
+    </tr>
+    <tr>
+      <td>和当前实验吻合度</td>
+      <td>低到中</td>
+      <td>高</td>
+      <td>中，已试但不稳</td>
+      <td>中，适合未来 GCL 方向</td>
+      <td>SoftDist 主线最稳；椭球/GEAF 是边界探索，不是已验证主方法。</td>
+    </tr>
+  </tbody>
+</table>
+
+<h2 id="mapping">七、对 SoftDist / 椭球 / GEAF 的具体映射</h2>
+<div class="split">
+  <div class="goodbox">
+    <h3>可以吸收进论文叙事的文献启发</h3>
+    <ul>
+      <li><strong>SoftDist 的核心定位：</strong>由 GBD/MgBIF/MgCNL/BNO-GB 支持，可写成“粒球将单点 noisy label 转化为局部标签分布证据”。</li>
+      <li><strong>frozen H 的合理性：</strong>由 MgCNL/G-GBC/IMVGCR 支持，可写成“先获得较稳定表征，再在表征空间中提取粒度结构”。</li>
+      <li><strong>alpha/confidence 的必要性：</strong>由 BNO-GB、MgCNL、GEAF 支持，不能对所有球同等信任。</li>
+      <li><strong>椭球实验的动机：</strong>由 G-GBC 和孙旭论文支持，球形假设可能忽略局部各向异性。</li>
+      <li><strong>GMM/soft affiliation 的动机：</strong>由 SAGBC 和 G-GBC 支持，hard membership 可能制造边界错误。</li>
+      <li><strong>负结果解释：</strong>GEAF 和 SAGBC 都提示：高维低聚类、边界复杂、support 不足时，局部多数/局部几何会失效。</li>
+    </ul>
+  </div>
+  <div class="danger">
+    <h3>不能吸收为强 claim 的地方</h3>
+    <ul>
+      <li>不能说“文献证明粒球去噪适合图节点分类”。这是当前项目自己的实验必须证明。</li>
+      <li>不能说“G-GBC 成功，所以 GMM-RespSoftDist 必然更好”。GMM 会引入额外复杂度，且下游可能吃不到 target 改善。</li>
+      <li>不能说“GEAF 在 UCI 成功，所以当前图实验应硬纠正”。当前 GEAF bridge 只有 AmazonCom seed0 有明显正信号。</li>
+      <li>不能说“椭球在大图 offline 正信号说明大图更适合椭球”。DBLP/Amazon downstream 已显示不稳定。</li>
+      <li>不能把 same-ball membership 写成语义正样本。IMVGCR 的球级锚点是降噪，不等价于所有同球点都应强拉近。</li>
+    </ul>
+  </div>
+</div>
+
+<h3>文献启发与当前实验结果的对照</h3>
+<table>
+  <thead><tr><th>文献启发</th><th>当前项目已试内容</th><th>结果边界</th><th>下一步含义</th></tr></thead>
+  <tbody>
+    <tr>
+      <td>球内标签分布可作为软去噪信号</td>
+      <td>SoftDist [X‖H]</td>
+      <td>Cora/CiteSeer/Coauthor-CS 5-seed 稳定小收益；但不胜 NRGNN[X‖H]。</td>
+      <td>可作为轻量插件/机制分析，不作 SOTA claim。</td>
+    </tr>
+    <tr>
+      <td>椭球/Mahalanobis 可降低边界/离群点投票</td>
+      <td>椭球化 SoftDist</td>
+      <td>offline 有局部正信号；Coauthor-CS seed0 正；Amazon/DBLP downstream 不稳。</td>
+      <td>不能替代 SoftDist 主线；可写负结果和适用边界。</td>
+    </tr>
+    <tr>
+      <td>GEAF 式硬纠正可修正噪声</td>
+      <td>GEAF hard correction bridge</td>
+      <td>AmazonCom conf=0.7 seed0 明显正；其他数据弱或失败；Coauthor 不如 SoftDist。</td>
+      <td>最多做 AmazonCom 5-seed sanity，失败则停止。</td>
+    </tr>
+    <tr>
+      <td>hard membership 可能是瓶颈</td>
+      <td>GMM-RespSoftDist 尚未完整落地或尚未形成稳定结论</td>
+      <td>文献支持强，但当前项目已有复杂化风险。</td>
+      <td>只适合先 offline target diagnostic；不过门槛不跑 downstream。</td>
+    </tr>
+    <tr>
+      <td>多粒度更稳</td>
+      <td>当前主线固定 ball count；标签率/大图实验显示粒度敏感</td>
+      <td>粒度调参可能变成 dataset-specific tuning。</td>
+      <td>若做，只做 small grid + shuffled + downstream gate。</td>
+    </tr>
+  </tbody>
+</table>
+
+<h2 id="boundaries">八、实验与论文边界：给 GPT 必须知道的约束</h2>
+<section class="danger">
+  <h3>不要让 GPT 给出这些错误建议</h3>
+  <ul>
+    <li>不要建议直接把 GEAF 硬纠正作为主方法。当前图实验没有稳定支持，且硬纠正容易高 CDR。</li>
+    <li>不要建议继续无限调椭球参数。当前 evidence 表明 offline target improvement 可能过小或不对齐 downstream。</li>
+    <li>不要建议把 same-ball node pairs 当强正样本恢复 GB-GCL。历史实验已经多次削弱该方向。</li>
+    <li>不要建议改变 split 或 baseline evaluation 来制造提升。</li>
+    <li>不要建议用 clean label 构球、调 alpha 或筛样。clean label 只能用于诊断/评估。</li>
+    <li>不要把文献中的 UCI/CNN/IMVC/OIC 结果包装成当前图节点任务上的证据。</li>
+  </ul>
+</section>
+
+<section class="callout">
+  <h3>可以让 GPT 深度思考的问题</h3>
+  <ul>
+    <li>如果 SoftDist 的主贡献不是 SOTA，而是“轻量、静态、可解释的 local soft target”，论文怎么组织最诚实？</li>
+    <li>当前文献更支持“软标签”还是“硬纠正”？结合当前实验，哪个方向更能形成可信论文边界？</li>
+    <li>SAGBC/G-GBC 支持 soft membership，但当前项目是否值得做 GMM-RespSoftDist？最小 gate 应该是什么？</li>
+    <li>GEAF 文献强调 NRR/CSIR，当前项目的 NCR/CDR 是否足够？还需要哪些指标解释 hard correction 失败？</li>
+    <li>椭球文献支持非球形局部结构，但当前 downstream 不稳定，是否应把椭球写成 negative diagnostic 而非主方法？</li>
+    <li>这些文献如何帮助解释“SoftDist 在 MLP(X) 上更强、在 GCN[X‖H] 上更小”的机制？</li>
+  </ul>
+</section>
+
+<h2>九、最重要的 8 条文献结论</h2>
+<ol>
+  <li><strong>粒球噪声学习的核心不是“投票得硬标签”，而是“局部一致性产生置信证据”。</strong></li>
+  <li><strong>最接近 SoftDist 的文献机制是 MgBIF 的原标签 + 球内伪标签融合，以及 MgCNL 的先表征后球置信选样。</strong></li>
+  <li><strong>最能解释椭球实验动机的是 G-GBC 和孙旭粒椭球：球形假设弱，协方差结构有价值。</strong></li>
+  <li><strong>最能支持 GMM/soft responsibility 的文献是 SAGBC：hard partition 会导致人工边界，点应能关联多个球。</strong></li>
+  <li><strong>最能解释 GEAF 当前风险的是 GEAF 自己的局限分析：高维低相关、边界复杂、噪声集中会导致局部多数标签不可靠。</strong></li>
+  <li><strong>多粒度是文献共识，但当前项目不能变成无止境粒度调参；必须用 shuffled 和 downstream gate 控制。</strong></li>
+  <li><strong>深度表征空间构球有文献支持，因此 frozen GRACE H 是合理选择；raw X-space ball 失败并不否定粒球思想。</strong></li>
+  <li><strong>这些文献支持“机制动机”和“related work”，但不能替代当前项目自己的 5-seed、same split、same H、real-vs-shuffled 证据。</strong></li>
+</ol>
+
+<h2 id="questions">十、可直接给 GPT 的提示词</h2>
+<div class="mono">你现在阅读的是我本地“粒球噪声学习”和“导师相关”文献材料的自包含整理。请不要假设你能访问本地 PDF、代码或 CSV，只基于这个 HTML 和我上传的 SoftDist 实验包做科研判断。
+
+请你重点分析：
+1. 这批文献到底支持当前 SoftDist 的哪些机制？哪些只是背景支持？
+2. 文献更支持 soft target / confidence weighting，还是 hard correction / sample filtering？
+3. G-GBC、SAGBC 和孙旭粒椭球是否足以支持我继续做 GMM-RespSoftDist 或椭球 SoftDist？如果支持，最小验证 gate 应该是什么？
+4. GEAF 在 UCI/传统分类中看起来强，但我当前图节点 GEAF bridge 不稳定。你认为任务迁移失败的主要原因可能是什么？
+5. 如果写论文，如何诚实表述：SoftDist 有稳定小收益、NRGNN[X‖H] 更强、椭球/GEAF 有诊断价值但 downstream 不稳？
+6. 你认为当前论文更应该定位为：
+   A. 一个轻量 SoftDist 方法；
+   B. 一个粒球 soft target 机制与适用边界分析；
+   C. 一个椭球/GEAF 扩展；
+   D. 一个负结果驱动的经验研究？
+
+请严格区分：
+- 文献直接支持的结论；
+- 当前项目实验已经支持的结论；
+- 只是合理猜测的解释；
+- 已被当前负结果削弱的方向。
+
+不要为了鼓励我而给乐观结论。请优先指出最容易自欺的地方。</div>
+
+</div>
+</body>
+</html>

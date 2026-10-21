@@ -1,0 +1,25 @@
+model:
+  method: graphmlp_reimplemented
+  n_hidden: 256
+  n_layer: 2
+  dropout: 0.6
+  graphmlp_alpha: 2.0
+  graphmlp_tau: 1.0
+  graphmlp_order: 2
+  graphmlp_batch_size: 2000
+
+training:
+  lr: 1.0e-3
+  weight_decay: 5.0e-3
+  n_epochs: 400
+  patience: ~
+  criterion: metric
+
+dataset:
+  sparse: true
+
+analysis:
+  flag: false
+  project: gnn-with-label-noise
+  save_graph: false
+

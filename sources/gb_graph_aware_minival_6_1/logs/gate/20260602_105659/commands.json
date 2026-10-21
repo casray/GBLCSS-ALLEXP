@@ -1,0 +1,242 @@
+[
+  {
+    "kind": "pretrain",
+    "output": "C:\\Users\\Admin\\Desktop\\实验8去噪5.19-\\gb_graph_aware_minival_6_1\\checkpoints\\grace\\Cora\\ratio_train0p2_val0p1_split0_pretrain0\\checkpoint.pt",
+    "skip": true,
+    "command": "C:\\Users\\Admin\\AppData\\Local\\Programs\\Python\\Python312\\python.exe scripts/run_vanilla_grace.py --dataset Cora --split-seed 0 --split-mode ratio --pretrain-seed 0 --train-ratio 0.2 --val-ratio 0.1"
+  },
+  {
+    "kind": "embedding",
+    "output": "C:\\Users\\Admin\\Desktop\\实验8去噪5.19-\\gb_graph_aware_minival_6_1\\checkpoints\\embeddings\\Cora\\ratio_train0p2_val0p1_split0_pretrain0\\H.pt",
+    "skip": true,
+    "command": "C:\\Users\\Admin\\AppData\\Local\\Programs\\Python\\Python312\\python.exe scripts/extract_embeddings.py --dataset Cora --split-seed 0 --split-mode ratio --pretrain-seed 0 --train-ratio 0.2 --val-ratio 0.1"
+  },
+  {
+    "kind": "classifier",
+    "output": "C:\\Users\\Admin\\Desktop\\实验8去噪5.19-\\gb_graph_aware_minival_6_1\\results\\gate_runs\\Cora\\symmetric_0p2\\ratio_train0p2_val0p1_split0_pretrain0_noise0_clf0\\result_rows.csv",
+    "skip": true,
+    "command": "C:\\Users\\Admin\\AppData\\Local\\Programs\\Python\\Python312\\python.exe scripts/run_noisy_classifier.py --dataset Cora --split-seed 0 --split-mode ratio --pretrain-seed 0 --train-ratio 0.2 --val-ratio 0.1 --noise-seed 0 --classifier-seed 0 --noise-type symmetric --noise-rate 0.2 --classifier-epochs 500 --patience 50 --alphas 0.3 --primary-alpha 0.3 --teacher-epochs 100 --teacher-lr 0.01 --teacher-weight-decay 0.0005 --teacher-temperature 1.0 --qb-pred-beta 0.5 --qb-teacher-gamma 2.0 --conflict-noisy-support-max 0.35 --conflict-target-conf-min 0.55 --methods gb gagb khop_only gagb_qb_conflict_gate_alpha03 gagb_qb_conflict_gate_alpha09 gagb_qb_conflict_gate_replace_qmix gagb_shuffled_alpha09_matched gagb_shuffled_replace_matched kmeans_gagb_matched_alpha09 kmeans_gagb_matched_replace topk_gagb_train_matched_alpha09 topk_gagb_train_matched_replace khop_only_alpha09 khop_only_replace"
+  },
+  {
+    "kind": "classifier",
+    "output": "C:\\Users\\Admin\\Desktop\\实验8去噪5.19-\\gb_graph_aware_minival_6_1\\results\\gate_runs\\Cora\\symmetric_0p4\\ratio_train0p2_val0p1_split0_pretrain0_noise0_clf0\\result_rows.csv",
+    "skip": true,
+    "command": "C:\\Users\\Admin\\AppData\\Local\\Programs\\Python\\Python312\\python.exe scripts/run_noisy_classifier.py --dataset Cora --split-seed 0 --split-mode ratio --pretrain-seed 0 --train-ratio 0.2 --val-ratio 0.1 --noise-seed 0 --classifier-seed 0 --noise-type symmetric --noise-rate 0.4 --classifier-epochs 500 --patience 50 --alphas 0.3 --primary-alpha 0.3 --teacher-epochs 100 --teacher-lr 0.01 --teacher-weight-decay 0.0005 --teacher-temperature 1.0 --qb-pred-beta 0.5 --qb-teacher-gamma 2.0 --conflict-noisy-support-max 0.35 --conflict-target-conf-min 0.55 --methods gb gagb khop_only gagb_qb_conflict_gate_alpha03 gagb_qb_conflict_gate_alpha09 gagb_qb_conflict_gate_replace_qmix gagb_shuffled_alpha09_matched gagb_shuffled_replace_matched kmeans_gagb_matched_alpha09 kmeans_gagb_matched_replace topk_gagb_train_matched_alpha09 topk_gagb_train_matched_replace khop_only_alpha09 khop_only_replace"
+  },
+  {
+    "kind": "pretrain",
+    "output": "C:\\Users\\Admin\\Desktop\\实验8去噪5.19-\\gb_graph_aware_minival_6_1\\checkpoints\\grace\\Cora\\ratio_train0p2_val0p1_split0_pretrain1\\checkpoint.pt",
+    "skip": true,
+    "command": "C:\\Users\\Admin\\AppData\\Local\\Programs\\Python\\Python312\\python.exe scripts/run_vanilla_grace.py --dataset Cora --split-seed 0 --split-mode ratio --pretrain-seed 1 --train-ratio 0.2 --val-ratio 0.1"
+  },
+  {
+    "kind": "embedding",
+    "output": "C:\\Users\\Admin\\Desktop\\实验8去噪5.19-\\gb_graph_aware_minival_6_1\\checkpoints\\embeddings\\Cora\\ratio_train0p2_val0p1_split0_pretrain1\\H.pt",
+    "skip": true,
+    "command": "C:\\Users\\Admin\\AppData\\Local\\Programs\\Python\\Python312\\python.exe scripts/extract_embeddings.py --dataset Cora --split-seed 0 --split-mode ratio --pretrain-seed 1 --train-ratio 0.2 --val-ratio 0.1"
+  },
+  {
+    "kind": "classifier",
+    "output": "C:\\Users\\Admin\\Desktop\\实验8去噪5.19-\\gb_graph_aware_minival_6_1\\results\\gate_runs\\Cora\\symmetric_0p2\\ratio_train0p2_val0p1_split0_pretrain1_noise1_clf1\\result_rows.csv",
+    "skip": true,
+    "command": "C:\\Users\\Admin\\AppData\\Local\\Programs\\Python\\Python312\\python.exe scripts/run_noisy_classifier.py --dataset Cora --split-seed 0 --split-mode ratio --pretrain-seed 1 --train-ratio 0.2 --val-ratio 0.1 --noise-seed 1 --classifier-seed 1 --noise-type symmetric --noise-rate 0.2 --classifier-epochs 500 --patience 50 --alphas 0.3 --primary-alpha 0.3 --teacher-epochs 100 --teacher-lr 0.01 --teacher-weight-decay 0.0005 --teacher-temperature 1.0 --qb-pred-beta 0.5 --qb-teacher-gamma 2.0 --conflict-noisy-support-max 0.35 --conflict-target-conf-min 0.55 --methods gb gagb khop_only gagb_qb_conflict_gate_alpha03 gagb_qb_conflict_gate_alpha09 gagb_qb_conflict_gate_replace_qmix gagb_shuffled_alpha09_matched gagb_shuffled_replace_matched kmeans_gagb_matched_alpha09 kmeans_gagb_matched_replace topk_gagb_train_matched_alpha09 topk_gagb_train_matched_replace khop_only_alpha09 khop_only_replace"
+  },
+  {
+    "kind": "classifier",
+    "output": "C:\\Users\\Admin\\Desktop\\实验8去噪5.19-\\gb_graph_aware_minival_6_1\\results\\gate_runs\\Cora\\symmetric_0p4\\ratio_train0p2_val0p1_split0_pretrain1_noise1_clf1\\result_rows.csv",
+    "skip": true,
+    "command": "C:\\Users\\Admin\\AppData\\Local\\Programs\\Python\\Python312\\python.exe scripts/run_noisy_classifier.py --dataset Cora --split-seed 0 --split-mode ratio --pretrain-seed 1 --train-ratio 0.2 --val-ratio 0.1 --noise-seed 1 --classifier-seed 1 --noise-type symmetric --noise-rate 0.4 --classifier-epochs 500 --patience 50 --alphas 0.3 --primary-alpha 0.3 --teacher-epochs 100 --teacher-lr 0.01 --teacher-weight-decay 0.0005 --teacher-temperature 1.0 --qb-pred-beta 0.5 --qb-teacher-gamma 2.0 --conflict-noisy-support-max 0.35 --conflict-target-conf-min 0.55 --methods gb gagb khop_only gagb_qb_conflict_gate_alpha03 gagb_qb_conflict_gate_alpha09 gagb_qb_conflict_gate_replace_qmix gagb_shuffled_alpha09_matched gagb_shuffled_replace_matched kmeans_gagb_matched_alpha09 kmeans_gagb_matched_replace topk_gagb_train_matched_alpha09 topk_gagb_train_matched_replace khop_only_alpha09 khop_only_replace"
+  },
+  {
+    "kind": "pretrain",
+    "output": "C:\\Users\\Admin\\Desktop\\实验8去噪5.19-\\gb_graph_aware_minival_6_1\\checkpoints\\grace\\Cora\\ratio_train0p2_val0p1_split0_pretrain2\\checkpoint.pt",
+    "skip": true,
+    "command": "C:\\Users\\Admin\\AppData\\Local\\Programs\\Python\\Python312\\python.exe scripts/run_vanilla_grace.py --dataset Cora --split-seed 0 --split-mode ratio --pretrain-seed 2 --train-ratio 0.2 --val-ratio 0.1"
+  },
+  {
+    "kind": "embedding",
+    "output": "C:\\Users\\Admin\\Desktop\\实验8去噪5.19-\\gb_graph_aware_minival_6_1\\checkpoints\\embeddings\\Cora\\ratio_train0p2_val0p1_split0_pretrain2\\H.pt",
+    "skip": true,
+    "command": "C:\\Users\\Admin\\AppData\\Local\\Programs\\Python\\Python312\\python.exe scripts/extract_embeddings.py --dataset Cora --split-seed 0 --split-mode ratio --pretrain-seed 2 --train-ratio 0.2 --val-ratio 0.1"
+  },
+  {
+    "kind": "classifier",
+    "output": "C:\\Users\\Admin\\Desktop\\实验8去噪5.19-\\gb_graph_aware_minival_6_1\\results\\gate_runs\\Cora\\symmetric_0p2\\ratio_train0p2_val0p1_split0_pretrain2_noise2_clf2\\result_rows.csv",
+    "skip": true,
+    "command": "C:\\Users\\Admin\\AppData\\Local\\Programs\\Python\\Python312\\python.exe scripts/run_noisy_classifier.py --dataset Cora --split-seed 0 --split-mode ratio --pretrain-seed 2 --train-ratio 0.2 --val-ratio 0.1 --noise-seed 2 --classifier-seed 2 --noise-type symmetric --noise-rate 0.2 --classifier-epochs 500 --patience 50 --alphas 0.3 --primary-alpha 0.3 --teacher-epochs 100 --teacher-lr 0.01 --teacher-weight-decay 0.0005 --teacher-temperature 1.0 --qb-pred-beta 0.5 --qb-teacher-gamma 2.0 --conflict-noisy-support-max 0.35 --conflict-target-conf-min 0.55 --methods gb gagb khop_only gagb_qb_conflict_gate_alpha03 gagb_qb_conflict_gate_alpha09 gagb_qb_conflict_gate_replace_qmix gagb_shuffled_alpha09_matched gagb_shuffled_replace_matched kmeans_gagb_matched_alpha09 kmeans_gagb_matched_replace topk_gagb_train_matched_alpha09 topk_gagb_train_matched_replace khop_only_alpha09 khop_only_replace"
+  },
+  {
+    "kind": "classifier",
+    "output": "C:\\Users\\Admin\\Desktop\\实验8去噪5.19-\\gb_graph_aware_minival_6_1\\results\\gate_runs\\Cora\\symmetric_0p4\\ratio_train0p2_val0p1_split0_pretrain2_noise2_clf2\\result_rows.csv",
+    "skip": true,
+    "command": "C:\\Users\\Admin\\AppData\\Local\\Programs\\Python\\Python312\\python.exe scripts/run_noisy_classifier.py --dataset Cora --split-seed 0 --split-mode ratio --pretrain-seed 2 --train-ratio 0.2 --val-ratio 0.1 --noise-seed 2 --classifier-seed 2 --noise-type symmetric --noise-rate 0.4 --classifier-epochs 500 --patience 50 --alphas 0.3 --primary-alpha 0.3 --teacher-epochs 100 --teacher-lr 0.01 --teacher-weight-decay 0.0005 --teacher-temperature 1.0 --qb-pred-beta 0.5 --qb-teacher-gamma 2.0 --conflict-noisy-support-max 0.35 --conflict-target-conf-min 0.55 --methods gb gagb khop_only gagb_qb_conflict_gate_alpha03 gagb_qb_conflict_gate_alpha09 gagb_qb_conflict_gate_replace_qmix gagb_shuffled_alpha09_matched gagb_shuffled_replace_matched kmeans_gagb_matched_alpha09 kmeans_gagb_matched_replace topk_gagb_train_matched_alpha09 topk_gagb_train_matched_replace khop_only_alpha09 khop_only_replace"
+  },
+  {
+    "kind": "pretrain",
+    "output": "C:\\Users\\Admin\\Desktop\\实验8去噪5.19-\\gb_graph_aware_minival_6_1\\checkpoints\\grace\\Cora\\ratio_train0p2_val0p1_split0_pretrain3\\checkpoint.pt",
+    "skip": true,
+    "command": "C:\\Users\\Admin\\AppData\\Local\\Programs\\Python\\Python312\\python.exe scripts/run_vanilla_grace.py --dataset Cora --split-seed 0 --split-mode ratio --pretrain-seed 3 --train-ratio 0.2 --val-ratio 0.1"
+  },
+  {
+    "kind": "embedding",
+    "output": "C:\\Users\\Admin\\Desktop\\实验8去噪5.19-\\gb_graph_aware_minival_6_1\\checkpoints\\embeddings\\Cora\\ratio_train0p2_val0p1_split0_pretrain3\\H.pt",
+    "skip": true,
+    "command": "C:\\Users\\Admin\\AppData\\Local\\Programs\\Python\\Python312\\python.exe scripts/extract_embeddings.py --dataset Cora --split-seed 0 --split-mode ratio --pretrain-seed 3 --train-ratio 0.2 --val-ratio 0.1"
+  },
+  {
+    "kind": "classifier",
+    "output": "C:\\Users\\Admin\\Desktop\\实验8去噪5.19-\\gb_graph_aware_minival_6_1\\results\\gate_runs\\Cora\\symmetric_0p2\\ratio_train0p2_val0p1_split0_pretrain3_noise3_clf3\\result_rows.csv",
+    "skip": true,
+    "command": "C:\\Users\\Admin\\AppData\\Local\\Programs\\Python\\Python312\\python.exe scripts/run_noisy_classifier.py --dataset Cora --split-seed 0 --split-mode ratio --pretrain-seed 3 --train-ratio 0.2 --val-ratio 0.1 --noise-seed 3 --classifier-seed 3 --noise-type symmetric --noise-rate 0.2 --classifier-epochs 500 --patience 50 --alphas 0.3 --primary-alpha 0.3 --teacher-epochs 100 --teacher-lr 0.01 --teacher-weight-decay 0.0005 --teacher-temperature 1.0 --qb-pred-beta 0.5 --qb-teacher-gamma 2.0 --conflict-noisy-support-max 0.35 --conflict-target-conf-min 0.55 --methods gb gagb khop_only gagb_qb_conflict_gate_alpha03 gagb_qb_conflict_gate_alpha09 gagb_qb_conflict_gate_replace_qmix gagb_shuffled_alpha09_matched gagb_shuffled_replace_matched kmeans_gagb_matched_alpha09 kmeans_gagb_matched_replace topk_gagb_train_matched_alpha09 topk_gagb_train_matched_replace khop_only_alpha09 khop_only_replace"
+  },
+  {
+    "kind": "classifier",
+    "output": "C:\\Users\\Admin\\Desktop\\实验8去噪5.19-\\gb_graph_aware_minival_6_1\\results\\gate_runs\\Cora\\symmetric_0p4\\ratio_train0p2_val0p1_split0_pretrain3_noise3_clf3\\result_rows.csv",
+    "skip": true,
+    "command": "C:\\Users\\Admin\\AppData\\Local\\Programs\\Python\\Python312\\python.exe scripts/run_noisy_classifier.py --dataset Cora --split-seed 0 --split-mode ratio --pretrain-seed 3 --train-ratio 0.2 --val-ratio 0.1 --noise-seed 3 --classifier-seed 3 --noise-type symmetric --noise-rate 0.4 --classifier-epochs 500 --patience 50 --alphas 0.3 --primary-alpha 0.3 --teacher-epochs 100 --teacher-lr 0.01 --teacher-weight-decay 0.0005 --teacher-temperature 1.0 --qb-pred-beta 0.5 --qb-teacher-gamma 2.0 --conflict-noisy-support-max 0.35 --conflict-target-conf-min 0.55 --methods gb gagb khop_only gagb_qb_conflict_gate_alpha03 gagb_qb_conflict_gate_alpha09 gagb_qb_conflict_gate_replace_qmix gagb_shuffled_alpha09_matched gagb_shuffled_replace_matched kmeans_gagb_matched_alpha09 kmeans_gagb_matched_replace topk_gagb_train_matched_alpha09 topk_gagb_train_matched_replace khop_only_alpha09 khop_only_replace"
+  },
+  {
+    "kind": "pretrain",
+    "output": "C:\\Users\\Admin\\Desktop\\实验8去噪5.19-\\gb_graph_aware_minival_6_1\\checkpoints\\grace\\Cora\\ratio_train0p2_val0p1_split0_pretrain4\\checkpoint.pt",
+    "skip": true,
+    "command": "C:\\Users\\Admin\\AppData\\Local\\Programs\\Python\\Python312\\python.exe scripts/run_vanilla_grace.py --dataset Cora --split-seed 0 --split-mode ratio --pretrain-seed 4 --train-ratio 0.2 --val-ratio 0.1"
+  },
+  {
+    "kind": "embedding",
+    "output": "C:\\Users\\Admin\\Desktop\\实验8去噪5.19-\\gb_graph_aware_minival_6_1\\checkpoints\\embeddings\\Cora\\ratio_train0p2_val0p1_split0_pretrain4\\H.pt",
+    "skip": true,
+    "command": "C:\\Users\\Admin\\AppData\\Local\\Programs\\Python\\Python312\\python.exe scripts/extract_embeddings.py --dataset Cora --split-seed 0 --split-mode ratio --pretrain-seed 4 --train-ratio 0.2 --val-ratio 0.1"
+  },
+  {
+    "kind": "classifier",
+    "output": "C:\\Users\\Admin\\Desktop\\实验8去噪5.19-\\gb_graph_aware_minival_6_1\\results\\gate_runs\\Cora\\symmetric_0p2\\ratio_train0p2_val0p1_split0_pretrain4_noise4_clf4\\result_rows.csv",
+    "skip": true,
+    "command": "C:\\Users\\Admin\\AppData\\Local\\Programs\\Python\\Python312\\python.exe scripts/run_noisy_classifier.py --dataset Cora --split-seed 0 --split-mode ratio --pretrain-seed 4 --train-ratio 0.2 --val-ratio 0.1 --noise-seed 4 --classifier-seed 4 --noise-type symmetric --noise-rate 0.2 --classifier-epochs 500 --patience 50 --alphas 0.3 --primary-alpha 0.3 --teacher-epochs 100 --teacher-lr 0.01 --teacher-weight-decay 0.0005 --teacher-temperature 1.0 --qb-pred-beta 0.5 --qb-teacher-gamma 2.0 --conflict-noisy-support-max 0.35 --conflict-target-conf-min 0.55 --methods gb gagb khop_only gagb_qb_conflict_gate_alpha03 gagb_qb_conflict_gate_alpha09 gagb_qb_conflict_gate_replace_qmix gagb_shuffled_alpha09_matched gagb_shuffled_replace_matched kmeans_gagb_matched_alpha09 kmeans_gagb_matched_replace topk_gagb_train_matched_alpha09 topk_gagb_train_matched_replace khop_only_alpha09 khop_only_replace"
+  },
+  {
+    "kind": "classifier",
+    "output": "C:\\Users\\Admin\\Desktop\\实验8去噪5.19-\\gb_graph_aware_minival_6_1\\results\\gate_runs\\Cora\\symmetric_0p4\\ratio_train0p2_val0p1_split0_pretrain4_noise4_clf4\\result_rows.csv",
+    "skip": true,
+    "command": "C:\\Users\\Admin\\AppData\\Local\\Programs\\Python\\Python312\\python.exe scripts/run_noisy_classifier.py --dataset Cora --split-seed 0 --split-mode ratio --pretrain-seed 4 --train-ratio 0.2 --val-ratio 0.1 --noise-seed 4 --classifier-seed 4 --noise-type symmetric --noise-rate 0.4 --classifier-epochs 500 --patience 50 --alphas 0.3 --primary-alpha 0.3 --teacher-epochs 100 --teacher-lr 0.01 --teacher-weight-decay 0.0005 --teacher-temperature 1.0 --qb-pred-beta 0.5 --qb-teacher-gamma 2.0 --conflict-noisy-support-max 0.35 --conflict-target-conf-min 0.55 --methods gb gagb khop_only gagb_qb_conflict_gate_alpha03 gagb_qb_conflict_gate_alpha09 gagb_qb_conflict_gate_replace_qmix gagb_shuffled_alpha09_matched gagb_shuffled_replace_matched kmeans_gagb_matched_alpha09 kmeans_gagb_matched_replace topk_gagb_train_matched_alpha09 topk_gagb_train_matched_replace khop_only_alpha09 khop_only_replace"
+  },
+  {
+    "kind": "pretrain",
+    "output": "C:\\Users\\Admin\\Desktop\\实验8去噪5.19-\\gb_graph_aware_minival_6_1\\checkpoints\\grace\\CiteSeer\\ratio_train0p2_val0p1_split0_pretrain0\\checkpoint.pt",
+    "skip": true,
+    "command": "C:\\Users\\Admin\\AppData\\Local\\Programs\\Python\\Python312\\python.exe scripts/run_vanilla_grace.py --dataset CiteSeer --split-seed 0 --split-mode ratio --pretrain-seed 0 --train-ratio 0.2 --val-ratio 0.1"
+  },
+  {
+    "kind": "embedding",
+    "output": "C:\\Users\\Admin\\Desktop\\实验8去噪5.19-\\gb_graph_aware_minival_6_1\\checkpoints\\embeddings\\CiteSeer\\ratio_train0p2_val0p1_split0_pretrain0\\H.pt",
+    "skip": true,
+    "command": "C:\\Users\\Admin\\AppData\\Local\\Programs\\Python\\Python312\\python.exe scripts/extract_embeddings.py --dataset CiteSeer --split-seed 0 --split-mode ratio --pretrain-seed 0 --train-ratio 0.2 --val-ratio 0.1"
+  },
+  {
+    "kind": "classifier",
+    "output": "C:\\Users\\Admin\\Desktop\\实验8去噪5.19-\\gb_graph_aware_minival_6_1\\results\\gate_runs\\CiteSeer\\symmetric_0p2\\ratio_train0p2_val0p1_split0_pretrain0_noise0_clf0\\result_rows.csv",
+    "skip": true,
+    "command": "C:\\Users\\Admin\\AppData\\Local\\Programs\\Python\\Python312\\python.exe scripts/run_noisy_classifier.py --dataset CiteSeer --split-seed 0 --split-mode ratio --pretrain-seed 0 --train-ratio 0.2 --val-ratio 0.1 --noise-seed 0 --classifier-seed 0 --noise-type symmetric --noise-rate 0.2 --classifier-epochs 500 --patience 50 --alphas 0.3 --primary-alpha 0.3 --teacher-epochs 100 --teacher-lr 0.01 --teacher-weight-decay 0.0005 --teacher-temperature 1.0 --qb-pred-beta 0.5 --qb-teacher-gamma 2.0 --conflict-noisy-support-max 0.35 --conflict-target-conf-min 0.55 --methods gb gagb khop_only gagb_qb_conflict_gate_alpha03 gagb_qb_conflict_gate_alpha09 gagb_qb_conflict_gate_replace_qmix gagb_shuffled_alpha09_matched gagb_shuffled_replace_matched kmeans_gagb_matched_alpha09 kmeans_gagb_matched_replace topk_gagb_train_matched_alpha09 topk_gagb_train_matched_replace khop_only_alpha09 khop_only_replace"
+  },
+  {
+    "kind": "classifier",
+    "output": "C:\\Users\\Admin\\Desktop\\实验8去噪5.19-\\gb_graph_aware_minival_6_1\\results\\gate_runs\\CiteSeer\\symmetric_0p4\\ratio_train0p2_val0p1_split0_pretrain0_noise0_clf0\\result_rows.csv",
+    "skip": true,
+    "command": "C:\\Users\\Admin\\AppData\\Local\\Programs\\Python\\Python312\\python.exe scripts/run_noisy_classifier.py --dataset CiteSeer --split-seed 0 --split-mode ratio --pretrain-seed 0 --train-ratio 0.2 --val-ratio 0.1 --noise-seed 0 --classifier-seed 0 --noise-type symmetric --noise-rate 0.4 --classifier-epochs 500 --patience 50 --alphas 0.3 --primary-alpha 0.3 --teacher-epochs 100 --teacher-lr 0.01 --teacher-weight-decay 0.0005 --teacher-temperature 1.0 --qb-pred-beta 0.5 --qb-teacher-gamma 2.0 --conflict-noisy-support-max 0.35 --conflict-target-conf-min 0.55 --methods gb gagb khop_only gagb_qb_conflict_gate_alpha03 gagb_qb_conflict_gate_alpha09 gagb_qb_conflict_gate_replace_qmix gagb_shuffled_alpha09_matched gagb_shuffled_replace_matched kmeans_gagb_matched_alpha09 kmeans_gagb_matched_replace topk_gagb_train_matched_alpha09 topk_gagb_train_matched_replace khop_only_alpha09 khop_only_replace"
+  },
+  {
+    "kind": "pretrain",
+    "output": "C:\\Users\\Admin\\Desktop\\实验8去噪5.19-\\gb_graph_aware_minival_6_1\\checkpoints\\grace\\CiteSeer\\ratio_train0p2_val0p1_split0_pretrain1\\checkpoint.pt",
+    "skip": true,
+    "command": "C:\\Users\\Admin\\AppData\\Local\\Programs\\Python\\Python312\\python.exe scripts/run_vanilla_grace.py --dataset CiteSeer --split-seed 0 --split-mode ratio --pretrain-seed 1 --train-ratio 0.2 --val-ratio 0.1"
+  },
+  {
+    "kind": "embedding",
+    "output": "C:\\Users\\Admin\\Desktop\\实验8去噪5.19-\\gb_graph_aware_minival_6_1\\checkpoints\\embeddings\\CiteSeer\\ratio_train0p2_val0p1_split0_pretrain1\\H.pt",
+    "skip": true,
+    "command": "C:\\Users\\Admin\\AppData\\Local\\Programs\\Python\\Python312\\python.exe scripts/extract_embeddings.py --dataset CiteSeer --split-seed 0 --split-mode ratio --pretrain-seed 1 --train-ratio 0.2 --val-ratio 0.1"
+  },
+  {
+    "kind": "classifier",
+    "output": "C:\\Users\\Admin\\Desktop\\实验8去噪5.19-\\gb_graph_aware_minival_6_1\\results\\gate_runs\\CiteSeer\\symmetric_0p2\\ratio_train0p2_val0p1_split0_pretrain1_noise1_clf1\\result_rows.csv",
+    "skip": true,
+    "command": "C:\\Users\\Admin\\AppData\\Local\\Programs\\Python\\Python312\\python.exe scripts/run_noisy_classifier.py --dataset CiteSeer --split-seed 0 --split-mode ratio --pretrain-seed 1 --train-ratio 0.2 --val-ratio 0.1 --noise-seed 1 --classifier-seed 1 --noise-type symmetric --noise-rate 0.2 --classifier-epochs 500 --patience 50 --alphas 0.3 --primary-alpha 0.3 --teacher-epochs 100 --teacher-lr 0.01 --teacher-weight-decay 0.0005 --teacher-temperature 1.0 --qb-pred-beta 0.5 --qb-teacher-gamma 2.0 --conflict-noisy-support-max 0.35 --conflict-target-conf-min 0.55 --methods gb gagb khop_only gagb_qb_conflict_gate_alpha03 gagb_qb_conflict_gate_alpha09 gagb_qb_conflict_gate_replace_qmix gagb_shuffled_alpha09_matched gagb_shuffled_replace_matched kmeans_gagb_matched_alpha09 kmeans_gagb_matched_replace topk_gagb_train_matched_alpha09 topk_gagb_train_matched_replace khop_only_alpha09 khop_only_replace"
+  },
+  {
+    "kind": "classifier",
+    "output": "C:\\Users\\Admin\\Desktop\\实验8去噪5.19-\\gb_graph_aware_minival_6_1\\results\\gate_runs\\CiteSeer\\symmetric_0p4\\ratio_train0p2_val0p1_split0_pretrain1_noise1_clf1\\result_rows.csv",
+    "skip": true,
+    "command": "C:\\Users\\Admin\\AppData\\Local\\Programs\\Python\\Python312\\python.exe scripts/run_noisy_classifier.py --dataset CiteSeer --split-seed 0 --split-mode ratio --pretrain-seed 1 --train-ratio 0.2 --val-ratio 0.1 --noise-seed 1 --classifier-seed 1 --noise-type symmetric --noise-rate 0.4 --classifier-epochs 500 --patience 50 --alphas 0.3 --primary-alpha 0.3 --teacher-epochs 100 --teacher-lr 0.01 --teacher-weight-decay 0.0005 --teacher-temperature 1.0 --qb-pred-beta 0.5 --qb-teacher-gamma 2.0 --conflict-noisy-support-max 0.35 --conflict-target-conf-min 0.55 --methods gb gagb khop_only gagb_qb_conflict_gate_alpha03 gagb_qb_conflict_gate_alpha09 gagb_qb_conflict_gate_replace_qmix gagb_shuffled_alpha09_matched gagb_shuffled_replace_matched kmeans_gagb_matched_alpha09 kmeans_gagb_matched_replace topk_gagb_train_matched_alpha09 topk_gagb_train_matched_replace khop_only_alpha09 khop_only_replace"
+  },
+  {
+    "kind": "pretrain",
+    "output": "C:\\Users\\Admin\\Desktop\\实验8去噪5.19-\\gb_graph_aware_minival_6_1\\checkpoints\\grace\\CiteSeer\\ratio_train0p2_val0p1_split0_pretrain2\\checkpoint.pt",
+    "skip": true,
+    "command": "C:\\Users\\Admin\\AppData\\Local\\Programs\\Python\\Python312\\python.exe scripts/run_vanilla_grace.py --dataset CiteSeer --split-seed 0 --split-mode ratio --pretrain-seed 2 --train-ratio 0.2 --val-ratio 0.1"
+  },
+  {
+    "kind": "embedding",
+    "output": "C:\\Users\\Admin\\Desktop\\实验8去噪5.19-\\gb_graph_aware_minival_6_1\\checkpoints\\embeddings\\CiteSeer\\ratio_train0p2_val0p1_split0_pretrain2\\H.pt",
+    "skip": true,
+    "command": "C:\\Users\\Admin\\AppData\\Local\\Programs\\Python\\Python312\\python.exe scripts/extract_embeddings.py --dataset CiteSeer --split-seed 0 --split-mode ratio --pretrain-seed 2 --train-ratio 0.2 --val-ratio 0.1"
+  },
+  {
+    "kind": "classifier",
+    "output": "C:\\Users\\Admin\\Desktop\\实验8去噪5.19-\\gb_graph_aware_minival_6_1\\results\\gate_runs\\CiteSeer\\symmetric_0p2\\ratio_train0p2_val0p1_split0_pretrain2_noise2_clf2\\result_rows.csv",
+    "skip": true,
+    "command": "C:\\Users\\Admin\\AppData\\Local\\Programs\\Python\\Python312\\python.exe scripts/run_noisy_classifier.py --dataset CiteSeer --split-seed 0 --split-mode ratio --pretrain-seed 2 --train-ratio 0.2 --val-ratio 0.1 --noise-seed 2 --classifier-seed 2 --noise-type symmetric --noise-rate 0.2 --classifier-epochs 500 --patience 50 --alphas 0.3 --primary-alpha 0.3 --teacher-epochs 100 --teacher-lr 0.01 --teacher-weight-decay 0.0005 --teacher-temperature 1.0 --qb-pred-beta 0.5 --qb-teacher-gamma 2.0 --conflict-noisy-support-max 0.35 --conflict-target-conf-min 0.55 --methods gb gagb khop_only gagb_qb_conflict_gate_alpha03 gagb_qb_conflict_gate_alpha09 gagb_qb_conflict_gate_replace_qmix gagb_shuffled_alpha09_matched gagb_shuffled_replace_matched kmeans_gagb_matched_alpha09 kmeans_gagb_matched_replace topk_gagb_train_matched_alpha09 topk_gagb_train_matched_replace khop_only_alpha09 khop_only_replace"
+  },
+  {
+    "kind": "classifier",
+    "output": "C:\\Users\\Admin\\Desktop\\实验8去噪5.19-\\gb_graph_aware_minival_6_1\\results\\gate_runs\\CiteSeer\\symmetric_0p4\\ratio_train0p2_val0p1_split0_pretrain2_noise2_clf2\\result_rows.csv",
+    "skip": true,
+    "command": "C:\\Users\\Admin\\AppData\\Local\\Programs\\Python\\Python312\\python.exe scripts/run_noisy_classifier.py --dataset CiteSeer --split-seed 0 --split-mode ratio --pretrain-seed 2 --train-ratio 0.2 --val-ratio 0.1 --noise-seed 2 --classifier-seed 2 --noise-type symmetric --noise-rate 0.4 --classifier-epochs 500 --patience 50 --alphas 0.3 --primary-alpha 0.3 --teacher-epochs 100 --teacher-lr 0.01 --teacher-weight-decay 0.0005 --teacher-temperature 1.0 --qb-pred-beta 0.5 --qb-teacher-gamma 2.0 --conflict-noisy-support-max 0.35 --conflict-target-conf-min 0.55 --methods gb gagb khop_only gagb_qb_conflict_gate_alpha03 gagb_qb_conflict_gate_alpha09 gagb_qb_conflict_gate_replace_qmix gagb_shuffled_alpha09_matched gagb_shuffled_replace_matched kmeans_gagb_matched_alpha09 kmeans_gagb_matched_replace topk_gagb_train_matched_alpha09 topk_gagb_train_matched_replace khop_only_alpha09 khop_only_replace"
+  },
+  {
+    "kind": "pretrain",
+    "output": "C:\\Users\\Admin\\Desktop\\实验8去噪5.19-\\gb_graph_aware_minival_6_1\\checkpoints\\grace\\CiteSeer\\ratio_train0p2_val0p1_split0_pretrain3\\checkpoint.pt",
+    "skip": true,
+    "command": "C:\\Users\\Admin\\AppData\\Local\\Programs\\Python\\Python312\\python.exe scripts/run_vanilla_grace.py --dataset CiteSeer --split-seed 0 --split-mode ratio --pretrain-seed 3 --train-ratio 0.2 --val-ratio 0.1"
+  },
+  {
+    "kind": "embedding",
+    "output": "C:\\Users\\Admin\\Desktop\\实验8去噪5.19-\\gb_graph_aware_minival_6_1\\checkpoints\\embeddings\\CiteSeer\\ratio_train0p2_val0p1_split0_pretrain3\\H.pt",
+    "skip": true,
+    "command": "C:\\Users\\Admin\\AppData\\Local\\Programs\\Python\\Python312\\python.exe scripts/extract_embeddings.py --dataset CiteSeer --split-seed 0 --split-mode ratio --pretrain-seed 3 --train-ratio 0.2 --val-ratio 0.1"
+  },
+  {
+    "kind": "classifier",
+    "output": "C:\\Users\\Admin\\Desktop\\实验8去噪5.19-\\gb_graph_aware_minival_6_1\\results\\gate_runs\\CiteSeer\\symmetric_0p2\\ratio_train0p2_val0p1_split0_pretrain3_noise3_clf3\\result_rows.csv",
+    "skip": true,
+    "command": "C:\\Users\\Admin\\AppData\\Local\\Programs\\Python\\Python312\\python.exe scripts/run_noisy_classifier.py --dataset CiteSeer --split-seed 0 --split-mode ratio --pretrain-seed 3 --train-ratio 0.2 --val-ratio 0.1 --noise-seed 3 --classifier-seed 3 --noise-type symmetric --noise-rate 0.2 --classifier-epochs 500 --patience 50 --alphas 0.3 --primary-alpha 0.3 --teacher-epochs 100 --teacher-lr 0.01 --teacher-weight-decay 0.0005 --teacher-temperature 1.0 --qb-pred-beta 0.5 --qb-teacher-gamma 2.0 --conflict-noisy-support-max 0.35 --conflict-target-conf-min 0.55 --methods gb gagb khop_only gagb_qb_conflict_gate_alpha03 gagb_qb_conflict_gate_alpha09 gagb_qb_conflict_gate_replace_qmix gagb_shuffled_alpha09_matched gagb_shuffled_replace_matched kmeans_gagb_matched_alpha09 kmeans_gagb_matched_replace topk_gagb_train_matched_alpha09 topk_gagb_train_matched_replace khop_only_alpha09 khop_only_replace"
+  },
+  {
+    "kind": "classifier",
+    "output": "C:\\Users\\Admin\\Desktop\\实验8去噪5.19-\\gb_graph_aware_minival_6_1\\results\\gate_runs\\CiteSeer\\symmetric_0p4\\ratio_train0p2_val0p1_split0_pretrain3_noise3_clf3\\result_rows.csv",
+    "skip": true,
+    "command": "C:\\Users\\Admin\\AppData\\Local\\Programs\\Python\\Python312\\python.exe scripts/run_noisy_classifier.py --dataset CiteSeer --split-seed 0 --split-mode ratio --pretrain-seed 3 --train-ratio 0.2 --val-ratio 0.1 --noise-seed 3 --classifier-seed 3 --noise-type symmetric --noise-rate 0.4 --classifier-epochs 500 --patience 50 --alphas 0.3 --primary-alpha 0.3 --teacher-epochs 100 --teacher-lr 0.01 --teacher-weight-decay 0.0005 --teacher-temperature 1.0 --qb-pred-beta 0.5 --qb-teacher-gamma 2.0 --conflict-noisy-support-max 0.35 --conflict-target-conf-min 0.55 --methods gb gagb khop_only gagb_qb_conflict_gate_alpha03 gagb_qb_conflict_gate_alpha09 gagb_qb_conflict_gate_replace_qmix gagb_shuffled_alpha09_matched gagb_shuffled_replace_matched kmeans_gagb_matched_alpha09 kmeans_gagb_matched_replace topk_gagb_train_matched_alpha09 topk_gagb_train_matched_replace khop_only_alpha09 khop_only_replace"
+  },
+  {
+    "kind": "pretrain",
+    "output": "C:\\Users\\Admin\\Desktop\\实验8去噪5.19-\\gb_graph_aware_minival_6_1\\checkpoints\\grace\\CiteSeer\\ratio_train0p2_val0p1_split0_pretrain4\\checkpoint.pt",
+    "skip": true,
+    "command": "C:\\Users\\Admin\\AppData\\Local\\Programs\\Python\\Python312\\python.exe scripts/run_vanilla_grace.py --dataset CiteSeer --split-seed 0 --split-mode ratio --pretrain-seed 4 --train-ratio 0.2 --val-ratio 0.1"
+  },
+  {
+    "kind": "embedding",
+    "output": "C:\\Users\\Admin\\Desktop\\实验8去噪5.19-\\gb_graph_aware_minival_6_1\\checkpoints\\embeddings\\CiteSeer\\ratio_train0p2_val0p1_split0_pretrain4\\H.pt",
+    "skip": true,
+    "command": "C:\\Users\\Admin\\AppData\\Local\\Programs\\Python\\Python312\\python.exe scripts/extract_embeddings.py --dataset CiteSeer --split-seed 0 --split-mode ratio --pretrain-seed 4 --train-ratio 0.2 --val-ratio 0.1"
+  },
+  {
+    "kind": "classifier",
+    "output": "C:\\Users\\Admin\\Desktop\\实验8去噪5.19-\\gb_graph_aware_minival_6_1\\results\\gate_runs\\CiteSeer\\symmetric_0p2\\ratio_train0p2_val0p1_split0_pretrain4_noise4_clf4\\result_rows.csv",
+    "skip": true,
+    "command": "C:\\Users\\Admin\\AppData\\Local\\Programs\\Python\\Python312\\python.exe scripts/run_noisy_classifier.py --dataset CiteSeer --split-seed 0 --split-mode ratio --pretrain-seed 4 --train-ratio 0.2 --val-ratio 0.1 --noise-seed 4 --classifier-seed 4 --noise-type symmetric --noise-rate 0.2 --classifier-epochs 500 --patience 50 --alphas 0.3 --primary-alpha 0.3 --teacher-epochs 100 --teacher-lr 0.01 --teacher-weight-decay 0.0005 --teacher-temperature 1.0 --qb-pred-beta 0.5 --qb-teacher-gamma 2.0 --conflict-noisy-support-max 0.35 --conflict-target-conf-min 0.55 --methods gb gagb khop_only gagb_qb_conflict_gate_alpha03 gagb_qb_conflict_gate_alpha09 gagb_qb_conflict_gate_replace_qmix gagb_shuffled_alpha09_matched gagb_shuffled_replace_matched kmeans_gagb_matched_alpha09 kmeans_gagb_matched_replace topk_gagb_train_matched_alpha09 topk_gagb_train_matched_replace khop_only_alpha09 khop_only_replace"
+  },
+  {
+    "kind": "classifier",
+    "output": "C:\\Users\\Admin\\Desktop\\实验8去噪5.19-\\gb_graph_aware_minival_6_1\\results\\gate_runs\\CiteSeer\\symmetric_0p4\\ratio_train0p2_val0p1_split0_pretrain4_noise4_clf4\\result_rows.csv",
+    "skip": true,
+    "command": "C:\\Users\\Admin\\AppData\\Local\\Programs\\Python\\Python312\\python.exe scripts/run_noisy_classifier.py --dataset CiteSeer --split-seed 0 --split-mode ratio --pretrain-seed 4 --train-ratio 0.2 --val-ratio 0.1 --noise-seed 4 --classifier-seed 4 --noise-type symmetric --noise-rate 0.4 --classifier-epochs 500 --patience 50 --alphas 0.3 --primary-alpha 0.3 --teacher-epochs 100 --teacher-lr 0.01 --teacher-weight-decay 0.0005 --teacher-temperature 1.0 --qb-pred-beta 0.5 --qb-teacher-gamma 2.0 --conflict-noisy-support-max 0.35 --conflict-target-conf-min 0.55 --methods gb gagb khop_only gagb_qb_conflict_gate_alpha03 gagb_qb_conflict_gate_alpha09 gagb_qb_conflict_gate_replace_qmix gagb_shuffled_alpha09_matched gagb_shuffled_replace_matched kmeans_gagb_matched_alpha09 kmeans_gagb_matched_replace topk_gagb_train_matched_alpha09 topk_gagb_train_matched_replace khop_only_alpha09 khop_only_replace"
+  }
+]

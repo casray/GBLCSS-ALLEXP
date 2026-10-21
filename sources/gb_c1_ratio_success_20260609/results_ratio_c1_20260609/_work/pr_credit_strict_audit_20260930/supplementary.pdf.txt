@@ -1,0 +1,701 @@
+PAGE 1
+Supplementary Material
+Granularballlocalconsensusforgraph-freenodeclassification
+underlabelnoise
+SileiCao,KunWang,JingyuZhu,TianxingWang,andBingHuang
+This supplement provides extended experimental results, implementation details,
+and theoretical analyses supporting the main paper. It includes paired statistical
+tests, target-construction checks, additional datasets, full derivations, and parameter-
+sensitivityanalyses.
+AppendixA. Resultsofthemaincomparisonsunderallnoisesettings
+Allaccuraciesinthissupplementarepercentages, reportedasthemean±sample
+standard deviation over five paired seeds. Bold marks the highest mean within each
+datasetandnoisesetting;inTableC.1,thehighestmeanismarkedseparatelyforeach
+validationprotocol.
+AppendixA.1. Cora
+TableA.1:TestaccuracyonCoraunderallfivenoisesettings.
+Method Uniform0.2 Uniform0.4 Uniform0.6 Pair0.4 Instance0.4
+MLP+CE 54.96±2.22 44.24±2.62 32.51±3.38 42.83±2.19 45.33±2.22
+Small-loss 59.84±1.29 51.95±1.97 36.72±1.09 46.99±2.77 51.82±0.94
+Co-teaching 58.62±1.97 46.83±1.78 33.29±3.48 44.26±2.30 47.35±2.24
+JoCoR 60.12±2.25 51.72±1.30 36.92±2.14 45.91±2.38 52.26±1.01
+SCE 53.57±2.17 43.60±1.86 32.66±3.78 41.40±2.04 43.29±4.35
+ELR 52.95±2.38 44.28±1.38 32.82±3.51 41.83±1.75 45.93±2.26
+LogitClip 58.63±1.35 47.50±1.50 34.44±2.67 44.90±1.21 48.09±1.73
+Random 53.57±1.99 43.31±1.40 32.18±2.54 39.28±1.34 43.34±1.70
+size-matched
+grouping
+GB-LCSS 63.25±2.46 57.49±0.76 41.86±2.30 51.45±2.80 56.84±1.67
+AppendixA.2. CiteSeer
+1
+
+PAGE 2
+TableA.2:TestaccuracyonCiteSeerunderallfivenoisesettings.
+Method Uniform0.2 Uniform0.4 Uniform0.6 Pair0.4 Instance0.4
+MLP+CE 55.10±1.17 43.50±3.02 33.35±1.36 45.15±1.67 44.33±2.04
+Small-loss 59.26±1.94 49.70±3.07 37.73±2.86 48.16±2.56 50.75±3.33
+Co-teaching 57.05±0.82 46.24±2.89 34.19±2.92 46.25±2.29 46.81±1.68
+JoCoR 59.36±1.43 49.91±3.37 39.07±2.47 48.63±2.35 50.86±2.45
+SCE 52.12±3.28 42.09±3.47 30.59±2.83 42.22±1.56 40.92±4.23
+ELR 53.62±1.48 43.17±3.95 30.80±2.70 42.69±2.43 41.94±3.27
+LogitClip 58.75±1.44 46.57±3.52 34.47±1.69 45.78±1.06 47.41±2.64
+Random 55.13±1.85 42.08±2.88 30.36±1.88 43.92±1.67 43.07±2.00
+size-matched
+grouping
+GB-LCSS 63.92±1.12 55.24±2.04 42.02±3.14 51.70±2.14 55.58±2.54
+AppendixA.3. CoraFull
+TableA.3:TestaccuracyonCoraFullunderallfivenoisesettings.
+Method Uniform0.2 Uniform0.4 Uniform0.6 Pair0.4 Instance0.4
+MLP+CE 41.11±0.46 31.98±0.98 21.16±0.81 28.14±1.17 31.33±0.85
+Small-loss 41.58±0.94 33.04±0.50 21.51±0.98 30.15±1.11 32.90±0.87
+Co-teaching 41.70±1.05 34.39±0.24 22.84±1.38 30.28±0.52 33.39±0.90
+JoCoR 43.33±0.70 35.70±0.32 24.20±0.98 31.45±0.80 35.17±0.51
+SCE 37.93±0.72 29.29±0.45 17.79±1.33 26.98±0.51 29.68±1.06
+ELR 41.08±0.53 32.14±0.67 21.32±0.98 28.91±1.44 31.52±0.83
+LogitClip 41.24±0.78 34.69±1.17 24.62±0.72 31.23±1.84 34.19±0.17
+Random 41.02±0.92 32.30±0.85 21.41±0.84 28.49±0.78 31.43±0.79
+size-matched
+grouping
+GB-LCSS 43.46±0.57 37.39±0.51 27.43±0.89 34.46±1.23 36.95±0.53
+AppendixA.4. Coauthor-CS
+TableA.4:TestaccuracyonCoauthor-CSunderallfivenoisesettings.
+Method Uniform0.2 Uniform0.4 Uniform0.6 Pair0.4 Instance0.4
+MLP+CE 91.38±0.54 88.42±0.62 80.03±1.91 75.91±1.34 87.44±1.15
+Small-loss 91.50±0.49 89.06±0.88 81.65±0.91 80.13±1.50 88.97±1.02
+Co-teaching 91.70±0.29 88.80±0.97 81.88±0.72 79.06±1.30 88.95±0.97
+JoCoR 91.81±0.25 89.38±0.61 82.58±0.41 81.02±1.62 89.17±0.85
+Continuedonthenextpage
+2
+
+PAGE 3
+TableA.4(continued)
+Method Uniform0.2 Uniform0.4 Uniform0.6 Pair0.4 Instance0.4
+SCE 90.63±0.47 88.37±0.53 79.43±1.45 79.77±2.51 87.99±0.56
+ELR 91.21±0.60 88.29±0.73 80.54±1.28 78.03±1.48 87.78±0.94
+LogitClip 91.32±0.43 88.40±0.21 79.96±1.64 81.57±0.53 88.60±0.75
+Random 90.26±0.70 87.46±1.07 78.78±1.82 75.99±0.60 86.87±1.56
+size-matched
+grouping
+GB-LCSS 91.54±0.26 90.71±0.59 87.19±0.69 86.24±1.18 90.51±0.43
+AppendixA.5. Amazon-Photo
+TableA.5:TestaccuracyonAmazon-Photounderallfivenoisesettings.
+Method Uniform0.2 Uniform0.4 Uniform0.6 Pair0.4 Instance0.4
+MLP+CE 82.34±1.39 73.90±1.80 58.60±3.77 62.61±4.31 69.13±3.00
+Small-loss 84.96±0.58 77.25±1.62 61.40±3.72 66.70±5.73 73.00±1.25
+Co-teaching 85.21±0.51 78.21±1.00 63.29±5.00 67.24±6.97 73.59±1.19
+JoCoR 85.60±1.26 79.57±0.53 66.48±4.43 66.94±6.36 74.80±1.79
+SCE 84.74±0.94 76.08±3.11 57.82±4.07 66.51±6.96 73.08±2.54
+ELR 82.31±1.98 73.93±2.12 59.32±4.53 66.07±5.25 69.41±2.70
+LogitClip 83.78±1.02 74.98±2.38 62.42±4.37 68.52±4.20 72.90±1.05
+Random 81.03±1.23 71.45±3.29 58.30±4.17 62.56±4.24 67.56±2.89
+size-matched
+grouping
+GB-LCSS 86.07±1.05 82.12±1.08 71.45±3.75 73.89±3.73 79.59±0.88
+AppendixB. Pairedstatisticaltests
+For each dataset and noise setting, we compute the accuracy difference between
+GB-LCSSandthereferencemethodoneachofthefivepairedseeds. TableB.1reports
+the mean difference and an unadjusted 95% confidence interval in percentage points.
+“Wins(seeds)”countstheseedsonwhichGB-LCSShashigheraccuracy. Two-sided
+pairedt-testp-valuesareHolm-adjustedacrossthe25comparisonswitheachreference
+method. The differences remain significant after correction in 24 of the 25 settings
+againstMLP+CEandin11againstJoCoR.GB-LCSSalsoexceedsJoCoRonallfive
+seedsin22ofthe25settings.
+3
+
+PAGE 4
+TableB.1:PairedstatisticsforGB-LCSSagainstthethreereferencemethods.
+Dataset Noise Reference Mean 95%CI(pp) Wins Adjusted
+method difference (seeds) p
+(pp)
+Cora Uniform0.2 Random +9.68 [+7.16,+12.20] 5/5 0.006
+grouping
+Cora Uniform0.2 MLP+CE +8.30 [+5.59,+11.00] 5/5 0.011
+Cora Uniform0.2 JoCoR +3.13 [+0.55,+5.72] 5/5 0.112
+Cora Uniform0.4 Random +14.17 [+12.71,+15.63] 5/5 <0.001
+grouping
+Cora Uniform0.4 MLP+CE +13.25 [+10.81,+15.68] 5/5 0.002
+Cora Uniform0.4 JoCoR +5.77 [+3.60,+7.95] 5/5 0.031
+Cora Uniform0.6 Random +9.68 [+6.39,+12.96] 5/5 0.010
+grouping
+Cora Uniform0.6 MLP+CE +9.35 [+4.54,+14.16] 5/5 0.011
+Cora Uniform0.6 JoCoR +4.94 [+1.79,+8.09] 5/5 0.082
+Cora Pair0.4 Random +12.17 [+7.23,+17.11] 5/5 0.012
+grouping
+Cora Pair0.4 MLP+CE +8.62 [+5.74,+11.50] 5/5 0.011
+Cora Pair0.4 JoCoR +5.54 [+2.90,+8.18] 5/5 0.060
+Cora Instance0.4 Random +13.51 [+12.08,+14.94] 5/5 <0.001
+grouping
+Cora Instance0.4 MLP+CE +11.51 [+9.50,+13.53] 5/5 0.002
+Cora Instance0.4 JoCoR +4.58 [+2.27,+6.89] 5/5 0.062
+CiteSeer Uniform0.2 Random +8.79 [+6.87,+10.71] 5/5 0.004
+grouping
+CiteSeer Uniform0.2 MLP+CE +8.81 [+7.00,+10.63] 5/5 0.003
+CiteSeer Uniform0.2 JoCoR +4.56 [+2.87,+6.26] 5/5 0.031
+CiteSeer Uniform0.4 Random +13.16 [+11.26,+15.06] 5/5 <0.001
+grouping
+CiteSeer Uniform0.4 MLP+CE +11.74 [+9.99,+13.50] 5/5 0.001
+CiteSeer Uniform0.4 JoCoR +5.34 [+2.51,+8.16] 5/5 0.062
+CiteSeer Uniform0.6 Random +11.66 [+9.60,+13.72] 5/5 0.002
+grouping
+CiteSeer Uniform0.6 MLP+CE +8.67 [+4.92,+12.42] 5/5 0.011
+CiteSeer Uniform0.6 JoCoR +2.95 [+1.09,+4.81] 5/5 0.082
+CiteSeer Pair0.4 Random +7.78 [+5.04,+10.53] 5/5 0.010
+grouping
+CiteSeer Pair0.4 MLP+CE +6.55 [+3.98,+9.13] 5/5 0.011
+CiteSeer Pair0.4 JoCoR +3.07 [+2.06,+4.07] 5/5 0.020
+CiteSeer Instance0.4 Random +12.51 [+9.97,+15.05] 5/5 0.003
+grouping
+CiteSeer Instance0.4 MLP+CE +11.25 [+8.48,+14.01] 5/5 0.006
+CiteSeer Instance0.4 JoCoR +4.72 [+3.63,+5.80] 5/5 0.007
+CoraFull Uniform0.2 Random +2.44 [+1.48,+3.40] 5/5 0.012
+grouping
+CoraFull Uniform0.2 MLP+CE +2.35 [+1.46,+3.25] 5/5 0.011
+CoraFull Uniform0.2 JoCoR +0.13 [-0.86,+1.12] 3/5 0.852
+Continuedonthenextpage
+4
+
+PAGE 5
+TableB.1(continued)
+Dataset Noise Reference Mean 95%CI(pp) Wins Adjusted
+method difference (seeds) p
+(pp)
+CoraFull Uniform0.4 Random +5.09 [+4.32,+5.87] 5/5 0.001
+grouping
+CoraFull Uniform0.4 MLP+CE +5.41 [+4.51,+6.32] 5/5 0.002
+CoraFull Uniform0.4 JoCoR +1.69 [+0.86,+2.52] 5/5 0.062
+CoraFull Uniform0.6 Random +6.02 [+5.16,+6.89] 5/5 <0.001
+grouping
+CoraFull Uniform0.6 MLP+CE +6.27 [+5.52,+7.03] 5/5 <0.001
+CoraFull Uniform0.6 JoCoR +3.23 [+1.89,+4.57] 5/5 0.042
+CoraFull Pair0.4 Random +5.98 [+4.75,+7.20] 5/5 0.003
+grouping
+CoraFull Pair0.4 MLP+CE +6.32 [+4.66,+7.98] 5/5 0.007
+CoraFull Pair0.4 JoCoR +3.02 [+2.10,+3.93] 5/5 0.017
+CoraFull Instance0.4 Random +5.52 [+4.23,+6.80] 5/5 0.004
+grouping
+CoraFull Instance0.4 MLP+CE +5.62 [+4.37,+6.86] 5/5 0.004
+CoraFull Instance0.4 JoCoR +1.78 [+1.22,+2.34] 5/5 0.018
+Coauthor-CS Uniform0.2 Random +1.28 [+0.70,+1.85] 5/5 0.012
+grouping
+Coauthor-CS Uniform0.2 MLP+CE +0.16 [-0.33,+0.65] 3/5 0.418
+Coauthor-CS Uniform0.2 JoCoR -0.27 [-0.41,-0.13] 0/5 0.062
+Coauthor-CS Uniform0.4 Random +3.25 [+1.96,+4.55] 5/5 0.012
+grouping
+Coauthor-CS Uniform0.4 MLP+CE +2.29 [+1.66,+2.93] 5/5 0.008
+Coauthor-CS Uniform0.4 JoCoR +1.33 [+1.07,+1.59] 5/5 0.004
+Coauthor-CS Uniform0.6 Random +8.41 [+5.72,+11.10] 5/5 0.009
+grouping
+Coauthor-CS Uniform0.6 MLP+CE +7.16 [+4.58,+9.75] 5/5 0.011
+Coauthor-CS Uniform0.6 JoCoR +4.61 [+3.37,+5.85] 5/5 0.011
+Coauthor-CS Pair0.4 Random +10.25 [+8.67,+11.83] 5/5 0.001
+grouping
+Coauthor-CS Pair0.4 MLP+CE +10.32 [+8.97,+11.67] 5/5 <0.001
+Coauthor-CS Pair0.4 JoCoR +5.22 [+3.82,+6.62] 5/5 0.011
+Coauthor-CS Instance0.4 Random +3.65 [+2.12,+5.17] 5/5 0.012
+grouping
+Coauthor-CS Instance0.4 MLP+CE +3.07 [+2.15,+4.00] 5/5 0.009
+Coauthor-CS Instance0.4 JoCoR +1.34 [+0.76,+1.92] 5/5 0.045
+Amazon- Uniform0.2 Random +5.03 [+3.82,+6.25] 5/5 0.005
+Photo grouping
+Amazon- Uniform0.2 MLP+CE +3.72 [+2.63,+4.81] 5/5 0.009
+Photo
+Amazon- Uniform0.2 JoCoR +0.46 [-0.99,+1.92] 3/5 0.852
+Photo
+Continuedonthenextpage
+5
+
+PAGE 6
+TableB.1(continued)
+Dataset Noise Reference Mean 95%CI(pp) Wins Adjusted
+method difference (seeds) p
+(pp)
+Amazon- Uniform0.4 Random +10.66 [+6.55,+14.78] 5/5 0.012
+Photo grouping
+Amazon- Uniform0.4 MLP+CE +8.22 [+5.17,+11.26] 5/5 0.011
+Photo
+Amazon- Uniform0.4 JoCoR +2.55 [+1.02,+4.07] 5/5 0.078
+Photo
+Amazon- Uniform0.6 Random +13.15 [+9.63,+16.67] 5/5 0.006
+Photo grouping
+Amazon- Uniform0.6 MLP+CE +12.85 [+8.39,+17.31] 5/5 0.011
+Photo
+Amazon- Uniform0.6 JoCoR +4.96 [+0.60,+9.32] 5/5 0.112
+Photo
+Amazon- Pair0.4 Random +11.32 [+8.02,+14.63] 5/5 0.008
+Photo grouping
+Amazon- Pair0.4 MLP+CE +11.28 [+9.10,+13.46] 5/5 0.003
+Photo
+Amazon- Pair0.4 JoCoR +6.95 [+1.90,+12.00] 5/5 0.094
+Photo
+Amazon- Instance0.4 Random +12.03 [+8.45,+15.61] 5/5 0.008
+Photo grouping
+Amazon- Instance0.4 MLP+CE +10.46 [+6.95,+13.98] 5/5 0.011
+Photo
+Amazon- Instance0.4 JoCoR +4.79 [+2.43,+7.15] 5/5 0.062
+Photo
+Randomgroupingpreservesthenumberandsizesofthegranularballs.
+AppendixC. Sensitivitytonoisyvalidationlabels
+We evaluate checkpoint selection with noisy validation labels under uniform 0.4
+training-labelnoise. Thedatasplitsandnoisytraininglabelsareunchanged,andval-
+idation labels are independently corrupted at the same rate using a separate random
+seed. Testlabelsremainclean. GB-LCSSandrandomsize-matchedgroupingusethe
+targetsfromSection3.3ofthemainpaper;GSDNandPosteLusetheimplementations
+describedinSection4.1.3andAppendixF.
+TableC.1:Testaccuracyundercleanandnoisyvalidationlabels.
+Dataset Method Cleanvalidation Noisyvalidation
+Cora GB-LCSS 57.49±0.76 56.81±1.55
+Cora Randomsize-matchedgrouping 43.31±1.40 43.12±2.07
+Cora GSDN 55.97±4.29 54.81±4.70
+Cora MLP+CE 44.24±2.62 43.30±3.65
+Cora JoCoR 51.72±1.30 50.77±1.98
+Continuedonthenextpage
+6
+
+PAGE 7
+TableC.1(continued)
+Dataset Method Cleanvalidation Noisyvalidation
+Cora PosteL 47.09±1.81 46.81±1.94
+CiteSeer GB-LCSS 55.24±2.04 54.99±2.18
+CiteSeer Randomsize-matchedgrouping 42.08±2.88 42.65±2.49
+CiteSeer GSDN 50.36±3.39 50.60±1.84
+CiteSeer MLP+CE 43.50±3.02 43.06±2.96
+CiteSeer JoCoR 49.91±3.37 50.67±1.07
+CiteSeer PosteL 45.84±2.48 46.27±1.76
+CoraFull GB-LCSS 37.39±0.51 36.90±0.81
+CoraFull Randomsize-matchedgrouping 32.30±0.85 32.03±0.77
+CoraFull GSDN 35.80±0.66 36.13±0.69
+CoraFull MLP+CE 31.98±0.98 31.99±0.85
+CoraFull JoCoR 35.70±0.32 35.57±1.04
+CoraFull PosteL 36.51±1.01 35.74±1.14
+Using noisy validation labels changes the test accuracy of GB-LCSS by at most
+0.68percentagepointsacrossthethreedatasets.GB-LCSSremainsaboverandomsize-
+matched grouping by 13.69, 12.35, and 4.87 points on Cora, CiteSeer, and CoraFull,
+respectively,andaboveMLP+CEby13.51,11.93,and4.91points. Italsoretainsthe
+highestmeanaccuracyamongthesixmethodsonallthreedatasets(TableC.1).
+AppendixD. Analysisoftargetconstruction
+Table D.1 summarizes the leave-one-out and clean-label checks. Excluding each
+node’sownlabelfromitslocalvoteimprovesmeanaccuracyonallfivedatasetswhen
+averagedoverthefivenoisesettings.Intheleastfavorableindividualsetting,excluding
+thevotelowersaccuracyby0.49points.
+Withcleantraininglabels(η = 0)andallothersettingsunchanged,GB-LCSShas
+higher mean accuracy than MLP+CE on CiteSeer and lower mean accuracy on the
+other four datasets. Targets can change only in balls whose training nodes belong to
+morethanoneclass.
+Whentwoormoreclassesreceivethesamehighestvotecount,GB-LCSSretains
+the empirical vote distribution as the consensus, q = r (Eq. (10)). Across the five
+n n
+datasets, five noise settings, and five seeds, these ties affect 12,788 of the 259,000
+training-nodetargets(4.94%).
+AppendixE. Resultsofgraph-basedsoft-targetmethodsunderallnoisesettings
+Table E.1 reports GB-LCSS, PosteL, ALS, and SALS on the five main datasets
+under all five noise settings, using the common splits, noise realizations, and graph-
+freeinferenceprotocol(AppendixF).GB-LCSShasthehighestmeanin24ofthe25
+7
+
+PAGE 8
+TableD.1:Accuracydifferencesintheleave-one-outandclean-labelchecks.
+Dataset Excludingminusincludingself-vote GB-LCSSminusMLP+CE
+Fivenoisesettings Cleanlabels
+Cora +0.96 -0.24
+CiteSeer +1.03 +2.00
+CoraFull +0.09 -0.38
+Coauthor-CS +0.08 -0.87
+Amazon-Photo +0.29 -1.75
+Differencesareinpercentagepoints. Theleave-one-outcomparisonaveragespaireddifferencesoverfive
+seedsandfivenoisesettings.Theclean-labelcomparisonaveragespaireddifferencesoverfiveseedsatzero
+training-labelnoise.
+settings; the exception is CoraFull under uniform 0.2, where PosteL and SALS are
+higher.
+TableE.1: Testaccuracyofgraph-basedsoft-targetmethodsunderallfivenoise
+settings.
+Dataset Noisesetting GB-LCSS PosteL ALS SALS
+Cora Uniform0.2 63.25±2.46 58.36±1.64 55.98±1.42 58.23±1.67
+Cora Uniform0.4 57.49±0.76 47.09±1.81 45.20±1.24 48.27±2.50
+Cora Uniform0.6 41.86±2.30 32.33±2.37 32.72±2.54 35.34±1.74
+Cora Pair0.4 51.45±2.80 44.36±0.65 41.63±3.61 44.16±1.52
+Cora Instance0.4 56.84±1.67 46.62±2.17 45.73±1.34 48.54±1.17
+CiteSeer Uniform0.2 63.92±1.12 58.11±1.11 56.58±2.04 58.36±1.07
+CiteSeer Uniform0.4 55.24±2.04 45.84±2.48 43.77±2.76 47.20±1.69
+CiteSeer Uniform0.6 42.02±3.14 31.88±0.86 32.00±1.57 35.16±2.58
+CiteSeer Pair0.4 51.70±2.14 45.06±1.60 45.72±2.41 45.63±2.70
+CiteSeer Instance0.4 55.58±2.54 46.02±2.54 43.75±2.18 47.51±2.50
+CoraFull Uniform0.2 43.46±0.57 44.54±0.31 41.72±0.22 44.43±0.75
+CoraFull Uniform0.4 37.39±0.51 36.51±1.01 31.91±1.05 37.06±0.78
+CoraFull Uniform0.6 27.43±0.89 23.90±1.16 20.64±0.61 26.10±1.07
+CoraFull Pair0.4 34.46±1.23 32.62±1.71 29.83±0.92 32.85±1.68
+CoraFull Instance0.4 36.95±0.53 35.99±0.51 31.15±1.18 36.58±0.74
+Coauthor-CS Uniform0.2 91.54±0.26 89.01±0.40 91.13±0.57 91.08±0.49
+Coauthor-CS Uniform0.4 90.71±0.59 84.74±1.51 88.55±0.86 88.85±0.82
+Coauthor-CS Uniform0.6 87.19±0.69 74.61±1.95 79.36±1.67 82.99±0.95
+Coauthor-CS Pair0.4 86.24±1.18 78.45±2.28 74.99±2.24 77.85±1.51
+Coauthor-CS Instance0.4 90.51±0.43 85.72±1.35 87.53±1.27 88.33±0.66
+Continuedonthenextpage
+8
+
+PAGE 9
+TableE.1(continued)
+Dataset Noisesetting GB-LCSS PosteL ALS SALS
+Amazon- Uniform0.2 86.07±1.05 84.37±0.96 82.63±1.27 84.81±1.20
+Photo
+Amazon- Uniform0.4 82.12±1.08 80.59±0.94 73.41±2.75 77.86±0.79
+Photo
+Amazon- Uniform0.6 71.45±3.75 64.49±2.99 58.14±1.78 66.29±3.62
+Photo
+Amazon- Pair0.4 73.89±3.73 67.56±3.57 62.82±6.11 64.83±3.54
+Photo
+Amazon- Instance0.4 79.59±0.88 77.23±2.77 68.81±2.81 72.73±1.78
+Photo
+AppendixF. Implementationdetailsandkeysettings
+For seeds 0–4, the NoisyGL percentage-split routine randomly assigns nodes to
+disjointtraining,validation,andtestsetsofsizes⌊0.2N⌋,⌊0.1N⌋,and⌊0.7N⌋.Sampling
+is independent of class labels. Representation learning and partitioning use all nodes
+asunlabeledtransductivecontext.
+TableF.1identifiestheimplementationusedforeachmethodandthecomponents
+retainedunderthecommonprotocol. Allmethodssharethedatasplitsandnoisereal-
+izationsanddeployanattribute-onlyMLP.TableF.2liststheirmethod-specificsettings
+andsources.
+TableF.1:Implementationsofgraph-basedanddistillationmethods.
+Method Implementation Componentsandadaptations
+PosteL Authors’target-generation Posteriorsoft-targetconstruction;iterative
+code pseudo-labelingdisabled
+ALS Mechanismadaptation Adaptivelabelsmoothing,pacing,andKL
+term
+SALS Mechanismadaptation Structure-awarelabelsmoothing
+Graph-MLP Adaptedtothecommon Multi-hopNContrastobjective
+MLP
+GSDN Mechanismadaptation Neighborhoodself-distillationatthefeature
+andlabellevels
+GCN(X)+CE Implementedforthisstudy GCN-to-MLPresponsedistillation
+teacher
+FF-G2M Reimplementedwiththe Low-andhigh-frequencydistillation
+commonGCNandMLP
+KRD Mechanismadaptation Reliability-basedknowledgeselection
+VQGraph Mechanismadaptation Soft-codebookdistillation
+TheoptimizerandMLPsettingssharedacrossmethodsaregiveninSection4.1.4
+ofthemainpaper.
+9
+
+PAGE 10
+TableF.2:Keymethod-specificsettingsusedinthemaincomparisons.
+Method Keysettings Parameterselection
+Small-loss Discardedfraction(forgetrate)increases Fixedscheduleacross
+linearlytothesyntheticnoiserateover10 datasets;finalrategivenby
+epochs;exponent1.0 syntheticnoiselevel
+Co-teaching TwoindependentMLPs;sameforget-rate NoisyGLconfiguration;
+scheduleasSmall-loss Small-lossschedule
+JoCoR TwoindependentMLPs;sameforget-rate NoisyGLconfiguration;
+scheduleasSmall-loss;consistencyweight Small-lossschedule
+0.1
+SCE Cross-entropyweight0.1; NoisyGLconfiguration
+reverse-cross-entropyweight1.0
+ELR Moving-averagecoefficient0.7; Fixedacrossdatasets
+regularizationweight1.0
+LogitClip Logit-clippingthreshold1.0 Fixedacrossdatasets
+PosteL Soft-labelratio0.8;smoothingratio0.4; Authors’targetcodeunder
+degreecutoff1;temperature1.0;iterative thecommontraining
+pseudo-labelingdisabled protocol
+ALS 2propagationsteps;residualcoefficient0.5; Fixedacrossdatasets
+KLweight1e-3;exponentialpacing;
+maximumsmoothingweight0.1
+SALS epsilon=0.4;gamma=0.8;unlabeled Fixedacrossdatasets
+neighborhoodsusetheuniformdistribution
+Graph-MLP Graphbatchsize512; Fixedacrossdatasets
+neighborhood-contrastiveweight0.5;
+temperature0.5
+GSDN Graphbatchsize512;weightsof0.8atboth Fixedacrossdatasets
+featureandlabellevels;negative-constraint
+weight0.1;initialmixupcoefficient0.5
+GB-LCSS B =64,n =32,δ=0.05,s =2, Establishedthrough
+max min min
+β=0.5;currentnodeexcludedfromvoting; iterativemethod
+tieskeeptheempiricaldistribution;2-means development;used
+usesEuclideandistance,k-means++,and10 unchangedinthemain
+restarts comparisons
+GCN(X)+CE Two-layerGCNteacherandtwo-layerMLP Sharedsettingsforteacher
+teacher student,bothwidth64;200epochs; andstudenttraining
+temperature1.0
+FF-G2M Two-layerGCNteacher,width64;low-and Fixedacrossdatasets
+high-frequencydistillationweights0.4;
+temperature1.5
+KRD 4featureperturbations,standarddeviation Fixedacrossdatasets
+0.01;top50%ofnodesretainedbyreliability;
+temperature1.0
+Continuedonthenextpage
+10
+
+PAGE 11
+TableF.2(continued)
+Method Keysettings Parameterselection
+VQGraph 128softcodes;codebooktemperature1.0; Fixedacrossdatasets
+token,node,andedgeweightsof1.0,0.001,
+and0.03;4096edgessampledperepoch
+GCNteacher Two-layerGCN(X)teacher,width64; Sharedsettingsforteacher
+trainedon GB-LCSStargetsfromEq.(12);student andstudenttraining;
+GB-LCSStargets temperature1.0;studentfitsteacher GB-LCSStargets
+predictionsoverallnodes
+TableF.3liststheGRACEsettingsforeachdataset. Eachdatasetusesonefrozen
+representationacrossnoisesettingsanddownstreamseeds.
+TableF.3:GRACEsettingsforthefivemaindatasets.
+Dataset Dimensions Learning Epochs Edge Feature Temperature
+rate dropping masking
+Cora (128,128) 5×10−4 200 (0.2,0.4) (0.3,0.4) 0.4
+CiteSeer (256,256) 10−3 200 (0.2,0.0) (0.3,0.2) 0.9
+CoraFull (256,256) 10−3 1000 (0.1,0.4) (0.1,0.0) 0.7
+Coauthor-CS (256,256) 10−3 1000 (0.1,0.4) (0.1,0.0) 0.7
+Amazon-Photo (256,256) 10−3 1500 (0.4,0.1) (0.0,0.2) 0.7
+PublicGRACEconfigurationsprovidepresetsforCora,CiteSeer,DBLP,andPubMed. Weusethecorre-
+spondingpresetsforCoraandCiteSeer.CoraFullandCoauthor-CSusetheDBLPpreset,andAmazon-Photo
+usesthePubMedpreset. IntheDimensionscolumn,eachpairgivestheoutputdimensionsoftheencoder
+andprojectionhead,respectively. Thetworatesineachaugmentationcolumnapplytothefirstandsecond
+augmentedgraphviews.Allconfigurationsuseatwo-layerGCNwithweightdecay10−5.
+AppendixG. Resultsonadditionaldatasets
+The six additional datasets were first evaluated under uniform 0.4 noise. Cite-
+SeerFull was subsequently evaluated under the remaining four noise settings as an
+exploratory follow-up. Table G.1 summarizes the statistics of the six datasets; data
+processingandedgehomophilyfollowTable2ofthemainpaper.
+TableG.1:Statisticsofthesixadditionaldatasets.
+Dataset Nodes Undirected Features Classes Trainingnodes Edge
+edges homophily
+PubMed 19,717 44,324 500 3 3,943 0.802
+Amazon-Computers 13,752 245,861 767 10 2,750 0.777
+Cora_ML 2,995 8,158 2,879 7 599 0.789
+Attributed-Wiki 2,405 11,596 4,973 17 481 0.610
+Continuedonthenextpage
+11
+
+PAGE 12
+TableG.1(continued)
+Dataset Nodes Undirected Features Classes Trainingnodes Edge
+edges homophily
+CiteSeerFull 4,230 5,337 602 6 846 0.949
+Coauthor-Physics 34,493 247,962 8,415 5 6,898 0.931
+TableG.2comparesGB-LCSSwiththestrongestofthesevennoisy-labelbaselines
+in Table 3 of the main paper and with random size-matched grouping under uniform
+0.4 noise. For each dataset, the best baseline is identified by its five-seed mean ac-
+curacy. Differences are GB-LCSS minus the corresponding method, in percentage
+points;“Wins(seeds)”countsthepairedseedsonwhichGB-LCSSexceedsthelisted
+bestbaseline. ThesamedefinitionsapplytoTableG.3.
+TableG.2:Uniform0.4resultsonthesixadditionaldatasets.
+Dataset GB-LCSS Best Baseline Difference Wins Random Difference
+baseline accuracy vs. (seeds) grouping vs.
+baseline random
+PubMed 72.60±0.66 JoCoR 77.84±1.10 -5.24 0/5 63.04±4.49 +9.56
+Amazon- 76.20±0.56 JoCoR 76.81±0.85 -0.60 1/5 70.49±1.08 +5.71
+Computers
+Cora_ML 56.26±2.61 Small-loss 55.56±3.42 +0.70 3/5 47.81±3.34 +8.45
+Attributed-Wiki 65.17±1.42 LogitClip 67.83±1.51 -2.66 0/5 59.83±2.13 +5.34
+CiteSeerFull 60.94±1.08 JoCoR 59.48±1.60 +1.46 4/5 46.69±2.74 +14.25
+Coauthor-Physics 93.13±0.25 JoCoR 93.09±0.28 +0.04 3/5 88.80±2.12 +4.33
+GB-LCSShasahighermeanaccuracythanrandomsize-matchedgroupingonall
+six datasets, by 4.33–14.25 percentage points, and exceeds the strongest noisy-label
+baselineonthree. Thedifferencefromthestrongestbaselinerangesfrom−5.24points
+onPubMedto+1.46pointsonCiteSeerFull. TableG.3reportstheresultsforCiteSeer-
+Full under all five noise settings: GB-LCSS has a mean accuracy at least as high as
+thatofthestrongestbaselineinfoursettings,whereasthestrongestbaselineishigher
+by4.20pointsunderuniform0.6.
+TableG.3:CiteSeerFullresultsunderallfivenoisesettings.
+Noisesetting GB-LCSS Best Baseline Difference Wins Random
+baseline accuracy vs. (seeds) grouping
+baseline
+Uniform0.2 70.71±0.65 Small-loss 67.47±1.98 +3.24 5/5 58.70±1.88
+Uniform0.4 60.94±1.08 JoCoR 59.48±1.60 +1.46 4/5 46.69±2.74
+Uniform0.6 42.45±3.08 JoCoR 46.65±3.70 -4.20 0/5 33.13±3.53
+Pair0.4 55.02±4.07 JoCoR 51.12±5.88 +3.89 4/5 43.86±3.51
+Instance0.4 61.49±3.01 JoCoR 59.92±4.19 +1.57 3/5 47.51±2.21
+12
+
+PAGE 13
+AppendixH. Analysisoflocal-consensussupervision
+Appendix H.1 proves the local-vote error bound in Proposition 1. Appendix H.2
+derivesthetarget-erroridentityinEq.(16)andthesufficientconditioninCorollary1
+for reducing expected target error. As in Section 3.4, the graph, representation, ball
+assignments,training-nodeset,andcleanlabelsarefixed,andrandomnesscomesonly
+fromindependentsymmetriclabelcorruptionatrateη.
+AppendixH.1. Reliabilityofthelocalvote
+Consider a training node v with s = |U | ≥ s other training nodes voting in
+n n n min
+itsball. Thecleanclassproportionsa andthemargin∆ aredefinedinEq.(14). As
+n,i n
+in Proposition 1, assume ∆ > 0 and 0 ≤ η < (C −1)/C. Each voting label retains
+n
+itscleanclasswithprobability1−ηandchangestoanyparticularincorrectclasswith
+probabilityη/(C−1).Withγ=1−Cη/(C−1)>0,theexpectedproportionofobserved
+votesforclassiis
+η η
+E[r ]=(1−η)a + (1−a )=γa + . (H.1)
+n,i n,i C−1 n,i n,i C−1
+Theexpectedvotedifferencebetweenthetrueclassofnodev andanycompetingclass
+n
+i(cid:44)y istherefore
+n
+E[r −r ]=γ(a −a )≥γ∆ . (H.2)
+n,yn n,i n,yn n,i n
+Symmetric noise therefore moves the expected vote proportions toward 1/C and re-
+ducesthemarginovertheclosestcompetitorfrom∆ toγ∆ . Forγ >0,thetrueclass
+n n
+retainsitsleadinexpectation.Atη=(C−1)/C,allobservedclassesareequallylikely.
+Foracompetingclassi(cid:44)y ,defineξ =I(z =y )−I(z =i)foreachvotingnode
+n ℓ ℓ n ℓ
+v ∈ U . This variable equals +1 for a vote for the true class of v , −1 for a vote for
+ℓ n n
+classi,and0otherwise. Thevariablesareindependentacrossnodesandliein[−1,1],
+andtheiraverageisr −r . UsingtheexpecteddifferenceinEq.(H.2),Hoeffding’s
+n,yn n,i
+inequality[H1]boundstheprobabilitythatclassitiesorexceedsthetrueclass:
+(cid:34) s γ2(a −a )2 (cid:35) (cid:32) s γ2∆2 (cid:33)
+Pr(r ≥r )≤exp − n n,yn n,i ≤exp − n n . (H.3)
+n,i n,yn
+2 2
+ApplyingtheunionboundtotheC−1competingclassesandcappingtheresultatone
+givesEq.(15),provingProposition1.
+Equation (10) preserves the most-voted classes, so the same bound applies to q .
+n
+BecauseProposition1requires∆ >0,AppendixI.2reportstheproportionoftraining
+n
+nodessatisfyingthiscondition.
+AppendixH.2. Erroroftheconsensus-weightedtarget
+For a training node v with |U | ≥ s , let e and e be its observed and clean
+n n min zn yn
+one-hot labels. The Brier score of a target b is BS (b) = ∥b−e ∥2. For any fixed
+n yn 2
+realizationoftheobservedlabels,substitutingt = (1−α )e +α q andexpanding
+n n zn n n
+thesquaredEuclideandistancegives
+∥t −e ∥2 =(1−α )2∥e −e ∥2+α2∥q −e ∥2+2α (1−α )⟨e −e ,q −e ⟩. (H.4)
+n yn 2 n zn yn 2 n n yn 2 n n zn yn n yn
+13
+
+PAGE 14
+Substituting2⟨e −e ,q −e ⟩=∥e −e ∥2+∥q −e ∥2−∥e −q ∥2intoEq.(H.4)
+zn yn n yn zn yn 2 n yn 2 zn n 2
+andcollectingtermsgivesEq.(16),relatingthetargeterrortotheerrorsoftheobserved
+labelandthelocalconsensus. Nodeswithfewerthan s votesretaintheirobserved
+min
+labelsandhencetheiroriginalerrors.
+Twocasesfollowdirectly.Iftheobservedlabeliscorrect,thene =e ,BS (e )=
+zn yn n zn
+0, and Eq. (16) reduces to BS (t ) = α2BS (q ). If the observed label is corrupted,
+n n n n n
+thene ande aredistinctone-hotvectors,soBS (e )=2,andBS (t )<2whenever
+zn yn n zn n n
+α >0andBS (q )<2.
+n n n
+For the full training set, let V = {v ∈ V : z (cid:44) y } denote the set of nodes
+err n L n n
+withcorruptedlabelsandV = V \V thesetofnodeswithcorrectlabels. For
+clean L err
+a target matrix, BS denotes the mean of the node-wise scores BS over the labeled
+n
+trainingnodes. WithZandTdenotingtheobservedone-hotandsoft-targetmatrices,
+respectively,thedifferencebetweentheirmeanBrierscoresis
+BS(Z)−BS(T)= 1 (cid:88) (cid:0) 2−BS (t ) (cid:1) − 1 (cid:88) BS (t ). (H.5)
+|V | n n |V | n n
+L vn ∈V err L vn ∈V clean
+Thefirsttermmeasurestheerrorremovedoncorruptedlabels,andthesecondmeasures
+theerrorintroducedoncorrectlabels. Bothareaveragedoverthefulltrainingset,and
+their difference is the net reduction reported in Table I.2. A target can have a lower
+Brier score while still assigning its largest probability to an incorrect class, because
+thisscoreevaluatesthefullprobabilitydistribution.
+ForCorollary1,fixtheobservedlabelsofalltrainingnodesexceptv . Theleave-
+n
+one-outrulethenkeepsq andα fixedastheobservedlabelofv varies.Theobserved
+n n n
+one-hotlabelhassquarederror0whencorrectand2whencorrupted,soE[BS (e )]=
+n zn
+2η,wheretheexpectationisoverthecorruptionofv ’slabel. Takingthisexpectation
+n
+inEq.(16)anddroppingitsnonpositivefinaltermgives
+E[BS (t )]≤2η(1−α )+α BS (q ). (H.6)
+n n n n n n
+ThisprovesEq.(17).WhenBS (q )<2ηandα >0,theupperboundisstrictlybelow
+n n n
+2η, the expected error of the observed one-hot label. The consensus-weighted target
+thereforehaslowerexpectederror,provingCorollary1.Section4.3.1andAppendixI.2
+evaluatethesetargeterrorsempirically.
+Reference for Appendix H. [H1] W. Hoeffding, Probability inequalities for sums of
+boundedrandomvariables,J.Am. Stat. Assoc. 58(1963)13–30.
+AppendixI. Parametersensitivityandtarget-errordecomposition
+AppendixI.1. Parametersensitivityandrepresentationcontrols
+Weevaluatethegroupingrepresentationsandtarget-constructionparametersonthe
+fivemaindatasetsunderuniform0.4noiseandseeds0–4. Eachvariantusesthesame
+datasplits,noisylabels,initializationseeds,MLP,optimizer,200trainingepochs,and
+checkpoint-selection rule as the default configuration (Section 4.1). GRACE-based
+variantsreusethefrozenrepresentationsfromthemaincomparisons.
+14
+
+PAGE 15
+Each parameter variant in Table I.1 changes one parameter from its default value
+in Section 4.1.4. The ball assignments remain fixed when varying β or s ; β = 0
+min
+usestheempiricalvotedistributionastheconsensus. Randomsize-matchedgrouping
+andtherawXandA2XrepresentationsarethecontrolsdescribedinSections4.3.1and
+4.3.3. Boldmarksthehighestmeanineachcolumn.
+TableI.1:Parametersensitivityandcontrolsunderuniform0.4noise.
+Configuration Cora CiteSeer CoraFull Coauthor-CS Amazon-Photo
+Default 57.49±0.76 55.24±2.04 37.39±0.51 90.71±0.59 82.12±1.08
+β=0 54.85±2.01 52.81±3.62 37.11±0.32 89.97±0.58 79.26±1.90
+β=0.25 56.16±1.49 54.31±2.58 37.61±0.32 90.24±0.52 81.09±0.58
+β=0.75 57.63±1.14 56.23±1.79 36.98±0.31 90.76±0.37 82.82±0.94
+β=1 57.65±1.05 56.98±2.07 37.08±1.18 91.01±0.31 82.79±0.76
+Bmax =32 57.54±1.08 56.25±1.92 35.21±0.68 89.84±0.64 81.45±0.82
+Bmax =128 57.49±0.76 55.15±2.03 38.93±0.24 90.59±0.65 81.71±0.66
+smin =5 56.32±1.30 54.81±2.44 37.42±0.51 90.54±0.40 82.18±0.79
+smin =10 50.25±1.48 49.91±1.72 37.15±0.54 90.68±0.47 82.06±1.12
+nmin =1 55.87±1.70 55.94±1.80 37.16±0.75 90.37±0.54 81.10±1.21
+nmin =16 56.72±1.47 56.49±1.17 37.16±0.62 90.32±0.57 81.58±1.71
+nmin =64 57.42±1.56 55.94±2.70 37.63±0.56 90.66±0.59 82.30±0.34
+δ=0.01 57.49±0.76 55.24±2.04 37.39±0.51 90.71±0.59 82.22±0.86
+δ=0.10 44.37±2.31 42.90±2.50 31.86±1.05 87.63±1.10 82.22±0.86
+MLP+CE 44.24±2.62 43.50±3.02 31.98±0.98 88.42±0.62 73.90±1.80
+Randomgrouping 43.31±1.40 42.08±2.88 32.30±0.85 87.46±1.07 71.45±3.29
+RawX 44.37±2.31 42.90±2.50 31.86±1.05 87.63±1.10 73.37±1.13
+A2X 44.37±2.31 42.90±2.50 31.86±1.05 89.20±0.67 81.13±1.64
+Thebest-performingsettingvariesacrossdatasets.Increasingβfrom0.5to1raises
+meanaccuracyonfourdatasetsandlowersitonCoraFull.
+With B = 128,constructionproduces52–53ballsonCora,63–66onCiteSeer,
+max
+128onCoraFullandCoauthor-CS,and124–128onAmazon-Photo. Thelargerbudget
+leaves the ball-count range unchanged on Cora and expands it from 63–64 to 63–66
+onCiteSeer. OnCoraFull,accuracyimprovesoverthedefaultonallfiveseeds,witha
+meanpairedgainof1.53±0.40percentagepoints. Thissettinggivesitshighestmean
+accuracy and lowers the target Brier score from 0.6321 to 0.6026. On Coauthor-CS
+andAmazon-Photo,meanaccuracychangesby−0.12and−0.41points,respectively.
+Reducingtheminimumchild-ballsizen from32to1changesmeanaccuracyby
+min
+−1.61,+0.70,−0.23,−0.34,and−1.02pointsonCora,CiteSeer,CoraFull,Coauthor-
+CS,andAmazon-Photo, respectively. Allowingsmallerchildballsthusimprovesthe
+meanonlyonCiteSeer.
+Raising s requires more voting nodes before consensus can modify a target.
+min
+At s = 10, the proportions of training nodes with a positive consensus weight are
+min
+56.52%, 58.32%, 99.13%, 98.98%, and 90.03% in the same dataset order. On Cora
+and CiteSeer, more than 40% of training nodes retain their observed one-hot targets,
+andaccuracyfallsbymorethan5points(TableI.1).
+15
+
+PAGE 16
+AppendixI.2. Errorreductionontrainingtargets
+TableI.2reportsthedefaultconfiguration’sfive-seedmeandecompositionoftarget
+Brier-scorereductionunderuniform0.4noise,asdefinedinEq.(H.5).
+TableI.2:Decompositionofthereductionintraining-targetBrierscoreunderuniform0.4noise.
+One-hot Soft Reductionon Errorincreaseon Net
+Dataset label target corruptedlabels correctlabels reduction
+Cora 0.8118 0.4498 0.4034 0.0415 0.3620
+CiteSeer 0.8162 0.5352 0.3304 0.0493 0.2811
+CoraFull 0.8011 0.6321 0.1960 0.0269 0.1690
+Coauthor-CS 0.8008 0.3130 0.5162 0.0285 0.4877
+Amazon-Photo 0.8013 0.3664 0.4660 0.0310 0.4350
+Errorremovedoncorruptedlabelsexceedserrorintroducedoncorrectlabelsinall
+25dataset–seedruns. Thefive-seedmeanreductionsare6.7–18.1timestheincreases,
+withnetreductionsfrom0.1690onCoraFullto0.4877onCoauthor-CS.Randomsize-
+matchedgroupingalsoreducesBrierscorebutyieldsloweraccuracyonallfivedatasets
+(TableI.1). Averagetargeterroralonethereforedoesnotexplaintheaccuracyadvan-
+tageofrepresentation-basedgrouping,consistentwiththeobservationinAppendixH.2
+thatatargetwithalowerBrierscorecanstillfavoranincorrectclass.
+Nodes with a positive clean-vote margin (∆ > 0) account for 75.64%, 65.02%,
+n
+36.13%,88.93%,and84.64%oftrainingnodesonCora,CiteSeer,CoraFull,Coauthor-
+CS,andAmazon-Photo,respectively. ThenetBrier-scorereductionsfollowthesame
+datasetorder,whileTableI.2includesalltrainingnodes.
+16

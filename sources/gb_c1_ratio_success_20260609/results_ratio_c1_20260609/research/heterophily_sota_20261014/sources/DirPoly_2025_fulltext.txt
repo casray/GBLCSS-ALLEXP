@@ -1,0 +1,466 @@
+Flow Matters: Directional and Expressive GNNs for Heterophilic Graphs
+Report GitHub Issue
+×
+Title:
+Content selection saved. Describe the issue below:
+Description:
+Submit without GitHub
+Submit in GitHub
+arXiv is now an independent nonprofit!
+Learn more
+×
+Back to arXiv
+Why HTML?
+Report Issue
+Back to Abstract
+Download PDF
+Abstract.
+1 Introduction
+2 Related Work
+3 Background
+3.1 Homophily and Heterophily in Graphs
+3.2 Polynomial Expressivity in Message Passing GNNs
+3.3 Edge Directionality in Graphs
+4 Methodology
+4.1 Polynomial Attention Model (Poly)
+4.2 Directed Polynomial Model (Dir-Poly)
+4.3 Implications
+5 Experiments
+5.1 Datasets and Metrics
+5.2 Baselines
+5.3 Results and Analysis
+6 Conclusion
+References
+License: CC BY 4.0
+arXiv:2509.00772v1 [cs.LG] 31 Aug 2025
+Flow Matters: Directional and Expressive GNNs for Heterophilic Graphs
+Arman Gupta
+Affiliation: Mastercard, India
+email: arman.gupta@mastercard.com
+,
+Govind Waghmare
+Affiliation: Mastercard, India
+email: govind.waghmare@mastercard.com
+,
+Gaurav Oberoi
+Affiliation: Mastercard, India
+email: gaurav.oberoi@mastercard.com
+and
+Nitish Srivastava
+Affiliation: Mastercard, India
+email: nitish.srivastava@mastercard.com
+Abstract.
+In heterophilic graphs, where neighboring nodes often belong to different classes, conventional Graph Neural Networks (GNNs) struggle due to their reliance on local homophilous neighborhoods. Prior studies suggest that modeling edge directionality in such graphs can increase effective homophily and improve classification performance. Simultaneously, recent work on polynomially expressive GNNs shows promise in capturing higher-order interactions among features. In this work, we study the combined effect of edge directionality and expressive message passing on node classification in heterophilic graphs. Specifically, we propose two architectures: (1) a polynomially expressive GAT baseline (Poly), and (2) a direction-aware variant (Dir-Poly) that separately aggregates incoming and outgoing edges. Both models are designed to learn permutation-equivariant high-degree polynomials over input features, while remaining scalable with no added time complexity. Experiments on five benchmark heterophilic datasets show that our Poly model consistently outperforms existing baselines, and that Dir-Poly offers additional gains on graphs with inherent directionality (e.g., Roman Empire), achieving state-of-the-art results. Interestingly, on undirected graphs, introducing artificial directionality does not always help, suggesting that the benefit of directional message passing is context-dependent. Our findings highlight the complementary roles of edge direction and expressive feature modeling in heterophilic graph learning.
+Keywords: Directed graphs, Heterophily, Polynomially expressive
+1. Introduction
+GNNs have become the de facto approach for learning over graph-structured data, achieving remarkable success in domains ranging from social network analysis and recommendation systems to molecular property prediction and fraud detection (Wu et al., 2019). However, the majority of GNN architectures (Kipf and Welling, 2016; Veličković et al., 2018; Hamilton et al., 2017) assume that the input graphs are undirected and homophilic, that is, neighboring nodes tend to belong to the same class or share similar attributes. This assumption underpins the core message-passing mechanism of many GNNs, where information is aggregated from local neighbors to infer node properties.
+Yet, many real-world graphs such as citation networks, web graphs, and interaction graphs, are inherently directed and heterophilic. In heterophilic graphs, connected nodes frequently belong to different classes, violating the inductive bias of classical GNNs (Zhu et al., 2020). Moreover, transforming directed graphs into undirected ones, often done during preprocessing (e.g., in libraries like PyTorch Geometric 11
+1
+https://github.com/pyg-team/pytorch_geometric/blob/master/torch_geometric/datasets/heterophilous_graph_dataset.py##L119), may lead to information loss, especially in heterophilic settings. Recent studies (Rossi et al., 2023) have shown that preserving edge directionality can increase the effective homophily of a graph and substantially improve GNN performance on node classification tasks in such settings.
+At the same time, another critical limitation of most existing GNN architectures is their limited expressive power. Traditional GNNs like GCN (Kipf and Welling, 2016), GraphSAGE (Hamilton et al., 2017), or GAT (Veličković et al., 2018) rely on simple, linear aggregation functions (e.g., sum, mean, and max) which cannot capture high-order, nonlinear feature interactions among nodes. This expressivity bottleneck has prompted the development of more flexible aggregation functions such as principled neighborhood aggregation (PNA) (Corso et al., 2020) by combining multiple simple aggregation functions, each associated with a learnable weight but the practical capacity of PNA is still limited by simply combining multiple simple aggregation functions. Recent literature have introduced higher-order polynomially expressive models such as tGNN (Hua et al., 2022) and Polynormer(Deng et al., 2024), which aim to represent richer feature transformations by learning high-degree polynomial functions while preserving permutation equivariance. However, these models either suffer from limited polynomial expressivity (Hua et al., 2022) or incur high computational costs (Liao et al., 2024), making them less practical for large-scale or complex graph tasks.
+Although both edge directionality and polynomial expressiveness have independently been shown to improve performance in specific contexts, their combined effect on heterophilic node classification remains largely unexplored. In this work, we bridge this gap by empirically studying the synergistic impact of edge directionality and expressive message passing on heterophilic graphs. Specifically, we design two architectures:
+•
+Poly, a GAT-based model augmented with a permutation-equivariant polynomially expressive message passing scheme. Inspired by the local attention mechanism in Polynormer (Deng et al., 2024), Poly explicitly captures high-degree interactions by recursively composing local attention and linear layers with multiplicative gating, and
+•
+Dir-Poly, which additionally accounts for edge direction by performing separate aggregations over incoming and outgoing edges.
+Both models are scalable and do not incur additional time complexity compared to standard GATs. We evaluate these architectures on five benchmark heterophilic datasets: Roman Empire, Amazon Ratings, Minesweeper, Tolokers, and Questions. Our results show that Poly consistently outperforms all existing baselines, while Dir-Poly achieves further gains on inherently directed graphs like Roman Empire. However, enforcing artificial directionality on undirected graphs offers limited benefit, indicating that direction-aware message passing is context-dependent. Overall, our results show that directional message passing and high-degree polynomial aggregation are complementary, and combining them effectively models complex interactions in heterophilic graphs.
+2. Related Work
+Graph Neural Networks (GNNs) have emerged as core models for learning from graph-structured data. Early frameworks such as GCN (Kipf and Welling, 2016), GAT (Veličković et al., 2018), and GraphSAGE (Hamilton et al., 2017) established neighborhood aggregation as the fundamental paradigm, typically using permutation-invariant functions like sum or mean. While effective on homophilic graphs, where neighboring nodes often share labels, these models degrade in performance on heterophilic graphs due to their implicit homophily assumptions.
+GNNs for Heterophily.
+To address this, recent models such as H2GCN (Zhu et al., 2020), GPR-GNN (Chien et al., 2020), and GGCN (Yan et al., 2022) introduce mechanisms to disentangle structural proximity from label similarity, either by decoupling feature propagation or adopting flexible message-passing schemes. More recently, Dir-GNN (Rossi et al., 2023) demonstrated that explicitly modeling edge directionality improves performance on heterophilic datasets by distinguishing between incoming and outgoing flows, an insight especially relevant for real-world directed graphs like citation or interaction networks.
+Directionality in GNNs.
+Although several earlier GNNs (Gilmer et al., 2017; Scarselli et al., 2009; Li et al., 2017) nominally support directed graphs, many implementations symmetrize edges or only partially utilize directional information (e.g., GatedGCN (Li et al., 2017) aggregates solely from out-neighbors). Spectral methods like DGCN (Tong et al., 2020b), DiGCN (Tong et al., 2020a), and MagNet (Zhang et al., 2021) incorporate directional operators, but often share weights across directions and suffer from limited scalability due to computationally expensive spectral decompositions. Dir-GNN (Rossi et al., 2023) overcomes these limitations via spatial aggregation paths that preserve direction-specific semantics, showing notable gains on heterophilic tasks.
+Expressive Aggregation Functions.
+Parallel to directionality, another line of work enhances GNN expressivity through advanced aggregation. PNA (Corso et al., 2020) improves flexibility using multiple aggregators and degree-scalers. Polynormer (Deng et al., 2024) further introduces polynomially expressive attention to model high-order interactions while preserving permutation equivariance. Tensor-based approaches (Hua et al., 2022) similarly aim to capture higher-order structures, albeit with high computational cost. These methods underscore the importance of moving beyond basic aggregators to capture richer structural patterns, but often face trade-offs in scalability or expressivity.
+Joint Modeling of Direction and Expressivity.
+Despite progress in direction-aware and expressive GNNs, their integration remains limited. Our work bridges this gap by introducing a unified framework that combines directional message passing with polynomial aggregation. Specifically, we extend GAT by (1) introducing permutation-equivariant polynomial aggregators and (2) modeling directed edge flow via separate incoming and outgoing paths. Unlike prior methods that trade efficiency for performance, our approach remains computationally tractable while achieving state-of-the-art results on multiple heterophilic benchmarks.
+Table 1. Averaged node classification results over 10 runs on heterophilic datasets — Accuracy is reported for roman-empire and amazon-ratings, and ROC AUC for the rest. We highlight the top-3 scores in each column using orange (1st), green (2nd), and blue (3rd) for improved visual comparison.
+| Model
+| roman-empire
+| amazon-ratings
+| minesweeper
+| tolokers
+| questions
+| GCN
+| 73.69 ± 0.74
+| 48.70 ± 0.63
+| 89.75 ± 0.52
+| 83.64 ± 0.67
+| 76.09 ± 1.27
+| GraphSAGE
+| 85.74 ± 0.67
+| 53.63 ± 0.39
+| 93.51 ± 0.57
+| 82.43 ± 0.44
+| 76.44 ± 0.62
+| GAT-sep
+| 88.75 ± 0.41
+| 52.70 ± 0.62
+| 93.91 ± 0.35
+| 83.78 ± 0.43
+| 76.79 ± 0.71
+| H2GCN
+| 60.11 ± 0.52
+| 36.47 ± 0.23
+| 89.71 ± 0.31
+| 73.35 ± 1.01
+| 63.59 ± 1.46
+| GPRGNN
+| 64.85 ± 0.27
+| 44.88 ± 0.34
+| 86.24 ± 0.61
+| 72.94 ± 0.97
+| 55.48 ± 0.91
+| FSGNN
+| 79.92 ± 0.56
+| 52.74 ± 0.83
+| 90.08 ± 0.70
+| 82.76 ± 0.61
+| 78.86 ± 0.92
+| GloGNN
+| 59.63 ± 0.69
+| 36.89 ± 0.14
+| 51.08 ± 1.23
+| 73.39 ± 1.17
+| 65.74 ± 1.19
+| GGCN
+| 74.46 ± 0.54
+| 43.00 ± 0.32
+| 87.54 ± 1.22
+| 77.31 ± 1.14
+| 71.10 ± 1.57
+| OrderedGNN
+| 77.68 ± 0.39
+| 47.29 ± 0.65
+| 80.58 ± 1.08
+| 75.60 ± 1.36
+| 75.09 ± 1.00
+| G2-GNN
+| 82.16 ± 0.78
+| 47.93 ± 0.58
+| 91.83 ± 0.56
+| 82.51 ± 0.80
+| 74.82 ± 0.92
+| DIR-GNN
+| 91.23 ± 0.32
+| 47.89 ± 0.39
+| 87.05 ± 0.69
+| 81.19 ± 1.05
+| 76.13 ± 1.24
+| tGNN
+| 79.95 ± 0.75
+| 48.21 ± 0.53
+| 91.93 ± 0.77
+| 70.84 ± 1.75
+| 76.38 ± 1.79
+| Poly (Ours)
+| 91.57 ± 0.46
+| 53.50 ± 0.39
+| 95.32 ± 0.28
+| 84.87 ± 0.76
+| 77.31 ± 0.87
+| Dir-Poly (Ours)
+| 94.51 ± 0.22
+| 50.73 ± 0.56
+| 93.74 ± 0.70
+| 84.10 ± 0.74
+| 76.87 ± 1.04
+3. Background
+Graph Neural Networks (GNNs) have become the cornerstone of learning on graph-structured data. However, their effectiveness often hinges on the nature of the graph topology, particularly, the degree of homophily (Rossi et al., 2023) and whether edge directions are available and informative.
+Notation
+Let G=(V,E)G=(V,E) denote a graph, where V={vi}i=1NV=\{v_{i}\}_{i=1}^{N} is the set of nodes and EE is the set of edges. The adjacency matrix of the graph is represented as A∈{0,1}N×NA\in\{0,1\}^{N\times N}, where Ai​j=1A_{ij}=1 if (i,j)∈E(i,j)\in E, and 00 otherwise. Let X∈ℝN×dX\in\mathbb{R}^{N\times d} denote the node feature matrix, where xix_{i} is the dd-dimensional feature vector for node viv_{i}.
+The variables used in the equations are as follows:
+•
+x(i)x^{(i)}: Feature matrix at the ii-th layer.
+•
+x(i−1)x^{(i-1)}: Input feature matrix from the (i−1)(i-1)-th layer.
+•
+WinW_{\text{in}}: Learnable input transformation matrix.
+•
+Wi(h)W^{(h)}_{i}: Weight matrix for nonlinear transformation at layer ii.
+•
+Wi(l)W^{(l)}_{i}: Linear transformation weight matrix at layer ii.
+•
+h(i)h^{(i)}: Nonlinear activation of features at layer ii.
+•
+Convi​(⋅)\text{Conv}_{i}(\cdot): Graph convolution or attention operator at layer ii.
+•
+βi\beta_{i}: Learnable coefficient controlling interpolation between nonlinear and linear components.
+•
+⊙\odot: Elementwise (Hadamard) product.
+•
+σ⁡(⋅)\sigma(\cdot): Nonlinear activation function (e.g., ReLU, sigmoid).
+•
+xlocalx_{\text{local}}: Output feature after summing across all LL layers.
+•
+mi,←(k)m^{(k)}_{i,\leftarrow}: Message from in-neighbors at layer kk.
+•
+mi,→(k)m^{(k)}_{i,\rightarrow}: Message from out-neighbors at layer kk.
+•
+AGG←(k),AGG→(k)\text{AGG}^{(k)}_{\leftarrow},\text{AGG}^{(k)}_{\rightarrow}: Aggregators for in- and out-neighbors at layer kk.
+•
+COM(k)\text{COM}^{(k)}: Combination function aggregating messages and current node feature at layer kk.
+3.1. Homophily and Heterophily in Graphs
+Most Graph Neural Networks (GNNs) rely on the homophily assumption—that neighboring nodes tend to share the same label. While valid for many graphs (e.g., citation networks), this assumption breaks down in heterophilic settings such as fraud detection or social networks, where connected nodes may differ significantly in labels. To measure homophily, the node homophily metric is used:
+| (1)
+|
+| h=1|V|∑i∈V1di∑j:(i,j)∈E𝕀[yi=yj]h=\frac{1}{|V|}\sum_{i\in V}\frac{1}{d_{i}}\sum_{j:(i,j)\in E}\mathbb{I}[y_{i}=y_{j}]
+|
+where 𝕀[yi=yj]\mathbb{I}[y_{i}=y_{j}] is 1 if nodes ii and jj share the same label, and 0 otherwise.
+For directed or weighted graphs, the weighted node homophily generalizes this:
+| (2)
+|
+| h⁡(S)=1|V|​∑i∈V∑jsi​j𝕀[yi=yj]∑jsi​jh(S)=\frac{1}{|V|}\sum_{i\in V}\frac{\sum_{j}s_{ij}\mathbb{I}[y_{i}=y_{j}]}{\sum_{j}s_{ij}}
+|
+where SS is a message-passing matrix (e.g., adjacency AA, A⊤A^{\top}, or multi-hop variants). These metrics reveal the need for models that go beyond local label similarity to succeed in heterophilic graphs.
+3.2. Polynomial Expressivity in Message Passing GNNs
+Traditional message passing neural networks (MPNNs) follow a linear aggregation scheme:
+| (3)
+|
+| P​(X)i=∑jci,j​XjP(X)_{i}=\sum_{j}c_{i,j}X_{j}
+|
+where ci,jc_{i,j} is a learnable or pre-defined edge weight. Since the output is a linear combination of neighbor features, these models are at most 1-polynomial expressive (Hua et al., 2022; Deng et al., 2024), relying on activation functions to introduce nonlinearity. This motivates models capable of capturing higher-degree interactions explicitly.
+3.3. Edge Directionality in Graphs
+Another limitation of standard GNNs is that they often neglect edge directionality, which is crucial in domains such as knowledge graphs and citation networks. Inspired by the Directed GNN (Dir-GNN) framework (Rossi et al., 2023), our Dir-Poly model addresses this by independently aggregating information from both incoming and outgoing neighbors:
+| (4)
+|
+| mi,←(k)\displaystyle m^{(k)}_{i,\leftarrow}
+| =AGG←(k)​{(xj(k−1),xi(k−1)):(j,i)∈E}\displaystyle=\text{AGG}^{(k)}_{\leftarrow}\left\{(x^{(k-1)}_{j},x^{(k-1)}_{i}):(j,i)\in E\right\}
+|
+| (5)
+|
+| mi,→(k)\displaystyle m^{(k)}_{i,\rightarrow}
+| =AGG→(k)​{(xj(k−1),xi(k−1)):(i,j)∈E}\displaystyle=\text{AGG}^{(k)}_{\rightarrow}\left\{(x^{(k-1)}_{j},x^{(k-1)}_{i}):(i,j)\in E\right\}
+|
+| (6)
+|
+| xi(k)\displaystyle x^{(k)}_{i}
+| =COM(k)​(xi(k−1),mi,←(k),mi,→(k))\displaystyle=\text{COM}^{(k)}\left(x^{(k-1)}_{i},m^{(k)}_{i,\leftarrow},m^{(k)}_{i,\rightarrow}\right)
+|
+This directional formulation enhances both expressivity and performance, especially on heterophilic graphs.
+4. Methodology
+We propose two complementary models, Poly and Dir-Poly, to overcome the expressivity and directionality limitations of standard GNNs.
+4.1. Polynomial Attention Model (Poly)
+Poly increases expressivity by leveraging attention mechanisms, enabling the learning of polynomial transformations.
+| (7)
+|
+| xin=Win​xx_{\text{in}}=W_{\text{in}}x
+|
+| (8)
+|
+| for ​i\displaystyle\text{for }i
+| =1​ to ​L:{h(i)=σ⁡(Wi(h)​x(i−1))x′=Convi​(x(i−1))+Wi(l)​x(i−1)x(i)=(1−βi)⋅(h(i)⊙x′)+βi⋅x′\displaystyle=1\text{ to }L:\begin{cases}h^{(i)}&=\sigma(W^{(h)}_{i}x^{(i-1)})\\
+x^{\prime}&=\text{Conv}_{i}(x^{(i-1)})+W^{(l)}_{i}x^{(i-1)}\\
+x^{(i)}&=(1-\beta_{i})\cdot(h^{(i)}\odot x^{\prime})+\beta_{i}\cdot x^{\prime}\end{cases}
+|
+| (9)
+|
+| xlocal=∑i=1Lx(i)x_{\text{local}}=\sum_{i=1}^{L}x^{(i)}
+|
+Here, Convi is a graph attention convolution (e.g., GAT), and σ\sigma is a nonlinearity. The learnable coefficients βi\beta_{i} control the interpolation between attention-based and linear contributions.
+Proof of Polynomial Expressivity
+To prove that Poly is polynomially expressive, consider the recurrence relation:
+| (10)
+|
+| x(i)=(1−βi)​(σ⁡(Wi(h)​x(i−1))⊙(Convi​(x(i−1))+Wi(l)​x(i−1)))+βi​(Convi​(x(i−1))+Wi(l)​x(i−1))x^{(i)}=(1-\beta_{i})\left(\sigma(W^{(h)}_{i}x^{(i-1)})\odot(\text{Conv}_{i}(x^{(i-1)})+W^{(l)}_{i}x^{(i-1)})\right)\\
++\beta_{i}\left(\text{Conv}_{i}(x^{(i-1)})+W^{(l)}_{i}x^{(i-1)}\right)
+|
+At each layer ii, this equation composes previous features x(i−1)x^{(i-1)} using:
+•
+a learned nonlinearity σ\sigma (e.g., ReLU or sigmoid),
+•
+an attention-based aggregation (Convi), and
+•
+multiplicative interactions (via elementwise product ⊙\odot).
+The result is that x(i)x^{(i)} is a polynomial function of xx with degree increasing in ii:
+| (11)
+|
+| deg⁡(x(i))≤i\deg(x^{(i)})\leq i
+|
+This is because each x(i)x^{(i)} is built from elementwise and linear operations over x(i−1)x^{(i-1)}, which themselves are polynomials of degree i−1i-1. By stacking LL layers, xlocal=∑i=1Lx(i)x_{\text{local}}=\sum_{i=1}^{L}x^{(i)} becomes a sum of polynomials up to degree LL. Therefore, Poly is L-polynomial expressive.
+4.2. Directed Polynomial Model (Dir-Poly)
+Dir-Poly extends Poly by instantiating Convi as a Directed GAT, separately handling in- and out-neighbors. The remaining architecture remains unchanged, preserving polynomial expressivity while incorporating directional inductive bias.
+4.3. Implications
+Poly models high-degree polynomial interactions using local attention, outperforming shallow MPNNs.
+Dir-Poly introduces direction-aware message passing, further improving performance on asymmetric and heterophilic graphs.
+Together, they enable robust learning on diverse graph structures.
+5. Experiments
+5.1. Datasets and Metrics
+We evaluate our proposed models, Poly and Dir-Poly, on five benchmark heterophilic datasets (Platonov et al., 2024): minesweeper, tolokers, questions, roman-empire and amazon-ratings. For roman-empire and amazon-ratings, we report average node classification Accuracy, while for the remaining three datasets, minesweeper, tolokers, and questions, we use the ROC AUC score. All results are averaged over 10 random runs with different seeds.
+5.2. Baselines
+We compare our models, Poly and Dir-Poly, against several prominent GNN architectures, spanning both homophilic and heterophilic graph learning paradigms:
+Homophilic GNNs: Models designed for graphs where connected nodes typically share similar labels. Examples include GCN (Kipf and Welling, 2016), GraphSAGE (Hamilton et al., 2017), and GAT-sep (Veličković et al., 2018).
+Heterophilic GNNs: Models that perform well even when neighboring nodes have dissimilar labels. Notable methods include H2-GCN  (Zhu et al., 2020), GPRGNN (Chien et al., 2020), FSGNN (Maurya et al., 2021), Glo-GNN (Li et al., 2022), and GGCN (Yan et al., 2022).
+Direction-aware and order-sensitive GNNs: Models that incorporate edge direction, temporal order, or higher-order dependencies for better expressivity. Examples include OrderedGNN (Song et al., 2023), G2-GNN (Rusch et al., 2023), DIR-GNN (Rossi et al., 2023), and tGNN (Hua et al., 2022).
+5.3. Results and Analysis
+In this section, we report the average performance over 10 random runs across five benchmark datasets, as summarized in Table 1.
+Scalability of Poly  Poly retains architectural simplicity and computational efficiency despite introducing polynomial expressivity in message passing. Built on top of GAT, it applies element-wise polynomial transformations to GAT convolutions, without significantly increasing the overall parameter count or runtime. This lightweight and flexible design allows Poly to scale effectively to large graphs, making it suitable for real-world applications where both expressivity and efficiency are essential.
+Performance of Poly  Poly consistently achieves strong and reliable performance across all datasets. It attains the best results on minesweeper (95.32) and tolokers (84.87), and secures top-2 ranks on roman-empire, amazon-ratings, and questions. These results clearly validate the benefit of polynomial transformations in enhancing the representational power of GNNs for modeling complex relationships in heterophilic graphs.
+Effectiveness of Edge Directionality in Dir-Poly  Dir-Poly, which augments Poly with direction-aware message passing, achieves the best performance on roman-empire (94.51), improving over Poly by nearly 3 points. It also ranks in the top three on all five datasets, including second-best performance on tolokers and third-best on amazon-ratings, minesweeper, and questions. This indicates that incorporating edge directionality can effectively capture asymmetrical dependencies in graphs where such structure is meaningful.
+When Directionality Helps—or Not  Dir-Poly is not always better than Poly, as Poly performs better on all datasets except roman-empire.
+This suggests that directional aggregation is beneficial primarily when edge directions encode informative structure, and may even degrade performance otherwise.
+Comparison to GAT  Both models, Poly and Dir-Poly, outperform the GAT baseline across the board. Poly improves over GAT by 1.41 points on minesweeper and by over 1 point on tolokers, confirming that polynomial attention significantly boosts GAT’s representational power in heterophilic graphs.
+6. Conclusion
+In this work, we investigated the joint impact of edge directionality and polynomially expressive message passing for node classification on heterophilic graphs. Our proposed Poly model, which augments a GAT backbone with high-degree polynomial aggregation, consistently outperforms standard and direction-aware GNN baselines across diverse datasets. The Dir-Poly variant achieves further gains on inherently directed graphs (e.g., Roman Empire), highlighting the benefit of directional information. However, its mixed performance on undirected graphs indicates that the advantage of direction-aware aggregation is context-dependent. These results suggest that expressivity and edge direction are complementary, and future GNNs can benefit from adaptively leveraging both based on graph structure.
+References
+Chien et al. (2020)
+Eli Chien, Jianhao Peng, Pan Li, and Olgica Milenkovic. 2020.
+Joint Adaptive Feature Smoothing and Topology Extraction via Generalized PageRank GNNs.
+CoRR abs/2006.07988 (2020).
+arXiv:2006.07988
+https://arxiv.org/abs/2006.07988
+Corso et al. (2020)
+Gabriele Corso, Luca Cavalleri, Dominique Beaini, Pietro Liò, and Petar Velickovic. 2020.
+Principal Neighbourhood Aggregation for Graph Nets.
+CoRR abs/2004.05718 (2020).
+arXiv:2004.05718
+https://arxiv.org/abs/2004.05718
+Deng et al. (2024)
+Chenhui Deng, Zichao Yue, and Zhiru Zhang. 2024.
+Polynormer: Polynomial-Expressive Graph Transformer in Linear Time.
+arXiv:2403.01232 [cs.LG]
+https://arxiv.org/abs/2403.01232
+Gilmer et al. (2017)
+Justin Gilmer, Samuel S. Schoenholz, Patrick F. Riley, Oriol Vinyals, and George E. Dahl. 2017.
+Neural Message Passing for Quantum Chemistry.
+arXiv:1704.01212 [cs.LG]
+https://arxiv.org/abs/1704.01212
+Hamilton et al. (2017)
+William L. Hamilton, Rex Ying, and Jure Leskovec. 2017.
+Inductive Representation Learning on Large Graphs.
+CoRR abs/1706.02216 (2017).
+arXiv:1706.02216
+http://arxiv.org/abs/1706.02216
+Hua et al. (2022)
+Chenqing Hua, Guillaume Rabusseau, and Jian Tang. 2022.
+High-Order Pooling for Graph Neural Networks with Tensor Decomposition.
+arXiv:2205.11691 [cs.LG]
+https://arxiv.org/abs/2205.11691
+Kipf and Welling (2016)
+Thomas N. Kipf and Max Welling. 2016.
+Semi-Supervised Classification with Graph Convolutional Networks.
+CoRR abs/1609.02907 (2016).
+arXiv:1609.02907
+http://arxiv.org/abs/1609.02907
+Li et al. (2022)
+Xiang Li, Renyu Zhu, Yao Cheng, Caihua Shan, Siqiang Luo, Dongsheng Li, and Weining Qian. 2022.
+Finding Global Homophily in Graph Neural Networks When Meeting Heterophily.
+arXiv:2205.07308 [cs.LG]
+https://arxiv.org/abs/2205.07308
+Li et al. (2017)
+Yujia Li, Daniel Tarlow, Marc Brockschmidt, and Richard Zemel. 2017.
+Gated Graph Sequence Neural Networks.
+arXiv:1511.05493 [cs.LG]
+https://arxiv.org/abs/1511.05493
+Liao et al. (2024)
+Ningyi Liao, Zihao Yu, and Siqiang Luo. 2024.
+DHIL-GT: Scalable Graph Transformer with Decoupled Hierarchy Labeling.
+arXiv:2412.04738 [cs.LG]
+https://arxiv.org/abs/2412.04738
+Maurya et al. (2021)
+Sunil Kumar Maurya, Xin Liu, and Tsuyoshi Murata. 2021.
+Improving Graph Neural Networks with Simple Architecture Design.
+arXiv:2105.07634 [stat.ML]
+https://arxiv.org/abs/2105.07634
+Platonov et al. (2024)
+Oleg Platonov, Denis Kuznedelev, Michael Diskin, Artem Babenko, and Liudmila Prokhorenkova. 2024.
+A critical look at the evaluation of GNNs under heterophily: Are we really making progress?
+arXiv:2302.11640 [cs.LG]
+https://arxiv.org/abs/2302.11640
+Rossi et al. (2023)
+Emanuele Rossi, Bertrand Charpentier, Francesco Di Giovanni, Fabrizio Frasca, Stephan Günnemann, and Michael Bronstein. 2023.
+Edge Directionality Improves Learning on Heterophilic Graphs.
+arXiv:2305.10498 [cs.LG]
+https://arxiv.org/abs/2305.10498
+Rusch et al. (2023)
+T. Konstantin Rusch, Benjamin P. Chamberlain, Michael W. Mahoney, Michael M. Bronstein, and Siddhartha Mishra. 2023.
+Gradient Gating for Deep Multi-Rate Learning on Graphs.
+arXiv:2210.00513 [cs.LG]
+https://arxiv.org/abs/2210.00513
+Scarselli et al. (2009)
+Franco Scarselli, Marco Gori, Ah Chung Tsoi, Markus Hagenbuchner, and Gabriele Monfardini. 2009.
+The Graph Neural Network Model.
+IEEE Transactions on Neural Networks 20, 1 (2009), 61–80.
+doi:10.1109/TNN.2008.2005605
+Song et al. (2023)
+Yunchong Song, Chenghu Zhou, Xinbing Wang, and Zhouhan Lin. 2023.
+Ordered GNN: Ordering Message Passing to Deal with Heterophily and Over-smoothing.
+arXiv:2302.01524 [cs.LG]
+https://arxiv.org/abs/2302.01524
+Tong et al. (2020a)
+Zekun Tong, Yuxuan Liang, Changsheng Sun, Xinke Li, David Rosenblum, and Andrew Lim. 2020a.
+Digraph Inception Convolutional Networks.
+Advances in Neural Information Processing Systems 33 (2020).
+Tong et al. (2020b)
+Zekun Tong, Yuxuan Liang, Changsheng Sun, David S. Rosenblum, and Andrew Lim. 2020b.
+Directed Graph Convolutional Network.
+arXiv:2004.13970 [cs.LG]
+https://arxiv.org/abs/2004.13970
+Veličković et al. (2018)
+Petar Veličković, Guillem Cucurull, Arantxa Casanova, Adriana Romero, Pietro Liò, and Yoshua Bengio. 2018.
+Graph Attention Networks.
+arXiv:1710.10903 [stat.ML]
+https://arxiv.org/abs/1710.10903
+Wu et al. (2019)
+Zonghan Wu, Shirui Pan, Fengwen Chen, Guodong Long, Chengqi Zhang, and Philip S. Yu. 2019.
+A Comprehensive Survey on Graph Neural Networks.
+CoRR abs/1901.00596 (2019).
+arXiv:1901.00596
+http://arxiv.org/abs/1901.00596
+Yan et al. (2022)
+Yujun Yan, Milad Hashemi, Kevin Swersky, Yaoqing Yang, and Danai Koutra. 2022.
+Two Sides of the Same Coin: Heterophily and Oversmoothing in Graph Convolutional Neural Networks.
+arXiv:2102.06462 [cs.LG]
+https://arxiv.org/abs/2102.06462
+Zhang et al. (2021)
+Xitong Zhang, Yixuan He, Nathan Brugnone, Michael Perlmutter, and Matthew Hirn. 2021.
+MagNet: A Neural Network for Directed Graphs.
+arXiv:2102.11391 [cs.LG]
+https://arxiv.org/abs/2102.11391
+Zhu et al. (2020)
+Jiong Zhu, Yujun Yan, Lingxiao Zhao, Mark Heimann, Leman Akoglu, and Danai Koutra. 2020.
+Generalizing Graph Neural Networks Beyond Homophily.
+CoRR abs/2006.11468 (2020).
+arXiv:2006.11468
+https://arxiv.org/abs/2006.11468
+Experimental support, please
+view the build logs
+for errors. Generated by
+L
+A
+T
+E
+xml
+.
+Instructions for reporting errors
+We are continuing to improve HTML versions of papers, and your feedback helps enhance accessibility and mobile
+support. To report errors in the HTML that will help us improve conversion and rendering, choose any of the
+methods listed below:
+Click the "Report Issue" (
+) button, located in the page header.
+Tip: You can select the relevant text first, to include it in your report.
+Our team has already identified the following issues. We appreciate your time reviewing and reporting rendering errors we
+may not have found yet. Your efforts will help us improve the HTML versions for all readers, because disability
+should not be a barrier to accessing research. Thank you for your continued support in championing open access for
+all.
+Have a free development cycle? Help support accessibility at arXiv! Our collaborators at LaTeXML maintain a list of packages that need conversion, and welcome developer contributions.
+We gratefully acknowledge support from
+our major funders,
+member institutions, ,
+and all contributors.
+About
+·
+Help
+·
+Contact
+·
+Subscribe
+·
+Copyright
+·
+Privacy
+·
+Accessibility
+·
+Operational Status (opens in new tab)
+Major funding support from

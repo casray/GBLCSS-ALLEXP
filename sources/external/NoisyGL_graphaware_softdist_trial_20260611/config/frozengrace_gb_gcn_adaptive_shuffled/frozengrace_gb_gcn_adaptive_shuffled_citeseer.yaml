@@ -1,0 +1,41 @@
+model:
+  method: frozengrace_gb_gcn_adaptive_shuffled
+  n_hidden: 64
+  n_layer: 2
+  act: F.relu
+  dropout: 0.5
+  norm_info: ~
+  input_layer: false
+  output_layer: false
+
+training:
+  lr: 1e-2
+  weight_decay: 5e-4
+  n_epochs: 200
+  patience: ~
+  criterion: metric
+
+dataset:
+  sparse: true
+
+gb:
+  embedding_path: "../../gb_graph_aware_minival_6_1/checkpoints/embeddings/CiteSeer/ratio_train0p2_val0p1_split0_pretrain0/H.pt"
+  ball_mode: adaptive
+  # noisy-supervised adaptive splitting (train noisy labels only; val/test never enter)
+  # tau_p=0.6: under 40% symmetric noise a pure-true-class ball has expected
+  # noisy purity ~ 0.6 + 0.4/C (CiteSeer 0.667), so clean regions stop while mixed split
+  purity_threshold: 0.6
+  min_train_per_child: 3
+  min_train_to_split: 12
+  adaptive_min_ball_size: 8
+  min_purity_gain: 0.02
+  split_attempts: 3
+  adaptive_max_balls: 128
+  min_train_per_ball: 2
+  alpha_baseline: multiclass
+  target_mode: distribution
+
+analysis:
+  flag: false
+  project: gnn-with-label-noise
+  save_graph: false

@@ -1,0 +1,192 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>GAGB v2.3 Class-Safe Target Calibration Plan Review Pack</title>
+<style>
+body{margin:0;background:#f7f8fa;color:#172033;font-family:"Segoe UI",Arial,"Microsoft YaHei",sans-serif;line-height:1.62}header{background:linear-gradient(180deg,#fff,#eef3f9);border-bottom:1px solid #d9dee8}.inner,main{max-width:1180px;margin:0 auto;padding:30px 22px}h1{margin:0 0 8px;font-size:28px}.subtitle{color:#5b6475}section{background:#fff;border:1px solid #d9dee8;border-radius:8px;padding:22px;margin:18px 0;box-shadow:0 1px 2px rgba(20,30,50,.04)}h2{margin:0 0 14px;font-size:20px;color:#132747}table{border-collapse:collapse;width:100%;display:block;overflow-x:auto;margin:12px 0 18px;font-size:13px}th,td{border:1px solid #d9dee8;padding:7px 9px;text-align:left;white-space:nowrap;vertical-align:top}th{background:#edf2f8}pre{white-space:pre-wrap;background:#101827;color:#e8eef8;padding:16px;border-radius:8px;overflow:auto}code{font-family:Consolas,monospace}.badge{display:inline-block;padding:2px 8px;border-radius:999px;background:#e9eef7;color:#273b5f;font-size:12px;margin-right:6px}.callout{border-left:4px solid #265a9f;background:#eef5ff;padding:12px 14px;margin:12px 0}
+</style>
+</head>
+<body>
+<header><div class="inner"><h1>GAGB v2.3 Class-Safe Target Calibration Plan Review Pack</h1><div class="subtitle">Self-contained GPT / Deep Research package. 生成时间：2026-06-02。用途：让外部 GPT 审查下一步实验设计，而不是审查代码。</div><div style="margin-top:10px"><span class="badge">不是代码审查</span><span class="badge">v2.3 计划包</span><span class="badge">v2.2 证据链</span><span class="badge">clean labels 仅诊断</span></div></div></header>
+<main>
+<div class="callout"><b>Traceability:</b> local project: <code>C:\Users\Admin\Desktop\实验8去噪5.19-\gb_graph_aware_minival_6_1</code>; v2.2 evidence: <code>C:\Users\Admin\Desktop\实验8去噪5.19-\gb_graph_aware_minival_6_1\reports\gagb_v2_2_class_failure_20260602</code>. 关键事实已在本文展开，外部 GPT 不需要打开本地路径。</div>
+<section><h2>1. Context And Objective</h2><p>当前项目研究 GAGB / GB-GCL 在带噪标签属性图节点分类中的作用。v2.2 已经把 Cora 0.4 的失败定位到更具体的层面：GAGB target repair 能产生正 NCR，且平均 CDR 很低，但最终 accuracy 尤其 class 1 和 class 6 不稳定或下降。v2.3 的目标不是加新大模块，而是做 class-safe target calibration：让低误伤纠错不要破坏类别边界。</p></section>
+<section><h2>2. Prior Experiment Chain</h2><p>v1 的 graph-aware GB 没有稳定证明 GAGB-specific value。v2 target-only 不改 GRACE、不改构球，只用 GAGB 生成 teacher-aware ball-level qmix target。v2.1 fair-control 修复后，alpha09 / replace_qmix 在四个 Cora/CiteSeer setting 中都有正 NCR 且 CDR &lt; 0.03，但 Cora 0.4 失败，且 GAGB 相比 khop repair 的优势不足。v2.2 进一步做 correction-by-class 诊断，发现 Cora 0.4 失败更像少量强 target update 引起间接 decision-boundary movement，而不是大量 clean damage。</p></section>
+<section><h2>3. Method / Algorithm</h2><p>既有 qmix 构造：q_label_B 来自球内 train noisy label distribution；q_pred_B 来自 noisy-train linear teacher 在球内 all-node 概率均值；q_mix = 0.5*q_label_B + 0.5*q_pred_B。conflict gate 触发条件为 q_mix[noisy_y_i] &lt;= 0.35 且 max(q_mix) &gt;= 0.55。alpha 方法用 target=(1-alpha)*noisy_onehot+alpha*q_mix；replace_qmix 直接用 q_mix。v2.3 只在 gated nodes 的 target update 强度、选择预算和安全条件上做校准，不改 qmix 来源、不改 GAGB grouping。</p></section>
+<section><h2>4. Clean-Label And Data-Leakage Boundary</h2><p>clean labels 只能用于 diagnostics / evaluation：NCR、CDR、per-class accuracy、confusion matrix、failure report。clean labels 不得进入 grouping、teacher training、target construction、class cap、class-balanced budget、boundary-safe gate、replay sampling 或 classifier training。gagb_replay_same_class_count 因需要 clean class count，不作为 trainable method，只能作为离线诊断设想。</p></section>
+<section><h2>5. Experimental Protocol</h2><table><thead><tr><th>Item</th><th>Value</th></tr></thead><tbody><tr><td>Datasets</td><td>Cora, CiteSeer</td></tr>
+<tr><td>Noise</td><td>symmetric label noise, rates 0.2 and 0.4</td></tr>
+<tr><td>Seeds</td><td>0, 1, 2, 3, 4</td></tr>
+<tr><td>Split</td><td>ratio split, train_ratio=0.2, val_ratio=0.1, split_seed=0</td></tr>
+<tr><td>Embedding</td><td>frozen GRACE embedding, no GRACE retraining</td></tr>
+<tr><td>Teacher</td><td>linear teacher trained only on noisy train labels</td></tr>
+<tr><td>GAGB</td><td>max_hops=2, tau_add=0.55, lambda_h=0.7, lambda_t=0.3, max_ball_size=128</td></tr>
+<tr><td>Conflict gate</td><td>q_mix[noisy_y_i] &lt;= 0.35 and max(q_mix) &gt;= 0.55</td></tr>
+<tr><td>Classifier</td><td>epochs=200, lr=0.01, weight_decay=0.0005, patience=30</td></tr>
+<tr><td>Output dir</td><td>reports/gagb_v2_3_class_safe_calibration_20260602/</td></tr></tbody></table></section>
+<section><h2>6. Baselines And Fair Controls</h2><table><thead><tr><th>Method</th><th>Role</th></tr></thead><tbody><tr><td>gb</td><td>ordinary embedding GB baseline</td></tr>
+<tr><td>gagb</td><td>v1 graph-aware grouping without v2 repair</td></tr>
+<tr><td>khop_only</td><td>topology-only grouping baseline</td></tr>
+<tr><td>gagb_qb_conflict_gate_alpha03</td><td>weak conflict-gated qmix update; conservative baseline</td></tr>
+<tr><td>gagb_qb_conflict_gate_alpha06 / alpha07 / alpha08 / alpha09</td><td>fixed alpha strength sweep; alpha08 is new, alpha06/07/09 already exist in current code</td></tr>
+<tr><td>gagb_qb_conflict_gate_replace_qmix</td><td>replace gated target with qmix</td></tr>
+<tr><td>gagb_class_capped_alpha09</td><td>per target class cap by qmix margin; non-kept nodes fallback to alpha03</td></tr>
+<tr><td>gagb_class_balanced_alpha09</td><td>noisy-train-prior budget by qmix target class; no clean prior</td></tr>
+<tr><td>gagb_boundary_safe_alpha09</td><td>alpha09 plus qmix margin, teacher confidence, teacher margin checks</td></tr>
+<tr><td>khop_only_alpha09 / khop_only_replace</td><td>test whether topology-only repair explains the effect</td></tr>
+<tr><td>gagb_replay_random_same_count</td><td>intervention-strength matched replay control using train mask and shuffled qmix targets only</td></tr></tbody></table></section>
+<section><h2>7. Metrics And Definitions</h2><p>主要指标：test_acc_mean/std；NCR=noisy train nodes 中 target argmax 回到 clean label 的比例；CDR=clean train nodes 中 target argmax 偏离 clean label 的比例；target_changed_count；target_changed_by_class；gated_noisy/gated_clean；test_acc_by_class；delta_test_acc_by_class_vs_gb/alpha03；teacher_gated_acc_by_class；qmix_argmax_confusion_matrix；target_argmax_confusion_matrix；clean_damage_confusion_matrix；corrected/damaged ball purity。Cora 0.4 的 class 1 和 class 6 是 primary failure indicators。</p></section>
+<section><h2>8. Main Results</h2><p>v2.3 还未执行。下表是 v2.1 修复后的前序证据，用于说明为什么要做 v2.3。</p><table><thead><tr><th>Setting</th><th>Method</th><th>Acc</th><th>NCR</th><th>CDR</th></tr></thead><tbody><tr><td>Cora 0.2</td><td>alpha03</td><td>0.8039</td><td>0.0000</td><td>0.0000</td></tr>
+<tr><td>Cora 0.2</td><td>alpha09</td><td>0.8083</td><td>0.2519</td><td>0.0143</td></tr>
+<tr><td>Cora 0.2</td><td>replace_qmix</td><td>0.8090</td><td>0.2519</td><td>0.0143</td></tr>
+<tr><td>Cora 0.4</td><td>alpha03</td><td>0.7949</td><td>0.0000</td><td>0.0000</td></tr>
+<tr><td>Cora 0.4</td><td>alpha09</td><td>0.7907</td><td>0.0811</td><td>0.0025</td></tr>
+<tr><td>Cora 0.4</td><td>replace_qmix</td><td>0.7886</td><td>0.0811</td><td>0.0025</td></tr>
+<tr><td>CiteSeer 0.2</td><td>alpha03</td><td>0.7058</td><td>0.0000</td><td>0.0000</td></tr>
+<tr><td>CiteSeer 0.2</td><td>alpha09</td><td>0.7087</td><td>0.1444</td><td>0.0255</td></tr>
+<tr><td>CiteSeer 0.2</td><td>replace_qmix</td><td>0.7064</td><td>0.1444</td><td>0.0255</td></tr>
+<tr><td>CiteSeer 0.4</td><td>alpha03</td><td>0.6982</td><td>0.0000</td><td>0.0000</td></tr>
+<tr><td>CiteSeer 0.4</td><td>alpha09</td><td>0.6981</td><td>0.0617</td><td>0.0075</td></tr>
+<tr><td>CiteSeer 0.4</td><td>replace_qmix</td><td>0.6997</td><td>0.0617</td><td>0.0075</td></tr></tbody></table></section>
+<section><h2>9. Diagnostic Results</h2><p>v2.2 Cora 0.4 关键 per-class 证据如下。它支持“不是大规模 clean damage，而可能是强 target update 造成边界移动”的诊断。</p><table><thead><tr><th>Method</th><th>Class</th><th>Test Acc</th><th>NCR</th><th>CDR</th><th>Changed</th><th>Gated Noisy</th><th>Gated Clean</th></tr></thead><tbody><tr><td>GB</td><td>0</td><td>0.6862</td><td>0.0000</td><td>0.0000</td><td>0.0000</td><td>0.0000</td><td>0.0000</td></tr>
+<tr><td>GB</td><td>1</td><td>0.7921</td><td>0.0000</td><td>0.0000</td><td>0.0000</td><td>0.0000</td><td>0.0000</td></tr>
+<tr><td>GB</td><td>2</td><td>0.9315</td><td>0.0000</td><td>0.0000</td><td>0.0000</td><td>0.0000</td><td>0.0000</td></tr>
+<tr><td>GB</td><td>3</td><td>0.8455</td><td>0.0000</td><td>0.0000</td><td>0.0000</td><td>0.0000</td><td>0.0000</td></tr>
+<tr><td>GB</td><td>4</td><td>0.7866</td><td>0.0000</td><td>0.0000</td><td>0.0000</td><td>0.0000</td><td>0.0000</td></tr>
+<tr><td>GB</td><td>5</td><td>0.7731</td><td>0.0000</td><td>0.0000</td><td>0.0000</td><td>0.0000</td><td>0.0000</td></tr>
+<tr><td>GB</td><td>6</td><td>0.5492</td><td>0.0000</td><td>0.0000</td><td>0.0000</td><td>0.0000</td><td>0.0000</td></tr>
+<tr><td>GAGB alpha03</td><td>1</td><td>0.7803</td><td>0.0000</td><td>0.0000</td><td>0.0000</td><td>0.4000</td><td>0.0000</td></tr>
+<tr><td>GAGB alpha03</td><td>6</td><td>0.5365</td><td>0.0000</td><td>0.0000</td><td>0.0000</td><td>0.0000</td><td>0.0000</td></tr>
+<tr><td>GAGB alpha09</td><td>0</td><td>0.6732</td><td>0.0067</td><td>0.0202</td><td>1.2000</td><td>0.4000</td><td>0.8000</td></tr>
+<tr><td>GAGB alpha09</td><td>1</td><td>0.7329</td><td>0.0400</td><td>0.0000</td><td>0.4000</td><td>0.4000</td><td>0.0000</td></tr>
+<tr><td>GAGB alpha09</td><td>2</td><td>0.9418</td><td>0.2751</td><td>0.0000</td><td>8.6000</td><td>8.6000</td><td>0.0000</td></tr>
+<tr><td>GAGB alpha09</td><td>3</td><td>0.8472</td><td>0.0566</td><td>0.0000</td><td>3.8000</td><td>3.8000</td><td>0.0000</td></tr>
+<tr><td>GAGB alpha09</td><td>4</td><td>0.7906</td><td>0.1410</td><td>0.0000</td><td>4.0000</td><td>4.0000</td><td>0.0000</td></tr>
+<tr><td>GAGB alpha09</td><td>5</td><td>0.7712</td><td>0.0251</td><td>0.0000</td><td>0.6000</td><td>0.6000</td><td>0.0000</td></tr>
+<tr><td>GAGB alpha09</td><td>6</td><td>0.5159</td><td>0.0000</td><td>0.0000</td><td>0.0000</td><td>0.0000</td><td>0.0000</td></tr>
+<tr><td>GAGB replace</td><td>1</td><td>0.7053</td><td>0.0400</td><td>0.0000</td><td>0.4000</td><td>0.4000</td><td>0.0000</td></tr>
+<tr><td>GAGB replace</td><td>6</td><td>0.5000</td><td>0.0000</td><td>0.0000</td><td>0.0000</td><td>0.0000</td><td>0.0000</td></tr>
+<tr><td>K-hop alpha09</td><td>1</td><td>0.7592</td><td>0.0505</td><td>0.0135</td><td>1.2000</td><td>0.8000</td><td>0.4000</td></tr>
+<tr><td>K-hop alpha09</td><td>6</td><td>0.4984</td><td>0.0000</td><td>0.0000</td><td>0.0000</td><td>0.0000</td><td>0.0000</td></tr></tbody></table><p>最大类别下降：GAGB alpha09 vs GB 最差 class 1，delta=-0.0592；GAGB replace vs GB 最差 class 1，delta=-0.0868。class 1 平均只有 0.4 gated noisy 和 0 gated clean；class 6 在 GAGB repair 中 gated noisy/clean 均为 0，但 accuracy 仍下降。</p></section>
+<section><h2>10. Supported Conclusions</h2><p>已支持：GAGB v2 能产生低 CDR 的正 NCR 信号；Cora 0.4 失败不是由大规模 clean damage 直接解释；class 1/6 drop 的直接干预 footprint 很小，尤其 class 6 没有 gated footprint；下一步应该优先诊断 target strength、class imbalance 和 boundary-safety。</p></section>
+<section><h2>11. Unsupported Or Still-Hypothetical Claims</h2><p>尚不支持：GAGB builder 稳定优于 khop-only/kmeans/topk/shuffled controls；更高 NCR 必然带来更高 accuracy；class_capped、class_balanced、boundary_safe 一定有效；当前结果可以作为论文主方法强 claim。v2.3 只是最小诊断，不是最终算法验证。</p></section>
+<section><h2>12. Missing Information / Residual Risk</h2><p>缺口：尚未执行 v2.3；尚无 intervention-strength matched replay control 结果；alpha08、class_capped、class_balanced、boundary_safe、replay 当前代码中尚未确认实现；没有 threshold sweep；没有 PubMed/OGBN-Arxiv；没有重新训练 GRACE；没有 seed-level logits margin 分析。</p></section>
+<section><h2>13. Questions For GPT</h2><p>请判断：1）v2.3 计划是否足以区分 target strength、class imbalance 和 boundary movement？2）class_capped fallback 到 alpha03 是否合理，还是应回到 noisy one-hot？3）class_balanced 用 noisy train prior 是否会过度保守？4）boundary_safe 的 teacher_margin 阈值 0.2 是否合理？5）replay_random_same_count 是否足以作为 intervention-strength matched control？6）如果 v2.3 仍不能超过 khop_only，是否应暂停当前 GAGB builder？</p></section>
+<section><h2>14. Full Paste-Ready GPT Prompt</h2><p>下面这一整段可以直接复制给 GPT。它不依赖本地文件路径。</p><pre>你看不到我的本地实验文件夹、代码、CSV、日志和浏览器页面，所以我把关键信息完整整理在下面。请只基于这份 self-contained 信息进行科研判断，不要假设你能访问本地路径。
+
+请帮我判断这个 GAGB v2.3 class-safe target calibration 计划是否合理。重点不是代码审查，而是科研设计审查：它是否能回答 v2.2 暴露的问题，是否有关键信息缺口，下一步最小实验是否应该这样做。
+
+我希望你回答：
+1. 这个计划真正能验证什么，不能验证什么？
+2. 它能否区分 target strength、class imbalance、boundary movement 三种失败原因？
+3. class_capped / class_balanced / boundary_safe / replay control 的定义是否公平？
+4. clean-label 边界是否足够严格？
+5. 如果 v2.3 失败，下一步应该暂停 target-only v2，还是转向 ball-quality filtering / GAGB builder？
+
+请不要做代码审查。下面是完整实验背景、v2.2 证据和 v2.3 计划。
+
+## 1. Context And Objective
+当前项目研究 GAGB / GB-GCL 在带噪标签属性图节点分类中的作用。v2.2 已经把 Cora 0.4 的失败定位到更具体的层面：GAGB target repair 能产生正 NCR，且平均 CDR 很低，但最终 accuracy 尤其 class 1 和 class 6 不稳定或下降。v2.3 的目标不是加新大模块，而是做 class-safe target calibration：让低误伤纠错不要破坏类别边界。
+
+## 2. Prior Experiment Chain
+v1 的 graph-aware GB 没有稳定证明 GAGB-specific value。v2 target-only 不改 GRACE、不改构球，只用 GAGB 生成 teacher-aware ball-level qmix target。v2.1 fair-control 修复后，alpha09 / replace_qmix 在四个 Cora/CiteSeer setting 中都有正 NCR 且 CDR &lt; 0.03，但 Cora 0.4 失败，且 GAGB 相比 khop repair 的优势不足。v2.2 进一步做 correction-by-class 诊断，发现 Cora 0.4 失败更像少量强 target update 引起间接 decision-boundary movement，而不是大量 clean damage。
+
+## 3. Method / Algorithm
+既有 qmix 构造：q_label_B 来自球内 train noisy label distribution；q_pred_B 来自 noisy-train linear teacher 在球内 all-node 概率均值；q_mix = 0.5*q_label_B + 0.5*q_pred_B。conflict gate 触发条件为 q_mix[noisy_y_i] &lt;= 0.35 且 max(q_mix) &gt;= 0.55。alpha 方法用 target=(1-alpha)*noisy_onehot+alpha*q_mix；replace_qmix 直接用 q_mix。v2.3 只在 gated nodes 的 target update 强度、选择预算和安全条件上做校准，不改 qmix 来源、不改 GAGB grouping。
+
+## 4. Clean-Label And Data-Leakage Boundary
+clean labels 只能用于 diagnostics / evaluation：NCR、CDR、per-class accuracy、confusion matrix、failure report。clean labels 不得进入 grouping、teacher training、target construction、class cap、class-balanced budget、boundary-safe gate、replay sampling 或 classifier training。gagb_replay_same_class_count 因需要 clean class count，不作为 trainable method，只能作为离线诊断设想。
+
+## 5. Experimental Protocol
+| Item | Value |
+| --- | --- |
+| Datasets | Cora, CiteSeer |
+| Noise | symmetric label noise, rates 0.2 and 0.4 |
+| Seeds | 0, 1, 2, 3, 4 |
+| Split | ratio split, train_ratio=0.2, val_ratio=0.1, split_seed=0 |
+| Embedding | frozen GRACE embedding, no GRACE retraining |
+| Teacher | linear teacher trained only on noisy train labels |
+| GAGB | max_hops=2, tau_add=0.55, lambda_h=0.7, lambda_t=0.3, max_ball_size=128 |
+| Conflict gate | q_mix[noisy_y_i] &lt;= 0.35 and max(q_mix) &gt;= 0.55 |
+| Classifier | epochs=200, lr=0.01, weight_decay=0.0005, patience=30 |
+| Output dir | reports/gagb_v2_3_class_safe_calibration_20260602/ |
+
+## 6. Baselines And Fair Controls
+| Method | Role |
+| --- | --- |
+| gb | ordinary embedding GB baseline |
+| gagb | v1 graph-aware grouping without v2 repair |
+| khop_only | topology-only grouping baseline |
+| gagb_qb_conflict_gate_alpha03 | weak conflict-gated qmix update; conservative baseline |
+| gagb_qb_conflict_gate_alpha06 / alpha07 / alpha08 / alpha09 | fixed alpha strength sweep; alpha08 is new, alpha06/07/09 already exist in current code |
+| gagb_qb_conflict_gate_replace_qmix | replace gated target with qmix |
+| gagb_class_capped_alpha09 | per target class cap by qmix margin; non-kept nodes fallback to alpha03 |
+| gagb_class_balanced_alpha09 | noisy-train-prior budget by qmix target class; no clean prior |
+| gagb_boundary_safe_alpha09 | alpha09 plus qmix margin, teacher confidence, teacher margin checks |
+| khop_only_alpha09 / khop_only_replace | test whether topology-only repair explains the effect |
+| gagb_replay_random_same_count | intervention-strength matched replay control using train mask and shuffled qmix targets only |
+
+## 7. Metrics And Definitions
+主要指标：test_acc_mean/std；NCR=noisy train nodes 中 target argmax 回到 clean label 的比例；CDR=clean train nodes 中 target argmax 偏离 clean label 的比例；target_changed_count；target_changed_by_class；gated_noisy/gated_clean；test_acc_by_class；delta_test_acc_by_class_vs_gb/alpha03；teacher_gated_acc_by_class；qmix_argmax_confusion_matrix；target_argmax_confusion_matrix；clean_damage_confusion_matrix；corrected/damaged ball purity。Cora 0.4 的 class 1 和 class 6 是 primary failure indicators。
+
+## 8. Main Results
+v2.3 还未执行。v2.1 前序结果：
+| Setting | Method | Acc | NCR | CDR |
+| --- | --- | --- | --- | --- |
+| Cora 0.2 | alpha03 | 0.8039 | 0.0000 | 0.0000 |
+| Cora 0.2 | alpha09 | 0.8083 | 0.2519 | 0.0143 |
+| Cora 0.2 | replace_qmix | 0.8090 | 0.2519 | 0.0143 |
+| Cora 0.4 | alpha03 | 0.7949 | 0.0000 | 0.0000 |
+| Cora 0.4 | alpha09 | 0.7907 | 0.0811 | 0.0025 |
+| Cora 0.4 | replace_qmix | 0.7886 | 0.0811 | 0.0025 |
+| CiteSeer 0.2 | alpha03 | 0.7058 | 0.0000 | 0.0000 |
+| CiteSeer 0.2 | alpha09 | 0.7087 | 0.1444 | 0.0255 |
+| CiteSeer 0.2 | replace_qmix | 0.7064 | 0.1444 | 0.0255 |
+| CiteSeer 0.4 | alpha03 | 0.6982 | 0.0000 | 0.0000 |
+| CiteSeer 0.4 | alpha09 | 0.6981 | 0.0617 | 0.0075 |
+| CiteSeer 0.4 | replace_qmix | 0.6997 | 0.0617 | 0.0075 |
+
+## 9. Diagnostic Results
+v2.2 Cora 0.4 关键 per-class 证据：
+| Method | Class | Test Acc | NCR | CDR | Changed | Gated Noisy | Gated Clean |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| GB | 0 | 0.6862 | 0.0000 | 0.0000 | 0.0000 | 0.0000 | 0.0000 |
+| GB | 1 | 0.7921 | 0.0000 | 0.0000 | 0.0000 | 0.0000 | 0.0000 |
+| GB | 2 | 0.9315 | 0.0000 | 0.0000 | 0.0000 | 0.0000 | 0.0000 |
+| GB | 3 | 0.8455 | 0.0000 | 0.0000 | 0.0000 | 0.0000 | 0.0000 |
+| GB | 4 | 0.7866 | 0.0000 | 0.0000 | 0.0000 | 0.0000 | 0.0000 |
+| GB | 5 | 0.7731 | 0.0000 | 0.0000 | 0.0000 | 0.0000 | 0.0000 |
+| GB | 6 | 0.5492 | 0.0000 | 0.0000 | 0.0000 | 0.0000 | 0.0000 |
+| GAGB alpha03 | 1 | 0.7803 | 0.0000 | 0.0000 | 0.0000 | 0.4000 | 0.0000 |
+| GAGB alpha03 | 6 | 0.5365 | 0.0000 | 0.0000 | 0.0000 | 0.0000 | 0.0000 |
+| GAGB alpha09 | 0 | 0.6732 | 0.0067 | 0.0202 | 1.2000 | 0.4000 | 0.8000 |
+| GAGB alpha09 | 1 | 0.7329 | 0.0400 | 0.0000 | 0.4000 | 0.4000 | 0.0000 |
+| GAGB alpha09 | 2 | 0.9418 | 0.2751 | 0.0000 | 8.6000 | 8.6000 | 0.0000 |
+| GAGB alpha09 | 3 | 0.8472 | 0.0566 | 0.0000 | 3.8000 | 3.8000 | 0.0000 |
+| GAGB alpha09 | 4 | 0.7906 | 0.1410 | 0.0000 | 4.0000 | 4.0000 | 0.0000 |
+| GAGB alpha09 | 5 | 0.7712 | 0.0251 | 0.0000 | 0.6000 | 0.6000 | 0.0000 |
+| GAGB alpha09 | 6 | 0.5159 | 0.0000 | 0.0000 | 0.0000 | 0.0000 | 0.0000 |
+| GAGB replace | 1 | 0.7053 | 0.0400 | 0.0000 | 0.4000 | 0.4000 | 0.0000 |
+| GAGB replace | 6 | 0.5000 | 0.0000 | 0.0000 | 0.0000 | 0.0000 | 0.0000 |
+| K-hop alpha09 | 1 | 0.7592 | 0.0505 | 0.0135 | 1.2000 | 0.8000 | 0.4000 |
+| K-hop alpha09 | 6 | 0.4984 | 0.0000 | 0.0000 | 0.0000 | 0.0000 | 0.0000 |
+
+最大类别下降：GAGB alpha09 vs GB 最差 class 1，delta=-0.0592；GAGB replace vs GB 最差 class 1，delta=-0.0868。class 1 平均只有 0.4 gated noisy 和 0 gated clean；class 6 在 GAGB repair 中 gated noisy/clean 均为 0，但 accuracy 仍下降。
+
+## 10. Supported Conclusions
+已支持：GAGB v2 能产生低 CDR 的正 NCR 信号；Cora 0.4 失败不是由大规模 clean damage 直接解释；class 1/6 drop 的直接干预 footprint 很小，尤其 class 6 没有 gated footprint；下一步应该优先诊断 target strength、class imbalance 和 boundary-safety。
+
+## 11. Unsupported Or Still-Hypothetical Claims
+尚不支持：GAGB builder 稳定优于 khop-only/kmeans/topk/shuffled controls；更高 NCR 必然带来更高 accuracy；class_capped、class_balanced、boundary_safe 一定有效；当前结果可以作为论文主方法强 claim。v2.3 只是最小诊断，不是最终算法验证。
+
+## 12. Missing Information / Residual Risk
+缺口：尚未执行 v2.3；尚无 intervention-strength matched replay control 结果；alpha08、class_capped、class_balanced、boundary_safe、replay 当前代码中尚未确认实现；没有 threshold sweep；没有 PubMed/OGBN-Arxiv；没有重新训练 GRACE；没有 seed-level logits margin 分析。
+
+## 13. Questions For GPT
+请判断：1）v2.3 计划是否足以区分 target strength、class imbalance 和 boundary movement？2）class_capped fallback 到 alpha03 是否合理，还是应回到 noisy one-hot？3）class_balanced 用 noisy train prior 是否会过度保守？4）boundary_safe 的 teacher_margin 阈值 0.2 是否合理？5）replay_random_same_count 是否足以作为 intervention-strength matched control？6）如果 v2.3 仍不能超过 khop_only，是否应暂停当前 GAGB builder？</pre></section>
+</main>
+</body>
+</html>

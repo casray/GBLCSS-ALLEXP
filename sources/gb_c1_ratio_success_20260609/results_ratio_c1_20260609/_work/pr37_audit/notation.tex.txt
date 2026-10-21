@@ -1,0 +1,50 @@
+\begin{table}[!htbp]
+\centering
+\caption{Main notation.}\label{tab:notation}
+\begingroup
+\renewcommand{\baselinestretch}{1}\selectfont
+\footnotesize
+\renewcommand{\arraystretch}{1.03}
+\setlength{\tabcolsep}{2pt}
+\begin{tabular}{@{}p{0.25\linewidth}p{0.72\linewidth}@{}}
+\toprule
+Symbol & Meaning \\
+\midrule
+\multicolumn{2}{@{}l}{\textit{Graph and data}} \\
+\(\mathcal V,\mathcal E\) & Node set and edge set \\
+\(N,C\) & Number of nodes and number of classes \\
+\(n,\ell\) & Node indices in \(\{1,\ldots,N\}\) \\
+\(j\) & Granular ball index \\
+\(i\) & Class index in \(\{1,\ldots,C\}\) \\
+\(\mathbf A,\mathbf X\) & Adjacency matrix and node attribute matrix \\
+\(\mathbf x_n\) & Attribute vector of node \(v_n\) \\
+\(\mathcal V_L\) & Set of labeled training nodes \\
+\(y_n,z_n\) & Clean and observed labels of node \(v_n\) \\
+\(\eta\) & Label corruption probability \\
+\midrule
+\multicolumn{2}{@{}l}{\textit{Representations and granular balls}} \\
+\(\mathbf G,\mathbf g_n\) & Frozen normalized GRACE representation matrix and vector for node \(v_n\) \\
+\(d,h\) & Attribute dimension and GRACE representation dimension \\
+\(\mathcal B,B_j\) & Collection of granular balls and its \(j\)-th member \\
+\(\boldsymbol\mu_j,D(B_j)\) & Center and mean radius of ball \(B_j\) \\
+\(D'(B_j)\) & Size-weighted mean radius after splitting \(B_j\) \\
+\(B_{\max}\) & Maximum number of granular balls \\
+\(n_{\min}\) & Minimum number of nodes in each accepted child ball \\
+\(\delta\) & Minimum relative decrease in mean radius for an accepted split \\
+\midrule
+\multicolumn{2}{@{}l}{\textit{Local consensus and soft targets}} \\
+\(\mathbf w_j\) & Observed class-count vector of training nodes in \(B_j\) \\
+\(U_n\) & Other training nodes in the ball containing \(v_n\) \\
+\(s_{\min}\) & Minimum number of votes required to use local consensus \\
+\(\mathbf r_n\) & Observed class proportions among the voting nodes in \(U_n\) \\
+\(i_n^\star\) & Class with the unique highest vote count in \(U_n\) \\
+\(\mathbf q_n\) & Local-consensus class distribution for node \(v_n\) \\
+\(\beta\) & Strength of the adjustment toward the uniquely most-voted class \\
+\(\alpha_n\) & Weight of the local consensus in the target for \(v_n\) \\
+\(\mathbf e_i,\mathbb I(\cdot)\) & One-hot vector for class \(i\); indicator function \\
+\(\mathbf t_n\) & Soft training target for node \(v_n\) \\
+\(f,\mathbf p_n\) & MLP classifier and its predicted class distribution for \(v_n\) \\
+\bottomrule
+\end{tabular}
+\endgroup
+\end{table}

@@ -1,0 +1,14 @@
+{
+  "datasets": ["roman", "corafull", "coauthorcs"],
+  "protocol_seeds": [0, 1, 2],
+  "conditions": {"clean": 0.0, "uniform": 0.4, "pair": 0.4},
+  "greet": {"seed": 0, "export_seed": 91015, "epochs": 400, "half_dim": 128, "projection_dim": 128, "layers": 2, "k": 20, "batch_size": 512, "learning_rate": 0.001, "highpass_alpha": 0.1, "margin": 0.5, "cl_rounds": 2, "maskfeat_rates": [0.1, 0.5], "dropedge_rates": [0.5, 0.1], "se_hops": 16, "se_walks": 1024, "se_block": 128, "structural_encoding": "Monte Carlo return frequencies, explicit portable approximation"},
+  "balls": {"max_balls": 64, "min_ball_size": 32, "split_improvement": 0.05},
+  "target": {"min_votes": 2, "beta": 0.5},
+  "auxiliary": {"folds": 3, "epochs": 30, "saved_epochs": [10, 20, 30]},
+  "student": {"hidden": 64, "layers": 2, "dropout": 0.5, "learning_rate": 0.01, "weight_decay": 0.0005, "epochs": 200},
+  "gates": {"brier_improvement": 0.005, "minimum_datasets": 2},
+  "device": "cuda",
+  "threads": 4,
+  "scope": "exploratory, one independent SSL seed, HF-proxy is not a reproduction of HALF"
+}

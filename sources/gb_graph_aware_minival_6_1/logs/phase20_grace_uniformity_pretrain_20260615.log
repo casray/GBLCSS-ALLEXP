@@ -1,0 +1,51 @@
+﻿SSL_PRETRAIN dataset=Cora method=grace_uniformity epoch=1/200 loss=8.3976, tau=0.4000, uniformity_weight=0.1000
+SSL_PRETRAIN dataset=Cora method=grace_uniformity epoch=50/200 loss=7.1183, tau=0.4000, uniformity_weight=0.1000
+SSL_PRETRAIN dataset=Cora method=grace_uniformity epoch=100/200 loss=6.6585, tau=0.4000, uniformity_weight=0.1000
+SSL_PRETRAIN dataset=Cora method=grace_uniformity epoch=150/200 loss=6.5124, tau=0.4000, uniformity_weight=0.1000
+SSL_PRETRAIN dataset=Cora method=grace_uniformity epoch=200/200 loss=6.4212, tau=0.4000, uniformity_weight=0.1000
+SSL_PRETRAIN dataset=Cora method=grace_uniformity epoch=1/200 loss=7.6011, tau=0.4000, uniformity_weight=0.5000
+SSL_PRETRAIN dataset=Cora method=grace_uniformity epoch=50/200 loss=5.8457, tau=0.4000, uniformity_weight=0.5000
+SSL_PRETRAIN dataset=Cora method=grace_uniformity epoch=100/200 loss=5.2906, tau=0.4000, uniformity_weight=0.5000
+SSL_PRETRAIN dataset=Cora method=grace_uniformity epoch=150/200 loss=5.1338, tau=0.4000, uniformity_weight=0.5000
+SSL_PRETRAIN dataset=Cora method=grace_uniformity epoch=200/200 loss=5.0075, tau=0.4000, uniformity_weight=0.5000
+SSL_PRETRAIN dataset=Cora method=grace_uniformity epoch=1/200 loss=6.6055, tau=0.4000, uniformity_weight=1.0000
+SSL_PRETRAIN dataset=Cora method=grace_uniformity epoch=50/200 loss=4.1743, tau=0.4000, uniformity_weight=1.0000
+SSL_PRETRAIN dataset=Cora method=grace_uniformity epoch=100/200 loss=3.5927, tau=0.4000, uniformity_weight=1.0000
+SSL_PRETRAIN dataset=Cora method=grace_uniformity epoch=150/200 loss=3.3831, tau=0.4000, uniformity_weight=1.0000
+SSL_PRETRAIN dataset=Cora method=grace_uniformity epoch=200/200 loss=3.2217, tau=0.4000, uniformity_weight=1.0000
+python.exe : Traceback (most recent call last):
+At line:2 char:145
++ ... ython.exe'; & $py scripts\pretrain_ssl_candidates.py --datasets Cora, ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (Traceback (most recent call last)::String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+  File "C:\Users\Admin\Desktop\ʵ��8ȥ��5.19-\gb_graph_aware_minival_6_1\scripts\pretrain_ssl_candidates.py", line 600, i
+n <module>
+    main()
+  File "C:\Users\Admin\Desktop\ʵ��8ȥ��5.19-\gb_graph_aware_minival_6_1\scripts\pretrain_ssl_candidates.py", line 574, i
+n main
+    rows.append(pretrain(args, dataset_name, method, uniformity_weight=uniformity_weight))
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Admin\Desktop\ʵ��8ȥ��5.19-\gb_graph_aware_minival_6_1\scripts\pretrain_ssl_candidates.py", line 499, i
+n pretrain
+    loss = train_one_epoch(method, model, optimizer, data, cfg, epoch)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Admin\Desktop\ʵ��8ȥ��5.19-\gb_graph_aware_minival_6_1\scripts\pretrain_ssl_candidates.py", line 457, i
+n train_one_epoch
+    loss.backward()
+  File "C:\Users\Admin\Desktop\�������ں�\�������ں�\GRACE-master\.venv-rocm\Lib\site-packages\torch\_tensor.py", line 62
+5, in backward
+    torch.autograd.backward(
+  File "C:\Users\Admin\Desktop\�������ں�\�������ں�\GRACE-master\.venv-rocm\Lib\site-packages\torch\autograd\__init__.py
+", line 354, in backward
+    _engine_run_backward(
+  File "C:\Users\Admin\Desktop\�������ں�\�������ں�\GRACE-master\.venv-rocm\Lib\site-packages\torch\autograd\graph.py", 
+line 841, in _engine_run_backward
+    return Variable._execution_engine.run_backward(  # Calls into the C++ engine to run the backward pass
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+torch.OutOfMemoryError: HIP out of memory. Tried to allocate 10.55 GiB. GPU 0 has a total capacity of 11.98 GiB of whic
+h 7.97 GiB is free. Of the allocated memory 602.85 MiB is allocated by PyTorch, and 3.17 GiB is reserved by PyTorch but
+ unallocated. If reserved but unallocated memory is large try setting PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True 
+to avoid fragmentation.  See documentation for Memory Management  (https://pytorch.org/docs/stable/notes/cuda.html#envi
+ronment-variables)

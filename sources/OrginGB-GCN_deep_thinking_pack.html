@@ -1,0 +1,1018 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>OrginGB-GCN Deep Thinking Pack</title>
+  <style>
+    :root {
+      --bg: #f6f7f9;
+      --paper: #ffffff;
+      --ink: #172033;
+      --muted: #5f6b7a;
+      --line: #d9dee7;
+      --blue: #1f6feb;
+      --blue-soft: #eef5ff;
+      --green: #1a7f37;
+      --green-soft: #edf8f0;
+      --amber: #9a6700;
+      --amber-soft: #fff8e1;
+      --red: #b42318;
+      --red-soft: #fff1f0;
+      --code: #f1f3f6;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--ink);
+      font-family: "Microsoft YaHei", "Segoe UI", Arial, sans-serif;
+      line-height: 1.72;
+    }
+
+    .page {
+      max-width: 1180px;
+      margin: 0 auto;
+      padding: 34px 24px 64px;
+    }
+
+    header, section, nav {
+      background: var(--paper);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+    }
+
+    header {
+      padding: 28px 32px;
+      margin-bottom: 20px;
+    }
+
+    h1 {
+      margin: 0 0 8px;
+      font-size: 31px;
+      line-height: 1.25;
+      letter-spacing: 0;
+    }
+
+    h2 {
+      margin: 0 0 14px;
+      font-size: 23px;
+      line-height: 1.35;
+      letter-spacing: 0;
+    }
+
+    h3 {
+      margin: 22px 0 8px;
+      font-size: 17px;
+      line-height: 1.4;
+      letter-spacing: 0;
+    }
+
+    p { margin: 10px 0; }
+
+    ul, ol {
+      margin: 10px 0 10px 22px;
+      padding: 0;
+    }
+
+    li { margin: 5px 0; }
+
+    main {
+      display: grid;
+      grid-template-columns: 282px minmax(0, 1fr);
+      gap: 20px;
+      align-items: start;
+    }
+
+    nav {
+      position: sticky;
+      top: 16px;
+      padding: 16px;
+    }
+
+    nav strong {
+      display: block;
+      margin-bottom: 8px;
+      font-size: 14px;
+    }
+
+    nav a {
+      display: block;
+      padding: 5px 0;
+      color: var(--blue);
+      text-decoration: none;
+      font-size: 13px;
+    }
+
+    section {
+      padding: 24px 28px;
+      margin-bottom: 20px;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 14px 0;
+      font-size: 14px;
+    }
+
+    th, td {
+      border: 1px solid var(--line);
+      padding: 9px 10px;
+      vertical-align: top;
+      text-align: left;
+    }
+
+    th {
+      background: #f1f4f8;
+      font-weight: 600;
+    }
+
+    code {
+      background: var(--code);
+      border-radius: 4px;
+      padding: 1px 5px;
+      font-family: Consolas, "Courier New", monospace;
+      font-size: 0.95em;
+    }
+
+    pre {
+      background: var(--code);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 14px 16px;
+      overflow-x: auto;
+      line-height: 1.5;
+      font-size: 13px;
+      white-space: pre-wrap;
+    }
+
+    pre code {
+      padding: 0;
+      background: transparent;
+    }
+
+    .subtitle {
+      color: var(--muted);
+      margin: 0;
+      font-size: 15px;
+    }
+
+    .meta {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 9px;
+      margin-top: 18px;
+      color: var(--muted);
+      font-size: 14px;
+    }
+
+    .callout {
+      border: 1px solid var(--line);
+      border-left: 4px solid var(--blue);
+      background: var(--blue-soft);
+      border-radius: 8px;
+      padding: 12px 14px;
+      margin: 14px 0;
+    }
+
+    .ok { border-left-color: var(--green); background: var(--green-soft); }
+    .warn { border-left-color: var(--amber); background: var(--amber-soft); }
+    .bad { border-left-color: var(--red); background: var(--red-soft); }
+
+    .formula {
+      display: block;
+      background: #fbfcff;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 12px 14px;
+      margin: 12px 0;
+      overflow-x: auto;
+      font-family: "Cambria Math", "Times New Roman", serif;
+    }
+
+    .tag {
+      display: inline-block;
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      padding: 1px 8px;
+      margin: 0 4px 6px 0;
+      color: var(--muted);
+      background: #fbfcff;
+      font-size: 12px;
+    }
+
+    @media (max-width: 920px) {
+      main { grid-template-columns: 1fr; }
+      nav { position: static; }
+    }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <header>
+      <h1>OrginGB-GCN Deep Thinking Pack</h1>
+      <p class="subtitle">把原始 OrginGB-GCN 设计、当前真实实现、smoke test 结果和后续机制探索问题整合成一个给 GPT 深度思考的自包含材料。</p>
+      <div class="meta">
+        <div><strong>生成日期：</strong>2026-06-03</div>
+        <div><strong>研究方向：</strong>普通粒球用于图标签噪声去噪</div>
+        <div><strong>当前阶段：</strong>v1 已实现，smoke test 不支持直接进入正式 5-seed</div>
+        <div><strong>核心文件：</strong>OrginGB-GCN.html + NoisyGL v1 smoke evidence</div>
+      </div>
+    </header>
+
+    <main>
+      <nav>
+        <strong>目录</strong>
+        <a href="#how-to-use">0. 如何使用这份材料</a>
+        <a href="#context">1. Context And Objective</a>
+        <a href="#prior">2. Prior Experiment Chain</a>
+        <a href="#baseline">3. Baseline 边界</a>
+        <a href="#original">4. 原始 OrginGB-GCN 方案</a>
+        <a href="#actual">5. 当前真实实现</a>
+        <a href="#leakage">6. Clean-Label 边界</a>
+        <a href="#protocol">7. Experimental Protocol</a>
+        <a href="#controls">8. Baselines And Controls</a>
+        <a href="#metrics">9. Metrics And Definitions</a>
+        <a href="#results">10. Main Results</a>
+        <a href="#diagnostics">11. Diagnostic Results</a>
+        <a href="#conclusions">12. Supported Conclusions</a>
+        <a href="#hypotheses">13. Unsupported Claims</a>
+        <a href="#risks">14. Missing Information</a>
+        <a href="#questions">15. Questions For GPT</a>
+        <a href="#prompt">16. Paste-Ready Prompt</a>
+      </nav>
+
+      <div>
+        <section id="how-to-use">
+          <h2>0. 如何使用这份材料</h2>
+          <p>
+            这份 HTML 是给外部 GPT 或 Deep Research 使用的自包含实验包。外部 GPT 不能访问你的本地代码、CSV、日志和浏览器页面，所以关键事实都已经在文档中重述。
+          </p>
+          <div class="callout warn">
+            这不是代码审查文件，而是科研判断材料。目标是让 GPT 帮你思考：普通粒球机制如何才能真正用于图标签噪声去噪，而不是只复述当前负结果。
+          </div>
+          <p>建议使用方式：</p>
+          <ol>
+            <li>先阅读 1-15 节，确认材料是否完整。</li>
+            <li>把第 16 节的完整 prompt 复制给 GPT。</li>
+            <li>要求 GPT 区分“已被实验支持的结论”和“下一步值得验证的猜测”。</li>
+            <li>不要让 GPT 直接提出大而全的新模型，优先逼它给出最小机制修正和最小验证实验。</li>
+          </ol>
+        </section>
+
+        <section id="context">
+          <h2>1. Context And Objective</h2>
+          <p>
+            当前项目目标是在节点级图学习/图标签噪声场景中，探索 Granular Ball Computing 是否可以作为一种有效的去噪机制。这里的任务不是图对比学习论文最终版，而是先在 NoisyGL 框架下，把普通 GCN 加入普通粒球模块，验证 ordinary granular ball 是否能提供比 noisy-label CE 更好的训练信号。
+          </p>
+          <p>
+            本轮方法名为 <strong>OrginGB-GCN</strong>。这里的 “OrginGB” 沿用用户文件命名，含义是 ordinary granular ball，不是 graph-aware GB，也不是之前失败较多的 GAGB。
+          </p>
+          <h3>核心问题</h3>
+          <ul>
+            <li>普通粒球能否在 GCN warmup embedding 空间中形成对标签噪声有用的局部区域？</li>
+            <li>ball-level soft target 是否能修正 noisy labels，或至少降低噪声样本的训练伤害？</li>
+            <li>这种收益是否超过随机大小匹配分组，还是只是普通分组/soft-label 正则的效果？</li>
+          </ul>
+          <h3>当前 v1 结论</h3>
+          <div class="callout bad">
+            当前 v1 已能运行，但 Cora uniform 0.4 seed=3000 smoke test 不支持直接进入正式三数据集 5-seed。原因是 best checkpoint 来自 warmup 阶段，GB 阶段没有超过普通 GCN；真实 GB 的 NCR 很低，说明当前 ball-level soft target 尚未形成可靠纠错机制。
+          </div>
+        </section>
+
+        <section id="prior">
+          <h2>2. Prior Experiment Chain</h2>
+          <h3>2.1 为什么暂停 GAGB</h3>
+          <p>
+            前期 GAGB 经验显示，直接把 same-ball membership 用作 hard semantic relation 风险很高。强制同球同类、hard positive、hard relabel 或过强 target 更新都容易引发分类边界间接移动。局部 smoothing 在 Cora 有一些信号，但 CiteSeer 不稳；而且很多收益可能被随机分组、kmeans 或 top-k 近邻解释。
+          </p>
+          <h3>2.2 从经验文档继承的硬约束</h3>
+          <table>
+            <thead>
+              <tr>
+                <th>经验</th>
+                <th>本实验如何吸收</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>same-ball membership 不能直接当作语义标签。</td>
+                <td>OrginGB-GCN 只做 soft target mixing，不做 hard label 替换。</td>
+              </tr>
+              <tr>
+                <td>target 更新强度过弱会 NCR=0，过强会误伤。</td>
+                <td>使用 <code>alpha_max</code> 和 sample weight 控制干预强度，并记录 NCR/CDR。</td>
+              </tr>
+              <tr>
+                <td>只看单数据集会误判。</td>
+                <td>计划第一批为 Cora/CiteSeer/PubMed 三个点，但 v1 smoke 未通过，暂缓正式三数据集 5-seed。</td>
+              </tr>
+              <tr>
+                <td>随机分组可能复现收益。</td>
+                <td>实现了 <code>orgingb_gcn_random</code>，保留真实球大小分布但随机分配节点。</td>
+              </tr>
+              <tr>
+                <td>不能改变 baseline 评估协议。</td>
+                <td>保留 NoisyGL 原始 train/val/test split 和 validation/test 流程。</td>
+              </tr>
+            </tbody>
+          </table>
+        </section>
+
+        <section id="baseline">
+          <h2>3. Baseline 边界</h2>
+          <p>以下是已有 baseline 筛查结果中与本轮最相关的设置。所有数值来自已保存的 baseline 汇总。</p>
+          <table>
+            <thead>
+              <tr>
+                <th>dataset</th>
+                <th>noise</th>
+                <th>method</th>
+                <th>runs / seeds</th>
+                <th>mean test acc</th>
+                <th>std</th>
+                <th>notes</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>Cora</td>
+                <td>uniform 0.4</td>
+                <td>GCN</td>
+                <td>5 / 3000-3004</td>
+                <td>0.6920</td>
+                <td>0.0083</td>
+                <td>本轮第一 smoke 点的主 GCN baseline。</td>
+              </tr>
+              <tr>
+                <td>Cora</td>
+                <td>uniform 0.4</td>
+                <td>RNCGLN</td>
+                <td>5 / 3000-3004</td>
+                <td>0.7532</td>
+                <td>0.0185</td>
+                <td>强鲁棒 baseline；如果普通 GB 有价值，应至少缩小差距。</td>
+              </tr>
+              <tr>
+                <td>CiteSeer</td>
+                <td>uniform 0.2</td>
+                <td>GCN</td>
+                <td>5 / 3000-3004</td>
+                <td>0.6262</td>
+                <td>0.0342</td>
+                <td>中等噪声验证点。</td>
+              </tr>
+              <tr>
+                <td>CiteSeer</td>
+                <td>uniform 0.2</td>
+                <td>RNCGLN</td>
+                <td>5 / 3000-3004</td>
+                <td>0.6734</td>
+                <td>0.0377</td>
+                <td>中等噪声下强于 GCN。</td>
+              </tr>
+              <tr>
+                <td>PubMed</td>
+                <td>uniform 0.4</td>
+                <td>GCN</td>
+                <td>5 / 3000-3004</td>
+                <td>0.5684</td>
+                <td>0.0489</td>
+                <td>PubMed 主 baseline。</td>
+              </tr>
+              <tr>
+                <td>PubMed</td>
+                <td>uniform 0.4</td>
+                <td>RNCGLN</td>
+                <td>-</td>
+                <td>-</td>
+                <td>-</td>
+                <td>默认实现因 dense PubMed NxN 相似度矩阵 OOM。</td>
+              </tr>
+              <tr>
+                <td>PubMed</td>
+                <td>uniform 0.4</td>
+                <td>Forward / Backward</td>
+                <td>5 / 3000-3004</td>
+                <td>0.5734 / 0.5728</td>
+                <td>0.0449 / 0.0449</td>
+                <td>只比 GCN 小幅高，仍在 std 内，不能包装成稳定强 baseline。</td>
+              </tr>
+              <tr>
+                <td>PubMed</td>
+                <td>uniform 0.4</td>
+                <td>RTGNN</td>
+                <td>5 / 3000-3004</td>
+                <td>0.6214</td>
+                <td>0.0514</td>
+                <td>高 uniform 噪声下强于 GCN，但仍需注意实现和协议边界。</td>
+              </tr>
+            </tbody>
+          </table>
+        </section>
+
+        <section id="original">
+          <h2>4. 原始 OrginGB-GCN 方案</h2>
+          <p>
+            原始 <code>OrginGB-GCN.html</code> 的核心定位是：<strong>静态普通粒球 + 软标签修正 + 轻量样本降权</strong>。它不是最终论文方法，而是验证 ordinary GB 是否能作为图标签噪声任务中的 weak denoising prior。
+          </p>
+          <h3>4.1 原始设想中的流程</h3>
+          <ol>
+            <li>先用普通 GCN 在 noisy train labels 上 warmup，例如 30 epoch。</li>
+            <li>从倒数第二层取 hidden embedding <code>H</code>。</li>
+            <li>只在 embedding 空间构造 ordinary granular balls，不用图拓扑、不用 clean label、不用 val/test label。</li>
+            <li>球内同时统计 warmup GCN 平均预测分布 <code>pbar_B</code> 和 noisy train label 分布 <code>yhat_B</code>。</li>
+            <li>生成球级 soft target <code>q_B</code>。</li>
+            <li>对每个 train node 做轻量 target mixing 和 sample reweighting。</li>
+          </ol>
+          <h3>4.2 原始公式</h3>
+          <div class="formula">q_B = normalize((1 - eta_B) * pbar_B + eta_B * yhat_B)</div>
+          <div class="formula">target_i = (1 - alpha_i) * onehot(noisy_y_i) + alpha_i * q_B</div>
+          <div class="formula">weight_i = 1 - gamma * alpha_i</div>
+          <p>
+            原始建议：<code>alpha_max=0.5</code>、<code>gamma=0.5</code>、<code>eta_max=0.4</code>、<code>min_train_per_ball=2</code>、<code>full_train_per_ball=4</code>、静态构球、不动态刷新。
+          </p>
+          <h3>4.3 原始方案中明确不做的事</h3>
+          <ul>
+            <li>不直接替换 noisy label。</li>
+            <li>不把同球节点当同类。</li>
+            <li>不做 hard positive / prototype pulling。</li>
+            <li>不改图结构。</li>
+            <li>不改 split。</li>
+            <li>不引入 PPR、K-hop 或 graph-aware ball。</li>
+          </ul>
+        </section>
+
+        <section id="actual">
+          <h2>5. 当前真实实现</h2>
+          <p>
+            当前实现已经落在 NoisyGL 中，包含两个方法：
+            <span class="tag">orgingb_gcn</span>
+            <span class="tag">orgingb_gcn_random</span>
+          </p>
+          <h3>5.1 文件与入口</h3>
+          <table>
+            <thead>
+              <tr>
+                <th>文件</th>
+                <th>作用</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><code>predictor/OrginGB_GCN_Predictor.py</code></td>
+                <td>实现 warmup、构球、soft target、weighted soft CE、diagnostics CSV。</td>
+              </tr>
+              <tr>
+                <td><code>utils/ordinary_gb.py</code></td>
+                <td>实现 ordinary GB 构造和 random-size-matched assignment。</td>
+              </tr>
+              <tr>
+                <td><code>utils/soft_targets.py</code></td>
+                <td>实现 <code>q_B</code>、<code>alpha_i</code>、<code>target_i</code>、<code>weight_i</code> 和 NCR/CDR/AUROC。</td>
+              </tr>
+              <tr>
+                <td><code>predictor/module/GNNs.py</code></td>
+                <td>为 GCN 增加 <code>forward_with_hidden()</code>，原 <code>forward()</code> 仍只返回 logits。</td>
+              </tr>
+              <tr>
+                <td><code>single_exp.py</code>, <code>total_exp.py</code></td>
+                <td>注册 <code>orgingb_gcn</code> 和 <code>orgingb_gcn_random</code>。</td>
+              </tr>
+              <tr>
+                <td><code>config/orgingb_gcn/*</code>, <code>config/orgingb_gcn_random/*</code></td>
+                <td>提供 Cora/CiteSeer/PubMed 配置。</td>
+              </tr>
+            </tbody>
+          </table>
+
+          <h3>5.2 当前构球算法</h3>
+          <pre><code>Input: hidden embeddings H from warmup GCN
+1. Convert H to numpy float32.
+2. L2 normalize all node embeddings.
+3. Start from one ball containing all nodes.
+4. Repeatedly choose splittable balls with large average distance.
+5. Split a candidate ball by KMeans(n_clusters=2, n_init=10).
+6. Reject split if either child is smaller than min_ball_size.
+7. Accept split only if weighted average distance decreases by at least split_improvement.
+8. Stop when max_balls is reached or no split is accepted.
+9. Return node-to-ball assignment and ball stats.</code></pre>
+          <p>默认自适应参数：</p>
+          <ul>
+            <li><code>max_balls = min(64, max(8, train_count // 3))</code></li>
+            <li><code>min_ball_size = max(32, ceil(num_nodes / max_balls))</code></li>
+            <li><code>split_improvement = 0.05</code></li>
+          </ul>
+
+          <h3>5.3 当前 soft target 真实公式</h3>
+          <p>
+            当前实现和原始设计一致地计算 <code>pbar_B</code> 和 <code>yhat_B</code>，但具体的 confidence/alpha 定义如下。
+          </p>
+          <div class="formula">coverage_B = 0, if |T_B| &lt; min_train_per_ball; else min(1, |T_B| / full_train_per_ball)</div>
+          <div class="formula">eta_B = eta_max * coverage_B</div>
+          <div class="formula">q_B = normalize((1 - eta_B) * pbar_B + eta_B * yhat_B)</div>
+          <div class="formula">quality_B = coverage_B * 0.5 * (max(yhat_B) + max(pbar_B))</div>
+          <div class="formula">alpha_i = clip(alpha_max * quality_B * (1 - q_B[noisy_y_i]), 0, alpha_max)</div>
+          <div class="formula">target_i = (1 - alpha_i) * onehot(noisy_y_i) + alpha_i * q_B</div>
+          <div class="formula">weight_i = max(1 - gamma * alpha_i, 1e-6)</div>
+          <p>
+            注意：当前 <code>alpha_i</code> 只让 soft distribution 改变；在 smoke 中 <code>target_argmax_changed_ratio=0</code>，说明 target 的 argmax 没有被改掉。这是一个重要诊断信号：当前方法更多是 soft regularization，而不是真正纠正 label argmax。
+          </p>
+
+          <h3>5.4 当前训练流程</h3>
+          <ol>
+            <li>同一个 GCN 从 epoch 1 开始训练。</li>
+            <li>epoch 1-30 使用 noisy CE warmup。</li>
+            <li>epoch 30 后从当前模型取 hidden 和 logits，构造静态 GB targets。</li>
+            <li>epoch 31-200 使用 weighted soft-label CE。</li>
+            <li>全程用 NoisyGL 的 validation metric 选择 best checkpoint，不强制使用 GB 阶段 checkpoint。</li>
+            <li>记录 <code>best_epoch</code> 和 <code>best_phase</code>，用于判断最终性能来自 warmup 还是 GB 阶段。</li>
+          </ol>
+
+          <h3>5.5 Random-size-matched control</h3>
+          <p>
+            <code>orgingb_gcn_random</code> 先构造真实 ordinary GB，保留真实 ball size distribution，然后随机打乱节点 assignment，再重新计算 <code>q_B</code>、<code>alpha_i</code> 和 loss。该控制用于排除“只要有分组或 soft regularization 就有效”的伪贡献。
+          </p>
+        </section>
+
+        <section id="leakage">
+          <h2>6. Clean-Label And Data-Leakage Boundary</h2>
+          <ul>
+            <li>构球只使用 GCN hidden embedding，不使用 clean labels。</li>
+            <li><code>q_B</code> 只使用 warmup prediction 和 train nodes 的 noisy labels。</li>
+            <li>validation/test labels 不参与构球、target 构造或训练。</li>
+            <li>clean labels 只用于 test evaluation 和诊断指标 NCR/CDR/AUROC。</li>
+            <li>train/validation/test split 保持 NoisyGL 原始设置。</li>
+          </ul>
+          <div class="callout ok">
+            当前实现没有把 clean labels 用于训练目标或构球，因此从设计上没有 clean-label leakage。
+          </div>
+        </section>
+
+        <section id="protocol">
+          <h2>7. Experimental Protocol</h2>
+          <h3>7.1 已完成 smoke test</h3>
+          <table>
+            <thead>
+              <tr>
+                <th>setting</th>
+                <th>value</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr><td>dataset</td><td>Cora</td></tr>
+              <tr><td>noise type</td><td>uniform</td></tr>
+              <tr><td>noise rate</td><td>0.4</td></tr>
+              <tr><td>seed</td><td>3000</td></tr>
+              <tr><td>device</td><td>cuda:0</td></tr>
+              <tr><td>split</td><td>NoisyGL Planetoid default split: train 140, val 500, test 1000</td></tr>
+              <tr><td>backbone</td><td>GCN, hidden=64, layers=2, dropout=0.5</td></tr>
+              <tr><td>training</td><td>lr=1e-2, weight_decay=5e-4, n_epochs=200, criterion=metric</td></tr>
+            </tbody>
+          </table>
+
+          <h3>7.2 原计划的正式三点实验</h3>
+          <table>
+            <thead>
+              <tr>
+                <th>dataset</th>
+                <th>noise</th>
+                <th>reason</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>Cora</td>
+                <td>uniform 0.4</td>
+                <td>高噪声，GCN 与 RNCGLN 差距明显，适合看去噪能力。</td>
+              </tr>
+              <tr>
+                <td>CiteSeer</td>
+                <td>uniform 0.2</td>
+                <td>中等噪声，检验是否只在 Cora 高噪声有效。</td>
+              </tr>
+              <tr>
+                <td>PubMed</td>
+                <td>uniform 0.4</td>
+                <td>大图，RNCGLN 默认 OOM，检验是否能超过 GCN。</td>
+              </tr>
+            </tbody>
+          </table>
+          <div class="callout warn">
+            当前 smoke test 未通过预设标准，因此建议先做机制修正，再跑三数据集 5-seed。否则大概率浪费算力并得到“与 GCN 持平”的结果。
+          </div>
+        </section>
+
+        <section id="controls">
+          <h2>8. Baselines And Fair Controls</h2>
+          <table>
+            <thead>
+              <tr>
+                <th>method</th>
+                <th>role</th>
+                <th>current status</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><code>gcn</code></td>
+                <td>基础 baseline。</td>
+                <td>已跑 Cora uniform 0.4 seed=3000 smoke。</td>
+              </tr>
+              <tr>
+                <td><code>orgingb_gcn</code></td>
+                <td>真实 ordinary GB soft denoising module。</td>
+                <td>已实现并 smoke。</td>
+              </tr>
+              <tr>
+                <td><code>orgingb_gcn_random</code></td>
+                <td>random-size-matched 控制。</td>
+                <td>已实现并 smoke。</td>
+              </tr>
+              <tr>
+                <td><code>rncgln</code></td>
+                <td>Cora/CiteSeer 强鲁棒 baseline。</td>
+                <td>已有 5-seed baseline；PubMed 默认实现 OOM。</td>
+              </tr>
+            </tbody>
+          </table>
+        </section>
+
+        <section id="metrics">
+          <h2>9. Metrics And Definitions</h2>
+          <table>
+            <thead>
+              <tr>
+                <th>metric</th>
+                <th>definition</th>
+                <th>why it matters</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>test acc</td>
+                <td>最终 best checkpoint 在 clean test labels 上的准确率。</td>
+                <td>主性能指标。</td>
+              </tr>
+              <tr>
+                <td>best_epoch / best_phase</td>
+                <td>验证集 metric 选出的最佳 epoch 及其阶段：warmup 或 gb。</td>
+                <td>判断收益是否真的来自 GB 阶段。</td>
+              </tr>
+              <tr>
+                <td>alpha_mean / alpha_max</td>
+                <td>train nodes 上 target mixing 强度的均值/最大值。</td>
+                <td>判断模块是否实际介入，以及介入强弱。</td>
+              </tr>
+              <tr>
+                <td>target_changed_ratio</td>
+                <td><code>alpha_i &gt; 0</code> 的 train node 比例。</td>
+                <td>衡量 soft distribution 是否被改变。</td>
+              </tr>
+              <tr>
+                <td>target_argmax_changed_ratio</td>
+                <td>soft target argmax 是否不同于 noisy label 的比例。</td>
+                <td>衡量是否发生“实际标签方向改变”。当前 smoke 为 0。</td>
+              </tr>
+              <tr>
+                <td>NCR</td>
+                <td>noisy train nodes 中，ball target argmax 等于 clean label 的比例。</td>
+                <td>衡量潜在纠错能力；clean label 仅用于诊断。</td>
+              </tr>
+              <tr>
+                <td>CDR</td>
+                <td>clean train nodes 中，ball target argmax 不等于 clean label 的比例。</td>
+                <td>衡量误伤风险。</td>
+              </tr>
+              <tr>
+                <td>suspicion AUROC</td>
+                <td>用 <code>1 - warmup_conf * q_B[noisy_y]</code> 区分 noisy/clean train nodes 的 AUROC。</td>
+                <td>衡量粒球信号能否识别可疑噪声。</td>
+              </tr>
+            </tbody>
+          </table>
+        </section>
+
+        <section id="results">
+          <h2>10. Main Results</h2>
+          <h3>10.1 Cora uniform 0.4 seed=3000 smoke</h3>
+          <table>
+            <thead>
+              <tr>
+                <th>method</th>
+                <th>test acc</th>
+                <th>valid acc</th>
+                <th>best_epoch</th>
+                <th>best_phase</th>
+                <th>interpretation</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><code>gcn</code></td>
+                <td>0.7050</td>
+                <td>0.4420</td>
+                <td>6</td>
+                <td>baseline</td>
+                <td>普通 GCN 在该 seed 下的结果。</td>
+              </tr>
+              <tr>
+                <td><code>orgingb_gcn</code></td>
+                <td>0.7050</td>
+                <td>0.4420</td>
+                <td>6</td>
+                <td>warmup</td>
+                <td>最终性能来自 warmup，而不是 GB 阶段。</td>
+              </tr>
+              <tr>
+                <td><code>orgingb_gcn_random</code></td>
+                <td>0.7050</td>
+                <td>0.4420</td>
+                <td>6</td>
+                <td>warmup</td>
+                <td>随机控制同样回到 warmup best。</td>
+              </tr>
+            </tbody>
+          </table>
+          <div class="callout bad">
+            主结果不是“OrginGB-GCN 有效”，而是“当前实现没有超过 GCN，且 best checkpoint 没有来自 GB 阶段”。这是一条重要负结果。
+          </div>
+        </section>
+
+        <section id="diagnostics">
+          <h2>11. Diagnostic Results</h2>
+          <h3>11.1 粒球与 target 诊断</h3>
+          <table>
+            <thead>
+              <tr>
+                <th>metric</th>
+                <th>orgingb_gcn</th>
+                <th>orgingb_gcn_random</th>
+                <th>interpretation</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>num_balls</td>
+                <td>28</td>
+                <td>28</td>
+                <td>两者共享真实 ball size distribution。</td>
+              </tr>
+              <tr>
+                <td>mean_ball_size</td>
+                <td>96.7143</td>
+                <td>96.7143</td>
+                <td>Cora 2708 nodes 被分成 28 个普通球。</td>
+              </tr>
+              <tr>
+                <td>max_ball_size</td>
+                <td>149</td>
+                <td>149</td>
+                <td>没有单个超大球吞掉全部节点。</td>
+              </tr>
+              <tr>
+                <td>mean_radius</td>
+                <td>0.4786</td>
+                <td>0.4786</td>
+                <td>普通 embedding-space 半径统计。</td>
+              </tr>
+              <tr>
+                <td>alpha_mean</td>
+                <td>0.0484</td>
+                <td>0.1098</td>
+                <td>真实 GB 干预较弱；随机控制反而 alpha 更大。</td>
+              </tr>
+              <tr>
+                <td>alpha_max</td>
+                <td>0.4188</td>
+                <td>0.1923</td>
+                <td>真实 GB 有少数节点较强干预，但平均很低。</td>
+              </tr>
+              <tr>
+                <td>target_changed_ratio</td>
+                <td>0.9500</td>
+                <td>0.9857</td>
+                <td>soft target 几乎都被轻微改变，但这不等于 label argmax 被纠正。</td>
+              </tr>
+              <tr>
+                <td>target_argmax_changed_ratio</td>
+                <td>0.0000</td>
+                <td>0.0000</td>
+                <td>当前 soft mixing 没有改变任何 train node 的 target argmax。</td>
+              </tr>
+              <tr>
+                <td>NCR</td>
+                <td>0.0208</td>
+                <td>0.0625</td>
+                <td>真实 GB 潜在纠错率很低；random 反而更高但伴随巨大 CDR。</td>
+              </tr>
+              <tr>
+                <td>CDR</td>
+                <td>0.0543</td>
+                <td>0.5870</td>
+                <td>真实 GB 误伤低但纠错也低；随机控制严重误伤。</td>
+              </tr>
+              <tr>
+                <td>suspicion AUROC</td>
+                <td>0.6492</td>
+                <td>0.5444</td>
+                <td>真实 GB 对可疑噪声有一定排序信号，但尚未转化为性能收益。</td>
+              </tr>
+            </tbody>
+          </table>
+
+          <h3>11.2 诊断解释</h3>
+          <ul>
+            <li><strong>不是实现崩溃：</strong>训练无 NaN/OOM，GPU 正常，单测和编译检查通过。</li>
+            <li><strong>不是 GB 完全没信号：</strong>suspicion AUROC=0.6492，说明真实 GB 对噪声识别有一定弱排序能力。</li>
+            <li><strong>但没有形成纠错：</strong>NCR=0.0208，target_argmax_changed_ratio=0，说明 soft target 没有实际把 noisy label 推向 clean label。</li>
+            <li><strong>GB 阶段没有提升验证集：</strong>best_phase=warmup，说明后续 soft-label CE 没有提供更好的 validation checkpoint。</li>
+            <li><strong>random control 暴露风险：</strong>random 的 CDR=0.5870，说明错误分组会严重误伤 clean labels；所以必须加强 gating。</li>
+          </ul>
+        </section>
+
+        <section id="conclusions">
+          <h2>12. Supported Conclusions</h2>
+          <ul>
+            <li>当前 v1 实现可以作为代码基础继续迭代，方法入口、配置、诊断和 random control 都已具备。</li>
+            <li>当前普通 GB soft target 的干预方式没有在 Cora uniform 0.4 seed=3000 上超过 GCN。</li>
+            <li>当前结果不支持直接进入三数据集正式 5-seed，因为 smoke test 已触发失败条件。</li>
+            <li>真实 GB 的 suspicion AUROC 高于 random control，说明普通 GB 可能包含弱噪声排序信号。</li>
+            <li>random-size-matched 控制非常必要，因为随机分组会造成明显 CDR，证明错误 membership 的伤害很大。</li>
+          </ul>
+        </section>
+
+        <section id="hypotheses">
+          <h2>13. Unsupported Or Still-Hypothetical Claims</h2>
+          <ul>
+            <li>不能说 ordinary GB 已经证明有去噪效果。</li>
+            <li>不能说 same-ball membership 对应语义同类。</li>
+            <li>不能说 GB 阶段提升了 GCN，因为 best checkpoint 来自 warmup。</li>
+            <li>不能说当前方法缩小了与 RNCGLN 的差距。</li>
+            <li>不能说 PubMed 上会有效，因为 PubMed 尚未跑 OrginGB-GCN。</li>
+            <li>不能说 target mixing 策略正确，因为当前 target argmax 没有改变，NCR 也很低。</li>
+          </ul>
+        </section>
+
+        <section id="risks">
+          <h2>14. Missing Information / Residual Risk</h2>
+          <ul>
+            <li>当前只有 Cora uniform 0.4 seed=3000 smoke，没有 5-seed。</li>
+            <li>没有系统调参 <code>alpha_max</code>、<code>eta_max</code>、coverage gate、entropy gate。</li>
+            <li>没有记录 ball-level noisy entropy、clean purity、class balance 等更细粒度诊断。</li>
+            <li>没有检查 GB 阶段每个 epoch 的 delta 是否短暂超过 warmup 后又回落。</li>
+            <li>没有 pred-only / label-only 消融，无法判断 <code>pbar_B</code> 和 <code>yhat_B</code> 谁在主导。</li>
+            <li>没有 graph-aware GB，因此不能评价拓扑信息是否是必要条件。</li>
+          </ul>
+        </section>
+
+        <section id="questions">
+          <h2>15. Questions For GPT</h2>
+          <p>请让 GPT 围绕这些问题深度思考，而不是直接写一个新模型名：</p>
+          <ol>
+            <li>当前 v1 为什么能产生 AUROC=0.6492 的弱噪声排序信号，却不能转化成 test accuracy 提升？</li>
+            <li><code>target_argmax_changed_ratio=0</code> 是否说明 alpha 过弱，还是说明 q_B 本身与 noisy label 方向高度一致？</li>
+            <li>NCR 低、CDR 低的真实 GB，和 NCR 略高但 CDR 极高的 random control，分别说明什么？</li>
+            <li>下一版应该先增强纠错强度，还是先增强 gating，避免误伤？</li>
+            <li>应该如何设计 ball-level confidence：entropy、train coverage、prediction agreement、node-center distance、neighbor consistency 哪个最优先？</li>
+            <li>是否应该只对 high-suspicion nodes 启用 target mixing，而不是几乎所有 train nodes 都有 alpha？</li>
+            <li>是否应该把 <code>q_B</code> 作为辅助 KL/consistency loss，而不是直接混入 supervised target？</li>
+            <li>是否应该把 ordinary GB 只用于样本权重，而暂时不用于 soft target？</li>
+            <li>在保持 ordinary GB 不引入图拓扑的前提下，最小机制修正是什么？</li>
+            <li>如果 ordinary GB v2 仍然失败，什么证据足以说明必须进入 graph-aware GB？</li>
+          </ol>
+        </section>
+
+        <section id="prompt">
+          <h2>16. 可直接复制给 GPT 的提示词</h2>
+          <pre><code>你看不到我的本地实验文件夹、代码、CSV、日志和浏览器页面，所以我把关键信息完整整理在下面。请只基于这份 self-contained 信息进行科研判断，不要假设你能访问本地路径。
+
+我的目标：
+我在图标签噪声节点分类任务中探索“普通粒球 ordinary granular ball”如何用于去噪。我已经实现了 OrginGB-GCN v1：普通 GCN warmup 后，在 hidden embedding 空间构 ordinary granular balls，用 ball-level soft target 和 sample weight 进行弱去噪训练。我希望你帮我深度思考：粒球机制到底应该如何设计，才能更好地用于图标签噪声去噪。
+
+请重点回答：
+1. 当前 v1 真正验证了什么，没有验证什么？
+2. 当前失败或不显著的最可能原因是什么？
+3. ordinary granular ball 还能以哪些更合理的形式参与去噪？
+4. 下一步最小机制修正是什么，不要直接提出巨大复杂模型。
+5. 下一步最小实验应该怎么设计，才能判断粒球机制是否值得继续？
+6. 哪些结论不能写进论文？
+
+项目背景：
+- 之前 GAGB 方向问题较多：same-ball membership 不能直接当语义标签；hard positive、hard relabel、prototype pulling 或过强 target 更新容易引发边界移动。
+- 因此当前回到一个更干净的问题：普通粒球本身是否能在图标签噪声任务中提供有效去噪信号。
+- 当前实现不改 graph structure，不改 train/val/test split，不使用 clean label 训练，不使用 validation/test label 构球。
+- clean label 只用于 test evaluation 和诊断 NCR/CDR/AUROC。
+
+Baseline 边界：
+- Cora uniform 0.4: GCN 0.6920 ± 0.0083, RNCGLN 0.7532 ± 0.0185。
+- CiteSeer uniform 0.2: GCN 0.6262 ± 0.0342, RNCGLN 0.6734 ± 0.0377。
+- PubMed uniform 0.4: GCN 0.5684 ± 0.0489；RNCGLN 默认实现因 dense PubMed NxN 相似度矩阵 OOM。Forward/Backward 在 PubMed uniform 0.4 只有 0.5734/0.5728 左右，仍在 std 内。
+
+原始 OrginGB-GCN 设计：
+- 目标：静态普通粒球 + 软标签修正 + 轻量样本降权。
+- 不是 hard relabel，不把 same-ball 节点当同类，不做 prototype pulling，不改图结构。
+- Warmup GCN 30 epoch 后，从倒数第二层取 hidden embedding H。
+- 在 L2-normalized H 上构 ordinary granular balls。
+- 对每个球 B，计算：
+  pbar_B = warmup GCN 在球内节点上的平均预测分布
+  yhat_B = 球内 train nodes 的 noisy label 分布，加全局 prior 平滑
+  q_B = normalize((1 - eta_B) * pbar_B + eta_B * yhat_B)
+- 对 train node i：
+  target_i = (1 - alpha_i) * onehot(noisy_y_i) + alpha_i * q_B
+  weight_i = 1 - gamma * alpha_i
+- 默认参数：warmup_epochs=30, alpha_max=0.5, gamma=0.5, eta_max=0.4, min_train_per_ball=2, full_train_per_ball=4。
+
+当前真实实现：
+- 方法入口：orgingb_gcn 和 orgingb_gcn_random。
+- orgingb_gcn_random 保留真实粒球的 size distribution，但随机打乱节点 assignment 后重算 q_B/alpha/weight。
+- 构球算法：
+  1. 从 warmup GCN 获取 hidden embedding。
+  2. L2 normalize。
+  3. 从一个包含所有节点的大球开始。
+  4. 对可分球使用 KMeans(n_clusters=2, n_init=10) 二分。
+  5. 子球小于 min_ball_size 则拒绝。
+  6. weighted average distance 至少下降 split_improvement=0.05 才接受。
+  7. 默认 max_balls=min(64, max(8, train_count//3))。
+  8. 默认 min_ball_size=max(32, ceil(num_nodes/max_balls))。
+- 当前 soft target：
+  coverage_B = 0 if |T_B| < min_train_per_ball else min(1, |T_B| / full_train_per_ball)
+  eta_B = eta_max * coverage_B
+  q_B = normalize((1 - eta_B) * pbar_B + eta_B * yhat_B)
+  quality_B = coverage_B * 0.5 * (max(yhat_B) + max(pbar_B))
+  alpha_i = clip(alpha_max * quality_B * (1 - q_B[noisy_y_i]), 0, alpha_max)
+  target_i = (1 - alpha_i) * onehot(noisy_y_i) + alpha_i * q_B
+  weight_i = max(1 - gamma * alpha_i, 1e-6)
+- 训练：
+  epoch 1-30 使用 noisy CE warmup。
+  epoch 31-200 使用 weighted soft-label CE。
+  全程按 validation metric 选择 best checkpoint，并记录 best_phase。
+
+Smoke test：
+- Dataset: Cora
+- Noise: uniform 0.4
+- Seed: 3000
+- Device: cuda:0
+- Split: Planetoid default split，train 140 / val 500 / test 1000
+- GCN config: hidden=64, layers=2, dropout=0.5, lr=1e-2, weight_decay=5e-4, n_epochs=200
+
+Smoke 结果：
+| method | test acc | valid acc | best_epoch | best_phase |
+| gcn | 0.7050 | 0.4420 | 6 | baseline |
+| orgingb_gcn | 0.7050 | 0.4420 | 6 | warmup |
+| orgingb_gcn_random | 0.7050 | 0.4420 | 6 | warmup |
+
+诊断结果：
+| metric | orgingb_gcn | orgingb_gcn_random |
+| num_balls | 28 | 28 |
+| mean_ball_size | 96.7143 | 96.7143 |
+| max_ball_size | 149 | 149 |
+| mean_radius | 0.4786 | 0.4786 |
+| alpha_mean | 0.0484 | 0.1098 |
+| alpha_max | 0.4188 | 0.1923 |
+| target_changed_ratio | 0.9500 | 0.9857 |
+| target_argmax_changed_ratio | 0.0000 | 0.0000 |
+| NCR | 0.0208 | 0.0625 |
+| CDR | 0.0543 | 0.5870 |
+| suspicion AUROC | 0.6492 | 0.5444 |
+
+重要解释：
+- 当前 v1 没有 NaN/OOM，GPU 正常，单元测试、py_compile 和 diff check 均通过。
+- 真实 GB 的 suspicion AUROC=0.6492，高于 random 的 0.5444，说明它可能有弱噪声排序信号。
+- 但 orgingb_gcn 的 best checkpoint 来自 warmup epoch 6，不是 GB 阶段。
+- target_argmax_changed_ratio=0，说明 soft target 虽然几乎都被轻微改变，但没有实际改变任何 train node 的 target argmax。
+- NCR=0.0208 很低，CDR=0.0543 也低，说明真实 GB 当前既没有强纠错，也没有强误伤。
+- random control 的 CDR=0.5870 很高，说明错误分组会严重误伤 clean labels，因此下一版必须加强 gating。
+
+当前已支持的结论：
+- OrginGB-GCN v1 代码可以作为继续迭代的基础。
+- 当前 soft target 设计没有在 Cora uniform 0.4 seed=3000 上超过 GCN。
+- 当前结果不支持直接进入三数据集 5-seed 正式实验。
+- 普通 GB 可能包含弱噪声排序信号，但还没有转化为有效训练收益。
+- random-size-matched 控制必须保留。
+
+不能声称的结论：
+- 不能说 ordinary GB 已经证明可以去噪。
+- 不能说 same-ball membership 有语义同类含义。
+- 不能说 GB 阶段提升了 GCN。
+- 不能说已经缩小与 RNCGLN 的差距。
+- 不能说 PubMed 会有效，因为 PubMed 尚未跑 OrginGB-GCN。
+
+请你现在做科研层面的深度判断：
+1. 你认为当前 v1 失败的最可能机制原因是什么？
+2. 如果只允许做一个最小机制修正，你会改 alpha、q_B、gating、loss 形式、构球方式中的哪一个？为什么？
+3. 是否应该只对 high-suspicion 节点启用 target mixing？
+4. 是否应该把 q_B 改成辅助 consistency/KL loss，而不是直接混入 supervised target？
+5. 如何设计一个更可靠的 ball confidence，避免 random control 那种高 CDR？
+6. ordinary GB 在不引入图拓扑的前提下还有没有希望？如果有，下一步最小实验是什么？如果没有，什么证据支持转向 graph-aware GB？
+7. 请给出 2-3 个候选 v2 方案，每个方案必须包含：机制、公式、预期影响、风险、最小验证实验、成功/失败标准。
+8. 请严格区分“实验支持的结论”“合理猜测”“未验证假设”“负结果削弱的方向”。</code></pre>
+        </section>
+      </div>
+    </main>
+  </div>
+</body>
+</html>

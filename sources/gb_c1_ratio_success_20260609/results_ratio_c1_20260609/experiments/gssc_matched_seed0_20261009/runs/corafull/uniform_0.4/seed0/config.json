@@ -1,0 +1,57 @@
+{
+  "dataset": "corafull",
+  "hid_dim": 64,
+  "batch_size": 512,
+  "n_layers": 2,
+  "dropout": 0.5,
+  "scale": 0.8,
+  "alpha": 0.1,
+  "temp": 0.5,
+  "epochs": 100,
+  "ep_epochs": 100,
+  "cl_epochs": 100,
+  "lr": 0.01,
+  "weight_decay": 0.0005,
+  "seed": 0,
+  "save_mode": 1,
+  "data_mode": 0,
+  "model_mode": 0,
+  "smoke": false,
+  "method": "gssc_matched",
+  "official_parameter_dataset": "cora",
+  "official_commit": "197a7f55e67e8d683dcd88149b788b76c39f058f",
+  "hidden": 64,
+  "hidden_dim": 64,
+  "learning_rate": 0.01,
+  "mixup_lr": 0.0001,
+  "optimizer": "Adam",
+  "device": "cuda",
+  "validation_selection": "clean validation accuracy; first tie",
+  "early_stopping": false,
+  "cpu_fallback": false,
+  "rng_reset": "parent only",
+  "edge_chunk_size": 8192,
+  "phase_budgets": {
+    "edge_pretrain": 100,
+    "classifier_pretrain": 100,
+    "main": 100
+  },
+  "supervised_epochs_total": 200,
+  "parameter_overrides": {
+    "ep_epochs": 100,
+    "cl_epochs": 100
+  },
+  "deployed_fc_layers": 2,
+  "validation_candidate_phases": [
+    "classifier_pretrain",
+    "main"
+  ],
+  "adaptations": [
+    "common two-FC MLP: Linear-ReLU-BN-dropout-Linear",
+    "100 warmup + 100 main supervised epochs",
+    "first validation maximum over warmup and main"
+  ],
+  "auxiliary_head": "native BN-LeakyReLU-dropout-Linear; training only",
+  "core_sha256": "bd9ed5ee5e5f43e08f91633f7f3f99a5494447c77f10f547570701c5bf685754",
+  "compute_equivalence": false
+}

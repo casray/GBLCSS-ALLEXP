@@ -1,0 +1,30 @@
+model:
+  method: procon
+  n_hidden: 64
+  n_layer: 2
+  dropout: 0.5
+  peer_k: 10
+  alpha: 0.5
+  clean_threshold: 0.5
+  prototype_momentum: 0.9
+  target_momentum: 0.99
+  lambda_supervised: 0.1
+  feature_drop: 0.2
+  edge_drop: 0.2
+  exact_max_nodes: 5000
+  candidate_limit: 512
+
+training:
+  lr: 0.005
+  weight_decay: 0.0005
+  n_epochs: 500
+  patience: 50
+  criterion: metric
+
+dataset:
+  sparse: true
+
+analysis:
+  flag: false
+  project: gnn-with-label-noise
+  save_graph: false

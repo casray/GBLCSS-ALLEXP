@@ -1,0 +1,396 @@
+这轮结果比上一轮好很多。它已经不是单纯的负结果了，而是 **机制打通，但方法还没成立**。
+
+最准确的判断是：
+
+```text
+target update repair 已经证明：
+GAGB + teacher-aware q_mix 里存在可转化的 correction signal；
+把 alpha 从 0.3 提高到 0.7/0.9，或者直接 replace q_mix，可以让 NCR 从 0 变成正数，并且 CDR 仍然较低。
+
+但它还没有证明：
+GAGB grouping 本身有独立价值；
+target repair 能稳定显著提升 accuracy；
+margin gate 有额外贡献。
+```
+
+你的报告里也明确写了，本轮没有恢复 `gagb_shuffled_alpha_matched`、`kmeans_gagb_matched`、`topk_gagb_train_matched` 等公平控制，所以它只能说明 target update repair 有效，不能说明 graph-aware ball grouping 是必要的。
+
+---
+
+## 1. 这个实验真正验证了什么？
+
+这轮实验验证的是一个很窄的问题：
+
+```text
+上一轮 q_mix 已经有纠错方向，但 alpha=0.3 太弱。
+那么，只修 target update，能不能让这个纠错方向进入最终 target？
+```
+
+答案是：**能。**
+
+证据很清楚：
+
+```text
+alpha07 / alpha09 / replace_qmix / margin_replace
+都让 NCR 从 0 变成了正数；
+CDR 最大只有 0.0255；
+lost_by_alpha 在 alpha09 / replace_qmix / margin_replace 中基本被消除。
+```
+
+报告里也总结了，`alpha07/alpha09/replace_qmix/margin_replace` 在四个 setting 上都让 NCR 从 0 变成正数，且 CDR 最大为 0.0255，低于本轮 0.05 的硬阈值。
+
+所以可以写进实验记录的结论是：
+
+```text
+旧版 NCR=0 的主要原因是 target update 太保守；
+修正 target update 后，GAGB 的 gated q_mix 可以转化为 post-target correction。
+```
+
+---
+
+## 2. 这个实验没有验证什么？
+
+它没有验证三件事。
+
+第一，**没有验证 GAGB grouping 的独立价值。**
+
+因为这轮没有 shuffled matched、kmeans matched、topk matched。报告里已经把它列为重要缺口。
+
+第二，**没有验证 accuracy 稳定显著提升。**
+
+很多涨点小于 seed std。例如 Cora 0.4 上 `replace_qmix` 仍低于 `gb` 约 0.0013；CiteSeer 0.2 上 `replace_qmix` 低于 `alpha03` 约 0.0006。报告也提醒，accuracy gain 普遍小于或接近 seed std。
+
+第三，**没有验证 margin_replace 有独立贡献。**
+
+`margin_replace` 和 `replace_qmix` 的结果完全一致，所以当前 margin 条件没有实际筛掉额外节点。报告也指出需要 margin distribution diagnostics。
+
+---
+
+## 3. alpha09、replace_qmix、margin_replace 哪个最适合作为 v2.1 主候选？
+
+我的建议是：
+
+```text
+主候选：alpha09
+强消融：replace_qmix
+暂不作为主方法：margin_replace
+```
+
+### 为什么选 alpha09？
+
+`alpha09` 是这轮最稳的 target repair：
+
+```text
+vs alpha03: 4/4 positive
+vs gb: 3/4 positive
+vs gagb: 4/4 positive
+vs khop_only: 4/4 positive
+```
+
+报告里也写了，`alpha09` 是最稳定的 soft-mixing repair。
+
+它还有一个论文表达上的优势：它仍然是 soft correction，不是完全 hard replace。你可以说：
+
+```text
+在 gate 识别到高置信标签冲突时，增大球级 soft target 的权重，使 correction signal 有效进入监督目标。
+```
+
+这比“直接替换 noisy label”为论文主方法更温和，clean damage 风险也更容易解释。
+
+### replace_qmix 适合作为什么？
+
+`replace_qmix` 是很强的机制上限对照。
+
+它回答：
+
+```text
+如果完全移除 noisy one-hot 阻断，q_mix 的最大效果是多少？
+```
+
+它在 Cora 0.2 和 CiteSeer 0.4 上最好，但 CiteSeer 0.2 低于 alpha09。作为主方法，它有两个问题：
+
+```text
+1. 更像 hard correction，审稿人会追问 clean damage；
+2. 当前没有 shuffled matched control，不能证明 replace 的收益来自真实 GAGB grouping。
+```
+
+所以我建议把它作为：
+
+```text
+hard correction upper-bound ablation
+```
+
+### margin_replace 暂时不能作为主方法
+
+理论上，`margin_replace` 最像 paper-friendly 方法，因为它有显式安全条件：
+
+```text
+argmax(q_mix) != noisy_y_i
+q_mix[top1] - q_mix[noisy_y_i] >= 0.2
+```
+
+但本轮它和 `replace_qmix` 完全一致。也就是说，margin 条件在当前 gated samples 上没有实际产生额外筛选。现在把它当主方法会显得“设计有余，证据不足”。
+
+下一轮可以保留 margin_replace，但要加 margin 阈值网格：
+
+```text
+margin ∈ {0.1, 0.2, 0.3, 0.4}
+```
+
+并输出：
+
+```text
+margin_pass_ratio
+margin_filtered_clean_count
+margin_filtered_noisy_count
+margin_filtered_possible_correction
+```
+
+---
+
+## 4. 下一步是否应该优先补 matched controls？
+
+是，下一步最小实验应该优先补 **repair 版公平控制**，不要继续发明 target 公式。
+
+原因很直接：现在你已经证明 target update repair 能让 NCR 变正。继续加新 target 公式，边际收益小，而且会让方法越来越复杂。当前最大的证据缺口是：
+
+```text
+这个 repair 是否依赖真实 GAGB grouping？
+还是随便一个 matched local grouping 加上同样 repair 也能做到？
+```
+
+所以下一步应该跑：
+
+```text
+gagb_alpha09
+gagb_replace_qmix
+
+gagb_shuffled_alpha09_matched
+gagb_shuffled_replace_matched
+
+kmeans_gagb_matched_alpha09
+kmeans_gagb_matched_replace
+
+topk_gagb_train_matched_alpha09
+topk_gagb_train_matched_replace
+
+khop_only_alpha09
+khop_only_replace
+```
+
+为了控制工作量，我建议先只选两个主候选：
+
+```text
+alpha09
+replace_qmix
+```
+
+暂时不要把 alpha07、sharpen、margin_replace 全带进去。否则矩阵太大，结论反而不清楚。
+
+---
+
+## 5. 如果 shuffled matched 也有效，论文叙事怎么降级？
+
+如果 `gagb_shuffled_alpha09_matched` 或 `gagb_shuffled_replace_matched` 也能达到类似效果，结论要降级为：
+
+```text
+有效信号主要来自 gated teacher-aware target correction，
+GAGB grouping 的成员语义没有被证明是必要条件。
+```
+
+论文方向可以从：
+
+```text
+Graph-aware Granular Ball provides uniquely useful noisy-label correction regions.
+```
+
+降级为：
+
+```text
+Ball-level or group-level target correction is useful when combined with high-confidence conflict gating, while the current GAGB grouping requires stronger quality constraints to show graph-aware-specific value.
+```
+
+中文理解就是：
+
+```text
+这时你的贡献不再是“图粒球分得特别好”，而是“用局部区域组织 q_mix 和 conflict gate 的去噪框架有潜力”。
+```
+
+如果 kmeans/topk 也接近甚至超过 GAGB，后续就要把主线转到：
+
+```text
+Q(B)
+prediction consistency
+homophily-aware reliability
+```
+
+也就是证明“哪些局部区域有资格纠错”，而不是继续强调当前 v1 GAGB builder。
+
+---
+
+## 6. 为什么 NCR 提升但 accuracy gain 小？
+
+我认为最可能有五个原因，按优先级排序。
+
+### 原因一：coverage 太低
+
+你之前 gated coverage 大概只有 3% 到 6%。即使这些节点 NCR 变正，对整体分类器的影响也有限。
+
+要补的诊断：
+
+```text
+effective_corrected_train_ratio
+corrected_noisy_count / total_train_count
+corrected_noisy_count / num_noisy_train
+```
+
+如果纠正节点只占总训练节点很小一部分，accuracy 小涨或不涨很正常。
+
+### 原因二：NCR 只看 target argmax，不等于训练梯度有效
+
+`target argmax` 改对了，但 soft target 的概率质量、熵、loss 权重也重要。
+
+要补：
+
+```text
+target_entropy_mean
+target_clean_prob_mean
+target_noisy_prob_mean
+CE_gradient_norm_on_gated_nodes
+loss_contribution_ratio_gated_vs_all
+```
+
+### 原因三：纠正的是容易节点，分类器本来就能学对
+
+如果 gated noisy nodes 大多是 teacher 已经很确定的 easy nodes，纠正它们对 test accuracy 影响会小。
+
+要补：
+
+```text
+pretrain_teacher_confidence_on_corrected
+classifier_before_repair_correct_rate_on_corrected_nodes
+corrected_node_degree_distribution
+corrected_node_class_distribution
+```
+
+### 原因四：CDR 虽低，但 clean damage 的位置可能关键
+
+平均 CDR 低不代表无害。如果误伤了类别边界节点或低频类别节点，accuracy 可能被抵消。
+
+要补：
+
+```text
+clean_damage_by_class
+clean_damage_node_degree
+clean_damage_teacher_confidence
+clean_damage_ball_purity
+```
+
+### 原因五：GAGB 的 q_mix 和 teacher 有同源偏差
+
+teacher 只用 noisy train labels 训练，它虽然在 gated noisy nodes 上 clean acc 高，但可能对某些类别有系统偏差。
+
+要补：
+
+```text
+teacher_confusion_matrix_on_gated_noisy
+qmix_confusion_matrix_on_gated_noisy
+correction_by_class_NCR
+correction_by_class_CDR
+```
+
+---
+
+## 7. 下一步实验我建议怎么做？
+
+最小、最有信息量的实验是：
+
+```text
+v2.1 fair-control repair minival
+```
+
+只保留两个候选：
+
+```text
+alpha09
+replace_qmix
+```
+
+方法矩阵：
+
+```text
+gb
+gagb
+khop_only
+alpha03
+
+gagb_alpha09
+gagb_replace
+
+shuffled_alpha09_matched
+shuffled_replace_matched
+
+kmeans_gagb_matched_alpha09
+kmeans_gagb_matched_replace
+
+topk_gagb_train_matched_alpha09
+topk_gagb_train_matched_replace
+```
+
+数据设置先不变：
+
+```text
+Cora, CiteSeer
+symmetric 0.2, 0.4
+5 seeds
+frozen GRACE
+```
+
+成功标准：
+
+```text
+硬标准：
+1. gagb_alpha09 或 gagb_replace 的 NCR > 0；
+2. CDR < 0.03；
+3. 至少 3/4 settings 超过 alpha03；
+4. 至少 2/4 settings 超过 shuffled matched；
+5. 至少 2/4 settings 超过 kmeans/topk matched。
+
+强标准：
+1. 至少 3/4 settings 超过 shuffled matched；
+2. 至少 3/4 settings 超过 kmeans/topk matched；
+3. accuracy gain 至少在 2 个 setting 超过 0.3 个 std；
+4. correction_by_class 没有严重偏科。
+```
+
+---
+
+## 8. 当前实验记录该怎么写？
+
+可以这样写：
+
+```text
+Target update repair was conducted to test whether the pre-alpha correction signal identified in gated-node diagnostics can be converted into post-target correction. Keeping GRACE, GAGB grouping, teacher, noise generation, and data splits fixed, we replaced the conservative alpha=0.3 convex mixing with stronger soft mixing and q_mix replacement variants. The results show that alpha09, replace_qmix, and margin_replace consistently produce positive NCR with low CDR, confirming that the previous NCR=0 failure was caused by the target update form rather than the absence of correction direction in q_mix. However, the accuracy gains are small and the repair run does not include shuffled, kmeans, or top-k matched controls, so it does not yet establish graph-aware-ball-specific value.
+```
+
+中文记录可以写成：
+
+```text
+本轮 target update repair 证明了 v2 的 pre-alpha correction signal 可以转化为 post-target NCR。alpha09、replace_qmix 和 margin_replace 均使 NCR 从 0 变为正，且 CDR 低于 0.03。该结果修正了上一轮“GAGB 没有纠错信号”的判断：问题主要来自 alpha=0.3 的 target update 阻断。但本轮 accuracy 增益较小，且缺少 shuffled/kmeans/topk matched repair controls，因此不能据此声称 GAGB grouping 已有独立价值。
+```
+
+---
+
+## 最终判断
+
+这轮是 **值得继续的正信号**。
+
+你现在不该马上加 `Q(B)`，也不该继续发明更多 target。下一步最应该做的是：
+
+```text
+把 alpha09 / replace_qmix 放回 fair-control suite，
+确认它们是否真的依赖 GAGB grouping。
+```
+
+如果它们能压过 shuffled、kmeans、topk matched，GAGB v2.1 才开始接近主方法候选。
+如果压不过，就把结论降级为“teacher-aware conflict target correction 有效，当前 GAGB grouping 还没有独立价值”。

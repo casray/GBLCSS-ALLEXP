@@ -1,0 +1,59 @@
+{
+  "datasets": [
+    "Cora",
+    "CiteSeer"
+  ],
+  "split_mode": "ratio",
+  "train_ratios": [
+    0.2
+  ],
+  "val_ratio": 0.1,
+  "split_seed": 0,
+  "noise_type": "symmetric",
+  "noise_rates": [
+    0.2,
+    0.4
+  ],
+  "seeds": [
+    0,
+    1,
+    2,
+    3,
+    4
+  ],
+  "methods": [
+    "gb",
+    "gagb",
+    "khop_only",
+    "gagb_qb_conflict_gate_alpha03",
+    "gagb_qb_conflict_gate_alpha09",
+    "gagb_qb_conflict_gate_replace_qmix",
+    "khop_only_alpha09",
+    "khop_only_replace"
+  ],
+  "alpha": 0.3,
+  "min_train_per_ball": 3,
+  "gb_min_ball_size": 5,
+  "gb_min_radius_gain": 0.01,
+  "gagb_max_hops": 2,
+  "gagb_tau_add": 0.55,
+  "gagb_lambda_h": 0.7,
+  "gagb_lambda_t": 0.3,
+  "gagb_max_ball_size": 128,
+  "eps": 1e-08,
+  "prior_gamma": 1.0,
+  "teacher_epochs": 100,
+  "teacher_lr": 0.01,
+  "teacher_weight_decay": 0.0005,
+  "teacher_temperature": 1.0,
+  "qb_pred_beta": 0.5,
+  "qb_teacher_gamma": 2.0,
+  "conflict_noisy_support_max": 0.35,
+  "conflict_target_conf_min": 0.55,
+  "classifier_epochs": 200,
+  "learning_rate": 0.01,
+  "weight_decay": 0.0005,
+  "patience": 30,
+  "gpu_id": null,
+  "output_dir": "reports\\gagb_v2_2_class_failure_20260602"
+}

@@ -1,0 +1,31 @@
+{
+  "dataset": "tolokers",
+  "seed": 4,
+  "noise": "symmetric04",
+  "arm": "BFS",
+  "target_hash": "b9da0c99f03b08e8d826507e91184ac0f23fc2f805bd8fa85ea25294ca31bc33",
+  "protocol": {
+    "dataset": "tolokers",
+    "seed": 4,
+    "noise": "symmetric04",
+    "kind": "uniform",
+    "rate": 0.4,
+    "split_hash": "171feaa814831bd8b20d571a1b820873c701b52328fe3217b53af03fea4703b6",
+    "noise_hash": "42ef8828f9aca705e0e7089263393d4584e09a636199c4fddf407a370d48bdc6",
+    "data_sha256": "dacf3ac94cec53d03cd2adb5255c08b33dee1656c33ca8164a464bd9450a1667",
+    "val_clean": true,
+    "test_clean": true
+  },
+  "primary_metric": "roc_auc",
+  "training": {
+    "hidden": 64,
+    "layers": 2,
+    "dropout": 0.5,
+    "learning_rate": 0.01,
+    "weight_decay": 0.0005,
+    "epochs": 200
+  },
+  "device": "cuda",
+  "model_input": "original X only",
+  "checkpoint": "clean validation roc_auc"
+}

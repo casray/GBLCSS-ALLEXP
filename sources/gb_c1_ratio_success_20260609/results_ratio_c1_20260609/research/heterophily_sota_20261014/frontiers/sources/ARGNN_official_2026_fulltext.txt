@@ -1,0 +1,958 @@
+
+--- PDF PAGE 1 ---
+Adaptive Riemannian Graph Neural Networks
+Xudong Wang, Chris Ding, Tongxin Li, Jicong Fan *
+School of Data Science, The Chinese University of Hong Kong, Shenzhen (CUHK-Shenzhen), China
+xudongwang@link.cuhk.edu.cn,fchrisding, litongxin, fanjicongg@cuhk.edu.cn
+Abstract
+Graph data often exhibits complex geometric heterogene-
+ity, where structures with varying local curvature, such as
+tree-like hierarchies and dense communities, coexist within
+a single network. Existing geometric GNNs, which embed
+graphs into single ﬁxed-curvature manifolds or discrete prod-
+uct spaces, struggle to capture this diversity. We introduce
+Adaptive Riemannian Graph Neural Networks (ARGNN), a
+novel framework that learns a continuous and anisotropic
+Riemannian metric tensor ﬁeld over the graph. It allows each
+node to determine its optimal local geometry, enabling the
+model to ﬂuidly adapt to the graph’s structural landscape. Our
+core innovation is an efﬁcient parameterization of the node-
+wise metric tensor, specializing to a learnable diagonal form
+that captures directional geometric information while main-
+taining computational tractability. To ensure geometric regu-
+larity and stable training, we integrate a Ricci ﬂow-inspired
+regularization that smooths the learned manifold. Theoreti-
+cally, we establish the rigorous geometric evolution conver-
+gence guarantee for ARGNN and provide a continuous gen-
+eralization that uniﬁes prior ﬁxed or mixed-curvature GNNs.
+Empirically, our method demonstrates superior performance
+on both homophilic and heterophilic benchmark datasets with
+the ability to capture diverse structures adaptively. Moreover,
+the learned geometries both offer interpretable insights into
+the underlying graph structure and empirically corroborate
+our theoretical analysis.
+1 Introduction
+Real-world graphs, from social networks to protein interac-
+tion maps, exhibit a rich geometric diversity that challenges
+various graph learning paradigms (Kipf and Welling 2016;
+Hamilton, Ying, and Leskovec 2017; Sun, Ding, and Fan
+2023; Kang et al. 2023; Wang and Fan 2024; Sun et al. 2024;
+Sun and Fan 2024; Wang et al. 2025b; Qian et al. 2025;
+Wang et al. 2025c; Guo et al. 2025; Fan 2025a,b). Con-
+sider a social network where some communities form deep,
+tree-like hierarchies best captured by hyperbolic geome-
+try (Chami et al. 2019), while others create dense, tightly-
+knit cliques that resemble spherical manifolds (Gu et al.
+2018). Forcing such a geometrically heterogeneous graph
+into a single geometric space (Euclidean, hyperbolic, or
+*Corresponding author.
+Copyright © 2026, Association for the Advancement of Artiﬁcial
+Intelligence (www.aaai.org). All rights reserved.
+Figure 1: Geometric heterogeneity in W ISCONSIN net-
+work. Left: raw graph topology coloured by class. Right:
+3-D t-SNE of node features. The translucent hull is coloured
+by the magnitude of discrete mean curvature (violet ! ﬂat,
+yellow! strongly curved), showing that curvature varies
+across the Riemannian manifold.
+spherical) inevitably introduces signiﬁcant distortion and in-
+formation loss.
+Pioneering work in geometric Graph Neural Networks
+(GNNs) has demonstrated the power of non-Euclidean
+spaces. Hyperbolic GNNs (Chami et al. 2019; Zhang et al.
+2021) excel on tree-like graphs but struggle with dense cy-
+cles. Conversely, spherical methods handle cyclic structures
+well but are less effective on hierarchical data. This fun-
+damental limitation stems from their shared assumption of
+global geometric homogeneity.
+Recent advances have moved towards mixed-curvature
+approaches to address this issue. Models like-GCN (Bach-
+mann, B ´ecigneul, and Ganea 2020) learn an isotropic
+(scalar) curvature for each node, while state-of-the-art meth-
+ods like CUSP (Grover et al. 2025) embed graphs into prod-
+uct manifolds of constant-curvature spaces (e.g., Hk Sl
+Em). While a signiﬁcant step forward, these methods remain
+constrained. Scalar curvature approaches are still isotropic
+at the node level, unable to capture directional geometric in-
+formation. Product manifold methods are limited to block-
+constant geometries chosen from a discrete set of curvatures.
+Neither can fully capture the ﬁne-grained, continuous geo-
+metric variations inherent in complex data.
+This geometric heterogeneity is not merely a theoretical
+construct; it is evident in real-world data, as illustrated in
+The Fortieth AAAI Conference on Artificial Intelligence (AAAI-26)
+26606
+
+--- PDF PAGE 2 ---
+Figure 1. The real-world WISCONSIN network (Craven et al.
+2000) embeds into a Riemannian feature manifold whose
+neighbourhoods can differ sharply in both curvature and ori-
+entation. Any single or ﬁxed-curvature space would there-
+fore distort part of the data, motivating our node-wise, adap-
+tive metric tensor.
+The importance of geometric understanding has been
+further highlighted by recent advances in curvature-based
+graph analysis. Graph Neural Ricci Flow (GNRF) (Chen
+et al. 2025) demonstrates that evolving features according
+to discrete Ricci curvature improves representation qual-
+ity, though it keeps the underlying geometry ﬁxed. Dis-
+crete curvature methods like CurvDrop (Liu et al. 2023) and
+curvature-based graph rewiring (Topping et al. 2021) show
+promise but operate as preprocessing steps rather than end-
+to-end learning frameworks.
+Our key insight is to move beyond pre-deﬁned geome-
+tries by learning a continuous, node-adaptive Rieman-
+nian metric ﬁeld that directly models the local structure.
+To realize this vision within a tractable framework, we in-
+troduce Adaptive Riemannian Graph Neural Networks
+(ARGNN). Our framework proposes a principled and efﬁ-
+cient parameterization of the metric tensor. Speciﬁcally, we
+model each node’s local geometry with an anisotropic di-
+agonal metric, Gi = diag(gi). This design is not merely
+a computational shortcut; it corresponds to a ﬂexible, per-
+dimension scaling of the feature space geometry. To ensure
+stable learning, we further integrate Ricci ﬂow-inspired dy-
+namics that regularize the evolution of the learned geometric
+manifold. See the full version (Wang et al. 2025a) for ap-
+pendices with proofs, ablations, and implementation details.
+The contributions of our work are threefold:
+i) Methodologically, we propose a principled parameteri-
+zation of the adaptive metric ﬁeld using diagonal matri-
+ces. We provide strong geometric and algorithmic jus-
+tiﬁcations for our design, framing it as an anisotropic
+conformal transformation that is both computationally
+efﬁcient and highly expressive. To the best of our knowl-
+edge, ARGNN is the ﬁrst framework that learns contin-
+uous and anisotropic metric tensor ﬁelds for graphs.
+ii) Theoretically, we establish the convergence guarantee
+for ARGNN’s geometric evolution and further prove
+its role as a universal framework that generalizes and
+uniﬁes prior isotropic, scalar-curvature, and product-
+manifold GNNs.
+iii) Empirically, we conduct extensive experiments on a
+wide range of benchmark datasets, including compre-
+hensive ablation studies. Our results demonstrate that
+ARGNN achieves superior performance compared to
+state-of-the-art benchmark methods on both homophilic
+and heterophilic graphs.
+2 Related Work
+2.1 Fixed-Curvature Geometric GNNs
+Geometric deep learning on graphs has been revolutionized
+by embedding approaches that leverage non-Euclidean ge-
+ometries. Hyperbolic GNNs exploit the exponential volume
+growth of hyperbolic space to naturally represent hierarchi-
+cal structures. HGCN (Chami et al. 2019) extends graph
+convolutions to hyperbolic space using the Poincar ´e ball
+model, achieving remarkable success on tree-like graphs.
+HGAT (Zhang et al. 2021) incorporates attention mecha-
+nisms in hyperbolic space, while recent work explores hy-
+perbolic transformers (Gulcehre et al. 2018) and variational
+autoencoders (Sun et al. 2021).
+Spherical GNNs address the complementary challenge
+of cyclic and community structures. Spherical CNNs (Cohen
+et al. 2018) and their graph extensions (Gu et al. 2018) lever-
+age the positive curvature of spherical space to model dense,
+interconnected communities. However, both hyperbolic and
+spherical approaches assume global geometric homogeneity,
+limiting their applicability to mixed-topology graphs.
+Fixed-curvature methods have the advantage compared
+with traditional GNNs in different target domains but fail
+catastrophically when graph geometry mismatches the em-
+bedding space, as shown in Figure 1, which prevents
+them from effectively handling the geometric heterogeneity
+prevalent in real-world networks.
+2.2 Discrete Mixed-Curvature Approaches
+Recognizing the limitations of ﬁxed-curvature methods, re-
+cent work explores mixed-curvature embeddings.
+-GCN (Bachmann, B ´ecigneul, and Ganea 2020) learns
+scalar curvature parameters for each node, allowing adap-
+tation between hyperbolic, Euclidean, and spherical geome-
+tries. However, scalar curvature cannot capture directional
+geometric information.
+CUSP (Grover et al. 2025) represents the current state-
+of-the-art in mixed-curvature approaches. It combines spec-
+tral graph analysis with embeddings in product manifolds of
+constant-curvature spaces (e.g., HkSl Em). CUSP also
+introduces spectral ﬁltering techniques and curvature-aware
+graph Laplacians, achieving strong performance across di-
+verse benchmarks.
+Q-GCN (Xiong et al. 2022) extends the framework
+to pseudo-Riemannian manifolds with indeﬁnite met-
+rics, enabling more ﬂexible curvature combinations. Self-
+supervised mixed-curvature methods (Jin et al. 2020) ex-
+plore representation learning without labels.
+However, despite their ﬂexibility, these approaches pri-
+marily treat geometry as discrete choices from ﬁnite sets
+of constant-curvature manifolds. Consequently, they of-
+fer limited support for continuous geometric variation and
+anisotropic (directional) structure.
+2.3 Curvature-Based Graph Analysis
+Recent advances in discrete differential geometry have en-
+abled sophisticated graph analysis through curvature.
+Discrete Ricci curvature, including Ollivier-Ricci (Ol-
+livier 2009) and Forman-Ricci (Forman 2003) curvature,
+provide local geometric characterizations of graph structure.
+Graph Neural Ricci Flow (GNRF) (Chen et al. 2025) rep-
+resents a signiﬁcant recent advance. GNRF evolves node
+features according to discrete Ricci curvature, showing that
+curvature-aware feature evolution improves representation
+26607
+
+--- PDF PAGE 3 ---
+quality. However, GNRF keeps the underlying graph geom-
+etry ﬁxed while evolving features.
+Curvature-based rewiring methods (Topping et al.
+2021; Fesser and Weber 2024) use curvature analysis to
+identify and modify graph bottlenecks. CurvDrop (Liu et al.
+2023) employs Ricci curvature for topology-aware dropout
+sampling. These methods show curvature’s utility but oper-
+ate as preprocessing steps rather than end-to-end learning.
+Curvature-based methods have found success in protein
+analysis (Wu et al. 2023; Shen et al. 2024), community de-
+tection (Ni et al. 2019), and graph generation (Li et al. 2022).
+However, to our knowledge, joint learning of geometry and
+features remains rare; methods typically ﬁx geometry and
+evolve features (GNRF) or use curvature for preprocessing.
+3 Preliminaries
+3.1 Riemannian Geometry Essentials
+A Riemannian manifold (M; g) consists of a smooth man-
+ifoldM equipped with a metric tensor ﬁeld g that varies
+smoothly across the manifold (Lee 2018). At each point
+p2M , the metric tensor gp deﬁnes an inner product on the
+tangent spaceTpM, enabling the measurement of distances,
+angles, and curvatures.
+For graph-structured data, we introduce a metric tensor
+ﬁeld over the graph by associating each node i2V with
+a metric tensor Gi 2 Sd
+++, whereSd
+++ denotes the cone
+of symmetric positive deﬁnite matrices. This creates a con-
+tinuous geometric structure over the discrete graph domain
+and makes Christoffel symbols vanish, where each node’s
+feature neighborhood in Rd possesses its own Riemannian
+geometry. The geodesic distance between sufﬁciently close
+points x; y2 Rd under the metric G ofTxM is:
+dG(x; y) =
+q
+(x  y)T G(x  y)
+The Ricci curvature tensor Ric(G) characterizes how the
+metric changes across the manifold. In differential geometry,
+Ricci ﬂow (Chow and Knopf 2004) evolves a metric ten-
+sor ﬁeldfGi(t)g according to @Gi
+@t = 2Ric(Gi), which
+smooths geometric irregularities while preserving topolog-
+ical structure, providing a principled approach for geomet-
+ric regularization on graphs (Hamilton 1982). Due to space
+limitations, more Riemannian Geometry and Ricci curvature
+details are shown in Appendix B.
+3.2 GNNs and Geometric Message Passing
+Consider an attributed graphG = (V;E; X) with nodesV,
+edgesE, and node features X2 RjVjd. Standard message
+passing (Gilmer et al. 2017) of GNNs updates node repre-
+sentations through:
+h(`+1)
+i =
+ 
+W(`)
+s h(`)
+i +
+X
+j2N (i)
+W(`)
+m h(`)
+j
+
+whereN (i) denotes the neighborhood of nodei, W(`)
+s and
+W(`)
+m are learnable transformation matrices (parameters) on
+`-th layer, and is a nonlinear activation function.
+Geometric message passing enhances this by incorpo-
+rating Riemannian structure by embedding graphs in non-
+Euclidean spaces. Existing approaches embed graphs in
+ﬁxed geometries (hyperbolic, spherical) or discrete mixed-
+curvature spaces. However, as illustrated in Figure 1, real
+graphs exhibit continuous geometric heterogeneityand the
+local geometry varies across the network.
+3.3 Problem Formulation and Challenges
+The core challenge of this work is to move beyond the ﬁxed-
+geometry paradigm. We aim to learn a node-adaptive ge-
+ometric space jointly with the node representations H =
+fhigi2V. This learned space is mathematically formulated
+as a Riemannian metric tensor ﬁeldfGi2Sd
+++gi2V, where
+each node i is endowed with its own local metric Gi. How-
+ever, realizing this vision presents several key hurdles.
+First, from a mathematical standpoint, each learned ten-
+sor Gi must remain symmetric positive deﬁnite (SPD)
+throughout training to constitute a valid Riemannian metric.
+Second, from a computational perspective, parameterizing
+a fulldd metric tensor for every node is prohibitive, scal-
+ing as O(jVjd2) and hindering application to large graphs.
+Third, for learning stability, the geometric manifold must
+evolve smoothly; pathological curvatures could destabilize
+the training process and lead to poor generalization.Finally,
+to justify its increased complexity, the proposed framework
+must be provably more expressive than its ﬁxed-geometry
+predecessors. Our ARGNN framework is designed to ad-
+dress these challenges systematically.
+4 Adaptive Riemannian Graph Neural
+Networks
+This section introduces Adaptive Riemannian Graph Neu-
+ral Networks (ARGNN), a framework that learns a con-
+tinuous, node-adaptive geometry tailored to the underlying
+graph structure. Our approach forgoes the manual selection
+of a geometric space and instead learns the geometry as part
+of the end-to-end training process. This section details the
+three core components of our framework: i) an efﬁcient and
+interpretable parameterization of the node-wise metric ten-
+sor via a local metric estimator, ii) a geometric message
+passing scheme that leverages the learned metric, and iii) a
+Ricci ﬂow-inspired regularization for stable geometric evo-
+lution. Figure 2 illustrates our approach’s diagram.
+4.1 Learning an Anisotropic Metric Field
+The foundational concept of our work is to equip the graph
+with a Riemannian metric tensor ﬁeld, denoted asfGi2
+Sd
+++gi2V. Each metric tensor Gi is a symmetric positive-
+deﬁnite (SPD) matrix that deﬁnes a unique local geometry
+on the feature space neighborhood of node i. As stated be-
+fore, a direct parameterization of a fulldd matrix for each
+node will be computationally prohibitive and lead to expen-
+sive downstream computations.
+To address this, we propose a principled simpliﬁcation
+by parameterizing each metric tensor Gi as a learnable di-
+agonal matrix:
+Gi = diag(gi) = diag(gi;1;gi;2;:::;g i;d) (1)
+where gi2 Rd
+++ is a vector of positive diagonal elements.
+This diagonal parameterization is not an arbitrary choice but
+a motivated design with several key advantages:
+26608
+
+--- PDF PAGE 4 ---
+Figure 2: Diagram of our proposed ARGNN, which jointly learns continuous, anisotropic metric tensor ﬁeldsfGi2Sd
+++gi2V
+and node embeddings H =fhigi2V. The learned Gi gives beyond curvature information to depict the geometric diversity.
+i) Geometric Interpretation: At its core, a metric ten-
+sor deﬁnes how to measure distances, angles, and cur-
+vatures. The standard Euclidean space, governed by the
+identity matrix, provides a single, global way of mea-
+surement. Our diagonal metric, Gi = diag(gi), acts as
+a local, learned modiﬁcation to this standard. Speciﬁ-
+cally, it rescales the geometry independently along each
+feature axis. The value of each diagonal element gi;k
+determines the stretch of the k-th dimension in the lo-
+cal vicinity of node i. This axis-aligned, non-uniform
+scaling type is formally known as an anisotropic con-
+formal transformation (Obata 1970; Spivak 1999). It
+endows the model with far greater ﬂexibility than the
+isotropic scaling of constant-curvature spaces, while re-
+maining more structured and tractable than a full metric
+tensor. The formal details of this geometric perspective
+are elaborated in Appendix B.
+ii) Interpretability and Feature Decomposition: The di-
+agonal form assumes that the standard coordinate axes
+of the feature space align with the principal directions
+of the local geometry. This makes the model highly in-
+terpretable: each diagonal element gi;k directly quanti-
+ﬁes the geometric importance or local scaling factor of
+the k-th feature dimension for node i. This is particu-
+larly effective when features are learned to be relatively
+disentangled.
+iii) Computational and Algorithmic Efﬁciency: This pa-
+rameterization dramatically reduces the complexity of
+learning and using the metric. The number of geometric
+parameters per node drops fromO(d2) toO(d). Further-
+more, crucial geometric computations such as geodesic
+distance, matrix inversion, and eigendecomposition be-
+come highly efﬁcient, which we will discuss later.
+To learn these adaptive metrics, we employ a small neu-
+ral network f (g)
+ as the local metric estimator that maps a
+node’s local structural information to its metric vector gi.
+Speciﬁcally, for each nodei, we ﬁrst aggregate its neighbor-
+hood features ai = 1
+jN (i)j
+P
+j2N (i) hj, and then compute its
+metric vector as:
+gi = softplus
+
+f (g)
+ ([hi; ai])
+
+(2)
+where [;] denotes feature concatenation. The softplus ac-
+tivation function ensures all elements of gi are strictly posi-
+tive, thereby naturally satisfying the SPD constraint for Gi.
+4.2 Geometric Message Passing
+With the learned diagonal metric ﬁeld, we now formulate a
+message passing scheme that is explicitly geometry-aware.
+The propagation of information between nodes is modulated
+by the local geometries, allowing the model to adapt its ag-
+gregation strategy based on the learned structure.
+Geodesic Distance and Principal Curvatures Under the
+learned metric Gi, the geodesic distance (in this locally con-
+stant metric space) between the feature vectors of two nodes
+i andj simpliﬁes to a weighted Euclidean distance:
+dGi(hi; hj) =
+q
+(hi  hj)T Gi(hi  hj)
+=
+vuu
+t
+dX
+k=1
+gi;k(hi;k hj;k)2
+(3)
+A major beneﬁt of the diagonal form is that the principal
+directions of the geometry are aligned with the standard ba-
+sis vectorsfekgd
+k=1, and the principal curvatures are directly
+related to the inverses of the metric elements f1=gi;kgd
+k=1.
+This allows us to deﬁne a geometric modulation factor that
+captures how the geometry curves along the direction of the
+message.
+Geometric Modulation and Attention We introduce a
+geometric modulation coefﬁcientij that weights the mes-
+sage from nodej toi based on the projection of their direc-
+tional vector onto the principal axes, modulated by the local
+curvature in those directions. Let dij = ( hj  hi)=khj 
+hik2 be the normalized direction vector. We deﬁneij as:
+ij =
+dX
+k=1
+d2
+ij;k tanh(  loggi;k) (4)
+Here, the term tanh(  loggi;k) acts as a curvature-
+dependent switch. Ifgi;k is large (high curvature, space con-
+26609
+
+--- PDF PAGE 5 ---
+tracts), the term approaches 1; ifgi;k is small (low curva-
+ture, space expands), it approaches +1.
+Complementing this, we introduce a geometric attention
+mechanismij that computes the similarity between nodes
+within their respective local geometries:
+ij = hhi; hjiGi
+khikGikhjkGj
+=
+P
+kgi;khi;khj;kqP
+kgi;kh2
+i;k
+qP
+kgj;kh2
+j;k
+(5)
+This formulation measures the cosine similarity where the
+inner product is deﬁned by nodei’s metric, and each node’s
+norm is measured in its own local metric.
+Node Representation Update The ﬁnal message mij
+from node j to i integrates the geometric modulation and
+attention with a standard learnable transformation Wm:
+mij =ij(ij) Wmhj (6)
+The node representations are then updated by aggregat-
+ing messages from neighbors and combining them with the
+transformed self-representation, followed by a non-linear
+activation:
+h(l+1)
+i =
+ 
+Wsh(l)
+i +
+X
+j2N (i)
+mij
+
+(7)
+4.3 Ricci Flow-Inspired Geometric
+Regularization
+To ensure that the learned metric ﬁeldfGig is well-behaved
+and varies smoothly across the graph, we introduce two reg-
+ularization terms inspired by the principles of discrete Ricci
+ﬂow. This geometric evolution stabilizes training and pre-
+vents pathological curvatures.
+First, we deﬁne a discrete approximation of the Ricci cur-
+vature for our diagonal metric ﬁeld. Along the k-th prin-
+cipal direction at node i, let Ric kk be the abbreviation of
+Ric(Gi)kk, it can be approximated as:
+Ric(i)
+kk = 1
+2jN (i)j
+X
+j2N (i)
+gi;k gj;k
+dgraph(i;j ): (8)
+wheredgraph(i;j ) is the shortest path distance on the graph,
+and node j2N (i) makesdgraph = 1. See the detailed dis-
+cussion in Appendix B.3. The Ricci regularizationLRicci
+encourages the learned geometry to be Ricci-ﬂat by penal-
+izing the squared sum of Ricci curvatures, promoting a uni-
+form curvature distribution:
+LRicci =
+X
+i2V
+dX
+k=1
+(Ric(i)
+kk)2 (9)
+The smoothness regularizationLsmooth penalizes large dif-
+ferences in the metric vectors of adjacent nodes, ensuring the
+geometry varies smoothly over the graph structure:
+Lsmooth =
+X
+(i;j)2E
+kgi  gjk2
+2 (10)
+These regularizers guide the model to learn a coherent
+and stable geometric manifold that supports the downstream
+task. The total loss function then combines the primary task
+lossLtask with hyperparameters; :
+Ltotal =Ltask +LRicci +Lsmooth (11)
+5 Theoretical Analysis
+We establish theoretical foundations for ARGNN, proving
+its convergence, stability analysis, and universality. All de-
+tailed proofs are provided in Appendix C.
+5.1 Convergence and Stability Analysis
+Theorem 1 (Convergence of Adaptive Geometry Learning).
+Consider ARGNN withL layers, hidden dimension d, and
+regularization weights ; . Under mild regularity condi-
+tions, the learned metric tensorsfGigi2V converge to a sta-
+tionary point with:
+E
+
+krL(t)
+totalk2
+=O
+
+1
+p
+te efft=L
+
+; (12)
+where eff is the effective curvature of the loss landscape.
+Optimal regularization hyperparameters satisfy:
+? = 
+ H
+L min
+ 
+1; d
+jEj
+
+;  ? = 
+ H
+p
+d
+jVj
+
+: (13)
+whereH2 (0; 1] is the dataset-dependent homophily ratio.
+Assume the theoretical optimal hyperparameters as
+ = c1
+L min
+ 
+1; d
+jEj
+
+;  = c2
+p
+d
+jVj (14)
+For constantsc1,c2, we get an effective practice as follows,
+Proposition 1 (Homophily-Aware Constants). The dataset-
+dependent constantsc1;c 2 can be estimated as:
+c1 (1 H ) + 0:1; c 2 0:1 (1 +H) (15)
+whereH2 (0; 1] is the graph homophily ratio.
+The proof (Appendix C.1) reveals key insights: i) Deeper
+networks require smaller  to maintain stability; ii) The
+smoothness weight  should scale with feature dimension
+and inversely with graph size; iii) The interplay between ge-
+ometric regularization and task loss creates a favorable op-
+timization landscape. These theoretical guidelines directly
+inform our hyperparameter choices in experiments.
+5.2 Universal Approximation
+Theorem 2 (Universal Geometric Framework). ARGNN
+provides a universal geometric framework that can general-
+ize existing curvature-based GNNs. Speciﬁcally, GNNs op-
+erating on a ﬁxed-curvature space (Euclidean, hyperbolic,
+spherical, or product manifolds) can be sufﬁciently approx-
+imated by a constrained parameterization of our learnable
+diagonal metric tensors Gi = diag(gi).
+See Appendix C.2 for the complete proof. We establish
+this by showing that ﬁxed-curvature geometries correspond
+to speciﬁc constraints on gi: Euclidean (gi = 1), constant-
+curvature (gi = c1;c > 0), and product manifolds (block-
+constant gi).
+5.3 Computational Efﬁciency
+Proposition 2 (Complexity Analysis). ARGNN has time
+complexityO((n +m)d2) per layer, wheren =jVj,m =
+jEj, and d is the hidden feature dimension, matching stan-
+dard GNNs while providing continuous geometric adapta-
+tion.
+See detailed proof in Appendix C.3. We also give the em-
+pirical comparison and analysis in Appendix E.
+26610
+
+--- PDF PAGE 6 ---
+Dataset Cora CiteSeer PubMed Actor Chameleon Squirrel Texas Cornell Wisconsin
+Nodes 2,708 3,327 19,717 7,600 2,277 5,201 183 183 251
+Edges 5,278 4,552 44,324 26,659 31,371 198,353 279 277 466
+Features 1,433 3,703 500 932 2,325 2,089 1,703 1,703 1,703
+Classes 7 6 3 5 5 5 5 5 5
+H 0.825 0.718 0.792 0.215 0.247 0.217 0.057 0.301 0.196
+Table 1: Dataset Statistics and Homophily RatiosH
+6 Experiments
+6.1 Experimental Setup
+Datasets: We evaluate on nine widely used benchmark
+datasets spanning homophilic and heterophilic graphs: Ho-
+mophilic: Cora, CiteSeer, PubMed (Sen et al. 2008); Het-
+erophilic: Actor (Tang et al. 2009), Chameleon, Squirrel,
+Texas, Cornell, Wisconsin (Pei et al. 2020). Table 1 provides
+detailed statistics.
+Baselines: We compare against four categories of meth-
+ods: i) Traditional GNNs: GCN (Kipf and Welling 2016),
+GAT (Veliˇckovi´c et al. 2018), GraphSAGE (Hamilton, Ying,
+and Leskovec 2017); ii) Geometric GNNs: HGCN (Chami
+et al. 2019), HGAT (Zhang et al. 2021), -GCN (Bach-
+mann, B ´ecigneul, and Ganea 2020), Q-GCN (Xiong et al.
+2022); iii) Heterophilic GNNs: H2GCN (Zhu et al. 2020),
+GPRGNN (Chien et al. 2020), FAGCN (Bo et al. 2021); iv)
+Recent Methods: CUSP (Grover et al. 2025), GNRF (Chen
+et al. 2025), CurvDrop (+JKNet) (Liu et al. 2023).
+Implementation Details: We implemented on PyG (Fey
+and Lenssen 2019) and Geoopt (Kochurov, Karimov, and
+Kozlukov 2020) frameworks. All experiments were run
+on NVIDIA GPUs with 10 random seeds, with the given
+60%=20%=20% splits from (Pei et al. 2020) for the node
+classiﬁcation task. And using the same80%=5%=15% splits
+and settings from (He et al. 2024) for the link existence pre-
+diction task.
+6.2 Main Results
+Table 2 presents mean F1-scores with 95% Conﬁdence In-
+tervals (CI) from 10 runs, chosen as the most comprehen-
+sive metric for multi-class imbalanced datasets. Additional
+metrics (Accuracy, AUROC, and AUPRC) are provided in
+Appendix E. ARGNN achieves the best performance on all
+9 datasets, with signiﬁcant improvements across both ho-
+mophilic and heterophilic graphs. For instance, on Cora (ho-
+mophilic), we improve3:38% over CUSP, while on Wiscon-
+sin (heterophilic), we gain 2:35% over the best baseline.
+Our results reveal three key patterns: i) Fixed-curvature
+methods like HGCN show high variance on heterophilic
+graphs, but generally overperform Euclidean-space GNNs;
+ii) Mixed-curvature approaches (CUSP, GNRF) achieve
+more consistent results but remain limited by discrete geom-
+etry choices; iii) ARGNN’s continuous adaptation provides
+robust performance across the homophily spectrum.
+For link prediction (Table 7 in Appendix), we report
+average AUROC as the comprehensive metric for link
+prediction. ARGNN achieves the highest scores on all 9
+datasets, with particularly strong performance on geomet-
+rically complex graphs (Actor: 76:40% vs. GNRF’s 73:50%
+and CUSP’s 74:20%), validating our adaptive metric learn-
+ing approach.
+6.3 Ablation Studies
+We conduct systematic ablations to validate our theoret-
+ical framework and understand the contribution of each
+component. Figure 3 presents results on three representa-
+tive datasets: Cora (homophilic, H = 0:825), Actor (het-
+erophilic,H = 0:215), and Wisconsin (mixed,H = 0:196).
+Figure 3: Ablation studies on three datasets. (a) Impact of
+regularization components, including theoretically optimal
+, settings v.s. grid search optimal; (b) Comparison
+with ﬁxedGi2fI; 0:5I; 2Ig for Euclidean, Hyperbolic and
+Spherical. Error bars show 95% CI from 10 runs.
+Regularization Components (Fig. 3a): Both Ricci and
+smoothness regularizations are essential but serve different
+roles. Removing Ricci regularization causes larger perfor-
+mance drops on heterophilic graphs (Actor:  1:3%, Wis-
+consin: 1:8%), where diverse geometries require careful
+control. Smoothness regularization is more critical for main-
+taining coherent metric ﬁelds, with Wisconsin showing the
+largest drop ( 3:5%) due to its mixed homophily structure
+requiring smooth transitions between geometric regimes.
+Remarkably, our theory-guided hyperparameters achieve
+near-optimal performance. Using theoretical optimal  =
+c1
+L min(1; d
+jEj ) and = c2
+p
+d
+jVj withc1;c 2 from Theorem 1,
+we obtain F1 scores within 0.5% of exhaustive grid search.
+This validates our convergence analysis and provides practi-
+tioners with principled hyperparameter selection.
+Geometry Parameterizations (Fig. 3b): Fixed geome-
+tries severely limit expressiveness across all graph types.
+Euclidean geometry (Gi = I), optimal for neither hierar-
+chies nor cycles, shows the worst performance. Fixed hy-
+perbolic geometry (Gi = 0:5I) improves slightly on tree-
+26611
+
+--- PDF PAGE 7 ---
+Homophilic Heterophilic
+Method Cora CiteSeer PubMed Actor Chameleon Squirrel Texas Cornell Wisconsin
+GCN 75.210.28 67.301.05 83.750.07 31.120.96 61.160.23 43.060.33 75.610.07 67.721.19 59.463.25
+GAT 76.700.13 66.230.85 82.830.22 32.650.23 63.100.77 43.900.01 76.090.77 74.010.01 55.295.40
+GraphSAGE 71.880.91 70.010.64 81.090.13 36.730.01 59.990.89 41.111.16 77.110.45 69.910.24 81.183.45
+HGCN 78.500.14 69.550.39 83.720.21 35.890.29 60.180.57 39.930.35 88.111.12 72.881.15 86.703.70
+HGAT 77.120.01 70.120.92 84.020.19 35.120.27 62.430.59 41.780.37 85.561.10 73.120.18 87.203.50
+-GCN 78.711.37 68.140.34 85.180.52 34.570.26 62.120.49 43.040.31 85.030.63 86.360.64 86.903.80
+Q-GCN 79.640.38 71.151.11 84.760.13 32.240.65 61.831.01 46.650.90 82.760.07 83.900.71 86.504.10
+H2GCN 82.700.90 71.100.80 84.600.50 35.901.20 60.102.20 48.202.00 84.906.00 82.204.20 86.672.91
+GPRGNN 79.490.31 67.610.38 84.070.09 37.431.09 65.090.43 47.510.23 88.340.09 87.210.70 88.071.00
+FAGCN 82.500.50 71.300.60 84.300.40 35.801.10 66.901.80 52.301.70 87.803.20 85.504.10 87.303.60
+CUSP 83.450.15 74.210.02 87.990.45 41.910.11 70.230.61 52.980.25 89.432.72 88.311.09 88.300.80
+GNRF 82.100.80 73.500.50 86.800.40 40.800.90 68.901.20 49.821.50 90.801.30 90.501.10 88.101.40
+CurvDrop 82.500.70 72.800.60 85.200.50 39.501.00 67.301.40 50.101.30 88.202.10 89.801.80 87.501.90
+ARGNN 86.830.84 74.801.26 88.590.25 42.180.33 70.441.27 53.121.45 92.281.59 90.850.33 90.652.34
+Table 2: Node Classiﬁcation Performance (Avg. F1-score %(") 95% Conﬁdence Interval) on Benchmark Datasets. Thebold,
+purple and orange numbers denote the best, second best, and third best performances, respectively.
+like substructures but fails on dense regions. Around5% im-
+provement of ARGNN over ﬁxed geometries on heterophilic
+graphs demonstrates the necessity of adaptive metrics.
+The performance gap is most pronounced on Actor (5.0%
+over Euclidean), where the co-occurrence network contains
+both star-like patterns (requiring hyperbolic geometry) and
+cliques (requiring spherical geometry), and our adaptive ap-
+proach can simultaneously capture these diverse structures.
+Due to the space limit, detailed ablation results like addi-
+tional parameterization comparisons and detailed computa-
+tional overhead analysis are provided in Appendix E.
+Computational Efﬁciency: ARGNN’s diagonal param-
+eterization achieves superior efﬁciency (nearly to HGCN):
+around 35% faster than CUSP by avoiding costly product
+manifold projections, with around 40% lower memory us-
+age than full tensor methods. TheO(d) complexity per met-
+ric operation (v.s.O(d2) for full tensors) enables scaling to
+large graphs. Detailed benchmarks and scalability analysis
+are provided in Appendix E.
+Figure 4: Geometry learned by ARGNN on Wisconsin.
+Left: Original graph topology colored by class under the
+layout from the learned embedding projection to 2-D. Mid-
+dle: Degree-preserving rewiring based on learned geodesic
+distances reveals clearer class separation. Right: 3-D t-SNE
+embedding with curvature visualization shows adaptive ge-
+ometry, the translucent hull is coloured by the magnitude of
+the mean curvature (violet!ﬂat, yellow!strongly curved)
+6.4 Learned Geometry Analysis
+Figure 4 visualizes how ARGNN discovers latent geomet-
+ric structure. The geodesic rewiring demonstrates improved
+class separation through learned metrics.
+Figure 5: HomophilyH vs. learned geometry.Avg. learned
+curvature across datasets with marker size/colour encodes
+the mean Neighbour-Relative Metric Dispersion (NRMD)
+Figure 5 reveals that highly homophilic graphs (Cora,
+CiteSeer) are in the low curvature and Neighbour-Relative
+Metric Dispersion (NRMD = 1
+jEj
+P
+(i;j)2E
+kgi gjk2
+1
+2 (kgik2+kgjk2)
+)
+quadrant, whereas heterophilic datasets (Actor, Wisconsin)
+display both larger curvature and greater metric dispersion.
+The joint trend conﬁrms that ARGNN bends its geometry
+more and allows higher learned metric diversity when neigh-
+bourhood labels are mixed, underscoring its dataset-adaptive
+behaviour. Due to the space limitation, see Appendix E for
+more evidence and analysis.
+7 Conclusion
+We have introducedARGNN, a novel framework that learns
+continuous, anisotropic metric tensor ﬁelds to capture the
+geometric diversity inherent in real-world graphs.
+26612
+
+--- PDF PAGE 8 ---
+Acknowledgements
+This work was supported by the National Natural Science
+Foundation of China under Grant No.62376236.
+References
+Bachmann, G.; B ´ecigneul, G.; and Ganea, O. 2020. Con-
+stant curvature graph convolutional networks. In Interna-
+tional conference on machine learning, 486–496. PMLR.
+Bo, D.; Wang, X.; Shi, C.; and Shen, H. 2021. Beyond
+low-frequency information in graph convolutional networks.
+In Proceedings of the AAAI conference on artiﬁcial intelli-
+gence, volume 35, 3950–3957.
+Chami, I.; Ying, Z.; R ´e, C.; and Leskovec, J. 2019. Hy-
+perbolic graph convolutional neural networks. Advances in
+neural information processing systems, 32.
+Chen, J.; Deng, B.; Chen, C.; Zheng, Z.; et al. 2025. Graph
+neural ricci ﬂow: Evolving feature from a curvature perspec-
+tive. In The Thirteenth International Conference on Learn-
+ing Representations.
+Chien, E.; Peng, J.; Li, P.; and Milenkovic, O. 2020. Adap-
+tive universal generalized pagerank graph neural network. In
+International Conference on Learning Representations.
+Chow, B.; and Knopf, D. 2004. The ricci ﬂow: An introduc-
+tion: An introduction, volume 1. American Mathematical
+Soc.
+Cohen, T. S.; Geiger, M.; K¨ohler, J.; and Welling, M. 2018.
+Spherical CNNs. In International Conference on Learning
+Representations.
+Craven, M.; DiPasquo, D.; Freitag, D.; McCallum, A.;
+Mitchell, T.; Nigam, K.; and Slattery, S. 2000. Learning to
+construct knowledge bases from the World Wide Web.Arti-
+ﬁcial intelligence, 118(1-2): 69–113.
+Fan, J. 2025a. Graph Minimum Factor Distance and Its Ap-
+plication to Large-Scale Graph Data Clustering. In Forty-
+second International Conference on Machine Learning.
+Fan, J. 2025b. An Interdisciplinary and Cross-Task
+Review on Missing Data Imputation. arXiv preprint
+arXiv:2511.01196.
+Fesser, L.; and Weber, M. 2024. Mitigating over-smoothing
+and over-squashing using augmentations of forman-ricci
+curvature. In Learning on Graphs Conference, 19–1. PMLR.
+Fey, M.; and Lenssen, J. E. 2019. Fast graph represen-
+tation learning with PyTorch Geometric. arXiv preprint
+arXiv:1903.02428.
+Forman. 2003. Bochner’s method for cell complexes and
+combinatorial Ricci curvature. Discrete & Computational
+Geometry, 29(3): 323–374.
+Gilmer, J.; Schoenholz, S. S.; Riley, P. F.; Vinyals, O.; and
+Dahl, G. E. 2017. Neural message passing for quantum
+chemistry. In International conference on machine learn-
+ing, 1263–1272. Pmlr.
+Grover, K.; Yu, H.; Song, X.; Zhu, Q.; Xie, H.; Ioannidis,
+V . N.; and Faloutsos, C. 2025. Spectro-Riemannian Graph
+Neural Networks. International Conference on Learning
+Representations.
+Gu, A.; Sala, F.; Gunel, B.; and R ´e, C. 2018. Learning
+mixed-curvature representations in product spaces. In In-
+ternational conference on learning representations.
+Gulcehre, C.; Denil, M.; Malinowski, M.; Razavi, A.; Pas-
+canu, R.; Hermann, K. M.; Battaglia, P.; Bapst, V .; Raposo,
+D.; Santoro, A.; et al. 2018. Hyperbolic attention networks.
+In International Conference on Learning Representations.
+Guo, Z.; Sun, Q.; Yuan, H.; Fu, X.; Zhou, M.; Gao, Y .; and
+Li, J. 2025. GraphMoRE: Mitigating Topological Hetero-
+geneity via Mixture of Riemannian Experts. In Proceed-
+ings of the AAAI Conference on Artiﬁcial Intelligence, vol-
+ume 39, 11754–11762.
+Hamilton, R. S. 1982. Three-manifolds with positive Ricci
+curvature. Journal of Differential geometry, 17(2): 255–306.
+Hamilton, W.; Ying, Z.; and Leskovec, J. 2017. Inductive
+representation learning on large graphs. Advances in neural
+information processing systems, 30.
+He, Y .; Zhang, X.; Huang, J.; Rozemberczki, B.; Cucuringu,
+M.; and Reinert, G. 2024. Pytorch geometric signed di-
+rected: a software package on graph neural networks for
+signed and directed graphs. In Learning on Graphs Con-
+ference, 12–1. PMLR.
+Jin, W.; Derr, T.; Liu, H.; Wang, Y .; Wang, S.; Liu, Z.; and
+Tang, J. 2020. Self-supervised learning on graphs: Deep in-
+sights and new direction. arXiv preprint arXiv:2006.10141.
+Kang, Q.; Zhao, K.; Song, Y .; Wang, S.; and Tay, W. P. 2023.
+Node embedding from neural Hamiltonian orbits in graph
+neural networks. In International conference on machine
+learning, 15786–15808. PMLR.
+Kipf, T. N.; and Welling, M. 2016. Semi-supervised classi-
+ﬁcation with graph convolutional networks. InInternational
+Conference on Learning Representations.
+Kochurov, M.; Karimov, R.; and Kozlukov, S. 2020. Geoopt:
+Riemannian optimization in pytorch. arXiv preprint
+arXiv:2005.02819.
+Lee, J. M. 2018. Introduction to Riemannian manifolds, vol-
+ume 2. Springer.
+Li, J.; Fu, X.; Sun, Q.; Ji, C.; Tan, J.; Wu, J.; and Peng, H.
+2022. Curvature graph generative adversarial networks. In
+Proceedings of the ACM web conference 2022, 1528–1537.
+Liu, Y .; Zhou, C.; Pan, S.; Wu, J.; Li, Z.; Chen, H.; and
+Zhang, P. 2023. Curvdrop: A ricci curvature based approach
+to prevent graph neural networks from over-smoothing and
+over-squashing. In Proceedings of the ACM Web Conference
+2023, 221–230.
+Ni, C.-C.; Lin, Y .-Y .; Luo, F.; and Gao, J. 2019. Community
+detection on networks with Ricci ﬂow. Scientiﬁc reports,
+9(1): 9984.
+Obata, M. 1970. Conformal transformations of Riemannian
+manifolds. Journal of Differential Geometry, 4(3): 311–333.
+Ollivier, Y . 2009. Ricci curvature of Markov chains on met-
+ric spaces. Journal of Functional Analysis, 256(3): 810–864.
+Pei, H.; Wei, B.; Chang, K. C.-C.; Lei, Y .; and Yang, B.
+2020. Geom-gcn: Geometric graph convolutional networks.
+In International Conference on Learning Representations.
+26613
+
+--- PDF PAGE 9 ---
+Qian, F.; Bai, L.; Cui, L.; Li, M.; Lyu, Z.; Du, H.; and
+Hancock, E. 2025. DHAKR: Learning Deep Hierarchi-
+cal Attention-Based Kernelized Representations for Graph
+Classiﬁcation. In Proceedings of the AAAI Conference on
+Artiﬁcial Intelligence, volume 39, 19995–20003.
+Sen, P.; Namata, G.; Bilgic, M.; Getoor, L.; Galligher, B.;
+and Eliassi-Rad, T. 2008. Collective classiﬁcation in net-
+work data. AI magazine, 29(3): 93–93.
+Shen, C.; Ding, P.; Wee, J.; Bi, J.; Luo, J.; and Xia, K.
+2024. Curvature-enhanced graph convolutional network for
+biomolecular interaction prediction. Computational and
+Structural Biotechnology Journal, 23: 1016–1025.
+Spivak, M. 1999. A comprehensive introduction to differen-
+tial geometry, volume 2. Publish or Perish.
+Sun, L.; Zhang, Z.; Zhang, J.; Wang, F.; Peng, H.; Su, S.;
+and Yu, P. S. 2021. Hyperbolic variational graph neural
+network for modeling dynamic graphs. In Proceedings of
+the AAAI Conference on Artiﬁcial Intelligence, volume 35,
+4375–4383.
+Sun, Y .; and Fan, J. 2024. MMD Graph Kernel: Effective
+Metric Learning for Graphs via Maximum Mean Discrep-
+ancy. In The Twelfth International Conference on Learning
+Representations.
+Sun, Z.; Ding, C.; and Fan, J. 2023. Lov ´asz Principle for
+Unsupervised Graph Representation Learning. In Oh, A.;
+Naumann, T.; Globerson, A.; Saenko, K.; Hardt, M.; and
+Levine, S., eds., Advances in Neural Information Process-
+ing Systems, volume 36, 58290–58311. Curran Associates,
+Inc.
+Sun, Z.; Wang, X.; Ding, C.; and Fan, J. 2024. Learn-
+ing Graph Representation via Graph Entropy Maximization.
+In International Conference on Machine Learning, 47133–
+47158. PMLR.
+Tang, J.; Sun, J.; Wang, C.; and Yang, Z. 2009. Social inﬂu-
+ence analysis in large-scale networks. In Proceedings of the
+15th ACM SIGKDD international conference on Knowledge
+discovery and data mining, 807–816.
+Topping, J.; Di Giovanni, F.; Chamberlain, B. P.; Dong, X.;
+and Bronstein, M. M. 2021. Understanding over-squashing
+and bottlenecks on graphs via curvature. arXiv preprint
+arXiv:2111.14522.
+Veliˇckovi´c, P.; Cucurull, G.; Casanova, A.; Romero, A.; Li`o,
+P.; and Bengio, Y . 2018. Graph Attention Networks. In
+International Conference on Learning Representations.
+Wang, X.; Ding, C.; Li, T.; and Fan, J. 2025a. Adap-
+tive riemannian graph neural networks. arXiv preprint
+arXiv:2508.02600.
+Wang, X.; Sun, Z.; Ding, C.; and Fan, J. 2025b. Explainable
+Graph Representation Learning via Graph Pattern Analysis.
+In Kwok, J., ed., Proceedings of the Thirty-Fourth Interna-
+tional Joint Conference on Artiﬁcial Intelligence, IJCAI-25,
+3426–3434. International Joint Conferences on Artiﬁcial In-
+telligence Organization.
+Wang, X.; Sun, Z.; Ding, C.; and Fan, J. 2025c. Learn-
+able Kernel Density Estimation for Graphs. arXiv preprint
+arXiv:2505.21285.
+Wang, Z.; and Fan, J. 2024. Graph classiﬁcation via refer-
+ence distribution learning: theory and practice. Advances
+in Neural Information Processing Systems, 37: 137698–
+137740.
+Wu, J.; Chen, H.; Cheng, M.; and Xiong, H. 2023. Cur-
+vagn: curvature-based adaptive graph neural networks for
+predicting protein-ligand binding afﬁnity. BMC bioinfor-
+matics, 24(1): 378.
+Xiong, B.; Zhu, S.; Potyka, N.; Pan, S.; Zhou, C.; and Staab,
+S. 2022. Pseudo-riemannian graph convolutional networks.
+Advances in Neural Information Processing Systems, 35:
+3488–3501.
+Zhang, Y .; Wang, X.; Shi, C.; Jiang, X.; and Ye, Y . 2021.
+Hyperbolic graph attention network. IEEE Transactions on
+Big Data, 8(6): 1690–1701.
+Zhu, J.; Yan, Y .; Zhao, L.; Heimann, M.; Akoglu, L.; and
+Koutra, D. 2020. Beyond homophily in graph neural net-
+works: Current limitations and effective designs. Advances
+in neural information processing systems, 33: 7793–7804.
+26614

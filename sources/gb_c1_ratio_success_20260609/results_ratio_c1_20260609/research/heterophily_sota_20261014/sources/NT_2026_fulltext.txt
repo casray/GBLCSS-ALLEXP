@@ -1,0 +1,1653 @@
+Neighbourhood Transformer: Switchable Attention for Monophily-Aware Graph Learning
+Report GitHub Issue
+×
+Title:
+Content selection saved. Describe the issue below:
+Description:
+Submit without GitHub
+Submit in GitHub
+arXiv is now an independent nonprofit!
+Learn more
+×
+Back to arXiv
+Why HTML?
+Report Issue
+Back to Abstract
+Download PDF
+Abstract
+1 Introduction
+2 Related Works
+3 Preliminaries
+3.1 Message Passing in Graph Neural Networks
+3.2 Self-attention in Transformers
+3.3 Linear-attention in Performers
+4 Neighbourhood Transformers
+4.1 Theoretical Analysis
+4.2 Implementation Details
+5 Neighbourhood Partitioning
+5.1 Partitioning by Size for Switchable Attention
+5.2 Recursively Partitioning by Area for Space-and-Time Efficiency
+6 Experiments
+6.1 Node Classification Performance
+6.2 The Efficiency of Neighbourhood Partitioning
+6.3 Additional Ablation Studies
+6.3.1 On Aggregators
+6.3.2 On Directed Graphs
+6.3.3 On Embeddings Separation
+6.3.4 On Self-loops
+7 Conclusions
+A Hyperparameters
+B Analysis on the Descrepencies of Neighbourhood Sizes in Training and in Inference
+C Comparing With Graph Transformers
+D The Difference Between Graph Partitioning Algorithms and Our Neighbourhood Partitioning
+References
+License: CC BY 4.0
+arXiv:2604.08980v1 [cs.LG] 10 Apr 2026
+††highlights: Our method captures the newly explored monophily patterns in graphs.
+Provides compatibility with conventional homophilic-based approaches.
+Proposes neighbourhood partitioning, vastly reducing memory and time.
+Shows state-of-the-art node classification accuracy on diverse datasets.
+Neighbourhood Transformer: Switchable Attention for Monophily-Aware Graph Learning
+Yi Luo
+Xu Sun
+Guangchun Luo
+Aiguo Chen
+organization=Laboratory of Intelligent Collaborative Computing, University of Electronic Science and Technology of China
+organization=School of Computer Science and Engineering, University of Electronic Science and Technology of China
+organization=Ubiquitous Intelligence and Trusted Services Key Laboratory of Sichuan Province, country=China
+Abstract
+Graph neural networks (GNNs) have been widely adopted in engineering applications such as social network analysis, chemical research and computer vision.
+However, their efficacy is severely compromised by the inherent homophily assumption, which fails to hold for heterophilic graphs where dissimilar nodes are frequently connected.
+To address this fundamental limitation in graph learning, we first draw inspiration from the recently discovered monophily property of real-world graphs, and propose Neighbourhood Transformers (NT), a novel paradigm that applies self-attention within every local neighbourhood instead of aggregating messages to the central node as in conventional message-passing GNNs.
+This design makes NT inherently monophily-aware and theoretically guarantees its expressiveness is no weaker than traditional message-passing frameworks.
+For practical engineering deployment, we further develop a neighbourhood partitioning strategy equipped with switchable attentions, which reduces the space consumption of NT by over 95% and time consumption by up to 92.67%, significantly expanding its applicability to larger graphs.
+Extensive experiments on 10 real-world datasets (5 heterophilic and 5 homophilic graphs) show that NT outperforms all current state-of-the-art methods on node classification tasks, demonstrating its superior performance and cross-domain adaptability.
+The full implementation code of this work is publicly available at https://github.com/cf020031308/MoNT to facilitate reproducibility and industrial adoption.
+keywords
+Graph Neural Networks ,Transformer ,Heterophily ,Node Classification
+††corresponding: Corresponding author: Aiguo Chen††Email: agchen@uestc.edu.cn
+1 Introduction
+Graph neural networks (GNNs) have emerged as a fundamental technology in the realm of graph learning, garnering extensive research interest and a wealth of practical applications over the past decade Duc et al. (2026).
+Their versatility has been demonstrated across a wide array of disciplines.
+In the domain of social network analysis, for instance, GNNs are utilized to predict user interactions and to pinpoint pivotal influencers within the network An et al. (2026).
+Within the field of patent analysis, GNNs are employed to model intricate semantic and structural relationships for intellectual property knowledge discovery Zeng et al. (2026).
+In the realm of intelligent transportation, GNNs are adopted to model spatial-temporal dependencies among road segments and achieve accurate traffic flow prediction Wu et al. (2026).
+Central to the functionality of GNNs is the message passing paradigm, which facilitates the exchange of information between nodes and their adjacent neighbours, thereby allowing GNNs to harness both node features and the structural topology of the graph Scarselli et al. (2009).
+Message passing (MP) implicitly posits that adjacent nodes are relevant or similar to one another, as is often the case in social networks where connected individuals tend to share similar interests McPherson et al. (2001); Gerber et al. (2013); Ciotti et al. (2016).
+However, recent investigations have called into question this homophily assumption by introducing a collection of heterophilic benchmarks and scenarios, where the premise of similarity between neighbouring nodes does not consistently apply Pei et al. (2020); Lim et al. (2021); Platonov et al. (2023).
+For instance, in financial transaction networks, the majority of users with whom fraudsters engage in transactions are not engaged in fraudulent activities themselves Lu et al. (2026).
+On such heterophilic graphs, researchers have noted that a node often exhibits similarity not with its immediate neighbours, but with its 2-hop neighbours, or the neighbours of its neighbours Zheng et al. (2022); Zhu et al. (2020).
+This characteristic, referred to as monophily Altenburger and Ugander (2018); Chin et al. (2019), is also prevalent in homophilic graphs Lei et al. (2022); Xiao et al. (2023).
+Consequently, the monophily assumption appears to be a universal trait in graphs, irrespective of their degree of homophily.
+(a)
+(b)
+(c)
+Figure 1:
+An illustration of computing representations for node v1v_{1} (represented by a double-lined circle) using various mechanisms.
+(a) Message Passing: Messages from different nodes (e.g., v3,v4,v5,v6v_{3},v_{4},v_{5},v_{6}) are propagated along edges towards node v1v_{1} to compute its representation, but are diluted and over-squashed when passing through heterophilic bottlenecks (e.g., v2v_{2}).
+(b) Graph Transformers: Node v1v_{1} aggregates messages from all nodes using self-attention. This approach may inadvertently downplay the importance of information from nearby nodes due to a reduction in the influence of topological structure.
+(c) Neighbourhood Transformers (Ours): Node v1v_{1} exchanges messages (depicted as squares) in each of its constituent neighbourhoods through self-attention, thereby acquiring attentive and structure-aware representations.
+Drawing upon the monophily assumption, we introduce Neighbourhood Transformers (NT), which enables message exchanging among nodes within each neighbourhood through self-attention Vaswani et al. (2017) and constructs node representations by aggregating the exchanged messages from the neighbourhoods of all its neighbours, as Figure 1c depicts.
+While NT captures monophilc patterns in graphs, we prove that it is also compatible with MP.
+Thus NT can serve as a replacement of traditional MP with greater or equal expressiveness.
+Figure 2:
+Unevenly distributed neighbourhood sizes.
+① Paralleled Processing pads node features of all neighbourhoods and processes the padded tensor in a single operation, occupying excessive memory when the node degree distribution is long-tailed.
+② Sequential Processing organizes neighbourhoods by size and processes node features group by group, consuming prohibitive time when the node degree distribution is dispersed.
+A pivotal challenge of applying self-attention in each neighbourhoods is the high complexity resulting from the variable sizes of neighbourhoods.
+In real-world graphs, the distribution of node degrees, correspond to the neighbourhood sizes, tends to be scattered and follow a long-tailed pattern, characterized by a small number of nodes with high degrees and a large number of nodes with low degrees Yin et al. (2012).
+This attribute presents NT with a quandary, as illustrated in Figure 2: either pad an excessive amount of redundant space to facilitate parallel processing Vaswani et al. (2017) or tolerate considerable time overhead to implement sequential processing Yan et al. (2020).
+Moreover, the quadratic complexity of self-attention must also be taken into account when processing large neighbourhoods.
+To tackle these challenges, we incorporate an efficient variant Tay et al. (2023) of self-attention and devise a neighbourhoods partitioning strategy, significantly diminishing both the space and time requirements in NT.
+For instance, when applied to the Tolokers dataset Platonov et al. (2023), our method reduces the memory footprint from over 80GB, necessitated by parallel processing, to less than 4GB and accomplishes the training in only 7.33% of the time required for sequential processing.
+These optimizations render NT practical, enabling us to conduct extensive experiments and assess its superiority against state-of-the-art baselines.
+In summary, our contributions include 1) a model, Neighbourhood Transformers, designed to harness the recently identified property of monophily within real-world graphs, 2) a neighbourhood partitioning strategy equipped with switchable attentions to reduce space and time consumtions of NT, and 3) extensive experiments across diverse benchmark graphs and thorough ablation studies.
+2 Related Works
+Heterophlilic GNNs (HGNN) are improved GNNs to address the challenges posed by heterophily Pei et al. (2020); Li et al. (2022); Bo et al. (2021); Du et al. (2022); Wang and Zhang (2022).
+Numerous prominent strategies of HGNN have been proposed in recent years.
+For example, SPS-GAD Zhu and Zhang (2026) segregates the graph into homophilic, ambiguous, and heterophilic subgraphs for different spectral filters.
+Despite these orthogonal approaches which rewire the graph Yang and Mirzasoleiman (2024); Wo et al. (2024), a common way to bypass the heterophilic structures is to pass messages along the second-order adjacency matrices 𝑨2{\bm{A}}^{2} Lei et al. (2022); Zhu et al. (2020); Xiao et al. (2023).
+While similar in principle to the utilization of 𝑨2{\bm{A}}^{2}, Neighbourhood Transformer (NT) distinguishes itself by enabling nodes to directly access their 2-hop neighbours.
+This paradigm effectively filters out potentially detrimental information in heterophilic contexts.
+For example, consider the heterophilic neighbourhood of node v2v_{2} in Figure 1a, which contains node v1v_{1} and from v3v_{3} to v6v_{6}.
+Assuming that nodes are mutually beneficial if they share the same color but are detrimental if they differ, conventional message passing (even when employing 𝑨2{\bm{A}}^{2}) squashes all conflicting information at node v2v_{2}, subsequently propagate these noisy messages to its neighbouring nodes.
+In contrast, NT (Figure 1c) allows nodes (e.g. v6v_{6}) to safely access information from same-colored nodes (e.g. v4v_{4}) and filter out extraneous noise with the attention mechanism.
+Another strategy of HGNNs is to aggregate neighbour- or high-pass-embeddings in separation with the ego- or low-pass-embeddings Zhu et al. (2020); Platonov et al. (2023); Luan et al. (2022); Bo et al. (2021); Xu et al. (2023).
+Although effective in HGNNs, this strategy is not essential for NT, because NT separately treats 1-hop neighbouring nodes as context conditions and aggregates information from 0- or 2-hop monophilic nodes with similarity, thus obviating the need for such separation.
+Our experiments in appendices has demonstrated this property of NT.
+Graph Transformers (GT) employ self-attention across the entire node set to capture global data dependencies Wu et al. (2021); Chen et al. (2023), as depicted in Figure 1b.
+This capability is advantageous in overcoming the information bottleneck associated with message passing (MP) Alon and Yahav (2021) and in aggregating high-order information to address heterophily challenges Ying et al. (2021).
+However, this often prioritizes distant nodes due to the lack of topological regulation, potentially overlooking nearby nodes that typically carry more relevant information Xing et al. (2024).
+As a trade-off, GT necessitates the explicit integration of structural encodings Kreuzer et al. (2021); Dwivedi et al. (2022) and the implicit representations of MP to address this shortcoming Deng et al. (2024).
+These limitations suggest that GT should be integrated with MP Shirzad et al. (2023); Ma et al. (2023); Rampásek et al. (2022), rather than replacing MP as a standalone graph learning method.
+In contrast to existing methods of GT, which are essentially the combination of MP and GT, NT is an improved replacement of MP that leverages local structures without succumbing to the issue of over-globalization and can also be integrated with GT.
+Therefore, we compare NT against MP in the main text, as they are direct counterparts.
+A comparison between NT and GT is additionally provided in Appendix C for completeness.
+3 Preliminaries
+We denote a graph as 𝒢=(𝒱,ℰ){\mathcal{G}}=({\mathcal{V}},{\mathcal{E}}), where 𝒱={vi|i=1,2,…,|𝒱|}{\mathcal{V}}=\{v_{i}|i=1,2,\ldots,|{\mathcal{V}}|\} is the node set and ℰ={ei​j|vi​ connects ​vj}{\mathcal{E}}=\{e_{ij}|v_{i}\text{ connects }v_{j}\} is the edge set.
+Node features are a matrix 𝑿∈ℝ|𝒱|×d{\bm{X}}\in{\mathbb{R}}^{|{\mathcal{V}}|\times d} where dd is the dimensions of node features.
+The ii-th row 𝑿i,:{\bm{X}}_{i,:} corresponds to the feature vector of node viv_{i}.
+Edge attributes are a matrix 𝑬∈ℝ|ℰ|×de{\bm{E}}\in{\mathbb{R}}^{|{\mathcal{E}}|\times d_{e}} where ded_{e} is the dimensions of edge attributes.
+We denote the attributes of edge ei​je_{ij} as 𝑬(i,j),:{\bm{E}}_{(i,j),:}.
+The neighbourhood of node viv_{i} is the set of nodes that connect to viv_{i}, denoted as 𝒩⁡(vi)={vj|ei​j∈ℰ}{\mathcal{N}}(v_{i})=\{v_{j}|e_{ij}\in{\mathcal{E}}\}.
+3.1 Message Passing in Graph Neural Networks
+The predominant architecture of graph neural networks (GNNs) is founded on the message passing (MP) mechanism, which comprises two essential components: the combiner and the aggregator.
+The combiner is a node-specific function, such as a straightforward linear transformation or a multi-layer perceptron (MLP), that encodes the input node features 𝑿{\bm{X}} into messages 𝒁∈ℝ|𝒱|×h{\bm{Z}}\in\mathbb{R}^{|{\mathcal{V}}|\times h}.
+The aggregator is an order-invariant operation, like mean\mathrm{mean} Kipf and Welling (2017), max\mathrm{max} Hamilton et al. (2017), sum\mathrm{sum} Xu et al. (2019), weighted-mean\mathrm{mean} Velickovic et al. (2018); Brody et al. (2022), or gated-sum\mathrm{sum} Bresson and Laurent (2017), which is utilized to aggregate the messages from neighbouring nodes to produce the final node representations 𝑯∈ℝ|𝒱|×h{\bm{H}}\in\mathbb{R}^{|{\mathcal{V}}|\times h}.
+In essence, an MP layer operates as follows:
+|
+| 𝒁\displaystyle{\bm{Z}}
+| =ϕ​(Combiner​(𝑿)),\displaystyle=\phi(\text{Combiner}({\bm{X}})),
+|
+|
+| 𝑯i,:\displaystyle{\bm{H}}_{i,:}
+| =Aggregator({𝒁j,:|vj∈𝒩(vi)}),\displaystyle=\text{Aggregator}(\{{\bm{Z}}_{j,:}|v_{j}\in{\mathcal{N}}(v_{i})\}),
+|
+where ϕ⁡(⋅)\phi(\cdot) is a non-linear activation function like GELU Hendrycks and Gimpel (2016).
+3.2 Self-attention in Transformers
+Self-attention is the core innovation of Transformer, designed to capture intricate dependencies among the nn input nodes.
+It initially maps the node features 𝑿∈ℝn×d{\bm{X}}\in\mathbb{R}^{n\times d} into corresponding query, key, and value matrices 𝑸,𝑲,𝑽∈ℝn×h{\bm{Q}},{\bm{K}},{\bm{V}}\in\mathbb{R}^{n\times h}.
+Subsequently, an n×nn\times n correlation matrix is generated by the matrix multiplication of 𝑸{\bm{Q}} and 𝑲T{\bm{K}}^{T}, which indicates the importance weights for information selection from 𝑽{\bm{V}}.
+Concisely, a self-attention module can be formalized as:
+|
+| (𝑸,𝑲,𝑽)\displaystyle({\bm{Q}},{\bm{K}},{\bm{V}})
+| =𝑿⋅(𝑾q,𝑾k,𝑾v),\displaystyle={\bm{X}}\cdot({\bm{W}}_{q},{\bm{W}}_{k},{\bm{W}}_{v}),
+|
+|
+| SelfAttention​(𝑿)\displaystyle\text{SelfAttention}({\bm{X}})
+| =softmax⁡(𝑸⋅𝑲Th)⋅𝑽,\displaystyle=\mathrm{softmax}(\frac{{\bm{Q}}\cdot{\bm{K}}^{T}}{\sqrt{h}})\cdot{\bm{V}},
+|
+where 𝑾q,𝑾k,𝑾v∈ℝd×h{\bm{W}}_{q},{\bm{W}}_{k},{\bm{W}}_{v}\in\mathbb{R}^{d\times h} are trainable parameters.
+3.3 Linear-attention in Performers
+The quadratic complexity O⁡(n2)O(n^{2}) of self-attention, as evidenced in the operation 𝑸⋅𝑲T{\bm{Q}}\cdot{\bm{K}}^{T}, becomes computationally infeasible when the number nn of nodes is substantial.
+Consequently, a variety of efficiency-enhanced attention mechanisms with linear complexity O⁡(n)O(n) have been proposed Tay et al. (2023).
+Among these, Performer Choromanski et al. (2021) offers an unbiased or nearly-unbiased estimation of self-attention, complete with provable convergence and reduced variance.
+It initially maps the query and key matrices 𝑸,𝑲{\bm{Q}},{\bm{K}} into 𝑸^,𝑲^∈ℝn×p\hat{\bm{Q}},\hat{\bm{K}}\in\mathbb{R}^{n\times p} using its orthogonal random features 𝑷∈ℝh×p{\bm{P}}\in\mathbb{R}^{h\times p}.
+Next, the product of 𝑲^T\hat{\bm{K}}^{T} and 𝑽{\bm{V}} results in a p×hp\times h matrix, which then matrix-multiplies 𝑸^\hat{\bm{Q}} to yield the approximated attention weights.
+The approximated self-attention mechanism in Performer is expressed as:
+|
+| 𝑸^\displaystyle\hat{\bm{Q}}
+| =exp⁡(1h⋅𝑸⋅𝑷),\displaystyle=\exp(\frac{1}{\sqrt{h}}\cdot{\bm{Q}}\cdot{\bm{P}}),
+|
+|
+| 𝑲^\displaystyle\hat{\bm{K}}
+| =exp⁡(𝑲⋅𝑷−‖𝑲‖22),\displaystyle=\exp({\bm{K}}\cdot{\bm{P}}-\frac{\|{\bm{K}}\|^{2}}{2}),
+|
+|
+| 𝑫^\displaystyle\hat{\bm{D}}
+| =diag​(𝑸^⋅(𝑲^T⋅𝟏n×1)),\displaystyle=\text{diag}(\hat{\bm{Q}}\cdot(\hat{\bm{K}}^{T}\cdot{\bm{1}}_{n\times 1})),
+|
+|
+| SelfAttention​(𝑿)\displaystyle\text{SelfAttention}({\bm{X}})
+| ≈𝑫^−1​𝑸^⋅(𝑲^T⋅𝑽).\displaystyle\approx\hat{\bm{D}}^{-1}\hat{\bm{Q}}\cdot(\hat{\bm{K}}^{T}\cdot{\bm{V}}).
+|
+When hh is held constant and pp is set to h​log⁡hh\log h, as recommended by Performer, the complexity of this linear-attention is O⁡(n​p​h)=O⁡(n)O(nph)=O(n).
+4 Neighbourhood Transformers
+Motivated by the monophily in graphs, we propose Neighbourhood Transformer (NT) to facilitate the message exchanging among nodes from the same neighbourhoods:
+|
+| 𝒁(j,k),:\displaystyle{\bm{Z}}_{(j,k),:}
+| =ϕ(Combiner([𝑯′j,:𝑯′k,:])),\displaystyle=\phi(\text{Combiner}(\begin{bmatrix}{\bm{H}}^{\prime}_{j,:}&{\bm{H}}^{\prime}_{k,:}\end{bmatrix})),
+|
+| (1)
+|
+| 𝑴(j)\displaystyle{\bm{M}}^{(j)}
+| =ϕ(SelfAttention(⊕{𝒁(j,k),:|vk∈𝒩(vj)})),\displaystyle=\phi(\text{SelfAttention}(\mathbin{\oplus}\{{\bm{Z}}_{(j,k),:}|v_{k}\in{\mathcal{N}}(v_{j})\})),
+|
+| (2)
+|
+| 𝑯i,:\displaystyle{\bm{H}}_{i,:}
+| =Aggregator({𝑴(i),:(j)|vj∈𝒩(vi)}),\displaystyle=\text{Aggregator}(\{{\bm{M}}^{(j)}_{(i),:}|v_{j}\in{\mathcal{N}}(v_{i})\}),
+|
+| (3)
+where ⊕\mathbin{\oplus} denotes the operation of stacking a set of row vectors into a matrix, 𝑯′{\bm{H}}^{\prime} is the node representations from the previous NT layer initialized as 𝑯′=𝑿{\bm{H}}^{\prime}={\bm{X}}.
+In Equation 1, the initial message 𝒁(j,k),:{\bm{Z}}_{(j,k),:} from node vjv_{j} to node vkv_{k} is computed by combining their node representations 𝑯′j,:{\bm{H}}^{\prime}_{j,:} and 𝑯′k,:{\bm{H}}^{\prime}_{k,:}.
+In Equation 2, the matrix 𝑴(j)∈ℝ|𝒩⁡(vj)|×h{\bm{M}}^{(j)}\in\mathbb{R}^{|{\mathcal{N}}(v_{j})|\times h} encapsulates messages from node vjv_{j} to all its neighbours, which are comprehensively exchanged within its neighbourhood 𝒩⁡(vj){\mathcal{N}}(v_{j}) through self-attention
+This message exchanging exploits the monophily property, a feature that has been shown to be advantageous in heterophilic graphs, and aids nodes in capturing intricate dependencies among similar 2-hop neighbours.
+In Equation 3, NT computes the hh-dimensional representation 𝑯i,:{\bm{H}}_{i,:} for node viv_{i} by aggregating messages 𝑴(j)(i),:{\bm{M}}^{(j)}_{(i),:} from all its adjacent nodes vj∈𝒩⁡(vi)v_{j}\in{\mathcal{N}}(v_{i}).
+Here, 𝑴(j)(i),:{\bm{M}}^{(j)}_{(i),:} corresponds to the row vector for node viv_{i} in matrix 𝑴(j){\bm{M}}^{(j)}.
+4.1 Theoretical Analysis
+The combination of both nodes in Equation 1 is pivotal in NT because the message exchanged within each neighbourhood is thus uniquely tailored to its central node, endowing NT with the diversified capability to accommodate various graphs.
+As the following theorems indicate, NT would degrade to mere message passing if any part of the two nodes is excluded:
+Theorem 1.
+When the combiner concentrates on information from central nodes of neighbourhoods, the Neighbourhood Transformer is a message passing layer.
+Proof.
+When Equation 1 omits 𝑯′k,:{\bm{H}}^{\prime}_{k,:} and becomes
+|
+| 𝒁(j,k),:=ϕ(Combiner(𝑯j,:′))≜𝒁(j),{\bm{Z}}_{(j,k),:}=\phi(\text{Combiner}({\bm{H}}^{\prime}_{j,:}))\triangleq{\bm{Z}}^{(j)},
+|
+Equation 2 becomes a simple transformation of 𝒁(j){\bm{Z}}^{(j)} as
+|
+| 𝑴(j)\displaystyle{\bm{M}}^{(j)}
+| =ϕ⁡(SelfAttention​(⊕{𝒁(j),𝒁(j),…,𝒁(j)})CLOSE\displaystyle=\phi(\text{SelfAttention}(\oplus\{{\bm{Z}}^{(j)},{\bm{Z}}^{(j)},\ldots,{\bm{Z}}^{(j)}\})
+|
+|
+|
+| =[ϕ⁡(𝒁(j)​𝑾v)ϕ⁡(𝒁(j)​𝑾v)⋯ϕ⁡(𝒁(j)​𝑾v)].\displaystyle=\begin{bmatrix}\phi({\bm{Z}}^{(j)}{\bm{W}}_{v})\\
+\phi({\bm{Z}}^{(j)}{\bm{W}}_{v})\\
+\cdots\\
+\phi({\bm{Z}}^{(j)}{\bm{W}}_{v})\end{bmatrix}.
+|
+Then, the output of Equation 3 is actually equivalent to the output of a message passing layer:
+|
+| 𝑯i,:\displaystyle{\bm{H}}_{i,:}
+| =Aggregator(𝑴(i),:(j)|vj∈𝒩(vi))\displaystyle=\text{Aggregator}({{\bm{M}}^{(j)}_{(i),:}|v_{j}\in{\mathcal{N}}(v_{i})})
+|
+|
+|
+| =Aggregator(ϕ(ϕ(Combiner(𝑯j,:′))⋅𝑾v)|vj∈𝒩(vi)).\displaystyle=\text{Aggregator}({\phi(\phi(\text{Combiner}({\bm{H}}^{\prime}_{j,:}))\cdot{\bm{W}}_{v})|v_{j}\in{\mathcal{N}}(v_{i})}).
+|
+∎
+This theorem also suggests that the optimizable combiner ensures compatibility with traditional message passing and maintains expressiveness not weaker than conventional GNNs when monophily is absent.
+Theorem 2.
+When the combiner omits information from central nodes of neighbourhoods, the Neighbourhood Transformer with linear-attention is a two-layered message passing network.
+Proof.
+When omitting 𝑯′j,:{\bm{H}}^{\prime}_{j,:} in Equation 1 and using linear-attention in Equation 2, the final representations of Equation 3 are
+|
+| 𝑯i,:=Aggregator({ϕ(𝑸^i,:⋅𝑲v(j)𝑸^i,:⋅𝑲1(j))|vj∈𝒩(vi)}),{\bm{H}}_{i,:}=\text{Aggregator}(\{\phi(\frac{\hat{\bm{Q}}_{i,:}\cdot{\bm{K}}_{v}^{(j)}}{\hat{\bm{Q}}_{i,:}\cdot{\bm{K}}_{1}^{(j)}})|v_{j}\in{\mathcal{N}}(v_{i})\}),
+|
+where 𝑲v(j){\bm{K}}_{v}^{(j)} and 𝑲1(j){\bm{K}}_{1}^{(j)} indicates the formulas 𝑲^T⋅𝑽\hat{\bm{K}}^{T}\cdot{\bm{V}} and 𝑲^T⋅𝟏n×1\hat{\bm{K}}^{T}\cdot{\bm{1}}_{n\times 1} of Performer applied in the neighbourhood 𝒩⁡(vj){\mathcal{N}}(v_{j}).
+In detail, the element at the position (x,y)(x,y) of 𝑲v(j){\bm{K}}_{v}^{(j)} is ∑vk∈𝒩⁡(vj)K^k,x​Vk,y\sum\limits_{v_{k}\in{\mathcal{N}}(v_{j})}\hat{K}_{k,x}V_{k,y} and the xx-th element of 𝑲1(j){\bm{K}}_{1}^{(j)} is ∑vk∈𝒩⁡(vj)K^k,x\sum\limits_{v_{k}\in{\mathcal{N}}(v_{j})}\hat{K}_{k,x}.
+Regarding 𝑲v(j){\bm{K}}_{v}^{(j)} and 𝑲1(j){\bm{K}}_{1}^{(j)} as the result of a message passing layer, which aggregates information of 𝒩⁡(vj){\mathcal{N}}(v_{j}) to node vjv_{j}, NT can be rewritten as a two-layered message passing network:
+|
+| 𝒁(1)\displaystyle{\bm{Z}}^{(1)}
+| =(𝑲^,𝑽)=(exp⁡(𝑿​𝑾k​𝑷−‖𝑿​𝑾k‖22),𝑿​𝑾v),\displaystyle=(\hat{\bm{K}},{\bm{V}})=(\exp({\bm{X}}{\bm{W}}_{k}{\bm{P}}-\frac{||{\bm{X}}{\bm{W}}_{k}||^{2}}{2}),{\bm{X}}{\bm{W}}_{v}),
+|
+|
+| 𝑯(1)i,:\displaystyle{\bm{H}}^{(1)}_{i,:}
+| =(𝑲v(i),𝑲1(i))\displaystyle=({\bm{K}}_{v}^{(i)},{\bm{K}}_{1}^{(i)})
+|
+|
+|
+| =([∑vj∈𝒩⁡(vi)K^j,x⋅Vj,y]x​y,[∑vj∈𝒩⁡(vi)K^j,x]x),\displaystyle=([\sum\limits_{v_{j}\in{\mathcal{N}}(v_{i})}\hat{K}_{j,x}\cdot V_{j,y}]_{xy},[\sum\limits_{v_{j}\in{\mathcal{N}}(v_{i})}\hat{K}_{j,x}]_{x}),
+|
+|
+| 𝒁(2)\displaystyle{\bm{Z}}^{(2)}
+| =𝑯(1),\displaystyle={\bm{H}}^{(1)},
+|
+|
+| 𝑯(2)i,:\displaystyle{\bm{H}}^{(2)}_{i,:}
+| =Aggregator′(exp(1h⋅𝑿i,:𝑾q𝑷),{𝒁j,:(2)|vj∈𝒩(vi)}),\displaystyle=\text{Aggregator}^{\prime}(\exp(\frac{1}{\sqrt{h}}\cdot{\bm{X}}_{i,:}{\bm{W}}_{q}{\bm{P}}),\{{\bm{Z}}^{(2)}_{j,:}|v_{j}\in{\mathcal{N}}(v_{i})\}),
+|
+where 𝑿{\bm{X}} is the inputted node features.
+∎
+4.2 Implementation Details
+In addition to the static aggregators, such as mean,max,sum\mathrm{mean,max,sum}, we harness the exchanged messages to simplify the implementation of dynamic aggregators.
+Specifically, we double the dimensions of the output matrices 𝑴(j){\bm{M}}^{(j)} from Equation 2 and split them into two parts.
+The first part is normalized by σ\sigma, which corresponds to the Softmax function for the weighted-mean\mathrm{mean} aggregator and the Sigmoid function for the gated-sum\mathrm{sum} aggregator, to generate the weights for aggregating the second part.
+This results in Equation 3 being expressed as:
+|
+| 𝑯i,:\displaystyle{\bm{H}}_{i,:}
+| =Aggregator({𝑴(i),:(j)|vj∈𝒩(vi)})\displaystyle=\text{Aggregator}(\{{\bm{M}}^{(j)}_{(i),:}|v_{j}\in{\mathcal{N}}(v_{i})\})
+|
+|
+|
+| =∑vj∈𝒩⁡(vi)σ(1h⋅∑l=1h𝑴(i),l(j))⋅𝑴(i),h+1:2​h(j).\displaystyle=\sum\limits_{v_{j}\in{\mathcal{N}}(v_{i})}\sigma(\frac{1}{h}\cdot\sum\limits^{h}_{l=1}{\bm{M}}^{(j)}_{(i),l})\cdot{\bm{M}}^{(j)}_{(i),h+1:2h}.
+|
+The weights of the messages 𝑴(j)(i),h+1:2​h{\bm{M}}^{(j)}_{(i),h+1:2h} from node vjv_{j} to node viv_{i} are determined not solely by the two endpoints but by the entire neighbourhood 𝒩⁡(vj){\mathcal{N}}(v_{j}), thereby enhancing the attentiveness and suitability of our approach for NT.
+Figure 3:
+In directed graphs, the source nodes (v2,v3,v4v_{2},v_{3},v_{4}) to the central node (v1v_{1}) and its destination nodes (v5,v6v_{5},v_{6}) construct different neighbourhoods.
+In the context of directed graphs, we adhere to the findings of Rossi et al. (2023), which suggest that leveraging the directionality of edges can lead to substantial improvements, particularly in heterophilic graphs.
+To adapt NT for directed graphs, we introduce a directed variant called Dir-NT.
+This variant differentiates between the source neighbours (nodes that have edges pointing towards the central node) and the destination neighbours (nodes that the central node points to), as shown in Figure 3.
+We apply two separate NT instances to these distinct sets of neighbours.
+The mathematical expression for this approach is as follows:
+|
+| NT1​(𝑿,𝑬)+NT2​(𝑿,𝑬′),\displaystyle\text{NT}_{1}({\bm{X}},{\bm{E}})+\text{NT}_{2}({\bm{X}},{\bm{E}}^{\prime}),
+|
+|
+| where 𝑬′(k,j),:=𝑬(j,k),:,∀ej​k∈ℰ.\displaystyle\text{ where }{\bm{E}}^{\prime}_{(k,j),:}={\bm{E}}_{(j,k),:},\forall e_{jk}\in{\mathcal{E}}.
+|
+Here, NT1\text{NT}_{1} and NT2\text{NT}_{2} represent two separate instances of the NT.
+By summing the outputs of NT1\text{NT}_{1} and NT2\text{NT}_{2}, we combine the information from both the source and destination neighbourhoods, allowing the model to capture the directional information in the graph and potentially improve the representation learning for nodes in directed graphs.
+5 Neighbourhood Partitioning
+Figure 4:
+Partitioning neighbourhoods into multiple groups for space and time efficiency.
+We partition neighbourhoods into two groups based on the degrees of their central nodes.
+Neighbourhoods with more than nn nodes will be processed by Performer for efficiency and other small neighbourhoods will be processed by Transformer for accuracy.
+Each group of neighbourhoods is recursively partitioned into two approximately equal halves in terms of area (s1≈s2s_{1}\approx s_{2}), provided that the partitioning leads to a considerable compression rate α\alpha.
+As we have discussed in Section 1, the primary obstacle to the practical application of NT is the excessive complexity arising from the uneven distribution of neighbourhood scales.
+To address this challenge, we propose a neighbourhood partitioning strategy that partitions all neighbourhoods into several smaller groups.
+Each group is processed through an attention module that can be switched between the precise self-attention of the Transformer and the computationally efficient linear-attention of the Performer.
+We depict this strategy in Figure 4 and provide a detailed description in the subsequent text.
+5.1 Partitioning by Size for Switchable Attention
+The self-attention mechanism, with its quadratic complexity, necessitates a significant amount of memory when applied to large neighbourhoods.
+To mitigate this issue, we implement a switchable attention module that processes neighbourhoods with different sizes.
+This module employs the linear-attention of the Performer to handle neighbourhoods exceeding nn nodes, prioritizing efficiency, and switches to the self-attention of the Transformer for neighbourhoods with nn nodes or fewer, ensuring accuracy.
+Notably, both attention algorithms share a single set of parameters, which is made possible by the Performer’s remarkable property of full compatibility with the Transformer.
+As detailed in Section 3.3, the self-attention in the Transformer computes an n×nn\times n matrix 𝑸⋅𝑲T{\bm{Q}}\cdot{\bm{K}}^{T}, whereas the linear-attention in the Performer computes two n×pn\times p matrices 𝑸^,𝑲^\hat{\bm{Q}},\hat{\bm{K}} and a p×hp\times h matrix 𝑲^T⋅𝑽\hat{\bm{K}}^{T}\cdot{\bm{V}}.
+Here, pp and hh represent the dimensions of the orthogonal random features in the Performer and the node representations, respectively.
+Thus, we set n=p+p2+h​pn=p+\sqrt{p^{2}+hp} as the solution of n2=2​n​p+h​pn^{2}=2np+hp to ensure that the linear-attention indeed reduces the memory footprint compared to the original self-attention.
+5.2 Recursively Partitioning by Area for Space-and-Time Efficiency
+In scenarios where we have NN neighbourhoods with the largest one contains DD nodes, processing the neighbourhoods in parallel necessitates padding the node features into an N×D×dN\times D\times d tensor (with an N×DN\times D boolean matrix to indicate the paddings).
+Due to the long-tail distribution characteristic of real-world graphs, this pre-processing step often results in substantial space wastage due to padding and an increase in time due to redundant computation.
+To address this issue, we propose to partition the neighbourhoods into smaller groups and process them sequentially rather than in a single paralleled operation.
+To formalize our analysis, we outline the following two assumptions to measure the memory usage in neighbourhood processing.
+Assumption 1 (Paralleled Processing).
+The memory consumption of applying the transformer to a group of neighbourhoods is proportional to the group’s area, defined as the product of the number of neighbourhoods and their maximum size.
+Assumption 2 (Sequential Processing).
+Sequentially processing two neighbourhood groups with areas s1s_{1} and s2s_{2} consumes memory proportional to max⁡(s1,s2)\max(s_{1},s_{2}).
+As the example in Figure 4 shows, partitioning neighbourhoods into two groups and sequentially processing them results in a memory footprint proportional to the area of max⁡(s1,s2)\max(s_{1},s_{2}), which is smaller than the memory footprint of the original group, proportional to the area of s=s1+s2+s3s=s_{1}+s_{2}+s_{3}.
+However, searching for the optimal partitioning with min⁡max⁡(s1,s2)\min\max(s_{1},s_{2}) has a complexity of o⁡(2N)o(2^{N}).
+To accelerate the searching, we propose the following theorem:
+Theorem 3.
+Given any partitioning that divides neighbourhoods into two groups, there exists an alternative partitioning that requires the same or less processing memory, where all neighbourhoods in one group are not smaller than those in the other group.
+Proof.
+Considering a partitioning where group G1G_{1} contains c1c_{1} neighbourhoods and group G2G_{2} contains c2c_{2} neighbourhoods, with the maximum size d1d_{1} of neighbourhoods in G1G_{1} being not smaller than that d2d_{2} of G2G_{2} (d1≥d2d_{1}\geq d_{2}).
+If the smallest neighbourhood (with size d3d_{3}) in G1G_{1} is smaller than the largest one (with size d2>d3d_{2}>d_{3}) in G2G_{2}, we can swap their positions to create two new groups G1′G^{\prime}_{1} and G2′G^{\prime}_{2}.
+The area of G1′G^{\prime}_{1} remains unchanged since max⁡(d1,d2)×c1=d1×c1\max(d_{1},d_{2})\times c_{1}=d_{1}\times c_{1}, while the area of G2′G^{\prime}_{2} is unchanged or reduced since min⁡(d3,d4)×c2≤d2×c2\min(d_{3},d_{4})\times c_{2}\leq d_{2}\times c_{2}, where d4d_{4} is the size of the second-largest neighbourhood in G2G_{2}.
+We can keep swapping the smallest neighbourhood in the first group with the largest neighbourhood in the second group if the former is smaller than the latter until any neighbourhood in the first group is not smaller than those in the second, with the processing memory remaining unchanged or reduced.
+∎
+With this theorem, we conclude that the optimal partitioning can be achieved by first ordering the neighbourhoods and then scanning linearly for the partitioning point, with a complexity of o⁡(N​log⁡N)o(N\log N), accounting for the sorting step.
+Algorithm 1  Recursively Partitioning Neighbourhoods by Area
+0:
+compression rate α\alpha, a list [(n1,c1),(n2,c2),…,(nl,cl)][(n_{1},c_{1}),(n_{2},c_{2}),\ldots,(n_{l},c_{l})] with n1>n2>…>nln_{1}>n_{2}>\ldots>n_{l} and ∑i=1lci=|𝒱|\sum\limits_{i=1}^{l}c_{i}=|{\mathcal{V}}| where an element (ni,ci)(n_{i},c_{i}) indicates cic_{i} neigbourhoods with size nin_{i}.
+0:
+a set 𝕊{\mathbb{S}} where an element (i,j,s)(i,j,s) indicates a group of neighbourhoods sized in [ni,nj][n_{i},n_{j}] and its area is ss.
+1:
+Define: Area​(i,j)=(aj−ai+ci)×ni,ai=∑j=1icj\text{Area}(i,j)=(a_{j}-a_{i}+c_{i})\times n_{i},a_{i}=\sum\limits_{j=1}^{i}c_{j}
+2:
+Initialize: 𝕊:={(1,l,Area​(1,l))}{\mathbb{S}}:=\{(1,l,\text{Area}(1,l))\}
+3:
+while true do
+4:
+select (i,j,s)(i,j,s) from 𝕊{\mathbb{S}} with maximum ss
+5:
+if j=ij=i then
+6:
+return  𝕊{\mathbb{S}}
+7:
+end if
+8:
+t∗:=arg​mint=ij​max⁡(Area​(i,t),Area​(t+1,j))t^{*}:=\argmin\limits_{t=i}^{j}\max(\text{Area}(i,t),\text{Area}(t+1,j))
+9:
+s1:=Area​(i,t∗)s_{1}:=\text{Area}(i,t^{*})
+10:
+s2:=Area​(t∗+1,j)s_{2}:=\text{Area}(t^{*}+1,j)
+11:
+if max⁡(s1,s2)≥α⋅s\max(s_{1},s_{2})\geq\alpha\cdot s then
+12:
+return  𝕊{\mathbb{S}}
+13:
+end if
+14:
+𝕊:=𝕊∖{(i,j,s)}∪{(i,t∗,s1),(t∗+1,j,s2)}{\mathbb{S}}:={\mathbb{S}}\setminus\{(i,j,s)\}\cup\{(i,t^{*},s_{1}),(t^{*}+1,j,s_{2})\}
+15:
+end while
+Although the sequential handling of the partitioned neighbourhood groups may increase the processing time, a substantial enough saving in redundant computation on padded bits (e.g. the s3s_{3} part) can offset this time increase.
+We therefore adopt the partitioning only when the compression rate α=max⁡(s1,s2)/s\alpha=\max(s_{1},s_{2})/s is considerably small and develop an algorithm, described in Algorithm 1, to recursively partition neighbourhoods into multiple groups for both space and time efficiency.
+In the algorithm, we define a function to calculate the area of a neighbourhood group as the product of the number of its containing neighbourhoods and their maximum size (in line 1).
+Then, we initialize the algorithm with all inputted neighbourhoods as a single group (in line 2).
+In the main loop, we repeatedly select the group with the largest area from the set 𝕊{\mathbb{S}} (in line 4) and partition it into two halves with their maximum areas minimal (in line 8).
+If the partitioning leads to a considerable compression rate (in line 11), we accept the partitioning and replace the group with its two halves (in line 14).
+By adjusting the hyperparameter α\alpha, we can control the tradeoff between memory usage and processing time.
+Our empirical findings suggest that α=0.4\alpha=0.4 is a good balance, resulting in fast processing with relatively low memory consumption.
+When a group is atomic (line 6) or a partitioning is refused (line 12), we terminate partitioning other smaller groups and output the group set 𝕊{\mathbb{S}}.
+6 Experiments
+To evaluate the performance of the Neighbourhood Transformer (NT) and the proposed neighbourhood partitioning strategy with switchable attention, we design a series of node classification experiments on a diverse set of graphs.
+The first five datasets are heterophilic graphs in Table 1, including Roman Empire, A-ratings, Minesweeper, Tolokers, and Questions Platonov et al. (2023).
+The latter five datasets are homophilic graphs in Table 2, including A-computer, A-photo McAuley et al. (2015), CoauthorCS, CoauthorPhy Shchur et al. (2018), and WikiCS Mernyei and Cangea (2020).
+We use the adjusted homophily metric, as introduced in Platonov et al. (2023), to quantify the degree of homophily within a graph.
+It is evident from the measurements that heterophilic graphs exhibit lower homophily scores across the board.
+We use the default data splits provided with the original datasets for the five heterophilic graphs and WikiCS.
+For other four homophilic graphs, we follow the splitting strategy from Shirzad et al. (2023), dividing the nodes into training (60%), validation (20%), and testing (20%) sets.
+Our experimental setup involves the integration of NT into the GAT-sep architecture, as proposed in Platonov et al. (2023).
+Specifically, the network architecture is structured as follows: it begins with a linear encoder, followed by LL residual blocks, and concludes with a linear predictor.
+Each residual block incorporates a skip connection He et al. (2016) and consists of a layer normalization layer, an NT layer, and a two-layer multi-layer perceptron (MLP).
+For model training, we utilize the Adam optimizer Kingma and Ba (2015).
+6.1 Node Classification Performance
+Table 1:
+Averaged accuracy scores and the standard deviations in 10 runs on heterophilic graphs.
+The best score for each dataset is bolded, and the second best is underlined.
+|
+| Roman Empire
+| A-ratings
+| Minesweeper
+| Tolokers
+| Questions
+| #Nodes
+| 22,662
+| 24,492
+| 10,000
+| 11,758
+| 48,921
+| #Edges
+| 32,927
+| 93,050
+| 39,402
+| 519,000
+| 153,540
+| Mean Deg.
+| 2.91
+| 7.60
+| 7.88
+| 88.28
+| 6.28
+| #Features
+| 300
+| 300
+| 7
+| 10
+| 301
+| #Classes
+| 18
+| 5
+| 2
+| 2
+| 2
+| Homophily
+| -4.68%
+| 14.02%
+| 0.94%
+| 9.26%
+| 2.07%
+| GCN
+| 73.69±0.74
+| 48.70±0.63
+| 89.75±0.52
+| 83.64±0.67
+| 76.09±1.27
+| GraphSAGE
+| 85.74±0.67
+| 53.63±0.39
+| 93.51±0.57
+| 82.43±0.44
+| 76.44±0.62
+| GAT
+| 80.87±0.30
+| 49.09±0.63
+| 92.01±0.68
+| 83.70±0.47
+| 77.43±1.20
+| H2GCN
+| 60.11±0.52
+| 36.47±0.23
+| 89.71±0.31
+| 73.35±1.01
+| 63.59±1.46
+| CPGNN
+| 63.96±0.62
+| 39.79±0.77
+| 52.03±5.46
+| 73.36±1.01
+| 65.96±1.95
+| GPRGNN
+| 64.85±0.27
+| 44.88±0.34
+| 86.24±0.61
+| 72.94±0.97
+| 55.48±0.91
+| FAGCN
+| 65.22±0.56
+| 44.12±0.30
+| 88.17±0.73
+| 77.75±1.05
+| 77.24±1.26
+| GloGNN
+| 59.63±0.69
+| 36.89±0.14
+| 51.08±1.23
+| 73.39±1.17
+| 65.74±1.19
+| GBK-GNN
+| 74.57±0.47
+| 45.98±0.71
+| 90.85±0.58
+| 81.01±0.67
+| 74.47±0.86
+| JacobiConv
+| 71.14±0.42
+| 43.55±0.48
+| 89.66±0.40
+| 68.66±0.65
+| 73.88±1.16
+| GGCN
+| 74.46±0.54
+| 43.00±0.32
+| 87.54±1.22
+| 77.31±1.14
+| 71.10±1.57
+| tGNN
+| 79.95±0.75
+| 48.21±0.53
+| 91.93±0.77
+| 70.84±1.75
+| 76.38±1.79
+| OrderedGNN
+| 77.68±0.39
+| 47.29±0.65
+| 80.58±1.08
+| 75.60±1.36
+| 75.09±1.00
+| GAT-sep
+| 88.75±0.41
+| 52.70±0.62
+| 93.91±0.35
+| 83.78±0.43
+| 76.79±0.71
+| Dir-GNN
+| 91.23±0.32
+| 47.89±0.39
+| 87.05±0.69
+| 81.19±1.05
+| 76.13±1.24
+| CDE
+| 91.64±0.28
+| 47.63±0.43
+| 95.50±5.23
+| -
+| 75.17±0.99
+| BloomGML
+| 85.26±0.25
+| 52.92±0.39
+| 93.30±0.16
+| 85.92±0.14
+| 77.93±0.34
+| NT
+| 94.77±0.31
+| 54.25±0.50
+| 97.42±0.50
+| 85.69±0.54
+| 78.46±1.10
+Table 2:
+Averaged accuracy scores and the standard deviations in 10 runs on homophilic graphs.
+The best score for each dataset is bolded, and the second best is underlined.
+|
+| A-computer
+| A-photo
+| CoauthorCS
+| CoauthorPhy
+| WikiCS
+| #Nodes
+| 13,752
+| 7,650
+| 18,333
+| 34,493
+| 11,701
+| #Edges
+| 245,861
+| 119,081
+| 81,894
+| 247,962
+| 216,123
+| Mean Deg.
+| 35.76
+| 31.13
+| 8.93
+| 14.38
+| 36.85
+| #Features
+| 767
+| 745
+| 6,805
+| 8,415
+| 300
+| #Classes
+| 10
+| 8
+| 15
+| 5
+| 10
+| Homophily
+| 68.23%
+| 78.50%
+| 78.45%
+| 87.24%
+| 57.90%
+| GCN
+| 89.65±0.52
+| 92.70±0.20
+| 92.92±0.12
+| 96.18±0.07
+| 77.47±0.85
+| GraphSAGE
+| 91.20±0.29
+| 94.59±0.14
+| 93.91±0.13
+| 96.49±0.06
+| 74.77±0.95
+| GAT
+| 90.78±0.13
+| 93.87±0.11
+| 93.61±0.14
+| 96.17±0.08
+| 76.91±0.82
+| APPNP
+| 90.18±0.17
+| 94.32±0.14
+| 94.49±0.07
+| 96.54±0.07
+| 78.87±0.11
+| PPRGo
+| 88.69±0.21
+| 93.61±0.12
+| 92.52±0.15
+| 95.51±0.08
+| 77.89±0.42
+| GCNII
+| 91.04±0.41
+| 94.30±0.20
+| 92.22±0.14
+| 95.97±0.11
+| 78.68±0.55
+| GPRGNN
+| 89.32±0.29
+| 94.49±0.14
+| 95.13±0.09
+| 96.85±0.08
+| 78.12±0.23
+| GGCN
+| 91.81±0.20
+| 94.50±0.11
+| 95.25±0.05
+| 97.07±0.05
+| 78.44±0.53
+| tGNN
+| 83.40±1.33
+| 89.92±0.72
+| 92.85±0.48
+| 96.24±0.24
+| 71.49±1.05
+| OrderedGNN
+| 92.03±0.13
+| 95.10±0.20
+| 95.00±0.10
+| 97.00±0.08
+| 79.01±0.68
+| NT
+| 92.61±0.63
+| 96.12±0.39
+| 96.07±0.32
+| 97.32±0.11
+| 80.04±0.61
+We report the average accuracy scores of NT across 10 runs on five heterophilic graphs in Table 1 and five homophilic graphs in Table 2.
+Baselines are state-of-the-art (SotA) message passing neural networks (MPNN), including GCN Kipf and Welling (2017), GraphSAGE Hamilton et al. (2017), GAT Velickovic et al. (2018), H2GCN Zhu et al. (2020), CPGNN Zhu et al. (2021), GPRGNN Chien et al. (2021), FAGCN Bo et al. (2021), GloGNN Li et al. (2022), GBK-GNN Du et al. (2022), JacobiConv Wang and Zhang (2022), GGCN Yan et al. (2022), tGNN Hua et al. (2022), OrderedGNN Song et al. (2023), GAT-sep Platonov et al. (2023), Dir-GNN Rossi et al. (2023), CDE Zhao et al. (2023), BloomGML Zheng et al. (2024), APPNP Klicpera et al. (2019), PPRGo Bojchevski et al. (2020), and GCNII Chen et al. (2020).
+Their node classification scores on the 10 datasets are retrieved from previous works, including their original papers Zhao et al. (2023); Zheng et al. (2024) and leaderboards of the respective datasets Platonov et al. (2023); Deng et al. (2024).
+The training protocol is constrained to a maximum of 2500 epochs with the learning rate for the optimizer is set at 0.0010.001.
+An early stopping mechanism is implemented to terminate training when there is no improvement in the validation set performance for 500 consecutive epochs.
+The selection of other hyperparameters is facilitated by Optuna Akiba et al. (2019), which is used to perform a search over the following parameters: the aggregator type, including mean\mathrm{mean}, weighted-mean\mathrm{mean}, sum\mathrm{sum}, gated-sum\mathrm{sum}, and max\mathrm{max}; the number of hidden dimensions per attention head, ranging from 8 to 64; the number of attention heads, ranging from 1 to 8; the number of layers, ranging from 1 to 5; and the dropout rate, which is searched within the set {0.1,0.2,…,0.8}\{0.1,0.2,\ldots,0.8\}.
+The optimal hyperparameters identified through this search are summarized in Appendix A and recorded in our released code.
+Table 1 and Table 2 reveal that NT outperforms the existing SotA MPNNs on 8 of the 10 graphs and ranks as the second best on the rest two datasets.
+The results on the five heterophilic graphs provide strong evidence that NT is a powerful approach for node classification tasks on heterophilic graphs, where traditional MPNNs often struggle due to the lack of homophily.
+Besides, the results on the five homophilic graphs confirm our earlier analysis that NT is capable of adapting to the homophily present in graphs, making it a robust framework that is general for graph representation learning.
+Thus, our claim that NT’s message exchanging paradigm is a novel and competitive graph learning approach compared with the message passing paradigm is validated.
+6.2 The Efficiency of Neighbourhood Partitioning
+Figure 5:
+Ablation studies on the neighbourhood partitioning strategy.
+Bars represent memory footprints and curves are time consumptions.
+We compare paralleled processing (the first bar/point), partitioning neighbourhoods by size (the second bar/point), by both size and area with α=0.1,0.2,…,0.9\alpha=0.1,0.2,\ldots,0.9 (the hollow bars/points), and sequential processing (the last bar/point).
+Figure 6:
+Accuracy scores (%, the horizontal axes) in 10 runs with different attention modules: Transformer with self-attention, Performer with linear-attention, and our switchable attention module.
+The middle line in each violin plot represents the average score.
+In this section, we benchmark NT using nine datasets to elucidate the attributes of the neighbourhood partitioning strategy.
+Figure 5 provides a visual representation of the GPU memory consumption and training time for parallel processing, partitioning neighbourhoods by size, by both size and area, and sequential processing.
+Parallel processing runs out of 80GB memory (OOM, depicted as red bars) in six out of the nine datasets and is only feasible on graphs with a low maximum node degree DD.
+By partitioning neighbourhoods by size and incorporating Performer, the memory footprint is dramatically decreased to below 30GB across all graph datasets.
+With additional partitionings by area, the memory footprint is further reduced, for instance, to less than 4GB when α=0.4\alpha=0.4.
+This reduction in GPU memory utilization is crucial for the practical application of NT.
+Moreover, as illustrated in the figure, the training time curves exhibit a bowl-shaped pattern with the minimum points occurring around α=0.4\alpha=0.4, showing that our method can be an order of magnitude faster than sequential processing (e.g., 8.63 times faster on WikiCS and 12.64 times faster on Tolokers).
+The only exception is observed on Roman Empire, where our approach is 16% slower compared to sequential processing.
+This discrepancy arises due to the highly concentrated distribution of node degrees in Roman Empire, which has an average node degree of 2.91.
+In such a scenario, the simplicity of the graph structure allows sequential processing to handle all neighbourhoods within a limited number of operations, negating the benefits of our partitioning strategy.
+As the above experiments indicate, the integration of our switchable attention module with the linear attention mechanism of Performer substantially diminishes the memory and computational demands of NT.
+To investigate whether this integration impairs node classification accuracy, we conducted an ablation study focusing on the attention module.
+Figure 6 displays the accuracy scores for different attention modules across ten datasets.
+As depicted in the figure, while the Performer with linear attention lags on Roman Empire, A-ratings, A-computer, A-photo, and WikiCS, there is no statistically significant discrepancy in accuracy between the Transformer with full-rank self-attention and our proposed switchable attention module.
+Consequently, we deduce that switching between different attentions does not degrade classification accuracy.
+In summary, our neighbourhood partitioning strategy successfully diminishes the space and time complexities associated with NT, all while maintaining its performance integrity.
+6.3 Additional Ablation Studies
+Other than Figure 6 on different attention modules, we have conduct additional ablation studies to thoroughly reveal the property of Neighbourhood Transformers.
+6.3.1 On Aggregators
+Figure 7:
+Accuracy scores (%, the horizontal axes) in 10 runs with different aggregators.
+The middle line in each violin plot represents the average score.
+In this section, we perform an ablation study on the aggregator used within our NT.
+We evaluate five different aggregators: mean\mathrm{mean}, weighted-mean\mathrm{mean}, sum\mathrm{sum}, gated-sum\mathrm{sum}, and max\mathrm{max}.
+As shown in Figure 7, there is no clear trend in performance across different aggregators, with the exception that the sum\mathrm{sum} aggregator tends to be unstable and often results in worse performance.
+Among the tested aggregators, weighted-mean\mathrm{mean} appears to be a more robust choice overall.
+However, the gated-sum\mathrm{sum} aggregator achieves the highest score on the Questions dataset, while the mean\mathrm{mean} aggregator performs best on the WikiCS dataset.
+This suggests that the choice of aggregator can significantly impact the performance of NT and that the optimal aggregator may vary depending on the specific characteristics of the dataset.
+6.3.2 On Directed Graphs
+Table 3:
+Averaged accuracy scores and the standard deviations in 10 runs on heterophilic graphs.
+|
+| Roman Empire
+| A-ratings
+| Minesweeper
+| Tolokers
+| Questions
+| GCN
+| 73.69±0.74
+| 48.70±0.63
+| 89.75±0.52
+| 83.64±0.67
+| 76.09±1.27
+| Dir-GNN
+| 91.23±0.32
+| 47.89±0.39
+| 87.05±0.69
+| 81.19±1.05
+| 76.13±1.24
+| NT
+| 91.71±0.57
+| 54.25±0.50
+| 97.42±0.50
+| 85.69±0.54
+| 78.46±1.10
+| Dir-NT
+| 94.77±0.31
+| 49.43±0.62
+| 93.92±0.59
+| 85.02±0.77
+| 77.99±1.00
+We report the performance of Dir-GNN Rossi et al. (2023) and the directed version of NT (Dir-NT) in Table 3, where the data clearly indicate that Dir-NT surpasses Dir-GNN across all tested datasets, with a particularly impressive accuracy score of 94.77 on the Roman Empire graph.
+This demonstrates that Dir-NT is more effective at leveraging the directional information in edges compared to Dir-GNN.
+However, we observe that on the A-ratings and Minesweeper datasets, both Dir-GNN and Dir-NT underperform compared to their undirected counterparts.
+This discrepancy can be attributed to the nature of these datasets.
+Although Platonov et al. (2023) has annotated these datasets with uni-directional edges, the relationships they represent, such as co-purchased products in A-ratings and adjacent grids in Minesweeper, are inherently undirected.
+Consequently, modelling these graphs as directed does not provide any additional beneficial information.
+Instead, it splits the neighbourhood into source and destination halves, which can interfere with the full exchange of monophilic messages.
+Similarly, the Tolokers dataset, which represents a network of project colleagues, is also fundamentally undirected.
+However, its significantly higher density (more than 10 times denser than the other four graphs) means that dividing the neighbourhood into two parts has a smaller negative impact on performance.
+6.3.3 On Embeddings Separation
+Figure 8:
+Accuracy scores (%, the horizontal axes) in 10 runs with and without the separation of ego- and neighbour-embeddings.
+The middle line in each violin plot represents the average score.
+Zhu et al. (2020) shows that the challenge posed by heterophily in graphs can be mitigated by distinguishing between ego-embeddings (representations of the central node itself) and neighbour-embeddings (representations of the node’s neighbours) during the aggregation process.
+Can this experience of message passing (MP) be brought into NT?
+We answer this question by presenting Figure 8, which shows the outcomes of our study on whether to implement this separation in NT.
+The results indicate that except for the A-ratings and Tolokers datasets, adopting the separation of ego- and neighbour-embeddings leads to a decline in performance on 8 out of 10 graphs.
+The rationale behind this is that in heterophilic graphs, the central node tends to be dissimilar to its neighbouring nodes.
+Therefore, these dissimilar nodes require different transformations before aggregating and the separation strategy addresses this requirement.
+However, NT is to aggregate messages attentively from 0- and 2-hop neighbours, conditioned on 1-hop neighbours.
+This inherently separation of ego-, 1-hop-neighbour, and 2-hop-neighbour-embeddings suggests that NT’s inherent ability to handle the aggregation of node information may already be sufficient to capture the complex relationships in heterophilic graphs, rendering the separation of ego- and neighbour-embeddings an unnecessary step for improving performance in most cases.
+6.3.4 On Self-loops
+Figure 9:
+Accuracy scores (%, the horizontal axes) in 10 runs with and without self-loops.
+The middle line in each violin plot represents the average score.
+In this section, we investigate the impact of adding self-loops to nodes in NT.
+Adding self-loops, which are edges connecting a node to itself, is a technique often used to modify the graph spectrum and facilitate the learning of smoother representations Wu et al. (2019).
+When self-loops are added in NT, each node effectively becomes part of its own neighbourhood.
+This inclusion introduces an inductive bias towards homophily, as it assumes that nodes are similar to their neighbours, which may not always be the case in heterophilic graphs.
+The ablation study presented in this section, as depicted in Figure 9, reveals that incorporating self-loops can occasionally degrade performance on heterophilic graphs due to the aforementioned incorrect inductive bias.
+In contrast, for homophilic graphs, the addition of self-loops does not lead to an accuracy increase on 4 out of 5 datasets.
+This suggests that NT is already adept at capturing the homophily present in these graphs, and thus, the extra self-loops do not contribute additional benefits.
+These findings highlight the importance of considering the underlying graph structure and the nature of the relationships between nodes when deciding on the use of self-loops in graph representation learning models like NT.
+7 Conclusions
+We introduce Neighbourhood Transformers (NT) designed to exploit the monophily observed in real-world graphs.
+NT employs self-attention mechanisms within each neighbourhood of the graph, generating informative messages for the nodes within, as opposed to the central node.
+This exploitation allows NT to effectively address heterophily and to be adaptive in homophilic graphs.
+We overcome the space and computational challenges inherent to NT with a neighbourhood partitioning strategy, thereby enabling the practical implementation of NT on standard hardware.
+Comprehensive experimental results validate the superior performance of NT on both heterophilic and homophilic graphs when compared to the current state-of-the-art methods.
+Appendix A Hyperparameters
+Table 4:
+Hyperparameters of NT on 10 graphs.
+|
+| Aggregator
+| #dimensions
+| #heads
+| #layers
+| Dropout
+| Roman Empire
+| sum\mathrm{sum}
+| 32
+| 6
+| 5
+| 0.4
+| A-ratings
+| mean\mathrm{mean}
+| 40
+| 8
+| 1
+| 0.3
+| Minesweeper
+| sum\mathrm{sum}
+| 53
+| 1
+| 5
+| 0.2
+| Tolokers
+| gated-sum\mathrm{sum}
+| 30
+| 2
+| 5
+| 0.1
+| Questions
+| sum\mathrm{sum}
+| 32
+| 4
+| 1
+| 0.2
+| Roman Empire (directed)
+| max\mathrm{max}
+| 36
+| 5
+| 5
+| 0.4
+| A-ratings (directed)
+| max\mathrm{max}
+| 23
+| 7
+| 4
+| 0.4
+| Minesweeper (directed)
+| sum\mathrm{sum}
+| 15
+| 2
+| 5
+| 0.1
+| Tolokers (directed)
+| gated-sum\mathrm{sum}
+| 9
+| 4
+| 4
+| 0.2
+| Questions (directed)
+| gated-sum\mathrm{sum}
+| 27
+| 7
+| 1
+| 0.3
+| A-computer
+| sum\mathrm{sum}
+| 17
+| 4
+| 5
+| 0.4
+| A-photo
+| mean\mathrm{mean}
+| 18
+| 7
+| 4
+| 0.6
+| CoauthorCS
+| weighted-mean\mathrm{mean}
+| 41
+| 8
+| 2
+| 0.3
+| CoauthorPhy
+| weighted-mean\mathrm{mean}
+| 16
+| 2
+| 2
+| 0.1
+| WikiCS
+| mean\mathrm{mean}
+| 38
+| 1
+| 3
+| 0.2
+Table 5:
+Experimental settings of NT on ablation studies.
+|
+| Figure 5
+| Figure 6
+| Figure 7
+| Figure 9
+| Aggregator
+| mean\mathrm{mean}
+| weighted-mean\mathrm{mean}
+| —
+| weighted-mean\mathrm{mean}
+| #dimensions
+| 8
+| 8
+| 8
+| 8
+| #heads
+| 4
+| 4
+| 8
+| 8
+| #layers
+| 1
+| 1
+| 2
+| 2
+| Dropout
+| 0
+| 0.2
+| 0.2
+| 0.2
+| Learning rate
+| 0.01
+| 0.01
+| 0.01
+| 0.01
+| #Epochs
+| 500
+| 1000
+| 200
+| 200
+| Early stop
+| 50
+| 200
+| 200
+| 200
+The optimal hyperparameters identified for NT are summarized in Table 4.
+The results presented in Figure 8 is obtained by exploring the identical hyperparameter space described in Section 6.1.
+Other ablation studies are conducted with manually assigned experimental settings, as detailed in Table 5.
+Appendix B Analysis on the Descrepencies of Neighbourhood Sizes in Training and in Inference
+Table 6:
+The descrepencies of neighbourhood sizes in training and in inference.
+| Dataset
+| Descrepency
+| Roman Empire
+| 3.5%
+| A-ratings
+| 5.3%
+| Minesweeper
+| 0.6%
+| Tolokers
+| 8.8%
+| Questions
+| 3.9%
+| A-computer
+| 6.5%
+| A-photo
+| 8.8%
+| CoauthorCS
+| 6.5%
+| CoauthorPhy
+| 7.2%
+| WikiCS
+| 14.4%
+To check if NT performs consistently when neighbourhood sizes are shifted from training to the inference stage, we conduct an analysis to measure the discrepancy between neighbourhood sizes in the training set and beyond.
+We first approximate the averaged size of belonging neighbourhoods for each node using 𝒔=deg​(𝑨2)/deg​(𝑨){\bm{s}}=\text{deg}({\bm{A}}^{2})/\text{deg}({\bm{A}}), where 𝑨{\bm{A}} is the adjacency matrix and deg​(⋅)\text{deg}(\cdot) is a function to derive node degrees from the adjacency matrix.
+Then, with 100 histogram bins, we transform elements of 𝒔{\bm{s}} corresponding to the training set to distribution PP and the other elements to distribution QQ.
+After that, we calculate the discrepency between the two distributions as ∑i|pi−qi|\sum\limits_{i}|p_{i}-q_{i}|, where pip_{i} is the probability of the ii-th histogram bin of PP and qiq_{i} is that of QQ.
+The discrepencies for the 10 datasets are reported in Table 6, indicating varying levels of discrepancy across the datasets, with Minesweeper showing low discrepancy and WikiCS showing high discrepancy.
+Despite these variations, NT maintains consistent performance, as demonstrated by the experiments in the main text.
+Appendix C Comparing With Graph Transformers
+This section presents the comparison between NT and state-of-the-art graph transformers (GT) by referencing the latest data from Polynormer’s publication Deng et al. (2024), where GraphGPS Rampásek et al. (2022), NAGphormer Chen et al. (2023), Exphormer Shirzad et al. (2023), NodeFormer Wu et al. (2022), DIFFormer Wu et al. (2023), and GOAT Kong et al. (2023) are also reported.
+As discussed in the Related Work section, we emphasize that vanilla GT cannot replace Message Passing Neural Networks (MPNN) as a standalone paradigm, due to their inherent topological information loss.
+Consequently, modern GT-based methods are typically integrated with MPNNs (e.g., GraphGPS), and can be more precisely regarded as ‘GT-augmented MPNNs’.
+Against this background, in addition to the vanilla NT proposed in this work, we further develop an enhanced variant NT* by substituting the MPNN component in Polynormer with an NT layer, yielding a ‘GT-augmented NT’ architecture for fair comparison.
+Table 7:
+Averaged accuracy scores and the standard deviations in 10 runs on heterophilic graphs.
+The best score for each dataset is bolded, the second best is underlined, and the third is italic.
+|
+| Roman Empire
+| A-ratings
+| Minesweeper
+| Tolokers
+| Questions
+| GraphGPS
+| 82.00±0.61
+| 53.10±0.42
+| 90.63±0.67
+| 83.71±0.48
+| 71.73±1.47
+| NAGphormer
+| 74.34±0.77
+| 51.26±0.72
+| 84.19±0.66
+| 78.32±0.95
+| 68.17±1.53
+| Exphormer
+| 89.03±0.37
+| 53.51±0.46
+| 90.74±0.53
+| 83.77±0.78
+| 73.94±1.06
+| NodeFormer
+| 64.49±0.73
+| 43.86±0.35
+| 86.71±0.88
+| 78.10±1.03
+| 74.27±1.46
+| DIFFormer
+| 79.10±0.32
+| 47.84±0.65
+| 90.89±0.58
+| 83.57±0.68
+| 72.15±1.31
+| GOAT
+| 71.59±1.25
+| 44.61±0.50
+| 81.09±1.02
+| 83.11±1.04
+| 75.76±1.66
+| Polynormer
+| 92.55±0.37
+| 54.81±0.49
+| 97.46±0.36
+| 85.91±0.74
+| 78.92±0.89
+| NT
+| 94.77±0.31
+| 54.25±0.50
+| 97.42±0.50
+| 85.69±0.54
+| 78.46±1.10
+| NT*
+| 92.90±0.30
+| 54.55±0.39
+| 97.92±0.28
+| 85.91±0.83
+| 79.36±0.69
+Table 8:
+Averaged accuracy scores and the standard deviations in 10 runs on homophilic graphs.
+The best score for each dataset is bolded, the second best is underlined, and the third is italic.
+|
+| A-computer
+| A-photo
+| CoauthorCS
+| CoauthorPhy
+| WikiCS
+| GraphGPS
+| 91.19±0.54
+| 95.06±0.13
+| 93.93±0.12
+| 97.12±0.19
+| 78.66±0.49
+| NAGphormer
+| 91.22±0.14
+| 95.49±0.11
+| 95.75±0.09
+| 97.34±0.03
+| 77.16±0.72
+| Exphormer
+| 91.47±0.17
+| 95.35±0.22
+| 94.93±0.01
+| 96.89±0.09
+| 78.54±0.49
+| NodeFormer
+| 86.98±0.62
+| 93.46±0.35
+| 95.64±0.22
+| 96.45±0.28
+| 74.73±0.94
+| DIFFormer
+| 91.99±0.76
+| 95.10±0.47
+| 94.78±0.20
+| 96.60±0.18
+| 73.46±0.56
+| GOAT
+| 90.96±0.90
+| 92.96±1.48
+| 94.21±0.38
+| 96.24±0.24
+| 77.00±0.77
+| Polynormer
+| 93.68±0.21
+| 96.46±0.26
+| 95.53±0.16
+| 97.27±0.08
+| 80.10±0.67
+| NT
+| 92.61±0.63
+| 96.12±0.39
+| 96.07±0.32
+| 97.32±0.11
+| 80.04±0.61
+| NT*
+| 93.87±0.23
+| 96.67±0.17
+| 96.09±0.11
+| 97.33±0.09
+| 80.17±0.71
+As shown in Table 7 and Table 8, NT* matches or surpasses all competing GT-based methods on 8 out of 10 evaluated datasets, except A-ratings and CoauthorPhy, demonstrating that the GT+NT composite framework is superior to the prevailing GT+MPNN paradigm.
+Moreover, even the vanilla NT outperforms most GT-based methods across all datasets and consistently ranks among the top 3 models.
+On heterophilic datasets listed in Table 7, we observe that vanilla NT achieves a substantial performance gain over GT methods on the Roman Empire dataset, owing to its explicit modeling of directional information.
+In contrast, standard GT layers ignore node edges and fail to encode edge directionality, limiting their expressiveness on such graph structures.
+Across the five homophilic graphs in Table 8, the vanilla NT achieves an average rank of (3+3+2+3+3)/5=2.8(3+3+2+3+3)/5=2.8, which is even better than the average rank of (2+2+5+4+2)/5=3.0(2+2+5+4+2)/5=3.0 achieved by Polynormer.
+This verifies that the standalone NT layer, even without auxiliary GT components, is highly competitive against state-of-the-art GT+MPNN models.
+Appendix D The Difference Between Graph Partitioning Algorithms and Our Neighbourhood Partitioning
+The primary objective of our algorithm is not to partition a large graph into independent subgraphs for mini-batch training, akin to those graph partitioning algorithms Hendrickson and Leland (1995); Chiang et al. (2019); Zeng et al. (2020).
+Instead, our algorithm groups graph nodes in a way that still requires full-batch training.
+This is because, in NT, applying transformers in all neighborhoods is only an intermediate step; the final representation of a node is then aggregated from all its belonging neighborhoods.
+We illustrate this difference with an example.
+Suppose a graph partitioning algorithm divides a graph into isolated subgraphs A, B, and C.
+A graph model can then be applied to one of these subgraphs, say A, to obtain the representation of a node, say vv that is in subgraph A.
+However, in NT, even if we also divide graph nodes into groups A, B, and C, the process is different.
+If node vv in group A has connected nodes uu in group B and ww in group C, the representation of node vv is not derived from applying the transformer in group A.
+Instead, it is obtained by gathering information from the neighborhoods of nodes uu and ww after the transformer has been applied to groups B and C, respectively.
+In summary, while the graph nodes are partitioned in NT, all their neighborhoods must still be processed by the transformer, with their results being combined later.
+Our partitioning algorithm is designed to optimize both memory and computation time during the transformer’s processing, before the results combination.
+Thus, our method is tailored only to address the unique challenges that arise in NT and is fundamentally different from graph partitioning algorithms.
+References
+Akiba et al. (2019)
+T. Akiba, S. Sano, T. Yanase, T. Ohta, and M. Koyama
+Optuna: A next-generation hyperparameter optimization framework.
+In KDD,
+pp. 2623–2631.
+Cited by: §6.1.
+Alon and Yahav (2021)
+U. Alon and E. Yahav
+On the bottleneck of graph neural networks and its practical implications.
+In 9th International Conference on Learning Representations, ICLR 2021,
+Virtual Event, Austria, May 3-7, 2021,
+Cited by: §2.
+Altenburger and Ugander (2018)
+K. M. Altenburger and J. Ugander
+Monophily in social networks introduces similarity among friends-of-friends.
+Nature Human Behaviour 2, pp. 284 – 290.
+Cited by: §1.
+An et al. (2026)
+J. An, B. Ding, and N. Jiang
+Noise-aware graph neural networks for multimodal semantic alignment in social media sentiment analysis.
+Engineering Applications of Artificial Intelligence 168, pp. 114058.
+External Links: ISSN 0952-1976,
+Document,
+Link
+Cited by: §1.
+Bo et al. (2021)
+D. Bo, X. Wang, C. Shi, and H. Shen
+Beyond low-frequency information in graph convolutional networks.
+In AAAI,
+pp. 3950–3957.
+Cited by: §2,
+§6.1.
+Bojchevski et al. (2020)
+A. Bojchevski, J. Klicpera, B. Perozzi, A. Kapoor, M. Blais, B. Rózemberczki, M. Lukasik, and S. Günnemann
+Scaling graph neural networks with approximate pagerank.
+In KDD,
+pp. 2464–2473.
+Cited by: §6.1.
+Bresson and Laurent (2017)
+X. Bresson and T. Laurent
+Residual gated graph convnets.
+ArXiv abs/1711.07553.
+Cited by: §3.1.
+Brody et al. (2022)
+S. Brody, U. Alon, and E. Yahav
+How attentive are graph attention networks?.
+In The Tenth International Conference on Learning Representations, ICLR
+2022, Virtual Event, April 25-29, 2022,
+Cited by: §3.1.
+Chen et al. (2023)
+J. Chen, K. Gao, G. Li, and K. He
+NAGphormer: A tokenized graph transformer for node classification in large graphs.
+In The Eleventh International Conference on Learning Representations,
+ICLR 2023, Kigali, Rwanda, May 1-5, 2023,
+Cited by: Appendix C,
+§2.
+Chen et al. (2020)
+M. Chen, Z. Wei, Z. Huang, B. Ding, and Y. Li
+Simple and deep graph convolutional networks.
+In ICML,
+Proceedings of Machine Learning Research, Vol. 119, pp. 1725–1735.
+Cited by: §6.1.
+Chiang et al. (2019)
+W. Chiang, X. Liu, S. Si, Y. Li, S. Bengio, and C. Hsieh
+Cluster-gcn: an efficient algorithm for training deep and large graph convolutional networks.
+In KDD,
+pp. 257–266.
+Cited by: Appendix D.
+Chien et al. (2021)
+E. Chien, J. Peng, P. Li, and O. Milenkovic
+Adaptive universal generalized pagerank graph neural network.
+In 9th International Conference on Learning Representations, ICLR 2021,
+Virtual Event, Austria, May 3-7, 2021,
+Cited by: §6.1.
+Chin et al. (2019)
+A. Chin, Y. Chen, K. M. Altenburger, and J. Ugander
+Decoupled smoothing on graphs.
+In WWW,
+pp. 263–272.
+Cited by: §1.
+Choromanski et al. (2021)
+K. M. Choromanski, V. Likhosherstov, D. Dohan, X. Song, A. Gane, T. Sarlós, P. Hawkins, J. Q. Davis, A. Mohiuddin, L. Kaiser, D. B. Belanger, L. J. Colwell, and A. Weller
+Rethinking attention with performers.
+In 9th International Conference on Learning Representations, ICLR 2021,
+Virtual Event, Austria, May 3-7, 2021,
+Cited by: §3.3.
+Ciotti et al. (2016)
+V. Ciotti, M. Bonaventura, V. Nicosia, P. Panzarasa, and V. Latora
+Homophily and missing links in citation networks.
+EPJ Data Sci. 5 (1), pp. 7.
+Cited by: §1.
+Deng et al. (2024)
+C. Deng, Z. Yue, and Z. Zhang
+Polynormer: polynomial-expressive graph transformer in linear time.
+In The Twelfth International Conference on Learning Representations,
+ICLR 2024, Vienna, Austria, May 7-11, 2024,
+Cited by: Appendix C,
+§2,
+§6.1.
+Du et al. (2022)
+L. Du, X. Shi, Q. Fu, X. Ma, H. Liu, S. Han, and D. Zhang
+GBK-GNN: gated bi-kernel graph neural networks for modeling both homophily and heterophily.
+In WWW,
+pp. 1550–1558.
+Cited by: §2,
+§6.1.
+Duc et al. (2026)
+M. L. Duc, V. T. Kiet, P. Bilik, and R. Martinek
+Applied graph neural networks: domain-driven insights from medicine to remote sensing.
+Engineering Applications of Artificial Intelligence 166, pp. 113682.
+External Links: ISSN 0952-1976,
+Document,
+Link
+Cited by: §1.
+Dwivedi et al. (2022)
+V. P. Dwivedi, A. T. Luu, T. Laurent, Y. Bengio, and X. Bresson
+Graph neural networks with learnable structural and positional representations.
+In The Tenth International Conference on Learning Representations, ICLR
+2022, Virtual Event, April 25-29, 2022,
+Cited by: §2.
+Gerber et al. (2013)
+E. R. Gerber, A. D. Henry, and M. N. Lubell
+Political homophily and collaboration in regional planning networks.
+American Journal of Political Science 57, pp. 598–610.
+Cited by: §1.
+Hamilton et al. (2017)
+W. L. Hamilton, Z. Ying, and J. Leskovec
+Inductive representation learning on large graphs.
+In NIPS,
+pp. 1024–1034.
+Cited by: §3.1,
+§6.1.
+He et al. (2016)
+K. He, X. Zhang, S. Ren, and J. Sun
+Deep residual learning for image recognition.
+In CVPR,
+pp. 770–778.
+Cited by: §6.
+Hendrickson and Leland (1995)
+B. Hendrickson and R. W. Leland
+A multi-level algorithm for partitioning graphs.
+In SC,
+pp. 28.
+Cited by: Appendix D.
+Hendrycks and Gimpel (2016)
+D. Hendrycks and K. Gimpel
+Bridging nonlinearities and stochastic regularizers with gaussian error linear units.
+CoRR abs/1606.08415.
+Cited by: §3.1.
+Hua et al. (2022)
+C. Hua, G. Rabusseau, and J. Tang
+High-order pooling for graph neural networks with tensor decomposition.
+Advances in Neural Information Processing Systems 35, pp. 6021–6033.
+Cited by: §6.1.
+Kingma and Ba (2015)
+D. P. Kingma and J. Ba
+Adam: A method for stochastic optimization.
+In 3rd International Conference on Learning Representations, ICLR 2015,
+San Diego, CA, USA, May 7-9, 2015, Conference Track Proceedings,  Y. Bengio and Y. LeCun (Eds.),
+Cited by: §6.
+Kipf and Welling (2017)
+T. N. Kipf and M. Welling
+Semi-supervised classification with graph convolutional networks.
+In ICLR (Poster),
+Cited by: §3.1,
+§6.1.
+Klicpera et al. (2019)
+J. Klicpera, A. Bojchevski, and S. Günnemann
+Predict then propagate: graph neural networks meet personalized pagerank.
+In 7th International Conference on Learning Representations, ICLR 2019,
+New Orleans, LA, USA, May 6-9, 2019,
+Cited by: §6.1.
+Kong et al. (2023)
+K. Kong, J. Chen, J. Kirchenbauer, R. Ni, C. B. Bruss, and T. Goldstein
+GOAT: A global transformer on large-scale graphs.
+In ICML,
+Proceedings of Machine Learning Research, Vol. 202, pp. 17375–17390.
+Cited by: Appendix C.
+Kreuzer et al. (2021)
+D. Kreuzer, D. Beaini, W. L. Hamilton, V. Létourneau, and P. Tossou
+Rethinking graph transformers with spectral attention.
+In Advances in Neural Information Processing Systems 34: Annual Conference
+on Neural Information Processing Systems 2021, NeurIPS 2021, December
+6-14, 2021, virtual,  M. Ranzato, A. Beygelzimer, Y. N. Dauphin, P. Liang, and J. W. Vaughan (Eds.),
+pp. 21618–21629.
+Cited by: §2.
+Lei et al. (2022)
+R. Lei, Z. Wang, Y. Li, B. Ding, and Z. Wei
+EvenNet: ignoring odd-hop neighbors improves robustness of graph neural networks.
+In Advances in Neural Information Processing Systems 35: Annual Conference
+on Neural Information Processing Systems 2022, NeurIPS 2022, New Orleans,
+LA, USA, November 28 - December 9, 2022,  S. Koyejo, S. Mohamed, A. Agarwal, D. Belgrave, K. Cho, and A. Oh (Eds.),
+Cited by: §1,
+§2.
+Li et al. (2022)
+X. Li, R. Zhu, Y. Cheng, C. Shan, S. Luo, D. Li, and W. Qian
+Finding global homophily in graph neural networks when meeting heterophily.
+In ICML,
+Proceedings of Machine Learning Research, Vol. 162, pp. 13242–13256.
+Cited by: §2,
+§6.1.
+Lim et al. (2021)
+D. Lim, X. Li, F. Hohne, and S. Lim
+New benchmarks for learning on non-homophilous graphs.
+CoRR abs/2104.01404.
+External Links: 2104.01404
+Cited by: §1.
+Lu et al. (2026)
+J. Lu, Q. Xu, and J. Hu
+A novel graph learning framework for interpretable and imbalance financial fraud detection.
+Engineering Applications of Artificial Intelligence 167, pp. 113709.
+External Links: ISSN 0952-1976,
+Document,
+Link
+Cited by: §1.
+Luan et al. (2022)
+S. Luan, C. Hua, Q. Lu, J. Zhu, M. Zhao, S. Zhang, X. Chang, and D. Precup
+Revisiting heterophily for graph neural networks.
+Advances in neural information processing systems 35, pp. 1362–1375.
+Cited by: §2.
+Ma et al. (2023)
+L. Ma, C. Lin, D. Lim, A. Romero-Soriano, P. K. Dokania, M. Coates, P. H. S. Torr, and S. Lim
+Graph inductive biases in transformers without message passing.
+In ICML,
+Proceedings of Machine Learning Research, Vol. 202, pp. 23321–23337.
+Cited by: §2.
+McAuley et al. (2015)
+J. J. McAuley, C. Targett, Q. Shi, and A. van den Hengel
+Image-based recommendations on styles and substitutes.
+In Proceedings of the 38th International ACM SIGIR Conference on
+Research and Development in Information Retrieval, Santiago, Chile,
+August 9-13, 2015,  R. Baeza-Yates, M. Lalmas, A. Moffat, and B. A. Ribeiro-Neto (Eds.),
+pp. 43–52.
+External Links: Document
+Cited by: §6.
+McPherson et al. (2001)
+M. McPherson, L. Smith-Lovin, and J. M. Cook
+Birds of a feather: homophily in social networks.
+Review of Sociology 27, pp. 415–444.
+Cited by: §1.
+Mernyei and Cangea (2020)
+P. Mernyei and C. Cangea
+Wiki-cs: A wikipedia-based benchmark for graph neural networks.
+CoRR abs/2007.02901.
+External Links: 2007.02901
+Cited by: §6.
+Pei et al. (2020)
+H. Pei, B. Wei, K. C. Chang, Y. Lei, and B. Yang
+Geom-gcn: geometric graph convolutional networks.
+In 8th International Conference on Learning Representations, ICLR 2020,
+Addis Ababa, Ethiopia, April 26-30, 2020,
+Cited by: §1,
+§2.
+Platonov et al. (2023)
+O. Platonov, D. Kuznedelev, M. Diskin, A. Babenko, and L. Prokhorenkova
+A critical look at the evaluation of gnns under heterophily: are we really making progress?.
+In The Eleventh International Conference on Learning Representations,
+ICLR 2023, Kigali, Rwanda, May 1-5, 2023,
+Cited by: §1,
+§1,
+§2,
+§6.1,
+§6.3.2,
+§6,
+§6.
+Rampásek et al. (2022)
+L. Rampásek, M. Galkin, V. P. Dwivedi, A. T. Luu, G. Wolf, and D. Beaini
+Recipe for a general, powerful, scalable graph transformer.
+In Advances in Neural Information Processing Systems 35: Annual Conference
+on Neural Information Processing Systems 2022, NeurIPS 2022, New Orleans,
+LA, USA, November 28 - December 9, 2022,  S. Koyejo, S. Mohamed, A. Agarwal, D. Belgrave, K. Cho, and A. Oh (Eds.),
+Cited by: Appendix C,
+§2.
+Rossi et al. (2023)
+E. Rossi, B. Charpentier, F. D. Giovanni, F. Frasca, S. Günnemann, and M. M. Bronstein
+Edge directionality improves learning on heterophilic graphs.
+In Learning on Graphs Conference, 27-30 November 2023, Virtual Event,  S. Villar and B. Chamberlain (Eds.),
+Proceedings of Machine Learning Research, Vol. 231, pp. 25.
+Cited by: §4.2,
+§6.1,
+§6.3.2.
+Scarselli et al. (2009)
+F. Scarselli, M. Gori, A. C. Tsoi, M. Hagenbuchner, and G. Monfardini
+The graph neural network model.
+IEEE Trans. Neural Networks 20 (1), pp. 61–80.
+Cited by: §1.
+Shchur et al. (2018)
+O. Shchur, M. Mumme, A. Bojchevski, and S. Günnemann
+Pitfalls of graph neural network evaluation.
+CoRR abs/1811.05868.
+External Links: 1811.05868
+Cited by: §6.
+Shirzad et al. (2023)
+H. Shirzad, A. Velingker, B. Venkatachalam, D. J. Sutherland, and A. K. Sinop
+Exphormer: sparse transformers for graphs.
+In International Conference on Machine Learning, ICML 2023, 23-29 July
+2023, Honolulu, Hawaii, USA,  A. Krause, E. Brunskill, K. Cho, B. Engelhardt, S. Sabato, and J. Scarlett (Eds.),
+Proceedings of Machine Learning Research, Vol. 202, pp. 31613–31632.
+Cited by: Appendix C,
+§2,
+§6.
+Song et al. (2023)
+Y. Song, C. Zhou, X. Wang, and Z. Lin
+Ordered GNN: ordering message passing to deal with heterophily and over-smoothing.
+In The Eleventh International Conference on Learning Representations,
+ICLR 2023, Kigali, Rwanda, May 1-5, 2023,
+Cited by: §6.1.
+Tay et al. (2023)
+Y. Tay, M. Dehghani, D. Bahri, and D. Metzler
+Efficient transformers: A survey.
+ACM Comput. Surv. 55 (6), pp. 109:1–109:28.
+External Links: Document
+Cited by: §1,
+§3.3.
+Vaswani et al. (2017)
+A. Vaswani, N. M. Shazeer, N. Parmar, J. Uszkoreit, L. Jones, A. N. Gomez, L. Kaiser, and I. Polosukhin
+Attention is all you need.
+In Advances in Neural Information Processing Systems 30: Annual Conference
+on Neural Information Processing Systems 2017, December 4-9, 2017,
+Long Beach, CA, USA,  I. Guyon, U. von Luxburg, S. Bengio, H. M. Wallach, R. Fergus, S. V. N. Vishwanathan, and R. Garnett (Eds.),
+pp. 5998–6008.
+External Links: Link
+Cited by: §1,
+§1.
+Velickovic et al. (2018)
+P. Velickovic, G. Cucurull, A. Casanova, A. Romero, P. Liò, and Y. Bengio
+Graph attention networks.
+In 6th International Conference on Learning Representations, ICLR 2018,
+Vancouver, BC, Canada, April 30 - May 3, 2018, Conference Track Proceedings,
+Cited by: §3.1,
+§6.1.
+Wang and Zhang (2022)
+X. Wang and M. Zhang
+How powerful are spectral graph neural networks.
+In ICML,
+Proceedings of Machine Learning Research, Vol. 162, pp. 23341–23362.
+Cited by: §2,
+§6.1.
+Wo et al. (2024)
+Z. Wo, M. Shao, W. Wang, X. Guo, and L. Lin
+Graph contrastive learning via interventional view generation.
+In Proceedings of the ACM on Web Conference 2024, WWW 2024, Singapore,
+May 13-17, 2024,  T. Chua, C. Ngo, R. Kumar, H. W. Lauw, and R. K. Lee (Eds.),
+pp. 1024–1034.
+External Links: Link,
+Document
+Cited by: §2.
+Wu et al. (2019)
+F. Wu, A. H. S. Jr., T. Zhang, C. Fifty, T. Yu, and K. Q. Weinberger
+Simplifying graph convolutional networks.
+In ICML,
+Proceedings of Machine Learning Research, Vol. 97, pp. 6861–6871.
+Cited by: §6.3.4.
+Wu et al. (2023)
+Q. Wu, C. Yang, W. Zhao, Y. He, D. Wipf, and J. Yan
+DIFFormer: scalable (graph) transformers induced by energy constrained diffusion.
+In The Eleventh International Conference on Learning Representations,
+ICLR 2023, Kigali, Rwanda, May 1-5, 2023,
+Cited by: Appendix C.
+Wu et al. (2022)
+Q. Wu, W. Zhao, Z. Li, D. P. Wipf, and J. Yan
+Nodeformer: a scalable graph structure learning transformer for node classification.
+Advances in Neural Information Processing Systems 35, pp. 27387–27401.
+Cited by: Appendix C.
+Wu et al. (2021)
+Z. Wu, P. Jain, M. A. Wright, A. Mirhoseini, J. E. Gonzalez, and I. Stoica
+Representing long-range context for graph neural networks with global attention.
+In Advances in Neural Information Processing Systems 34: Annual Conference
+on Neural Information Processing Systems 2021, NeurIPS 2021, December
+6-14, 2021, virtual,  M. Ranzato, A. Beygelzimer, Y. N. Dauphin, P. Liang, and J. W. Vaughan (Eds.),
+pp. 13266–13279.
+Cited by: §2.
+Wu et al. (2026)
+Z. Wu, X. Liu, and X. Zhang
+Dynamic graph convolutional recurrent network with attention mechanism for traffic flow forecasting.
+Engineering Applications of Artificial Intelligence 170, pp. 114236.
+External Links: ISSN 0952-1976,
+Document,
+Link
+Cited by: §1.
+Xiao et al. (2023)
+T. Xiao, H. Zhu, Z. Chen, and S. Wang
+Simple and asymmetric graph contrastive learning without augmentations.
+In Advances in Neural Information Processing Systems 36: Annual Conference
+on Neural Information Processing Systems 2023, NeurIPS 2023, New Orleans,
+LA, USA, December 10 - 16, 2023,  A. Oh, T. Naumann, A. Globerson, K. Saenko, M. Hardt, and S. Levine (Eds.),
+Cited by: §1,
+§2.
+Xing et al. (2024)
+Y. Xing, X. Wang, Y. Li, H. Huang, and C. Shi
+Less is more: on the over-globalizing problem in graph transformers.
+In Forty-first International Conference on Machine Learning, ICML 2024,
+Vienna, Austria, July 21-27, 2024,
+Cited by: §2.
+Xu et al. (2019)
+K. Xu, W. Hu, J. Leskovec, and S. Jegelka
+How powerful are graph neural networks?.
+In 7th International Conference on Learning Representations, ICLR 2019,
+New Orleans, LA, USA, May 6-9, 2019,
+Cited by: §3.1.
+Xu et al. (2023)
+Z. Xu, Y. Chen, Q. Zhou, Y. Wu, M. Pan, H. Yang, and H. Tong
+Node classification beyond homophily: towards a general solution.
+In KDD,
+pp. 2862–2873.
+Cited by: §2.
+Yan et al. (2020)
+B. Yan, C. Wang, G. Guo, and Y. Lou
+TinyGNN: learning efficient graph neural networks.
+In KDD,
+pp. 1848–1856.
+Cited by: §1.
+Yan et al. (2022)
+Y. Yan, M. Hashemi, K. Swersky, Y. Yang, and D. Koutra
+Two sides of the same coin: heterophily and oversmoothing in graph convolutional neural networks.
+In IEEE International Conference on Data Mining, ICDM 2022, Orlando,
+FL, USA, November 28 - Dec. 1, 2022,  X. Zhu, S. Ranka, M. T. Thai, T. Washio, and X. Wu (Eds.),
+pp. 1287–1292.
+External Links: Document
+Cited by: §6.1.
+Yang and Mirzasoleiman (2024)
+W. Yang and B. Mirzasoleiman
+Graph contrastive learning under heterophily via graph filters.
+In Uncertainty in Artificial Intelligence, 15-19 July 2024, Universitat
+Pompeu Fabra, Barcelona, Spain,  N. Kiyavash and J. M. Mooij (Eds.),
+Proceedings of Machine Learning Research, Vol. 244, pp. 3936–3955.
+External Links: Link
+Cited by: §2.
+Yin et al. (2012)
+H. Yin, B. Cui, J. Li, J. Yao, and C. Chen
+Challenging the long tail recommendation.
+Proc. VLDB Endow. 5 (9), pp. 896–907.
+External Links: Document
+Cited by: §1.
+Ying et al. (2021)
+C. Ying, T. Cai, S. Luo, S. Zheng, G. Ke, D. He, Y. Shen, and T. Liu
+Do transformers really perform badly for graph representation?.
+In Advances in Neural Information Processing Systems 34: Annual Conference
+on Neural Information Processing Systems 2021, NeurIPS 2021, December
+6-14, 2021, virtual,  M. Ranzato, A. Beygelzimer, Y. N. Dauphin, P. Liang, and J. W. Vaughan (Eds.),
+pp. 28877–28888.
+Cited by: §2.
+Zeng et al. (2020)
+H. Zeng, H. Zhou, A. Srivastava, R. Kannan, and V. K. Prasanna
+GraphSAINT: graph sampling based inductive learning method.
+In 8th International Conference on Learning Representations, ICLR 2020,
+Addis Ababa, Ethiopia, April 26-30, 2020,
+Cited by: Appendix D.
+Zeng et al. (2026)
+X. Zeng, P. Lai, C. Wang, and Q. Dai
+Heterogeneous patent graph prompt learning.
+Engineering Applications of Artificial Intelligence 167, pp. 113959.
+External Links: ISSN 0952-1976,
+Document,
+Link
+Cited by: §1.
+Zhao et al. (2023)
+K. Zhao, Q. Kang, Y. Song, R. She, S. Wang, and W. P. Tay
+Graph neural convection-diffusion with heterophily.
+In Proceedings of the Thirty-Second International Joint Conference on
+Artificial Intelligence, IJCAI 2023, 19th-25th August 2023, Macao,
+SAR, China,
+pp. 4656–4664.
+External Links: Document
+Cited by: §6.1.
+Zheng et al. (2024)
+A. Y. Zheng, T. He, Y. Qiu, M. Wang, and D. Wipf
+Graph machine learning through the lens of bilevel optimization.
+In International Conference on Artificial Intelligence and Statistics,
+2-4 May 2024, Palau de Congressos, Valencia, Spain,  S. Dasgupta, S. Mandt, and Y. Li (Eds.),
+Proceedings of Machine Learning Research, Vol. 238, pp. 982–990.
+Cited by: §6.1.
+Zheng et al. (2022)
+X. Zheng, Y. Liu, S. Pan, M. Zhang, D. Jin, and P. S. Yu
+Graph neural networks for graphs with heterophily: A survey.
+CoRR abs/2202.07082.
+External Links: 2202.07082
+Cited by: §1.
+Zhu and Zhang (2026)
+C. Zhu and Y. Zhang
+SPS-gad: spectral-spatial graph structure learning for anomaly detection in heterophilic graphs.
+Expert Systems with Applications 298, pp. 129639.
+External Links: ISSN 0957-4174,
+Document
+Cited by: §2.
+Zhu et al. (2021)
+J. Zhu, R. A. Rossi, A. Rao, T. Mai, N. Lipka, N. K. Ahmed, and D. Koutra
+Graph neural networks with heterophily.
+In AAAI,
+pp. 11168–11176.
+Cited by: §6.1.
+Zhu et al. (2020)
+J. Zhu, Y. Yan, L. Zhao, M. Heimann, L. Akoglu, and D. Koutra
+Beyond homophily in graph neural networks: current limitations and effective designs.
+In Advances in Neural Information Processing Systems 33: Annual Conference
+on Neural Information Processing Systems 2020, NeurIPS 2020, December
+6-12, 2020, virtual,  H. Larochelle, M. Ranzato, R. Hadsell, M. Balcan, and H. Lin (Eds.),
+Cited by: §1,
+§2,
+§6.1,
+§6.3.3.
+Experimental support, please
+view the build logs
+for errors. Generated by
+L
+A
+T
+E
+xml
+.
+Instructions for reporting errors
+We are continuing to improve HTML versions of papers, and your feedback helps enhance accessibility and mobile
+support. To report errors in the HTML that will help us improve conversion and rendering, choose any of the
+methods listed below:
+Click the "Report Issue" (
+) button, located in the page header.
+Tip: You can select the relevant text first, to include it in your report.
+Our team has already identified the following issues. We appreciate your time reviewing and reporting rendering errors we
+may not have found yet. Your efforts will help us improve the HTML versions for all readers, because disability
+should not be a barrier to accessing research. Thank you for your continued support in championing open access for
+all.
+Have a free development cycle? Help support accessibility at arXiv! Our collaborators at LaTeXML maintain a list of packages that need conversion, and welcome developer contributions.
+We gratefully acknowledge support from
+our major funders,
+member institutions, ,
+and all contributors.
+About
+·
+Help
+·
+Contact
+·
+Subscribe
+·
+Copyright
+·
+Privacy
+·
+Accessibility
+·
+Operational Status (opens in new tab)
+Major funding support from

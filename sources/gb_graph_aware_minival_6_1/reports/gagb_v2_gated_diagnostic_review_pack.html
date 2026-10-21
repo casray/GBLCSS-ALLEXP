@@ -1,0 +1,406 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>GAGB v2 Gated Diagnostic Review Pack</title>
+  <style>
+    :root {
+      --bg: #f5f7fb;
+      --paper: #ffffff;
+      --ink: #1f2937;
+      --muted: #5f6b7a;
+      --line: #d9e0ea;
+      --soft: #eef4fb;
+      --blue: #2457a6;
+      --red: #9f2323;
+      --green: #14633c;
+      --orange: #8a4b00;
+      --code-bg: #101820;
+      --code-ink: #e8edf3;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--ink);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Microsoft YaHei", sans-serif;
+      line-height: 1.65;
+    }
+    main {
+      width: min(1180px, calc(100% - 40px));
+      margin: 32px auto 64px;
+      padding: 38px 46px;
+      background: var(--paper);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      box-shadow: 0 12px 30px rgba(31, 41, 55, 0.08);
+    }
+    h1, h2, h3 { line-height: 1.3; color: #111827; }
+    h1 { margin: 0 0 8px; font-size: 30px; }
+    h2 {
+      margin-top: 36px;
+      padding-top: 20px;
+      border-top: 1px solid var(--line);
+      font-size: 22px;
+    }
+    h3 { margin-top: 24px; font-size: 18px; }
+    p { margin: 10px 0; }
+    ul, ol { margin: 10px 0 10px 24px; padding: 0; }
+    li { margin: 5px 0; }
+    table { width: 100%; border-collapse: collapse; margin: 12px 0 20px; font-size: 14px; }
+    th, td { border: 1px solid var(--line); padding: 8px 10px; text-align: left; vertical-align: top; }
+    th { background: var(--soft); font-weight: 650; }
+    code { font-family: "Cascadia Mono", Consolas, "Courier New", monospace; font-size: 0.94em; }
+    pre {
+      margin: 12px 0 18px;
+      padding: 16px 18px;
+      overflow: auto;
+      background: var(--code-bg);
+      color: var(--code-ink);
+      border-radius: 8px;
+      line-height: 1.45;
+      font-size: 13px;
+    }
+    pre code { color: inherit; font-size: inherit; }
+    .subtitle { color: var(--muted); margin-bottom: 20px; }
+    .box {
+      border-left: 4px solid var(--blue);
+      background: #f2f6fd;
+      padding: 12px 16px;
+      margin: 16px 0;
+    }
+    .fail { border-left-color: var(--red); background: #fff3f3; }
+    .warn { border-left-color: var(--orange); background: #fff8ed; }
+    .ok { border-left-color: var(--green); background: #effaf4; }
+    .small { color: var(--muted); font-size: 13px; }
+  </style>
+</head>
+<body>
+<main>
+  <h1>GAGB v2 Gated Diagnostic Review Pack</h1>
+  <p class="subtitle">给 GPT / 同行审查用：完整串联 v1 失败、v2 target-only 设计、gated diagnostic 结果、代码边界和下一步判断。</p>
+
+  <div class="box fail">
+    <strong>核心结论：</strong>
+    <code>gagb_qb_conflict_gate</code> 的 NCR 为 0 不是因为 gate 没选中 noisy nodes，
+    也不是因为 <code>q_mix</code> 没有纠错方向，更不是 NCR 统计不一致。
+    诊断显示 gate 明显富集 noisy nodes，<code>q_mix</code> 和 teacher 多数能指向 clean label；
+    失败主因是 <code>alpha=0.3</code> 的 convex mixing 太弱，混合后 target argmax 仍停留在 noisy label。
+  </div>
+
+  <h2>1. 审查前必须知道的背景</h2>
+  <p>
+    本项目研究 Granular Ball Computing 与节点级 Graph Contrastive Learning 的结合。
+    当前任务族是 <strong>带噪标签属性图节点分类</strong>，实验在 frozen GRACE embedding 上进行。
+  </p>
+  <p>
+    已有跨方向复盘显示：GB 直接做 view generation、hard same-ball positive、prototype pulling、
+    broad negative filtering 等方向反复不稳。因此本轮没有改 GRACE、不改视图增强、不接入 RTGNN/NoisyGL，
+    只研究 GAGB 在 noisy-label target construction 中是否有价值。
+  </p>
+
+  <h2>2. v1 到 v2 的实验链条</h2>
+  <table>
+    <thead>
+      <tr>
+        <th>阶段</th>
+        <th>核心想法</th>
+        <th>关键结论</th>
+        <th>下一步动机</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>GAGB v1 fair minival</td>
+        <td>GCL embedding + graph-aware granular balls + noisy-label local smoothing</td>
+        <td>没有稳定超过 ordinary GB、embedding-only、topology-only、matched kmeans/top-k、alpha-matched shuffled</td>
+        <td>怀疑 <code>q_B</code> 过度依赖 noisy local majority</td>
+      </tr>
+      <tr>
+        <td>GAGB v2 target-only</td>
+        <td>固定 GAGB 分组，只把 ball-wise target 改成 teacher-aware target</td>
+        <td>主方法 <code>gagb_qb_conflict_gate</code> 只在 2/4 settings 超过 <code>gb</code> 和 v1 <code>gagb</code>，NCR 仍为 0</td>
+        <td>需要诊断是 gate、q_mix、alpha 还是 NCR 实现的问题</td>
+      </tr>
+      <tr>
+        <td>Gated nodes diagnostic</td>
+        <td>不改算法，只复现 gate/q_mix/target/alpha 并用 clean labels 做诊断</td>
+        <td>gate 选中 noisy nodes，q_mix 多数指向 clean label，但 alpha 后 target argmax 未改变</td>
+        <td>下一步应优先检查 alpha/target update 形式，而不是先改构球或 teacher</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h2>3. v2 Target-Only 算法</h2>
+  <pre><code>Input:
+  frozen GRACE embedding H
+  GAGB grouping B
+  noisy train labels y_noisy
+  train / val / test masks
+
+Teacher:
+  Train LinearClassifier(H -> class) only on noisy train labels.
+  No clean labels, val labels, or test labels enter teacher training.
+  Output teacher_probs for all nodes.
+
+For each GAGB ball B:
+  q_label_B = noisy label distribution among train nodes in B
+  q_pred_B  = mean teacher_probs among all nodes in B
+
+gagb_qb_pred_mix:
+  q_B = (1 - beta) * q_label_B + beta * q_pred_B
+
+gagb_qb_teacher_prior:
+  q_B = (count_label_B + gamma * q_pred_B) / (n_train_B + gamma)
+
+gagb_qb_conflict_gate:
+  q_mix = (1 - beta) * q_label_B + beta * q_pred_B
+  gate node i only if:
+    q_mix[noisy_y_i] <= 0.35
+    max(q_mix) >= 0.55
+
+Target update:
+  target_i = (1 - alpha_i) * one_hot(noisy_y_i) + alpha_i * q_mix
+  if gate rejects i:
+    target_i = one_hot(noisy_y_i)</code></pre>
+
+  <h2>4. 代码边界与无泄漏说明</h2>
+  <table>
+    <thead>
+      <tr>
+        <th>组件</th>
+        <th>文件</th>
+        <th>是否使用 clean labels</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>Noisy teacher</td>
+        <td><code>src/noisy_label_gb_grace/smoothing/teacher.py</code></td>
+        <td>不使用。函数签名不接收 <code>clean_labels</code>、<code>val_mask</code>、<code>test_mask</code>。</td>
+      </tr>
+      <tr>
+        <td>Target construction</td>
+        <td><code>src/noisy_label_gb_grace/smoothing/targets.py</code></td>
+        <td>不使用。只接收 noisy labels、teacher_probs、grouping 和 train_mask。</td>
+      </tr>
+      <tr>
+        <td>Classifier training</td>
+        <td><code>src/noisy_label_gb_grace/evaluation/classifier.py</code></td>
+        <td>clean labels 只用于 val/test/train accuracy evaluation，不进入 soft target。</td>
+      </tr>
+      <tr>
+        <td>Gated diagnostic</td>
+        <td><code>src/noisy_label_gb_grace/diagnostics/gated_nodes.py</code></td>
+        <td>使用 clean labels 仅计算诊断指标，如 noisy node 命中率、clean correction、ball purity。</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h2>5. v2 Target-Only Minival 结果</h2>
+  <p>实验设置：Cora / CiteSeer，symmetric noise 0.2 / 0.4，seeds 0-4，ratio split train 0.2 / val 0.1，frozen GRACE，alpha 0.3。</p>
+  <table>
+    <thead>
+      <tr>
+        <th>Dataset</th>
+        <th>Noise</th>
+        <th>vs gb</th>
+        <th>vs v1 gagb</th>
+        <th>vs khop_only</th>
+        <th>vs shuffled alpha</th>
+        <th>NCR</th>
+        <th>CDR</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr><td>Cora</td><td>0.2</td><td>-0.00011</td><td>-0.00021</td><td>-0.00032</td><td>-0.00042</td><td>0.0</td><td>0.0</td></tr>
+      <tr><td>Cora</td><td>0.4</td><td>-0.00169</td><td>+0.00063</td><td>+0.00201</td><td>+0.00327</td><td>0.0</td><td>0.0</td></tr>
+      <tr><td>CiteSeer</td><td>0.2</td><td>+0.00747</td><td>+0.00713</td><td>+0.00043</td><td>+0.00816</td><td>0.0</td><td>0.0</td></tr>
+      <tr><td>CiteSeer</td><td>0.4</td><td>+0.00034</td><td>-0.00009</td><td>-0.00077</td><td>-0.00043</td><td>0.0</td><td>0.0</td></tr>
+    </tbody>
+  </table>
+  <div class="box warn">
+    <strong>v2 target-only 判断：</strong>
+    没有通过主成功标准。它不是一个可直接写成主方法的正结果，但保留了一个关键诊断信号：
+    conflict gate 没有伤害 clean nodes，且在部分 setting 有 accuracy 正信号。
+  </div>
+
+  <h2>6. Minimal Diagnostic Patch 计划</h2>
+  <p>
+    目标是解释 <code>gagb_qb_conflict_gate</code> 的 NCR 为什么仍为 0。约束如下：
+  </p>
+  <ul>
+    <li>不修改 GAGB 构球算法。</li>
+    <li>不修改 GRACE embedding。</li>
+    <li>不加入 prediction consistency 或 <code>Q(B)</code>。</li>
+    <li>不接入 RTGNN / NoisyGL。</li>
+    <li>不调参，不扩数据集。</li>
+    <li>clean labels 只用于 diagnostics。</li>
+  </ul>
+
+  <p>新增诊断回答四个可能原因：</p>
+  <ol>
+    <li>A. gate 选中的大多是 clean nodes。</li>
+    <li>B. gate 选中了 noisy nodes，但 <code>q_mix</code> 不指向 clean label。</li>
+    <li>C. <code>q_mix</code> 指向 clean label，但 alpha 混合后 target argmax 没改变。</li>
+    <li>D. target argmax 已经改对，但 NCR 实现没有反映。</li>
+  </ol>
+
+  <h2>7. Diagnostic 算法</h2>
+  <pre><code>For each dataset, noise_rate, seed:
+  1. Load frozen embedding artifact H.pt.
+  2. Rebuild the same GAGB grouping with v2 parameters.
+  3. Recreate noisy labels for the same split/noise seed.
+  4. Train the same noisy-label-only teacher.
+  5. Recompute q_mix and the conflict gate mask.
+  6. Recompute target_i after alpha mixing.
+  7. Use clean labels only to diagnose:
+       - whether gated nodes are actually noisy
+       - whether q_mix argmax equals clean label
+       - whether target argmax changes after alpha
+       - whether NCR computation agrees with target argmax
+       - whether gated balls are high-purity
+  8. Write per-seed CSV, aggregate summary CSV, and markdown report.</code></pre>
+
+  <h2>8. Diagnostic 结果</h2>
+  <table>
+    <thead>
+      <tr>
+        <th>Dataset</th>
+        <th>Noise</th>
+        <th>Gated Ratio</th>
+        <th>Gated Noisy Ratio</th>
+        <th>Noisy Lift</th>
+        <th>Possible Before Alpha</th>
+        <th>Recomputed NCR</th>
+        <th>Lost By Alpha</th>
+        <th>Teacher Gated Noisy Clean Acc</th>
+        <th>Ball Clean Purity</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr><td>Cora</td><td>0.2</td><td>0.0631</td><td>0.8101</td><td>4.0655</td><td>0.9722</td><td>0.0000</td><td>0.9722</td><td>0.9663</td><td>0.9335</td></tr>
+      <tr><td>Cora</td><td>0.4</td><td>0.0343</td><td>0.9664</td><td>2.4139</td><td>0.9875</td><td>0.0000</td><td>0.9875</td><td>0.9875</td><td>0.9861</td></tr>
+      <tr><td>CiteSeer</td><td>0.2</td><td>0.0547</td><td>0.6262</td><td>3.1355</td><td>0.8426</td><td>0.0000</td><td>0.8426</td><td>0.8346</td><td>0.8525</td></tr>
+      <tr><td>CiteSeer</td><td>0.4</td><td>0.0324</td><td>0.8812</td><td>2.2063</td><td>0.9032</td><td>0.0000</td><td>0.9032</td><td>0.9032</td><td>0.8956</td></tr>
+    </tbody>
+  </table>
+
+  <h3>8.1 对四类原因的判定</h3>
+  <table>
+    <thead>
+      <tr>
+        <th>候选原因</th>
+        <th>证据</th>
+        <th>结论</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>A. gate 选中的大多是 clean nodes</td>
+        <td>gated noisy ratio 为 0.6262-0.9664，明显高于 base train noise rate；lift 为 2.21-4.07。</td>
+        <td>不成立。</td>
+      </tr>
+      <tr>
+        <td>B. q_mix 不指向 clean label</td>
+        <td>possible correction before alpha 为 0.8426-0.9875；teacher gated noisy clean acc 为 0.8346-0.9875。</td>
+        <td>不成立。</td>
+      </tr>
+      <tr>
+        <td>C. alpha 后 target argmax 没变</td>
+        <td>possible before alpha 很高，但 recomputed NCR 为 0；lost by alpha 与 possible correction 几乎相同。</td>
+        <td>成立，是主因。</td>
+      </tr>
+      <tr>
+        <td>D. NCR 实现错误</td>
+        <td>recomputed target-argmax NCR 与当前报告 NCR 一致为 0。</td>
+        <td>不成立。</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h2>9. 关键解释</h2>
+  <p>
+    当前 gate 其实选得很准：它明显富集 noisy nodes，并且这些节点所在的 ball clean purity 较高。
+    teacher 也不是完全复现 noisy labels；在 gated noisy nodes 上，它多数能预测 clean label。
+  </p>
+  <p>
+    真正的问题出在 target update 的几何上。即使 <code>q_mix</code> 的 argmax 是 clean label，
+    当前 target 仍然是：
+  </p>
+  <pre><code>target_i = (1 - alpha_i) * one_hot(noisy_y_i) + alpha_i * q_mix</code></pre>
+  <p>
+    当 <code>alpha_i <= 0.3</code> 时，noisy one-hot 仍保留至少 0.7 的质量。
+    除非 <code>q_mix</code> 对 clean label 的置信度极端高，否则 target argmax 很难从 noisy label 翻到 clean label。
+    因此 NCR 为 0 是符合公式预期的，不是 gate 或 teacher 没有信号。
+  </p>
+
+  <h2>10. 容易误读的地方</h2>
+  <ul>
+    <li>不能说“GAGB 没有纠错信号”。诊断显示 <code>q_mix</code> 在 gated noisy nodes 上经常指向 clean label。</li>
+    <li>不能说“teacher 没有用”。teacher 在 gated noisy nodes 上的 clean accuracy 很高。</li>
+    <li>不能说“gate 选错了”。gate 对 noisy nodes 有明显 lift。</li>
+    <li>不能说“NCR 指标坏了”。重算 NCR 与当前报告一致。</li>
+    <li>也不能直接说“只要调大 alpha 就成功”。这需要下一轮实验验证 accuracy/CDR 是否仍可控。</li>
+  </ul>
+
+  <h2>11. 给 GPT 的审查提示词</h2>
+  <pre><code>请你审查这个 GAGB v2 gated diagnostic 实验包。
+
+请务必遵守：
+1. 不要把 clean-label diagnostic 当成训练信号。
+2. 不要建议本轮已经做了的内容，例如改 GAGB 构球、改 GRACE、接 RTGNN/NoisyGL、加 Q(B)，除非明确作为下一轮。
+3. 区分事实、解释和下一步假设。
+4. 不要只根据 accuracy 判断，要结合 gated noisy ratio、possible correction before alpha、lost by alpha、teacher clean acc、ball purity 和 recomputed NCR。
+5. 特别检查是否存在信息缺失、指标定义错误、或结论过度外推。
+
+请回答：
+1. 当前 NCR=0 的最可信原因是什么？
+2. 诊断是否足以排除 gate 选错、q_mix 无方向、teacher 无效、NCR 实现错误这四种解释？
+3. 当前结果支持什么，不支持什么？
+4. 下一步最小实验应该是改 alpha、改 target update、改 teacher、进入 ball-quality v2，还是继续诊断？
+5. 如果建议改 alpha 或 target update，请明确需要哪些公平控制和 clean damage 检查。
+
+请用审稿人的严格标准指出：
+- 哪些结论可以写进实验记录；
+- 哪些只能作为假设；
+- 哪些说法不能写。</code></pre>
+
+  <h2>12. 复现实验命令</h2>
+  <pre><code class="language-powershell">cd C:\Users\Admin\Desktop\实验8去噪5.19-\gb_graph_aware_minival_6_1
+
+py -3 tests\run_unit_tests.py
+
+py -3 scripts\diagnose_gagb_v2_gated_nodes.py ^
+--allow-external-python ^
+--python C:\Users\Admin\AppData\Local\Programs\Python\Python312\python.exe ^
+--datasets Cora CiteSeer ^
+--split-mode ratio ^
+--train-ratios 0.2 ^
+--val-ratio 0.1 ^
+--noise-rates 0.2 0.4 ^
+--seeds 0 1 2 3 4 ^
+--mode frozen ^
+--alpha 0.3 ^
+--method gagb_qb_conflict_gate ^
+--output-dir reports\gagb_v2_gated_diagnostic_20260601</code></pre>
+
+  <h2>13. 关键文件</h2>
+  <ul>
+    <li><code>src/noisy_label_gb_grace/diagnostics/gated_nodes.py</code>：gated nodes 诊断计算。</li>
+    <li><code>scripts/diagnose_gagb_v2_gated_nodes.py</code>：诊断脚本。</li>
+    <li><code>reports/gagb_v2_gated_diagnostic_20260601/gated_nodes_per_seed.csv</code>：每个 seed 一行。</li>
+    <li><code>reports/gagb_v2_gated_diagnostic_20260601/gated_nodes_summary.csv</code>：dataset/noise 聚合。</li>
+    <li><code>reports/gagb_v2_gated_diagnostic_20260601/gated_nodes_diagnostic_report.md</code>：文字报告。</li>
+    <li><code>reports/gagb_v2_target_minival_20260601/gate_summary.csv</code>：v2 target-only 汇总。</li>
+    <li><code>reports/2026-06-01_gagb_v2_target_minival_result.md</code>：v2 target-only 结论。</li>
+  </ul>
+
+  <p class="small">
+    审查时请注意：本 HTML 不是下一步算法修改方案，而是问题定位材料。下一轮如果修改 alpha 或 target update，
+    仍需重新跑 fair controls，并报告 clean damage。
+  </p>
+</main>
+</body>
+</html>

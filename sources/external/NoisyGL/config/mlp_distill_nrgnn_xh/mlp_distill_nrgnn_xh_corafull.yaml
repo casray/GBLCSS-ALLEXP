@@ -1,0 +1,47 @@
+model:
+  method: mlp_distill_nrgnn_xh
+  n_hidden: 128
+  n_layer: 2
+  act: F.relu
+  dropout: 0.5
+  norm_info: ~
+  input_layer: false
+  output_layer: false
+  edge_hidden: 64
+  t_small: 0.1
+  n_n: 50
+  n_p: 50
+  p_u: 0.8
+  alpha: 0.03
+  beta: 1
+
+training:
+  lr: 1e-3
+  weight_decay: 5e-4
+  n_epochs: 200
+  patience: ~
+  criterion: metric
+
+dataset:
+  feat_norm: true
+  sparse: true
+  add_loop: true
+  normalize: true
+
+gb:
+  embedding_path: "../../gb_graph_aware_minival_6_1/checkpoints/embeddings_v2/CoraFull/grace/H.pt"
+  student_input: x
+  student_hidden: 64
+  student_n_layer: 2
+  student_dropout: 0.5
+  student_lr: 1e-2
+  student_weight_decay: 5e-4
+  student_epochs: 200
+  student_patience: ~
+  student_criterion: metric
+  distill_temperature: 1.0
+
+analysis:
+  flag: false
+  project: gnn-with-label-noise
+  save_graph: false

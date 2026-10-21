@@ -1,0 +1,696 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>C组实验计划：带保护的粒球反向约束 encoder</title>
+  <style>
+    :root {
+      --bg: #f7f8fa;
+      --paper: #ffffff;
+      --text: #1f2937;
+      --muted: #5f6b7a;
+      --border: #d9dee7;
+      --accent: #2764c4;
+      --accent-soft: #eaf1ff;
+      --warn: #8a5a00;
+      --warn-bg: #fff7df;
+      --bad: #9f2b2b;
+      --bad-bg: #fff0f0;
+      --good: #0f6b3f;
+      --good-bg: #eaf7f0;
+      --code: #f1f3f6;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--text);
+      font-family: "Microsoft YaHei", "Segoe UI", Arial, sans-serif;
+      line-height: 1.65;
+    }
+    main {
+      width: min(1160px, calc(100% - 32px));
+      margin: 24px auto 56px;
+      background: var(--paper);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 28px 34px;
+      box-shadow: 0 8px 24px rgba(21, 32, 53, 0.06);
+    }
+    h1, h2, h3 { line-height: 1.25; margin: 0; }
+    h1 { font-size: 30px; margin-bottom: 10px; }
+    h2 {
+      font-size: 22px;
+      border-top: 1px solid var(--border);
+      padding-top: 24px;
+      margin-top: 30px;
+      margin-bottom: 12px;
+    }
+    h3 { font-size: 17px; margin-top: 20px; margin-bottom: 8px; }
+    p { margin: 8px 0 12px; }
+    ul, ol { margin-top: 8px; padding-left: 24px; }
+    li { margin: 4px 0; }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 12px 0 18px;
+      font-size: 14px;
+    }
+    th, td {
+      border: 1px solid var(--border);
+      padding: 9px 10px;
+      vertical-align: top;
+      text-align: left;
+    }
+    th { background: #f2f5fa; }
+    code {
+      background: var(--code);
+      border-radius: 4px;
+      padding: 1px 5px;
+      font-family: Consolas, "Cascadia Mono", monospace;
+      font-size: 0.95em;
+    }
+    pre {
+      background: #101827;
+      color: #edf2ff;
+      border-radius: 6px;
+      padding: 14px 16px;
+      overflow: auto;
+      font-family: Consolas, "Cascadia Mono", monospace;
+      font-size: 13px;
+      line-height: 1.5;
+    }
+    .meta {
+      color: var(--muted);
+      margin-bottom: 20px;
+    }
+    .box {
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 14px 16px;
+      margin: 14px 0;
+      background: #fbfcfe;
+    }
+    .good { border-color: #b7e1c8; background: var(--good-bg); }
+    .warn { border-color: #f0d58a; background: var(--warn-bg); }
+    .bad { border-color: #efb5b5; background: var(--bad-bg); }
+    .tag {
+      display: inline-block;
+      border-radius: 999px;
+      padding: 2px 9px;
+      margin-right: 6px;
+      background: var(--accent-soft);
+      color: var(--accent);
+      font-size: 12px;
+      font-weight: 600;
+    }
+    .small { color: var(--muted); font-size: 13px; }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      gap: 12px;
+      margin: 12px 0;
+    }
+    .card {
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 13px 14px;
+      background: #fbfcfe;
+    }
+    .card h3 { margin-top: 0; }
+  </style>
+</head>
+<body>
+<main>
+  <h1>C组实验计划：带保护的粒球反向约束 encoder</h1>
+  <p class="meta">保存日期：2026-05-21。目标：把 B1/B2 的负结果转化为下一轮更稳的实验设计，验证粒球是否能作为 soft local prior（软局部先验）帮助 encoder（编码器），而不是作为强制压紧目标。</p>
+
+  <div class="box warn">
+    <strong>核心判断：</strong>
+    B组已经说明，只做粒球 compactness（紧凑性）会让局部球变小，但不稳定提升语义质量。C组不再继续单纯调小 <code>lambda_gb</code> 或刷新间隔，而是测试三个保护机制：稳定 encoder、置信度加权、防塌缩和软关系对齐。
+  </div>
+
+  <h2>1. 研究问题</h2>
+  <p>当前问题不是“粒球有没有作用”。B1/B2 已经证明粒球 loss（损失）确实能反向影响 encoder，且 compactness 被真实激活。真正的问题是：这种影响如果只表现为球内拉近，就可能牺牲全局语义可分性。</p>
+  <p>C组要验证的是：</p>
+  <ol>
+    <li>如果换成更稳定的 encoder baseline（基础模型），原始粒球 compactness 是否还会伤害表示空间？</li>
+    <li>如果只让高置信度粒球参与约束，是否能降低错误球 assignment（分配）的伤害？</li>
+    <li>如果加 anti-collapse gate（防塌缩门控），是否能避免 effective rank（有效秩）下降？</li>
+    <li>如果不用硬拉近，而改成 soft ball relation alignment（软粒球关系对齐），是否更稳？</li>
+  </ol>
+
+  <h2>2. 文献依据和B组教训</h2>
+  <table>
+    <thead>
+      <tr>
+        <th>来源</th>
+        <th>关键机制</th>
+        <th>对C组的启发</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>CGBC</td>
+        <td>contrastive pretraining（对比预训练）后建球；球内 compactness；球间 separation（分离）；supervised purity（有监督纯度）；SCE（对称交叉熵）抗噪声。</td>
+        <td>不能只学球内拉近。需要球质量筛选、球间分离或防塌缩保护。监督 purity 不能直接用，要改成 label-free confidence（无标签置信度）。</td>
+      </tr>
+      <tr>
+        <td>GBmooer</td>
+        <td>hypersphere contrastive learning（超球面对比学习）；angular distance（角距离）；局部 label smoothing（标签平滑）；球内局部软标签。</td>
+        <td>粒球更适合做局部软约束，而不是 hard same-ball label（硬同球标签）。球质量、角半径和局部分布可以转成 soft confidence（软置信度）。</td>
+      </tr>
+      <tr>
+        <td>B1/B2实验</td>
+        <td>真实粒球 compactness 可激活，但小权重和动态刷新仍不稳定。</td>
+        <td>单独优化局部紧凑性不够。下一轮必须同时检查 accuracy（准确率）、effective rank、purity（纯度）和 AD（平均角距离）。</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h2>3. C组总设计</h2>
+  <p>C组由 C0-C4 五个方法组成，按从基础对照到更保守约束递进。第一轮建议只跑 Cora 和 CiteSeer，seeds 固定为 0、1、2，不跑 PubMed，避免计算成本过大。</p>
+  <table>
+    <thead>
+      <tr>
+        <th>方法</th>
+        <th>中文含义</th>
+        <th>验证目的</th>
+        <th>对应前面方案</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>C0</td>
+        <td>稳定 encoder baseline</td>
+        <td>建立稳定表示空间参照，不加粒球约束。</td>
+        <td>方案B：全局分离 / 防塌缩基础</td>
+      </tr>
+      <tr>
+        <td>C1</td>
+        <td>稳定 encoder + 原始粒球紧凑约束</td>
+        <td>检查 B1 失败是否主要来自 raw negative-free encoder。</td>
+        <td>诊断桥梁</td>
+      </tr>
+      <tr>
+        <td>C2</td>
+        <td>稳定 encoder + 置信度加权紧凑约束</td>
+        <td>只让可靠粒球参与 compactness，降低错误 assignment 伤害。</td>
+        <td>方案A</td>
+      </tr>
+      <tr>
+        <td>C3</td>
+        <td>C2 + 防塌缩门控</td>
+        <td>如果表示空间 rank 或 feature std（特征标准差）下降，就自动减弱粒球损失。</td>
+        <td>方案A + 方案B</td>
+      </tr>
+      <tr>
+        <td>C4</td>
+        <td>软粒球关系对齐</td>
+        <td>不用硬拉近节点到球心，而是对齐 weak view（弱视图）和 strong view（强视图）的 node-to-ball distribution（节点到粒球分布）。</td>
+        <td>方案C</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h2>4. 固定实验协议</h2>
+  <table>
+    <thead>
+      <tr>
+        <th>项目</th>
+        <th>设置</th>
+        <th>原因</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>代码基线</td>
+        <td>从 Stage B 干净版本继续，新建 Stage C 分支或 worktree。</td>
+        <td>避免混入当前主工作区未提交扩展代码。</td>
+      </tr>
+      <tr>
+        <td>数据集</td>
+        <td>Cora、CiteSeer</td>
+        <td>先在小图上验证机制稳定性。</td>
+      </tr>
+      <tr>
+        <td>seeds</td>
+        <td>0、1、2</td>
+        <td>和 B1/B2 保持可比。</td>
+      </tr>
+      <tr>
+        <td>训练轮数</td>
+        <td><code>epochs=1000</code>，<code>warmup_epochs=300</code></td>
+        <td>和 B组正式实验一致。</td>
+      </tr>
+      <tr>
+        <td>粒球空间</td>
+        <td><code>ball_space=H</code>，优先 encoder output（编码器输出）</td>
+        <td>projector（投影头）空间更偏训练 loss，不优先作为主建球空间。</td>
+      </tr>
+      <tr>
+        <td>距离度量</td>
+        <td>第一轮沿用 Stage B 当前距离实现，不把角距离/余弦距离作为变量。</td>
+        <td>角距离 vs 余弦距离留给猜想3，避免变量混杂。</td>
+      </tr>
+      <tr>
+        <td>粒球大小限制</td>
+        <td><code>reliable_ball_min_size=3</code>，<code>reliable_ball_max_size=256</code></td>
+        <td>沿用 B组 size-aware split 逻辑。</td>
+      </tr>
+      <tr>
+        <td>输出目录</td>
+        <td><code>results_stage_c/</code></td>
+        <td>避免覆盖 B组结果。</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <div class="box">
+    <strong>推荐第一轮运行矩阵：</strong>
+    <code>5 methods × 2 datasets × 3 seeds = 30 runs</code>。encoder 先固定为 InfoNCE，因为 InfoNCE 自带全局分离，最适合验证“局部粒球约束在稳定表示空间上是否变安全”。如果 C2/C4 有正信号，再把最佳设置迁移到 <code>negfree_bn</code> 做第二轮。
+  </div>
+
+  <h2>5. C0：稳定 encoder baseline</h2>
+  <h3>目的</h3>
+  <p>C0 是所有 C 组方法的 paired baseline（成对基线）。它不加任何粒球训练约束，只训练稳定 encoder。第一轮建议使用 InfoNCE，因为它保留负样本排斥力，有助于全局语义可分性。</p>
+  <h3>配置</h3>
+  <pre><code>method: C0
+ssl_objective: infonce
+use_bn: false
+lambda_gb: 0.0
+ball_constraint: none
+results_dir: results_stage_c/C0_infonce</code></pre>
+  <h3>必须输出</h3>
+  <ul>
+    <li><code>linear_eval_acc</code>：线性分类准确率。</li>
+    <li><code>effective_rank</code>：有效秩，判断是否坍缩。</li>
+    <li><code>feature_std_mean</code>：特征标准差均值。</li>
+    <li><code>mean_radius</code>、<code>mean_average_angular_distance</code>、<code>label_purity_diagnostic</code>：只做后验粒球诊断。</li>
+  </ul>
+
+  <h2>6. C1：稳定 encoder + 原始粒球紧凑约束</h2>
+  <h3>目的</h3>
+  <p>C1 用来回答：如果 encoder 本身更稳定，B1 那种原始 compactness 是否还会导致不稳定？这一步不是最终方法，而是定位问题来源。</p>
+  <h3>机制</h3>
+  <pre><code>loss = contrastive_loss + lambda_gb * compactness_loss</code></pre>
+  <p>其中 <code>compactness_loss</code> 仍然是同一个粒球内部节点到球心的距离损失。球心和 assignment 建议 detach（截断梯度），只让 loss 更新 encoder。</p>
+  <h3>配置</h3>
+  <pre><code>method: C1
+ssl_objective: infonce
+lambda_gb: 0.0005
+ball_constraint: compactness
+confidence_weighting: false
+anti_collapse_gate: false
+results_dir: results_stage_c/C1_infonce_compact</code></pre>
+  <h3>判定</h3>
+  <p>如果 C1 仍然明显低于 C0，说明 compactness 本身风险很高；如果 C1 接近或略高于 C0，说明 B1 的失败和 raw negative-free encoder 关系较大。</p>
+
+  <h2>7. C2：置信度加权粒球紧凑约束</h2>
+  <h3>目的</h3>
+  <p>C2 是从 CGBC 的 supervised purity（有监督纯度）迁移出来的无标签版本。由于不能用标签判断球是否可靠，所以改用 label-free confidence（无标签置信度）。</p>
+  <h3>球置信度定义</h3>
+  <p>每个粒球 <code>GB_k</code> 计算一个置信度 <code>q_k</code>，范围为 0 到 1。第一轮建议使用简单、可解释、可消融的乘法形式：</p>
+  <pre><code>q_k = q_size(k) * q_ad(k) * q_radius(k) * q_stability(k)</code></pre>
+  <table>
+    <thead>
+      <tr>
+        <th>项</th>
+        <th>含义</th>
+        <th>第一轮实现</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><code>q_size</code></td>
+        <td>球大小是否合理</td>
+        <td>如果 <code>3 <= size <= 256</code>，取 1，否则取 0。</td>
+      </tr>
+      <tr>
+        <td><code>q_ad</code></td>
+        <td>球内平均角距离越小越可靠</td>
+        <td><code>q_ad = 1 - percentile_rank(AD_k)</code>，AD 越小分数越高。</td>
+      </tr>
+      <tr>
+        <td><code>q_radius</code></td>
+        <td>半径越小越可靠</td>
+        <td><code>q_radius = 1 - percentile_rank(radius_k)</code>。</td>
+      </tr>
+      <tr>
+        <td><code>q_stability</code></td>
+        <td>刷新前后 assignment 越稳定越可靠</td>
+        <td>第一轮如果没有历史 assignment，先取 1；实现动态刷新后再改成 <code>1 - churn_k</code>。</td>
+      </tr>
+    </tbody>
+  </table>
+  <h3>损失形式</h3>
+  <pre><code>loss_gb = mean_i q_assignment(i) * distance(h_i, center_assignment(i))^2
+loss = contrastive_loss + lambda_gb * loss_gb</code></pre>
+  <h3>配置</h3>
+  <pre><code>method: C2
+ssl_objective: infonce
+lambda_gb: 0.0005
+ball_constraint: confidence_weighted_compactness
+confidence_keys: [size, ad, radius]
+anti_collapse_gate: false
+results_dir: results_stage_c/C2_infonce_conf_compact</code></pre>
+  <h3>关键消融</h3>
+  <p>C2 至少要和 C1 比较。如果 C2 优于 C1，说明“不是所有球都同等可信”这个判断成立。如果 C2 仍然低于 C0，说明仅靠置信度加权还不够。</p>
+
+  <h2>8. C3：C2 + 防塌缩门控</h2>
+  <h3>目的</h3>
+  <p>C3 用来解决 B1/B2 中最危险的问题：球内压紧可能让表示空间过度压缩。anti-collapse gate（防塌缩门控）不是为了提高粒球 compactness，而是为了在 rank 或 feature std 变差时自动降低粒球 loss。</p>
+  <h3>门控指标</h3>
+  <table>
+    <thead>
+      <tr>
+        <th>指标</th>
+        <th>中文含义</th>
+        <th>用途</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><code>effective_rank_snapshot</code></td>
+        <td>训练中定期计算的有效秩快照</td>
+        <td>如果低于 C0 同 epoch 参考值太多，说明表示可能坍缩。</td>
+      </tr>
+      <tr>
+        <td><code>feature_std_mean</code></td>
+        <td>特征标准差均值</td>
+        <td>如果接近 0，说明样本表示过度相似。</td>
+      </tr>
+      <tr>
+        <td><code>mean_pairwise_cosine</code></td>
+        <td>平均两两余弦相似度</td>
+        <td>如果过高，说明全局表示被压得太紧。</td>
+      </tr>
+    </tbody>
+  </table>
+  <h3>第一轮门控规则</h3>
+  <pre><code>rank_floor = 0.8 * rank_at_warmup
+std_floor = 0.8 * feature_std_at_warmup
+
+if effective_rank_current < rank_floor or feature_std_current < std_floor:
+    gate = 0.0
+else:
+    gate = 1.0
+
+loss = contrastive_loss + gate * lambda_gb * confidence_weighted_compactness</code></pre>
+  <p>第一轮建议先用硬门控，因为容易解释。后续如果有效，再改成连续门控。</p>
+  <h3>配置</h3>
+  <pre><code>method: C3
+ssl_objective: infonce
+lambda_gb: 0.0005
+ball_constraint: confidence_weighted_compactness
+anti_collapse_gate: true
+rank_floor_ratio: 0.8
+std_floor_ratio: 0.8
+results_dir: results_stage_c/C3_infonce_conf_gate</code></pre>
+
+  <h2>9. C4：软粒球关系对齐</h2>
+  <h3>目的</h3>
+  <p>C4 是最不同的一组。它不再直接把节点拉向球心，而是让 weak view 上的粒球关系作为 teacher（教师信号），指导 strong view 学到相似的 node-to-ball distribution（节点到粒球分布）。这更接近 GBmooer 的局部软约束思想，也符合 CLSA 的 weak teacher 思路。</p>
+  <h3>机制步骤</h3>
+  <ol>
+    <li>生成 weak view 和 strong view。</li>
+    <li>用 weak view 的 encoder output 建粒球，得到球心 <code>C</code> 和置信度 <code>q_k</code>。</li>
+    <li>计算 weak view 中每个节点到最近 K 个球心的 soft assignment（软分配）。</li>
+    <li>用 stop-gradient（停止梯度）固定 weak view 的分布，作为 teacher。</li>
+    <li>strong view 计算到同一组球心的 soft assignment，作为 student（学生）。</li>
+    <li>最小化两者的 KL divergence（KL散度）或 MSE（均方误差）。</li>
+  </ol>
+  <h3>损失形式</h3>
+  <pre><code>P_teacher = stopgrad(softmax(-distance(h_weak, centers) / tau_ball))
+P_student = softmax(-distance(h_strong, centers) / tau_ball)
+
+loss_relation = KL(P_teacher || P_student)
+loss = contrastive_loss + lambda_rel * confidence_weighted(loss_relation)</code></pre>
+  <h3>配置</h3>
+  <pre><code>method: C4
+ssl_objective: infonce
+ball_constraint: soft_relation_alignment
+lambda_rel: 0.001
+topk_centers: 8
+tau_ball: 0.2
+teacher_view: weak
+student_view: strong
+use_confidence_weight: true
+results_dir: results_stage_c/C4_infonce_soft_relation</code></pre>
+  <h3>为什么 C4 重要</h3>
+  <p>C4 可以避免 C1/C2/C3 的一个根本问题：直接把节点压向球心。它学习的是“这个节点和哪些球更相关”的分布，而不是“这个节点必须属于某一个球”。如果 C4 比 C1/C2 稳，说明粒球更适合作为 soft relation teacher（软关系教师），而不是 compactness loss。</p>
+
+  <h2>10. 代码实施任务</h2>
+  <div class="grid">
+    <div class="card">
+      <h3>Task 1：配置扩展</h3>
+      <ul>
+        <li>新增 Stage C 配置字段：<code>method</code>、<code>ball_constraint</code>、<code>confidence_keys</code>、<code>anti_collapse_gate</code>、<code>lambda_rel</code>、<code>topk_centers</code>、<code>tau_ball</code>。</li>
+        <li>为 C0-C4 生成 YAML 配置。</li>
+        <li>测试配置加载，确保默认值不影响 B组旧实验。</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h3>Task 2：粒球置信度</h3>
+      <ul>
+        <li>新增 <code>compute_ball_confidence</code>。</li>
+        <li>输入球大小、AD、radius、可选 churn。</li>
+        <li>输出每个球的 <code>q_k</code>，并记录均值、最小值和覆盖节点数。</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h3>Task 3：C2损失</h3>
+      <ul>
+        <li>在原 compactness loss 上加入 <code>q_assignment(i)</code>。</li>
+        <li>确保 ball center detach，不让球心本身反向传播。</li>
+        <li>测试低置信度球不会产生大梯度。</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h3>Task 4：C3门控</h3>
+      <ul>
+        <li>训练中记录 rank 和 feature std 快照。</li>
+        <li>实现 gate 为 0 或 1 的第一版。</li>
+        <li>输出 <code>gate_off_epochs</code>、<code>rank_floor</code>、<code>std_floor</code>。</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h3>Task 5：C4软关系对齐</h3>
+      <ul>
+        <li>实现 node-to-ball soft assignment。</li>
+        <li>实现 teacher stop-gradient。</li>
+        <li>实现 KL 或 MSE relation loss。</li>
+        <li>测试只有 student 表示收到梯度。</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h3>Task 6：汇总和报告</h3>
+      <ul>
+        <li>生成 <code>stage_c_summary.csv</code>。</li>
+        <li>生成 <code>stage_c_paired_deltas_vs_c0.csv</code>。</li>
+        <li>生成中文实验报告，区分支持结论、合理猜测、未验证假设和负结果削弱方向。</li>
+      </ul>
+    </div>
+  </div>
+
+  <h2>11. 测试计划</h2>
+  <table>
+    <thead>
+      <tr>
+        <th>测试</th>
+        <th>目的</th>
+        <th>预期</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><code>test_ball_confidence.py</code></td>
+        <td>验证置信度范围和排序</td>
+        <td>低 AD、低 radius 的球置信度更高；所有值在 0 到 1。</td>
+      </tr>
+      <tr>
+        <td><code>test_conf_weighted_compactness.py</code></td>
+        <td>验证 C2 损失</td>
+        <td>低置信度球梯度更小；无可靠球时 loss 为 0。</td>
+      </tr>
+      <tr>
+        <td><code>test_anti_collapse_gate.py</code></td>
+        <td>验证 C3 门控</td>
+        <td>rank 或 std 低于阈值时 gate 关闭。</td>
+      </tr>
+      <tr>
+        <td><code>test_soft_relation_alignment.py</code></td>
+        <td>验证 C4 软关系对齐</td>
+        <td>teacher 无梯度，student 有梯度；loss 有限。</td>
+      </tr>
+      <tr>
+        <td>smoke CLI</td>
+        <td>小图快速跑通 C0-C4</td>
+        <td>每个 method 都能写出 metrics 和 config。</td>
+      </tr>
+    </tbody>
+  </table>
+  <pre><code>py -m pytest -q
+py -m gb_stage_c.cli run --config configs/stage_c/C0_Cora_seed0.yaml
+py -m gb_stage_c.cli summarize --results results_stage_c</code></pre>
+
+  <h2>12. 正式运行计划</h2>
+  <h3>第一轮：InfoNCE稳定 encoder</h3>
+  <table>
+    <thead>
+      <tr>
+        <th>维度</th>
+        <th>取值</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>methods</td>
+        <td>C0、C1、C2、C3、C4</td>
+      </tr>
+      <tr>
+        <td>datasets</td>
+        <td>Cora、CiteSeer</td>
+      </tr>
+      <tr>
+        <td>seeds</td>
+        <td>0、1、2</td>
+      </tr>
+      <tr>
+        <td>runs</td>
+        <td>30</td>
+      </tr>
+    </tbody>
+  </table>
+  <pre><code>for method in C0 C1 C2 C3 C4:
+  for dataset in Cora CiteSeer:
+    for seed in 0 1 2:
+      py -m gb_stage_c.cli run --config configs/stage_c/{method}_{dataset}_seed{seed}.yaml</code></pre>
+
+  <h3>第二轮：只扩展最佳设置</h3>
+  <p>如果第一轮中 C2、C3 或 C4 至少有一个方法在 4/6 个 dataset-seed pair 上不低于 C0，再把最佳方法迁移到 <code>negfree_bn</code> 做验证。否则不扩展，先回到机制分析。</p>
+
+  <h2>13. 汇总指标</h2>
+  <table>
+    <thead>
+      <tr>
+        <th>指标</th>
+        <th>中文解释</th>
+        <th>判断方式</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><code>delta_linear_eval_acc</code></td>
+        <td>相对 C0 的线性分类准确率变化</td>
+        <td>不能明显为负；最好多数 seed 不低于 C0。</td>
+      </tr>
+      <tr>
+        <td><code>delta_effective_rank</code></td>
+        <td>有效秩变化</td>
+        <td>不能同步明显下降。</td>
+      </tr>
+      <tr>
+        <td><code>delta_feature_std_mean</code></td>
+        <td>特征标准差变化</td>
+        <td>防止表示过度压缩。</td>
+      </tr>
+      <tr>
+        <td><code>delta_mean_average_angular_distance</code></td>
+        <td>平均角距离变化</td>
+        <td>可以下降，但不能以 accuracy / rank 下降为代价。</td>
+      </tr>
+      <tr>
+        <td><code>delta_label_purity_diagnostic</code></td>
+        <td>标签纯度诊断变化</td>
+        <td>训练不用标签，评估时检查语义一致性。</td>
+      </tr>
+      <tr>
+        <td><code>confidence_mean</code></td>
+        <td>平均粒球置信度</td>
+        <td>如果过低，说明粒球本身不可靠。</td>
+      </tr>
+      <tr>
+        <td><code>gate_off_epochs</code></td>
+        <td>防塌缩门控关闭轮数</td>
+        <td>如果经常关闭，说明 compactness 仍然危险。</td>
+      </tr>
+      <tr>
+        <td><code>assignment_churn</code></td>
+        <td>粒球分配变化率</td>
+        <td>如果刷新后变化过大，说明动态粒球不稳定。</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h2>14. 成功标准和失败标准</h2>
+  <div class="box good">
+    <strong>成功标准：</strong>
+    <ul>
+      <li>至少一个方法在 Cora/CiteSeer 的 6 个 dataset-seed pair 中，4 个或以上不低于 C0。</li>
+      <li>平均 accuracy 不低于 C0，且 effective rank 没有明显下降。</li>
+      <li>AD/radius 改善时，label purity diagnostic 不下降或小幅上升。</li>
+      <li>C2 明显优于 C1，说明置信度加权有实际价值；或 C4 明显优于 C1，说明软关系对齐更安全。</li>
+    </ul>
+  </div>
+  <div class="box bad">
+    <strong>失败标准：</strong>
+    <ul>
+      <li>C1-C4 都只有 3/6 或更少 pair 不低于 C0。</li>
+      <li>方法只降低 AD/radius，但 accuracy、effective rank 或 feature std 同步下降。</li>
+      <li>C2 不优于 C1，说明当前置信度 proxy 没有筛掉错误球。</li>
+      <li>C4 不优于 C1，说明软关系 teacher 也可能被错误粒球污染。</li>
+      <li>C3 经常关闭 gate，说明 compactness 与当前 encoder 仍然严重冲突。</li>
+    </ul>
+  </div>
+
+  <h2>15. 结论边界</h2>
+  <table>
+    <thead>
+      <tr>
+        <th>结果类型</th>
+        <th>可以怎么写</th>
+        <th>不能怎么写</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>C2 成功</td>
+        <td>无标签粒球置信度可以降低错误 compactness 的伤害。</td>
+        <td>粒球 compactness 本身稳定有效。</td>
+      </tr>
+      <tr>
+        <td>C3 成功</td>
+        <td>防塌缩门控有助于平衡局部紧凑和全局可分。</td>
+        <td>粒球约束不会导致塌缩。</td>
+      </tr>
+      <tr>
+        <td>C4 成功</td>
+        <td>粒球更适合作为 soft relation teacher，而不是 hard pulling target。</td>
+        <td>same-ball membership 可以直接当正样本。</td>
+      </tr>
+      <tr>
+        <td>全部失败</td>
+        <td>当前粒球反向约束 encoder 的路径仍缺少可靠机制，应转向诊断或噪声场景。</td>
+        <td>粒球与图对比学习完全不兼容。</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h2>16. 最推荐的执行顺序</h2>
+  <ol>
+    <li>先实现 C0 和 C1，确认稳定 encoder 上原始 compactness 是否仍然危险。</li>
+    <li>再实现 C2，验证置信度加权是否能改善 C1。</li>
+    <li>如果 C2 有改善但仍偶尔崩，加入 C3 防塌缩门控。</li>
+    <li>并行或下一轮实现 C4，因为它是不同机制，不是 C2/C3 的简单调参。</li>
+    <li>第一轮只跑 Cora/CiteSeer seeds 0/1/2，结果达标后再扩展 PubMed 或 noisy graph。</li>
+  </ol>
+
+  <div class="box">
+    <strong>一句话总结：</strong>
+    C组不是继续证明“粒球会让球更紧”，而是验证“在有全局分离和置信度保护的情况下，粒球能不能作为温和的局部结构先验帮助 encoder”。如果 C4 比 C1/C2 更稳，后续论文主线应转向 soft relation teacher，而不是 compactness loss。
+  </div>
+</main>
+</body>
+</html>

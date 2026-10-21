@@ -1,0 +1,36 @@
+model:
+  method: krd_faithful
+  parameter_source: KRD_official_best_parameters_tran_GCN
+  n_hidden: 256
+  n_layer: 2
+  dropout: 0.6
+  norm_type: none
+  teacher_hidden: 256
+  teacher_n_layer: 2
+  teacher_dropout: 0.5
+  teacher_epochs: 500
+  teacher_patience: 50
+  teacher_lr: 0.01
+  teacher_weight_decay: 0.001
+  distill_lambda: 0.3
+  distill_temperature: 1.1
+  reliability_noise_level: 1.0
+  reliability_init_power: 1.0
+  reliability_momentum: 0.99
+  reliability_bins: 50
+  reliability_update_start: 50
+
+training:
+  lr: 0.01
+  weight_decay: 0.001
+  n_epochs: 500
+  patience: 50
+  criterion: metric
+
+dataset:
+  sparse: true
+
+analysis:
+  flag: false
+  project: gnn-with-label-noise
+  save_graph: false

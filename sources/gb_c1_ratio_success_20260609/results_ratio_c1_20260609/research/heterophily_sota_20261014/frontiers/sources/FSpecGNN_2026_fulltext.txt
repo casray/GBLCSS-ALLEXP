@@ -1,0 +1,3604 @@
+Full-Spectrum Graph Neural Network: Expressive and Scalable
+Report GitHub Issue
+×
+Title:
+Content selection saved. Describe the issue below:
+Description:
+Submit without GitHub
+Submit in GitHub
+arXiv is now an independent nonprofit!
+Learn more
+×
+Back to arXiv
+Why HTML?
+Report Issue
+Back to Abstract
+Download PDF
+Abstract
+1 Introduction
+2 Preliminaries
+3 Full-Spectrum GNN
+3.1 Spectral Filtering on Node-Pair Domain
+3.2 Classical Spectral Filtering as a Subfamily
+3.3 Full-Spectrum GNN and Its Expressivity
+3.4 Scalability of FSpecGNN
+4 Application to Heterophilic Graph Learning
+4.1 Necessity of Off-diagonal Components
+4.2 How FSpecGNN Models Off-diagonal
+5 Experiments
+5.1 Heterophilic Node Classification
+5.2 GNN Expressivity
+5.3 Ablation Study
+5.4 Time and Space Overhead
+6 Related Works
+7 Conclusion
+References
+A More Related Work
+A.1 Spectral GNN Architectures
+A.2 Expressivity of Spectral GNNs
+B Discussions and Potential Limitations
+B.1 Discussions on FSpecGNN
+B.2 Potential Limitations and Future Work
+Underexplored implementation choices for FSpecGNN.
+C Algebraic Properties and Parameterizations of Full-Spectrum Filters
+C.1 Basic Properties
+C.2 Tensor Decomposition of Full-Spectrum Filters.
+D Expressivity of Full-Spectrum GNN
+D.1 Universal Approximation on Node-Pair Signals
+Choose WW.
+Choose gg.
+D.2 Non-Isomorphic Graph Distinguishability of FSpecGNN
+E An Analysis of Spectral Filters for Class-Wise Separability
+E.1 Optimal Convolution under Classwise Separability
+E.1.1 Setting and Notation
+E.1.2 Algebraic Structure and a Bias–Variance Decomposition
+Intra-class blocks:
+Inter-class blocks:
+Convexity and strict convexity:
+Eliminating γa∙\gamma_{a\bullet}:
+Solving for αa⋆\alpha_{a}^{\star}, βa⋆\beta_{a}^{\star} and γa∙⋆\gamma_{a\bullet}^{\star}:
+Nonnegativity of AaA_{a} and uniqueness:
+Concentration of random directions:
+Controlling (G−a+D−a)−1(G_{-a}+D_{-a})^{-1}.
+Asymptotics of AaA_{a}, γa∙⋆\gamma_{a\bullet}^{\star}, and the diagonal block coefficients:
+Asymptotic block-diagonality.
+E.2 Spectral GNNs Cannot Express the Optimal Convolution
+Problem Reduction.
+Single block analysis:
+Two–block stacking:
+Multi–block induction:
+Non-simple spectra and larger partitions:
+F Experimental Details
+F.1 Heterophilic Node Classification
+Datasets
+Hyperparameter Setting
+F.2 GNN Expressivity
+Time and Space Overhead
+License: CC BY 4.0
+arXiv:2605.05759v1 [cs.LG] 07 May 2026
+Full-Spectrum Graph Neural Network: Expressive and Scalable
+Xiaohan Wang
+Affiliation: Division of Mathematical Sciences, School of Physical and Mathematical Sciences, Nanyang Technological University, Singapore 637371, Singapore
+Deyu Bo
+Affiliation: Division of Mathematical Sciences, School of Physical and Mathematical Sciences, Nanyang Technological University, Singapore 637371, Singapore
+Longlong Li
+Affiliation: Division of Mathematical Sciences, School of Physical and Mathematical Sciences, Nanyang Technological University, Singapore 637371, Singapore
+Kelin Xia
+Affiliation: Division of Mathematical Sciences, School of Physical and Mathematical Sciences, Nanyang Technological University, Singapore 637371, Singapore
+Correspondence to: xiakelin@ntu.edu.sg
+Abstract
+It is well established that spectral graph neural networks (GNNs) can universally approximate node signals; however, their expressive power remains bounded by the 1-dimensional Weisfeiler–Lehman test, which is mirrored in their lack of universality for higher-order signals.
+To go beyond this bound, we propose the Full-Spectrum GNN (FSpecGNN), a second-order generalization of classical spectral GNNs. FSpecGNN advances spectral filtering in two perspectives: (1) it lifts the signal from the node domain to the node-pair domain; and (2) it extends the univariate spectral filter over eigenvalues to a bivariate filter over eigenvalue pairs.
+We show that classical spectral GNNs arise as a diagonal special case of FSpecGNN, and prove that FSpecGNN can be at most as expressive as Local 2-GNN while universally approximating node-pair signals, the latter being particularly beneficial for heterophilic graph learning.
+Moreover, FSpecGNN admits scalable implementations that avoid explicit node-pair-level computations; combined with a low-rank approximation that reduces full-spectrum convolution to a combination of polynomial spectral filters, it enables learning on large graphs.
+Empirically, FSpecGNN validates the predicted expressivity and delivers strong performance on heterophilic benchmarks.
+Keywords: Machine Learning, ICML
+††affiliationnotice: Equal contribution
+Figure 1: FSpecGNN generalizes spectral filtering by lifting signals to the node-pair domain and extending univariate eigenvalue filters to bivariate filters over eigenvalue pairs.
+Proposition 3.3 embeds spectral GNN (SpecGNN) to the diagonal restriction of FSpecGNN, and Theorem 3.8 establishes that FSpecGNN can be as expressive as Local 2-GNN.
+1 Introduction
+Graph Neural Networks (GNNs) is a standard paradigm for learning from data with underlying graph structure, combining feature transformations with graph propagations.
+A central line of research studies the expressivity of GNNs, which provides a principled lens for comparing the representational power of different architectures in learning from graph-structured data.
+A mainstream framework for such analyses characterizes expressivity by a model’s ability to distinguish non-isomorphic graphs, ranging from the 1-dimensional Weisfeiler–Lehman (1-WL) test (Xu et al., 2019) to more recent homomorphism-based expressivity (Zhang et al., 2024), yielding a well-established expressiveness hierarchy for GNNs.
+Within this hierarchy, a standard way to surpass 1-WL is to lift message passing from the node domain to higher-order domains, such as node pairs V×VV\times V and, more generally, kk-tuples (Morris et al., 2019; Morris et al., 2020).
+In contrast, spectral GNNs, which parameterize propagation as Laplacian filtering, have a comparatively incomplete expressivity picture: while they are universal for node-signal approximation (Wang and Zhang, 2022; Roth and Liebig, 2025), their ability to distinguish non-isomorphic graphs remains bounded by 1-WL (Wang and Zhang, 2022).
+This raises a natural question: what is the spectral counterpart of lifting that enables spectral GNNs to systematically go beyond 1-WL?
+Our contributions.
+We propose the full-spectrum GNN (FSpecGNN) as a second-order generalization of spectral GNNs; the same construction also extends directly to higher orders.
+Concretely, instead of filtering node signals x∈ℝVx\in\mathbb{R}^{V}, full-spectrum filtering operates on node-pair signals ε∈ℝV×V\varepsilon\in\mathbb{R}^{V\times V} and generalizes classical spectral filtering
+|
+| U⁡(gλ⊙(U⊤​x))=∑ig⁡(λi)​ui​ui⊤​x\displaystyle U\big(g_{\lambda}\odot(U^{\top}x)\big)=\sum_{i}g(\lambda_{i})\,u_{i}u_{i}^{\top}x
+|
+| (1)
+|
+| ⇓\displaystyle\Downarrow
+|
+|
+| U⁡(Gλ⊙(U⊤​ε​U))​U⊤=∑i,jg⁡(λi,λj)​ui​ui⊤​ε​uj​uj⊤\displaystyle U\big(G_{\lambda}\odot(U^{\top}\varepsilon U)\big)U^{\top}=\sum_{i,j}g(\lambda_{i},\lambda_{j})\,u_{i}u_{i}^{\top}\varepsilon\,u_{j}u_{j}^{\top}
+|
+| (2)
+where L=U​Λ​U⊤L=U\Lambda U^{\top} is the eigendecomposition of the graph Laplacian with eigenvectors U=[u1,…,un]U=[u_{1},\ldots,u_{n}] and eigenvalues Λ=diag⁡(λ1,…,λn)\Lambda=\mathrm{diag}(\lambda_{1},\ldots,\lambda_{n}).
+FSpecGNN naturally extends the classic univariate spectral filter gλ=(g⁡(λi))1≤i≤|V|g_{\lambda}=(g(\lambda_{i}))_{1\leq i\leq|V|} to a bivariate matrix Gλ=(g⁡(λi,λj))1≤i,j≤|V|G_{\lambda}=(g(\lambda_{i},\lambda_{j}))_{1\leq i,j\leq|V|}.
+Proposition 3.3 further shows that Eq. (1) is recovered within Eq. (2) via a diagonal embedding.
+FSpecGNN is expressive: it can surpass the 1-WL upper bound. In particular, under sufficient conditions, Theorem 3.8 shows that FSpecGNN matches the distinguishing power of Local 2-GNN (Zhang et al., 2024). Complementarily, Theorem 3.4 establishes a universal approximation result for 11-dimensional node-pair signals.
+FSpecGNN is also scalable:
+Section 3.4 discusses implementations of FSpecGNN to avoid explicit computations in the node-pair domain. We further propose a low-rank approximation in Eq. (3), which approximates a full-spectrum convolution using only a small number of
+polynomial spectral filters (e.g., BernConv (He et al., 2021)).
+This leads to implementations Eq. (5) whose computational complexity is comparable to
+that of existing spectral GNNs.
+We further demonstrate the utility of FSpecGNN on heterophilic graph learning tasks, where adjacent nodes often carry different labels and thus naive neighborhood aggregation can be detrimental (Luan et al., 2023).
+To understand heterophily from a spectral perspective, we study the optimal convolution that maximally separates representations across different labels. Theorem 4.1 shows that the resulting convolution suppresses (and, in particular, assigns zero weight to) positions corresponding to inter-class connections. We then prove a fundamental limitation: Theorem 4.2 establishes that such an optimal convolution cannot be realized within the class of classical spectral convolutions. In contrast, FSpecGNN can realize this optimal operator via a slight modification of our implementation.
+Together, these results identify heterophily as an inherently second-order phenomenon and highlight the importance of scalable second-order architectures such as FSpecGNN.
+Finally, we evaluate FSpecGNN on substructure-counting benchmarks (Zhang et al., 2024), where the empirical results align with our expressivity predictions. Moreover, FSpecGNN is substantially more efficient in practice, achieving roughly 5×5\times lower runtime than the corresponding spatial second-order baselines and the lowest peak GPU memory among all compared methods.
+We also assess FSpecGNN on standard heterophilic node-classification benchmarks and demonstrate consistent gains over a range of representative baselines.
+2 Preliminaries
+Notations.
+Let G=(V,E)G=(V,E) be an undirected graph with |V|=n,|E|=m,m≪n2|V|=n,\ |E|=m,\ m\ll n^{2}.
+The adjacency matrix is A∈ℝn×nA\in\mathbb{R}^{n\times n}, the degree matrix is
+D∈ℝn×nD\in\mathbb{R}^{n\times n}, and node features are
+represented by a matrix X∈ℝn×dX\in\mathbb{R}^{n\times d}. We further fix a graph Laplacian L∈ℝn×nL\in\mathbb{R}^{n\times n} by D−AD-A or I−D−1/2AD−1/2I-D^{-1/2}AD^{-1/2}.
+When all choices are admissible, we refer to any of them simply as LL.
+Spectral GNNs.
+The Laplacian admits the eigendecomposition
+L=U​Λ​U⊤,L=U\Lambda U^{\top},
+where U=[u1,…,un]U=[u_{1},\dots,u_{n}] is an orthonormal eigenvector matrix and
+Λ=diag⁡(λ1,…,λn)\Lambda=\mathrm{diag}(\lambda_{1},\dots,\lambda_{n}) contains the eigenvalues.
+For a graph signal x∈ℝnx\in\mathbb{R}^{n}, the graph Fourier transform (GFT) and its inverse are
+x^=U⊤​x,x=U​x^.\hat{x}=U^{\top}x,\ x=U\hat{x}.
+Definition 2.1.
+Given a continuous function g:ℝ→ℝg:\mathbb{R}\to\mathbb{R}, the corresponding
+spectral filter is the vector
+|
+| gλ≔(g⁡(λ1),g⁡(λ2),⋯,g⁡(λn)).g_{\lambda}\coloneqq(g(\lambda_{1}),g(\lambda_{2}),\cdots,g(\lambda_{n})).
+|
+Then, the spectral convolution is defined as
+|
+| gλ∗Gx≔\displaystyle g_{\lambda}\ast_{G}x\coloneqq
+| U⁡(gλ⊙(U⊤​x))=U​g​(Λ)​U⊤​x\displaystyle U\big(g_{\lambda}\odot(U^{\top}\!x)\big)=Ug(\Lambda)U^{\top}x
+|
+|
+| =\displaystyle=
+| ∑ig⁡(λi)​ui​ui⊤​x,\displaystyle\sum_{i}g(\lambda_{i})\,u_{i}u_{i}^{\top}x,
+|
+where g⁡(Λ)≔diag⁡(gλ)∈ℝn×ng(\Lambda)\coloneqq\mathrm{diag}\bigl(g_{\lambda}\bigr)\in\mathbb{R}^{n\times n}.
+When graph convolution is of the form gλ∗Gxg_{\lambda}\ast_{G}x,
+the resulting architecture is commonly referred to as a spectral GNN.
+A common choice of the function gg is a
+polynomial
+p⁡(t)=∑k=0Kθk​tkp(t)=\sum_{k=0}^{K}\theta_{k}t^{k}
+with learnable coefficients {θk}k=0K\{\theta_{k}\}_{k=0}^{K}. Define the corresponding polynomial of Laplacian by p⁡(L)≔∑k=0Kθk​Lkp(L)\coloneqq\sum_{k=0}^{K}\theta_{k}L^{k}. With L=U​Λ​U⊤L=U\Lambda U^{\top}, we obtain
+|
+| p⁡(L)=U⁡(∑k=0Kθk​Λk)​U⊤=U​p​(Λ)​U⊤p(L)=U\big(\sum_{k=0}^{K}\theta_{k}\Lambda^{k}\big)U^{\top}\!=Up(\Lambda)U^{\top}
+|
+equivalently, we have
+p⁡(𝝀)∗Gx=p⁡(L)​x,p(\bm{\lambda})\ast_{G}x=p(L)x,
+which avoid computing the eigendecomposition explicitly. For simplicity, given an arbitrary function gg, we denote the spectral convolutional matrix by g⁡(L)≔U​g​(Λ)​U⊤g(L)\coloneqq Ug(\Lambda)U^{\top}, then similarly gλ∗Gx=g⁡(L)​xg_{\lambda}\ast_{G}x=g(L)x.
+Tensor product of matrices.
+To describe the second-order spectral framework, we introduce
+Definition 2.2.
+Let A∈ℝm×nA\in\mathbb{R}^{m\times n} and B∈ℝp×qB\in\mathbb{R}^{p\times q}.
+Their tensor product, a.k.a Kronecker product, is the block matrix
+|
+| A⊗B:=[a11​B⋯a1​n​B⋱am​1​B⋯am​n​B]∈ℝ(m​p)×(n​q).A\otimes B:=\begin{bmatrix}a_{11}B&\cdots&a_{1n}B\\
+\vdots&\ddots&\vdots\\
+a_{m1}B&\cdots&a_{mn}B\end{bmatrix}\in\mathbb{R}^{(mp)\times(nq)}.
+|
+For a matrix X∈ℝn×nX\in\mathbb{R}^{n\times n}, the vectorization map
+is defined by column-stacking:
+|
+| vec(X):=[X:,1⊤,X:,2⊤,…,X:,n⊤]⊤∈ℝn2,\mathrm{vec}(X):=\bigl[X_{:,1}^{\top},\;X_{:,2}^{\top},\;\dots,\;X_{:,n}^{\top}\bigr]^{\top}\in\mathbb{R}^{n^{2}},
+|
+where X:,i∈ℝnX_{:,i}\in\mathbb{R}^{n} denotes the ii-th column of XX.
+Lemma 2.3 (Van Loan (2000)).
+The Kronecker product and the vectorization map satisfy the following
+1.
+vec:ℝn×n→ℝn2\mathrm{vec}:\mathbb{R}^{n\times n}\rightarrow\mathbb{R}^{n^{2}} is a linear space isomorphism.
+2.
+A,B,X∈ℝn×nA,B,X\in\mathbb{R}^{n\times n},
+(B⊤⊗A)​vec​(X)=vec⁡(A​X​B).(B^{\top}\otimes A)\,\mathrm{vec}(X)=\mathrm{vec}(AXB).
+3.
+For u,v∈ℝnu,v\in\mathbb{R}^{n}, v⊗u=vec⁡(u​v⊤)v\otimes u=\mathrm{vec}(uv^{\top}).
+3 Full-Spectrum GNN
+3.1 Spectral Filtering on Node-Pair Domain
+Let L=U​Λ​U⊤L=U\Lambda U^{\top} be the eigendecomposition of the Laplacian of a graph GG.
+The Kronecker product U⊗UU\otimes U has columns
+{ui⊗uj}i,j=1n\{u_{i}\otimes u_{j}\}_{i,j=1}^{n}, which form an orthonormal basis of ℝn2\mathbb{R}^{n^{2}}.
+For a node-pair signal ε∈ℝn×n\varepsilon\in\mathbb{R}^{n\times n}, we will, by a slight abuse of notation, identify ε\varepsilon with vec⁡(ε)∈ℝn2\mathrm{vec}(\varepsilon)\in\mathbb{R}^{n^{2}} via the isomorphism vec\mathrm{vec} throughout the paper.
+Then GFT and its inverse are defined as
+|
+| ε^=(U⊗U)⊤​ε,ε=(U⊗U)​ε^.\hat{\varepsilon}=(U\otimes U)^{\top}\varepsilon,\ \varepsilon=(U\otimes U)\hat{\varepsilon}.
+|
+Parallel to Definition 2.1, we have
+Definition 3.1.
+Given a continuous function g:ℝ2→ℝg:\mathbb{R}^{2}\to\mathbb{R}, the corresponding
+full spectrum filter is the matrix
+|
+| Gλ≔(g⁡(λi,λj))1≤i,j≤nG_{\lambda}\coloneqq\bigl(g(\lambda_{i},\lambda_{j})\bigr)_{1\leq i,j\leq n}
+|
+Then, the full spectrum convolution is defined as
+|
+| Gλ∗Gε≔\displaystyle G_{\lambda}\ast_{G}\varepsilon\coloneqq
+| (U⊗U)​(Gλ⊙(U⊗U)⊤​ε)\displaystyle(U\otimes U)\big(G_{\lambda}\odot(U\otimes U)^{\top}\!\varepsilon\,\big)
+|
+|
+| =\displaystyle=
+| (U⊗U)​G​(Λ)​(U⊗U)⊤​ε\displaystyle(U\otimes U)\,G(\Lambda)\,(U\otimes U)^{\top}\!\varepsilon
+|
+|
+| =\displaystyle=
+| ∑i,jg⁡(λi,λj)​ui​ui⊤​ε​uj​uj⊤,\displaystyle\sum_{i,j}g(\lambda_{i},\lambda_{j})\,u_{i}u_{i}^{\top}\varepsilon\,u_{j}u_{j}^{\top},
+|
+where G⁡(Λ)≔diag⁡(vec⁡(Gλ))∈ℝn2×n2G(\Lambda)\coloneqq\mathrm{diag}\big(\mathrm{vec}(G_{\lambda})\big)\in\mathbb{R}^{n^{2}\times n^{2}}.
+Let gg be a bivariate polynomial
+q⁡(s,t)=∑i,jαi​j​si​tjq(s,t)=\sum_{i,j}\alpha_{ij}s^{i}t^{j}, then define the polynomial of Laplacians
+q⁡(L⊗In,In⊗L)≔∑i,jαi​j​(L⊗In)i​(In⊗L)j=∑i,jαi​j​Li⊗Ljq(L\otimes I_{n},\;I_{n}\otimes L)\;\coloneqq\;\sum_{i,j}\alpha_{ij}(L\otimes I_{n})^{i}(I_{n}\otimes L)^{j}=\sum_{i,j}\alpha_{ij}\,L^{i}\otimes L^{j}, where In∈ℝn×nI_{n}\in\mathbb{R}^{n\times n} is the identity matrix. We have
+Proposition 3.2.
+Define Qλ=(q⁡(λi,λj))1≤i,j≤nQ_{\lambda}=\bigl(q(\lambda_{i},\lambda_{j})\bigr)_{1\leq i,j\leq n}, then
+|
+| q⁡(L⊗In,In⊗L)=(U⊗U)​Q​(Λ)​(U⊗U)⊤,q(L\otimes I_{n},\ I_{n}\otimes L)=(U\otimes U)\,Q(\Lambda)\,(U\otimes U)^{\top},
+|
+where Q⁡(Λ)=diag⁡(vec⁡(Qλ))Q(\Lambda)=\mathrm{diag}\big(\mathrm{vec}(Q_{\lambda})\big). Equivalently,
+|
+| Qλ∗Gε=q⁡(L⊗In,In⊗L)​ε.Q_{\lambda}\ast_{G}\varepsilon=\,q(L\otimes I_{n},\ I_{n}\otimes L)\varepsilon.
+|
+The proof is provided in Appendix C (Proposition C.2). Motivated by Proposition 3.2, given an continuous function gg, we denote the full spectrum convolutional matrix by
+|
+| g⁡(L⊗In,In⊗L)≔(U⊗U)​G​(Λ)​(U⊗U)⊤,g(L\otimes I_{n},I_{n}\otimes L)\coloneqq(U\otimes U)G(\Lambda)(U\otimes U)^{\top}\!,
+|
+then for arbitrary such gg,
+|
+| Gλ∗Gε=g⁡(L⊗In,In⊗L)​ε.G_{\lambda}\ast_{G}\varepsilon=g(L\otimes I_{n},I_{n}\otimes L)\varepsilon.
+|
+Full-spectrum convolution admits a simple view as propagation on the Cartesian product graph G​□​GG\square G over node set V×VV\times V, where (u,v)(u,v) is adjacent to (u′,v′)(u^{\prime},v^{\prime}) iff u=u′u=u^{\prime} and (v,v′)∈E(v,v^{\prime})\in E, or v=v′v=v^{\prime} and (u,u′)∈E(u,u^{\prime})\in E. Concretely, L⊗InL\otimes I_{n} (resp. In⊗LI_{n}\otimes L) propagates along the second (resp. first) coordinate while keeping the other fixed.
+As a special case, if we enforce simultaneous propagation along both coordinates by restricting the bivariate function to g⁡(s,t)=h⁡(s+t)g(s,t)=h(s+t) for some univariate hh, the induced operator reduces to g⁡(L⊕L)g(L\oplus L), where
+L⊕L:=L⊗In+In⊗LL\oplus L\;:=\;L\otimes I_{n}+I_{n}\otimes L,
+is the Kronecker sum of Laplacians. Moreover, L⊕LL\oplus L is exactly the Laplacian of the Cartesian product graph G​□​GG\square G (Brouwer and Haemers, 2011), so g⁡(L⊕L)g(L\oplus L) implements simultaneous propagation on both coordinates. In this sense, g⁡(L⊕L)g(L\oplus L) is a degraded second-order convolution: the signal is lifted to node pairs, but the filter is constrained to be univariate.
+3.2 Classical Spectral Filtering as a Subfamily
+Classical spectral filters can be characterized as a subfamily of full-spectrum filters via diagonal embedding.
+Proposition 3.3.
+Given node signal x∈ℝnx\in\mathbb{R}^{n}, define the diagonal embedding ℰ⁡(x):=∑i=1nx^i​ui​ui⊤\mathcal{E}(x)\;:=\;\sum_{i=1}^{n}\hat{x}_{i}\,u_{i}u_{i}^{\top} with x^i:=ui⊤​x\hat{x}_{i}:=u_{i}^{\top}x, and the projection 𝒫⁡(H):=∑i=1n(ui⊤​H​ui)​ui\mathcal{P}(H)\;:=\;\sum_{i=1}^{n}(u_{i}^{\top}Hu_{i})\,u_{i} for H∈ℝn×nH\in\mathbb{R}^{n\times n}. Then
+|
+| 𝒫⁡(g⁡(L⊗In,In⊗L)​ℰ​(x))=U​g~​(Λ)​U⊤​x,\mathcal{P}\!\left(g(L\otimes I_{n},\ I_{n}\otimes L)\,\mathcal{E}(x)\right)\;=\;U\,\tilde{g}(\Lambda)\,U^{\top}x,
+|
+where g~​(Λ)≔diag​(g⁡(λi,λi))1≤i≤n\tilde{g}(\Lambda)\coloneqq\mathrm{diag}(g(\lambda_{i},\lambda_{i}))_{1\leq i\leq n}, recovering the classical spectral filtering.
+The proof is provided in Appendix C (Proposition C.3). From this perspective, classical spectral filters can be viewed as diagonal-spectrum filters, obtained by restricting the full-spectrum filter to the diagonal of the paired spectrum.
+3.3 Full-Spectrum GNN and Its Expressivity
+Based on the full-spectrum filtering, we propose the full spectrum GNN, i.e., FSpecGNN. Given node features X∈ℝn×d1X\in\mathbb{R}^{n\times d_{1}} and node-pair features E∈ℝn×n×d2E\in\mathbb{R}^{n\times n\times d_{2}}, we first lift them to representations in node-pair domain via
+Hu​v=ϕ⁡(Xu,Xv,Eu​v)∈ℝd,H_{uv}=\phi(X_{u},X_{v},E_{uv})\in\mathbb{R}^{d},
+where ϕ\phi can be either a hand-crafted encoder or a neural network. Stacking all pairwise representations yields a tensor H∈ℝn×n×dH\in\mathbb{R}^{n\times n\times d}, which we reshape into a matrix
+H∈ℝn2×dH\in\mathbb{R}^{n^{2}\times d}.
+A full-spectrum convolution layer is then defined as
+|
+| H′=σ⁡(g⁡(L⊗In,In⊗L)​H​W),H^{\prime}\;=\;\sigma\!\bigl(g(L\otimes I_{n},\,I_{n}\otimes L)\,H\,W\bigr),
+|
+where gg is a learnable bivariate function.
+Depending on the choice of readout, the filtered representations H′H^{\prime} can be used to produce edge/node/graph-level predictions.
+Now We consider two complementary notions of expressivity for spectral GNNs.
+The first is specific to spectral methods and concerns their ability to universally approximate graph signals.
+The second is a model’s ability to distinguish non-isomorphic graphs.
+Parallel to Wang and Zhang (2022), who showed the linear spectral GNN can universally approximate one-dimensional signals on VV, we prove that the linear FSpecGNN can universally approximate one-dimensional signals on V×VV\times V, with proof provided in Appendix D (Theorem D.1).
+Theorem 3.4.
+Linear FSpecGNN, obtained by removing the nonlinear activation, can produce any one-dimensional node-pair signal prediction if the normalized Laplacian L~\tilde{L} has no multiple eigenvalues
+and the input representation HH contain all paired frequency components, namely, (U⊗U)⊤​H(U\otimes U)^{\top}H is non-zero for every index (u,v)∈V×V(u,v)\in V\times V.
+We next study the ability of FSpecGNN to distinguish non-isomorphic graphs.
+Let G=(V,E)G=(V,E) be a finite graph with an initial node labeling ℓ(0):V→Σ\ell^{(0)}:V\to\Sigma, where Σ\Sigma is a countable label set.
+We adopt the standard definitions of 1-WL and Local 2-GNN from Zhang et al. (2024).
+Definition 3.5.
+The 1-dimensional Weisfeiler–Lehman test refines node labels by
+|
+| ℓ(t)​(v)=HASH⁡(ℓ(t−1)​(v),{{ℓ(t−1)​(u):u∈N⁡(v)}}),\ell^{(t)}(v)=\mathrm{HASH}\Bigl(\ell^{(t-1)}(v),\{\!\!\{\ell^{(t-1)}(u):u\in N(v)\}\!\!\}\Bigr),
+|
+where N⁡(v)N(v) denotes the neighborhood of vv and HASH\mathrm{HASH} is an perfect hash function. The process iterates until stabilization. Two graphs are
+distinguished by 1-WL if the multisets of node labels differ at some
+iteration.
+Definition 3.6.
+The local 2-GNN operates on ordered
+node pairs (u,v)∈V×V(u,v)\in V\times V. It initializes
+ℓ(0)​(u,v)=(ℓ(0)​(u),ℓ(0)​(v),𝐚𝐭𝐩⁡(u,v))\ell^{(0)}(u,v)=\big(\ell^{(0)}(u),\ell^{(0)}(v),\mathbf{atp}(u,v)\big), where the
+atomic type is 𝐚𝐭𝐩⁡(u,v)=(𝟏u=v,𝟏(u,v)∈E)\mathbf{atp}(u,v)=(\mathbf{1}_{u=v},\mathbf{1}_{(u,v)\in E}).
+For t≥0t\geq 0, define multisets
+ℳu←v(t):={{ℓ(t)​(w,v):w∈N⁡(u)}}\mathcal{M}^{(t)}_{u\leftarrow v}:=\{\!\!\{\ell^{(t)}(w,v):w\in N(u)\}\!\!\} and
+ℳv←u(t):={{ℓ(t)​(u,w):w∈N⁡(v)}}\mathcal{M}^{(t)}_{v\leftarrow u}:=\{\!\!\{\ell^{(t)}(u,w):w\in N(v)\}\!\!\}, and
+update
+|
+| ℓ(t+1)​(u,v)=HASH⁡(ℓ(t)​(u,v),ℳu←v(t),ℳv←u(t)).\ell^{(t+1)}(u,v)=\mathrm{HASH}\bigl(\ell^{(t)}(u,v),\mathcal{M}^{(t)}_{u\leftarrow v},\mathcal{M}^{(t)}_{v\leftarrow u}\bigr).
+|
+The process iterates until stabilization.
+First, consider FSpecGNN that realizes
+g⁡(L⊗In,In⊗L)g(L\otimes I_{n},\,I_{n}\otimes L) via bivariate polynomial pp.
+By stacking the pairwise label ℓ(0)​(u,v)\ell^{(0)}(u,v) into a matrix ℒ∈ℝn2×d\mathcal{L}\in\mathbb{R}^{n^{2}\times d} for some dd, We show that the resulting model has expressivity upper-bounded by Local 22-GNN.
+Theorem 3.7.
+Let pp be any polynomial of total degree at most KK, and define the filtered linear representation
+ℒ′=p⁡(L⊗I,I⊗L)​ℒ​W\mathcal{L}^{\prime}=p(L\otimes I,I\otimes L)\mathcal{L}W.
+Let χ(u,v)(k)\chi^{(k)}_{(u,v)} denote the color of index (u,v)(u,v) after kk iterations
+of the Local 22-GNN refinement.
+Then for any
+(u1,v1),(u2,v2)∈V×V(u_{1},v_{1}),(u_{2},v_{2})\in V\times V and any matrix WW,
+|
+| χ(u1,v1)(K)=χ(u2,v2)(K)⟹ℒ′​(u1,v1)=ℒ′​(u2,v2).\chi^{(K)}_{(u_{1},v_{1})}=\chi^{(K)}_{(u_{2},v_{2})}\Longrightarrow\mathcal{L}^{\prime}(u_{1},v_{1})=\mathcal{L}^{\prime}(u_{2},v_{2}).
+|
+In contrast, by allowing bivariate polynomials, there exists a polynomial q⁡(s,t)q(s,t) such that the FSpecGNN induced by qq achieves greater expressivity than local 2-GNNs.
+Theorem 3.8.
+Let χ(u,v)(∞)\chi^{(\infty)}_{(u,v)} denote the stable Local 22-GNN color on index (u,v)(u,v).
+If LL has a simple spectrum and
+U⊤​ℒ​UU^{\top}\mathcal{L}U is index-wise nonzero, then there exists a bivariate polynomial qq and a matrix WW, such that the filtered representation
+ℒ′=q⁡(L⊗In,In⊗L)​ℒ​W\mathcal{L}^{\prime}=q(L\otimes I_{n},\ I_{n}\otimes L)\mathcal{L}W satisfies
+|
+| ℒ′​(u1,v1)=ℒ′​(u2,v2)⟹χ(u1,v1)(∞)=χ(u2,v2)(∞).\mathcal{L}^{\prime}(u_{1},v_{1})=\mathcal{L}^{\prime}(u_{2},v_{2})\Longrightarrow\chi^{(\infty)}_{(u_{1},v_{1})}=\chi^{(\infty)}_{(u_{2},v_{2})}.
+|
+Proofs are provided in Appendix D (Theorem D.3, D.6).
+Note that Theorem 3.8 is an existence result: in practice, the learned filter may or may not realize the specific polynomial qq guaranteed by the theorem. Consequently, the empirical expressivity of FSpecGNN can vary across tasks and may be slightly weaker or stronger than that of Local 22-GNNs, depending on the parameterization and optimization.
+3.4 Scalability of FSpecGNN
+A main challenge for second-order methods is scalability. Concretely, filtering in the node-pair domain is intractable, as it requires multiplying an n2×n2n^{2}\times n^{2} matrix by an n2n^{2}-dimensional vector. In this section, we discuss implementations of FSpecGNN, especially those that avoid these costs, including explicit eigendecomposition and node-pair–level computations. These implementations mainly involve choosing parameterizations of the bivariate function gg.
+Route I: direct learning of g⁡(λi,λj)g(\lambda_{i},\lambda_{j}).
+When the graph is small, we can explicitly compute the eigendecomposition and learn the bivariate filter gθ:ℝ2→ℝg_{\theta}:\mathbb{R}^{2}\to\mathbb{R} directly, e.g., using an MLP.
+In computing a full-spectrum convolution g⁡(L⊗In,In⊗L)​Hg(L\otimes I_{n},\,I_{n}\otimes L)H, we follow Definition 3.1, constructing GλG_{\lambda} by
+(Gλ)i​j=gθ​(λi,λj),(G_{\lambda})_{ij}\;=\;g_{\theta}(\lambda_{i},\lambda_{j}),
+and apply
+Gλ⊙((U⊗U⊤)​ε)G_{\lambda}\odot\big((U\otimes U^{\top})\varepsilon\big) followed by inverse GFT transform, where ε\varepsilon is one channel of HH and we apply the same convolution to all channels.
+This route is impractical for large graphs, as eigendecomposition requires O⁡(n3)O(n^{3}) and GFT requires O⁡(n2)O(n^{2}) time.
+Route II: polynomial parameterization of g⁡(λi,λj)g(\lambda_{i},\lambda_{j}).
+We parameterize the filter by a polynomial
+q⁡(L⊗In,In⊗L)=∑p=0K∑q=0Kαp​q​(Lp⊗Lq).q(L\otimes I_{n},I_{n}\otimes L)=\sum_{p=0}^{K}\sum_{q=0}^{K}\alpha_{pq}(L^{p}\otimes L^{q}).
+Learning gg is then reduced to learning the coefficient matrix (αp​q)(\alpha_{pq}).
+A key computational benefit is that we never explicitly construct Lp⊗Lq∈ℝn2×n2L^{p}\otimes L^{q}\in\mathbb{R}^{n^{2}\times n^{2}}, instead, we exploit by Lemma 2.3 to have
+(Lp⊗Lq)​vec​(ε)=vec⁡(Lq​ε​Lp),(L^{p}\otimes L^{q})\mathrm{vec}(\varepsilon)=\mathrm{vec}(L^{q}\varepsilon L^{p}),
+reducing computations to n×nn\times n matrix multiplications.
+Although we avoid computations in the node-pair domain, we still have (K+1)2(K+1)^{2} polynomial terms; even with a recursive implementation, applying the filter still costs O⁡(K2)O(K^{2}) left/right multiplications, which becomes expensive for high-degree polynomial filters.
+Further scalability via tensor decomposition.
+To mitigate the at least quadratic dependence on KK, we exploit the tensor-product structure of bivariate polynomial filters. Proofs are provided in Appendix C (Proposition C.4).
+Proposition 3.9.
+Let
+P⁡(s,t)=∑i+j≤Kai​j​si​tjP(s,t)=\sum_{i+j\leq K}a_{ij}\,s^{i}t^{j}
+be a bivariate polynomial, and denote by A=(ai​j)A=(a_{ij}) its coefficient matrix.
+Then the induced operator
+P⁡(L⊗In,In⊗L)P(L\otimes I_{n},\;I_{n}\otimes L)
+admits a decomposition of the form
+|
+| P⁡(L⊗In,In⊗L)=∑r=1Rfr​(L)⊗hr​(L)P(L\otimes I_{n},\;I_{n}\otimes L)=\sum_{r=1}^{R}f_{r}(L)\otimes h_{r}(L)
+|
+for univariate polynomials {fr,hr}\{f_{r},h_{r}\} satisfying deg⁡(fr)≤K\mathrm{deg}(f_{r})\leq K and deg⁡(hr)≤K\mathrm{deg}(h_{r})\leq K for all rr, if and only if
+R≥rank⁡(A)R\geq\mathrm{rank}(A).
+In particular, a low-rank approximation of the coefficient matrix AA
+yields a truncated tensor decomposition with only a small number of terms:
+|
+| 𝒯LS≔∑r=1Sfr​(L)⊗hr​(L),S≪rank⁡(A).\mathcal{T}_{L}^{S}\;\coloneqq\;\sum_{r=1}^{S}f_{r}(L)\otimes h_{r}(L),\qquad S\ll\mathrm{rank}(A).
+|
+| (3)
+Thus we only need to perform O⁡(S​K)O(SK) matrix multiplications with degree-KK univariate polynomials frf_{r} and hrh_{r}.
+4 Application to Heterophilic Graph Learning
+4.1 Necessity of Off-diagonal Components
+Classical spectral GNN restricts to
+diagonal spectral convolutions
+g⁡(L)=∑ig⁡(λi)​ui​ui⊤.g(L)=\sum_{i}g(\lambda_{i})\,u_{i}u_{i}^{\top}.
+Equivalently, for any such convolution matrix C=g⁡(L)C=g(L), U⊤​C​UU^{\top}CU is diagonal.
+In contrast, spatial message passing GNNs typically learn convolution operators whose spectral
+expansions over the basis {ui​uj⊤}\{u_{i}u_{j}^{\top}\} contain non-zero off-diagonal
+components, i.e., U⊤​C​UU^{\top}CU generally non-diagonal.
+We answer the following question in this section:
+are such off-diagonal components merely incidental artifacts of spatial
+message passing, or do they play a principled and necessary role in learning?
+We study this question in heterophilic graph learning, where adjacent nodes often carry different labels and classical models such as GCNs can degrade substantially.
+To understand heterophily from a spectral perspective, we firstly characterize an
+optimal convolution operator that maximally separates representations across
+different labels, equivalently, maximally contracts representations within the
+same label, under suitable idealized assumptions.
+Model Assumption.
+Let G=(V,E)G=(V,E) be a graph with |V|=n|V|=n, whose nodes are partitioned into
+kk classes Π={V1,…,Vk}\Pi=\{V_{1},\dots,V_{k}\} with |Va|=na|V_{a}|=n_{a} and ∑a=1kna=n\sum_{a=1}^{k}n_{a}=n.
+For each class a∈{1,…,k}a\in\{1,\dots,k\}, we randomly draw a class mean vector
+ma∈ℝdm_{a}\in\mathbb{R}^{d} independently from the unit sphere
+𝕊d−1\mathbb{S}^{d-1}.
+Conditioned on these class means, node features are generated independently
+across nodes according to their class labels.
+Specifically, for each node i∈Vaii\in V_{a_{i}}, the feature vector
+xi∼𝒟ai,x_{i}\sim\mathcal{D}_{a_{i}},
+where each class-conditional distribution 𝒟a\mathcal{D}_{a} on ℝd\mathbb{R}^{d}
+has mean mam_{a} and covariance matrix Σa⪰0\Sigma_{a}\succeq 0.
+We denote by X∈ℝn×dX\in\mathbb{R}^{n\times d} the resulting feature matrix,
+whose ii-th row is xi⊤x_{i}^{\top}.
+For convenience, we write τa:=tr⁡(Σa)\tau_{a}:=\mathrm{tr}(\Sigma_{a}) for the total feature
+variance of class aa, and assume τa>0\tau_{a}>0 for all aa.
+Under this model, we now specify a measurement to quantify class separability after graph propagation.
+Rather than adopting a Bayesian formulation
+(Luan et al., 2023; Wang et al., 2024), we consider a deterministic classwise mean squared error
+|
+| ℒ⁡(C):=∑a=1k1na​∑p∈Va𝔼​‖Yp−ma‖22,\mathcal{L}(C):=\sum_{a=1}^{k}\frac{1}{n_{a}}\sum_{p\in V_{a}}\mathbb{E}\,\bigl\|Y_{p}-m_{a}\bigr\|_{2}^{2},
+|
+| (4)
+where Y:=C​X∈ℝn×dY:=CX\in\mathbb{R}^{n\times d} denotes the propagated feature matrix,
+YpY_{p} is its pp-th row, and mam_{a} is the class-wise mean.
+Eq. (4) is well suited to our setting:
+ℒ⁡(C)\mathcal{L}(C) is differentiable with
+respect to CC, and the optimal solution
+C∗:=arg⁡minC⁡ℒ⁡(C)C^{\ast}:=\arg\min_{C}\mathcal{L}(C)
+admits a closed-form characterization.
+Theorem 4.1.
+Let C∗C^{*} be a minimizer of ℒ⁡(C)\mathcal{L}(C). Assume τa​na≥τ0>0\tau_{a}n_{a}\geq\tau_{0}>0 for each class a∈{1,…,k}a\in\{1,\dots,k\}, where τ0\tau_{0}
+is a fixed positive constant lower bound. Then, as the feature dimension d→∞d\to\infty, C∗C^{*} becomes asymptotically block-diagonal with respect to the class partition
+Π\Pi, with
+|
+| (C∗)Va×Vb→ℙ{sa∗​JVa,a=b,0,a≠b,sa∗→ℙ1na+τa.(C^{*})_{V_{a}\times V_{b}}\;\xrightarrow{\ \mathbb{P}\ }\;\begin{cases}s_{a}^{*}\,J_{V_{a}},&a=b,\\[4.0pt]
+0,&a\neq b,\end{cases}\qquad s_{a}^{*}\xrightarrow{\ \mathbb{P}\ }\dfrac{1}{n_{a}+\tau_{a}}.
+|
+The proof is provided in Appendix E (Theorem E.9).
+It shows that the inter-class blocks of optimal convolution C⋆C^{\star} vanish asymptotically, while intra-class blocks converge to class-dependent constants.
+We now prove that such convolutions cannot be realized by classical spectral filters.
+Theorem 4.2.
+Given a connected graph GG, there exists a GG-dependent integer K≥1K\geq 1 such that for
+any K<k≤nK<k\leq n, there exists a kk-partition
+V=V1∪⋯∪VkV=V_{1}\cup\cdots\cup V_{k} with label assignment yi=a⇔vi∈Vay_{i}=a\iff v_{i}\in V_{a} such that
+the following holds:
+if a diagonal-spectral operator C=g⁡(L)C=g(L) satisfies
+|
+| Ci​j=0whenever ​yi≠yj,C_{ij}=0\quad\text{whenever }y_{i}\neq y_{j},
+|
+then necessarily C=α​InC=\alpha I_{n} for some α∈ℝ\alpha\in\mathbb{R}.
+See Theorem E.12 for the proof. It shows that any spectral filter of the form C=g⁡(L)C=g(L) that enforces
+Cu​v=0C_{uv}=0 whenever ℓ⁡(u)≠ℓ⁡(v)\ell(u)\neq\ell(v) must degenerate to C=α​IC=\alpha I, and
+thus cannot approximate the optimal convolution in Theorem 4.1.
+Therefore, achieving the optimal class-separability convolution in general
+requires off-diagonal components, highlighting their importance for
+heterophilic graph learning.
+Figure 3: Off-diagonal components grow with heterophily.
+Top: Synthetic graphs with increasing heterophily h(G)=1|E|∑(u,v)∈E[ℓ(u)≠ℓ(v)]\mathrm{h}(G)=\frac{1}{|E|}\sum_{(u,v)\in E}\mathbf{1}\!\left[\ell(u)\neq\ell(v)\right].
+Bottom-left: For each graph, we compute the optimal convolution and
+plot the near-diagonal energy ratio EC∗​(δ)E_{C^{*}}(\delta) as a function of the
+bandwidth δ\delta.
+Curves that are close to 11 already at δ=0\delta=0 indicate that most spectral
+energy concentrates on the diagonal, whereas curves that start substantially
+below 11 and only approach 11 for larger δ\delta indicate stronger
+off-diagonal energy.
+Bottom-right: The same trend holds on real-world datasets: Cora and
+Citeseer are homophilic and exhibit higher near-diagonal energy, while
+heterophilic datasets exhibit stronger off-diagonal energy.
+Table 1: Node classification tasks on heterophilic datasets. High accuracy indicates good performance.
+| Model
+| Texas
+| Wisconsin
+| Chameleon
+| Squirrel
+| Roman
+| Minesweeper
+| Tolokers
+| Questions
+| ChebNet
+| 36.76±6.76\pm 6.76
+| 33.17±7.83\pm 7.83
+| 25.65±3.56\pm 3.56
+| 22.58±2.56\pm 2.56
+| 45.32±0.65\pm 0.65
+| 86.34±0.19\pm 0.19
+| 69.88±0.26\pm 0.26
+| 48.55±1.04\pm 1.04
+| ChebNetII
+| 48.44±10.87\pm 10.87
+| 41.33±9.25\pm 9.25
+| 33.48±4.59\pm 4.59
+| 30.80±2.65\pm 2.65
+| 55.06±0.32\pm 0.32
+| 74.49±3.76\pm 3.76
+| 69.37±0.60\pm 0.60
+| 63.99±0.32\pm 0.32
+| GPRGNN
+| 48.55±7.00\pm 7.00
+| 40.79±3.62\pm 3.62
+| 30.44±4.29\pm 4.29
+| 24.33±2.68\pm 2.68
+| 55.48±1.30\pm 1.30
+| 86.68±0.32\pm 0.32
+| 67.05±0.97\pm 0.97
+| 53.76±0.41\pm 0.41
+| JacobiConv
+| 50.17±7.87\pm 7.87
+| 46.08±9.08\pm 9.08
+| 26.57±3.60\pm 3.60
+| 23.15±4.47\pm 4.47
+| 52.92±0.70\pm 0.70
+| 87.40±0.13\pm 0.13
+| 70.24±0.18\pm 0.18
+| 55.68±0.54\pm 0.54
+| BernNet
+| 52.14±8.09\pm 8.09
+| 49.33±8.21\pm 8.21
+| 29.45±3.22\pm 3.22
+| 25.94±3.35\pm 3.35
+| 55.30±0.41\pm 0.41
+| 76.64±0.29\pm 0.29
+| 69.31±0.69\pm 0.69
+| 65.41±0.33\pm 0.33
+| FSpecGNN(Cheb)
+| 55.32±4.57\pm 4.57
+| 49.87±8.29\pm 8.29
+| 33.09±0.92\pm 0.92
+| 39.57±0.67\pm 0.67
+| 54.35±0.73\pm 0.73
+| 88.30±0.82\pm 0.82
+| 76.89±0.91\pm 0.91
+| 75.87±0.37\pm 0.37
+| FSpecGNN(ChebII)
+| 57.05±2.20\pm 2.20
+| 50.00±5.42\pm 5.42
+| 39.60±2.77\pm 2.77
+| 37.70±0.63\pm 0.63
+| 56.26±1.08\pm 1.08
+| 84.25±0.65\pm 0.65
+| 76.37±0.67\pm 0.67
+| 77.00±0.37\pm 0.37
+| FSpecGNN(Bern)
+| 56.13±0.46\pm 0.46
+| 54.58±9.47\pm 9.47
+| 37.91±3.94\pm 3.94
+| 37.59±1.32\pm 1.32
+| 56.16±1.19\pm 1.19
+| 84.17±1.01\pm 1.01
+| 74.50±0.69\pm 0.69
+| 77.11±0.26\pm 0.26
+Table 2: Experimental results on (chordal) cycle counting, reported as normalized test MAE. Lower is better.
+Graph-level
+Node-level
+Edge-level
+MPNN
+.358.358
+.208.208
+.188.188
+.146.146
+.261.261
+.205.205
+.600.600
+.413.413
+.300.300
+.207.207
+.318.318
+.237.237
+-
+-
+-
+-
+-
+-
+Spec. Inv. GNN
+.072.072
+.072.072
+.089.089
+.089.089
+.060.060
+.099.099
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+Subgraph GNN
+.010.010
+.020.020
+.024.024
+.046.046
+.007.007
+.027.027
+.003.003
+.005.005
+.092.092
+.082.082
+.050.050
+.073.073
+.001.001
+.003.003
+.090.090
+.096.096
+.038.038
+.065.065
+Local 2-GNN
+.008.008
+.011.011
+.017.017
+.034.034
+.007.007
+.016.016
+.002.002
+.005.005
+.010.010
+.023.023
+.004.004
+.015.015
+.001.001
+.005.005
+.010.010
+.019.019
+.005.005
+.014.014
+Local 2-FGNN
+.003.003
+.004.004
+.010.010
+.020.020
+.003.003
+.010.010
+.004.004
+.006.006
+.012.012
+.021.021
+.004.004
+.014.014
+.003.003
+.006.006
+.012.012
+.022.022
+.005.005
+.012.012
+FSpecGNN
+.005.005
+.018.018
+.024.024
+.033.033
+.006.006
+.032.032
+.003.003
+.009.009
+.020.020
+.029.029
+.009.009
+.021.021
+.003.003
+.008.008
+.026.026
+.045.045
+.009.009
+.033.033
+The argument is supported by analysis of optimal convolutions across datasets with varying degrees of heterophily.
+Let
+Wi​j:=(U⊤​C​U)i​j2.W_{ij}:=(U^{\top}\!CU)_{ij}^{2}.
+denote the spectral energy associated with the eigengraph component ui​uj⊤u_{i}u_{j}^{\top}.
+For a bandwidth parameter δ∈[0,2]\delta\in[0,2], we define the near-diagonal energy ratio
+EC​(δ):=∑|λi−λj|≤δWi​j/∑i,jWi​j.E_{C}(\delta):=\sum_{|\lambda_{i}-\lambda_{j}|\leq\delta}W_{ij}/\sum_{i,j}W_{ij}.
+Empirically, EC∗​(δ)E_{C^{*}}(\delta) of optimal convolution C∗C^{*} exhibits a clear trend: as the level of heterophily increases, spectral energy shifts away from the diagonal, see Figure 3, indicating a growing reliance on off-diagonal components.
+4.2 How FSpecGNN Models Off-diagonal
+We provide a scalable implementation of FSpecGNN that models off-diagonal components without explicitly constructing node pair-domain operators.
+We exploit the low-rank approximation 𝒯LS\mathcal{T}_{L}^{S} in Eq. (3), and take a small rank SS, e.g., S=1S=1. Let 𝒯L1=f⁡(L)⊗h⁡(L)\mathcal{T}_{L}^{1}=f(L)\otimes h(L), where ff and hh are univariate polynomial spectral filters. Given an initial convolution ε∈ℝn×n\varepsilon\in\mathbb{R}^{n\times n}, we have OPENf⁡(L)⊗h⁡(L))​ε=h⁡(L)​ε​f​(L)f(L)\otimes h(L))\varepsilon=h(L)\,\varepsilon\,f(L) by Lemma 2.3. Thus a full-spectrum convolution layer can be implemented as
+|
+| H′=σ⁡(h⁡(L)​ε​f​(L)​H​W),H^{\prime}=\sigma\big(h(L)\,\varepsilon\,f(L)\,H\,W),
+|
+| (5)
+where H∈ℝn×dH\in\mathbb{R}^{n\times d} is a matrix of node representations. In practice, we can set both ff and hh to be classical filters such as ChebConv (Defferrard et al., 2016), ChebIIConv (He et al., 2022) or BernConv (He et al., 2021). The initial convolution can be either fixed or learnable, and we choose ε=I+α​GAT\varepsilon\;=\;I+\alpha\mathrm{GAT}, where GAT is a single-layer GAT (Velickovic et al., 2018) and α\alpha is a learnable scalar.
+Let L=U​Λ​U⊤L=U\Lambda U^{\top}.
+Expanding the linear convolution in Eq. (5) in the eigengraph basis gives
+|
+| h⁡(L)​ε​f​(L)=∑i,jh⁡(λi)​f​(λj)​(ui⊤​ε​uj)​ui​uj⊤.h(L)\,\varepsilon\,f(L)=\sum_{i,j}h(\lambda_{i})\,f(\lambda_{j})\,\bigl(u_{i}^{\top}\varepsilon u_{j}\bigr)\,u_{i}u_{j}^{\top}.
+|
+Therefore, an off-diagonal ui​uj⊤u_{i}u_{j}^{\top} (i≠ji\neq j) appears
+whenever the coefficient ui⊤​ε​uju_{i}^{\top}\varepsilon u_{j} is nonzero, see Corollary C.7 for more explanations.
+GAT-based initialization fits this case, since the
+resulting ε\varepsilon is feature-dependent and generally does not commute
+with the Laplacian LL.
+In this view, GAT induces feature-dependent off-diagonal mixing, while 𝒯LS\mathcal{T}_{L}^{S} spectrally reweights both diagonal and off-diagonal components, tuning their balance via the frequency-pair response.
+Complexity.
+Let KfK_{f} and KhK_{h} denote the polynomial degrees of ff and hh.
+The linear convolution in Eq. (5) can be computed as
+H1=f⁡(L)​HH_{1}=f(L)H, H2=ε​H1H_{2}=\varepsilon H_{1}, and H′=h⁡(L)​H2H^{\prime}=h(L)H_{2}.
+Using sparse multiplications, the two polynomial spectral filters incur a cost of O⁡((Kf+Kh)​m​d)O((K_{f}+K_{h})md), while the
+single-layer GAT propagation costs O⁡(m​d)O(md) up to head-dependent
+constants.
+Consequently, the overall complexity is O⁡(K​m​d)O(Kmd) with K≈Kf+KhK\approx K_{f}+K_{h},
+matching the order of classical polynomial spectral layers such as BernConv.
+For a general rank SS in Eq. (3), the cost increases linearly in SS.
+5 Experiments
+We benchmark FSpecGNN on three representative tasks: node classification on heterophilic datasets, homomorphism counting, and cycle counting. For the counting tasks, our primary goal is not to push state-of-the-art performance; rather, we use them as controlled evaluations to validate the theoretical predictions derived in our analysis.
+Datasets.
+For heterophilic node classification, we conduct experiments on eight widely used benchmark datasets, including four small heterophilic graphs (Texas, Wisconsin, Chameleon, and Squirrel) and four large-scale heterophilic graphs (Roman Empire, Minesweeper, Tolokers, and Questions). Following Platonov et al. (2023), we use the directed clean versions of Chameleon and Squirrel, removing duplicate nodes. For all datasets, we adopt the sparse split strategy of Liu and Wang (2025), randomly partitioning nodes into training/validation/test sets with ratios of 2.5%/2.5%/95%2.5\%/2.5\%/95\%.
+For homomorphism counting, we adopt the benchmark of Zhao et al. (2022) and evaluate graph-level homomorphism counts as well as node/edge-anchored homomorphism count regression, using the same template graphs as Zhang et al. (2024). For (chordal) cycle counting, following Huang et al. (2023), we evaluate graph-level and node/edge-anchored (chordal) cycle subgraph count regression, again selecting the same subgraphs as Zhang et al. (2024).
+Baselines.
+For heterophilic node classification, our baselines include five representative spectral GNNs: ChebNet, GPRGNN (Chien et al., 2021), BernNet, JacobiConv (Wang and Zhang, 2022), and ChebNetII, with results reported in Liu and Wang (2025). For homomorphism and cycle counting, we compare against MPNN, Subgraph GNN, Local 2-GNN, and Local 2-FGNN, adopting the results reported by Zhang et al. (2024), as well as Spectral Invariant GNN with results from Gai et al. (2025).
+5.1 Heterophilic Node Classification
+We adopt FSpecGNN in form of Eq. (5) with detailed implementation described in Section 4.2, yielding three variants denoted by
+FSpecGNN(Cheb/ChebII/Bern), respectively.
+The results are reported in the last three rows of Table 1. ROC-AUC is reported on Minesweeper, Tolokers, and Questions, while test accuracy is reported on the remaining datasets.
+Across all datasets, each variant consistently improves upon its corresponding base filter
+(e.g., FSpecGNN(Cheb) vs. ChebNet, and similarly for ChebII and Bern).
+Moreover, for every dataset, the best-performing FSpecGNN variant surpasses all preceding spectral baselines in Table 1.
+5.2 GNN Expressivity
+Table 3: Experimental results on homomorphism counting. Red/blue nodes indicate marked vertices. Lower is better.
+Graph-level
+Node-level
+Edge-level
+MPNN
+.300
+.233
+.254
+.505
+.478
+–
+–
+–
+Spec. Inv. GNN
+.045
+.048
+–
+–
+–
+–
+–
+–
+Subgraph GNN
+.011
+.015
+.012
+.004
+.058
+.003
+.058
+.048
+Local 2-GNN
+.008
+.008
+.010
+.003
+.004
+.005
+.006
+.008
+Local 2-FGNN
+.003
+.005
+.004
+.005
+.005
+.007
+.007
+.008
+FSpecGNN
+.006
+.009
+.008
+.006
+.008
+.008
+.008
+.012
+We adopt Route I in Section 3.4 and parameterize the spectral response gg using a two-layer MLP.
+Since a single spectral layer can aggregate global information, we do not follow the five propagation layers used in Zhang et al. (2024); instead, we use fewer layers with a larger hidden dimension, resulting in a comparable model size (approximately 300300K parameters) to the baselines.
+Apart from the above modifications, we keep all remaining hyperparameters and setups identical to Zhang et al. (2024).
+The reported performance is measured by normalized mean absolute error (MAE). Results are summarized in Tables 2 and 3. In Table 2, cell colors indicate MAE ranges: blue for <0.025<0.025, green for [0.025,0.05)[0.025,0.05), orange for [0.05,0.1)[0.05,0.1), and red for ≥0.1\geq 0.1.
+Overall, the empirical results align with our theoretical predictions. In particular, Theorems 3.7 and 3.8 suggest that FSpecGNNs should have expressivity comparable to Local 2-GNNs when equipped with sufficiently expressive spectral filters. This argument is supported by experiments: on all benchmarks, FSpecGNN achieves performance comparable to Local 2-GNN, and even outperforms it on some datasets. Moreover, compared to Spectral Invariant GNN, which also leverages graph spectral information, FSpecGNN achieves substantially lower MAE on these benchmarks.
+5.3 Ablation Study
+Table 4: Ablation on architectural components. Δ\Delta indicates change from the full model.
+| Variants
+| Texas
+| Squirrel
+| Roman
+| Full model
+| 55.3±4.655.3_{\pm 4.6}
+| 39.6±0.739.6_{\pm 0.7}
+| 54.4±0.754.4_{\pm 0.7}
+| w/o Off-diagonal
+| 51.0±7.151.0_{\pm 7.1}
+| 34.6±0.434.6_{\pm 0.4}
+| 53.8±1.853.8_{\pm 1.8}
+| Δ\Delta
+| −4.3-4.3
+| −5.0-5.0
+| −0.6-0.6
+| w/o In-filter hh
+| 49.5±11.049.5_{\pm 11.0}
+| 29.9±3.129.9_{\pm 3.1}
+| 52.0±1.552.0_{\pm 1.5}
+| Δ\Delta
+| −5.8-5.8
+| −9.7-9.7
+| −2.4-2.4
+| w/o hh and off-diagonal
+| 39.7±7.939.7_{\pm 7.9}
+| 24.5±1.124.5_{\pm 1.1}
+| 47.1±0.847.1_{\pm 0.8}
+| Δ\Delta
+| −15.6-15.6
+| −15.1-15.1
+| −7.3-7.3
+Table 4 studies the contribution of architectural components in FSpecGNN(Cheb) on heterophilic node classification.
+The full model uses two spectral filters: the in-filter hh, applied to the input features before eigenspace interaction, and the out-filter ff, applied after interaction to refine the propagated representation.
+Removing off-diagonal interactions consistently degrades performance across datasets, underscoring the necessity of modeling cross-eigenspace coupling.
+Ablating both the in-filter hh and the off-diagonal interaction reduces the
+model to ChebNet, yielding performance consistent with the baseline.
+5.4 Time and Space Overhead
+We evaluate the computational efficiency of models on the homomorphism- and cycle-counting benchmarks in Table 5. For each model, we report the average time per iteration, aggregated over graph/node/edge levels across both homomorphism- and cycle-counting tasks, and the peak GPU memory usage, taken as the maximum over all tasks. Task-wise results are provided in Appendix F. Notably, MPNN is realized on the lifted node-pair domain representation and reduces to MPNN only through a degenerate message passing, so it retains second-order computational overhead.
+Table 5 shows that FSpecGNN achieves substantially lower runtime and the lowest peak GPU memory among all compared second-order spatial GNNs. This advantage is mainly due to the fact that spectral filters can achieve long-range propagation with much fewer layers and the moderate graph sizes in these benchmarks.
+Table 5: Average iteration time and peak GPU memory per model across all tasks.
+| Model
+| Avg. Time (s/it)
+| Max GPU Mem (MB)
+| MPNN
+| 6.162
+| 9688
+| Subgraph NN
+| 6.145
+| 11228
+| Local 2-GNN
+| 7.569
+| 11532
+| Local 2-FGNN
+| 4.856
+| 19886
+| FSpecGNN
+| 1.111
+| 9532
+6 Related Works
+Several recent GNN architectures are closely related, yet they differ from our work in perspectives of the signal domain, the spectral filter, and the analysis focus.
+Specformer (Bo et al., 2023) learns a set-to-set map on the graph spectrum, but the resulting operator remains diagonal in the eigenbasis; our framework instead parameterizes g⁡(λi,λj)g(\lambda_{i},\lambda_{j}) to enable off-diagonal spectral interactions.
+CITRUS (Einizade et al., 2024) leverages Cartesian product graphs and continuous diffusion for scalable learning on multi-domain data; our focus instead stays within a single graph and its internal spectral interactions.
+STSGNN (Chen et al., 2025) designs second-order spectral filters for spatio-temporal modeling by using two Laplacians from the spatial and temporal domains; in contrast, we study second-order spectral filters based on a single graph and analyze their expressivity and scalability.
+Finally, Spectral Invariant GNNs (Gai et al., 2025) inject spectral invariants into GNNs and study homomorphism expressivity, using spectral information in a positional-encoding-like manner rather than parameterizing a spectral filter.
+More related works are discussed in Appendix A.
+7 Conclusion
+We propose FSpecGNN as a second-order generalization of spectral GNNs. It can surpass the expressivity limits of 11-WL, while admitting scalable implementations that extend to large graphs. Overall, as a second-order spectral GNN, FSpecGNN is both expressive and scalable, making it well suited to tasks with inherently second-order structure.
+Impact Statement
+This paper presents work whose goal is to advance the field of machine learning, specifically in spectral graph neural networks.
+Our contributions are methodological and are intended for general-purpose use.
+We do not anticipate substantial ethical concerns or negative societal consequences beyond those commonly associated with machine learning research.
+References
+Bo et al. (2023)
+D. Bo, C. Shi, L. Wang, and R. Liao
+Specformer: spectral graph neural networks meet transformers.
+In The Eleventh International Conference on Learning Representations,
+Cited by: §6.
+Bo et al. (2021)
+D. Bo, X. Wang, C. Shi, and H. Shen
+Beyond low-frequency information in graph convolutional networks.
+In Proceedings of the AAAI conference on artificial intelligence,
+Vol. 35, pp. 3950–3957.
+Cited by: §A.1.
+Brouwer and Haemers (2011)
+A. E. Brouwer and W. H. Haemers
+Spectra of graphs.
+Springer Science & Business Media.
+Cited by: §3.1.
+Chen et al. (2025)
+Y. Chen, F. Lin, J. Huo, and H. Yan
+Designing specialized two-dimensional graph spectral filters for spatial-temporal graph modeling.
+In Proceedings of the AAAI Conference on Artificial Intelligence,
+Vol. 39, pp. 11500–11508.
+Cited by: §6.
+Chen et al. (2022)
+Y. Chen, Y. R. Gel, and H. V. Poor
+BScNets: block simplicial complex neural networks.
+In Proceedings of the aaai conference on artificial intelligence,
+Vol. 36, pp. 6333–6341.
+Cited by: §B.1.
+Chien et al. (2021)
+E. Chien, J. Peng, P. Li, and O. Milenkovic
+ADAPTIVE universal generalized pagerank graph neural network.
+In 9th International Conference on Learning Representations, ICLR 2021,
+Cited by: §A.1,
+§5.
+Defferrard et al. (2016)
+M. Defferrard, X. Bresson, and P. Vandergheynst
+Convolutional neural networks on graphs with fast localized spectral filtering.
+Advances in neural information processing systems 29.
+Cited by: §A.1,
+§4.2.
+Einizade et al. (2024)
+A. Einizade, F. Malliaros, and J. H. Giraldo
+Continuous product graph neural networks.
+Advances in Neural Information Processing Systems 37, pp. 90226–90252.
+Cited by: §6.
+Gai et al. (2025)
+J. Gai, Y. Du, B. Zhang, H. Maron, and L. Wang
+Homomorphism expressivity of spectral invariant graph neural networks.
+In The Thirteenth International Conference on Learning Representations,
+Cited by: §A.2,
+§5,
+§6.
+Gasteiger et al. (2019)
+J. Gasteiger, A. Bojchevski, and S. Günnemann
+Predict then propagate: graph neural networks meet personalized pagerank.
+In International Conference on Learning Representations,
+Cited by: §A.1.
+Guo and Wei (2023)
+Y. Guo and Z. Wei
+Graph neural networks with learnable and optimal polynomial bases.
+In International conference on machine learning,
+pp. 12077–12097.
+Cited by: §A.1.
+Hajij et al. (2020)
+M. Hajij, K. Istvan, and G. Zamzmi
+Cell complex neural networks.
+In TDA & Beyond,
+External Links: Link
+Cited by: §B.1.
+He et al. (2022)
+M. He, Z. Wei, and J. Wen
+Convolutional neural networks on graphs with chebyshev approximation, revisited.
+Advances in neural information processing systems 35, pp. 7264–7276.
+Cited by: §A.1,
+§4.2.
+He et al. (2021)
+M. He, Z. Wei, H. Xu, et al.
+Bernnet: learning arbitrary graph spectral filters via bernstein approximation.
+Advances in neural information processing systems 34, pp. 14239–14251.
+Cited by: §A.1,
+§1,
+§4.2.
+Huang et al. (2024)
+K. Huang, Y. G. Wang, M. Li, and P. Lio
+How universal polynomial bases enhance spectral graph neural networks: heterophily, over-smoothing, and over-squashing.
+In International Conference on Machine Learning,
+pp. 20310–20330.
+Cited by: §A.1.
+Huang et al. (2023)
+Y. Huang, X. Peng, J. Ma, and M. Zhang
+Boosting the cycle counting power of graph neural networks with I2I^{2}-gnns.
+In ICLR,
+Cited by: §5.
+Kipf and Welling (2017)
+T. N. Kipf and M. Welling
+Semi-supervised classification with graph convolutional networks.
+In International Conference on Learning Representations,
+External Links: Link
+Cited by: §A.1.
+Liu and Wang (2025)
+F. Liu and Q. Wang
+Asymmetric learning for spectral graph neural networks.
+In Proceedings of the AAAI Conference on Artificial Intelligence,
+Vol. 39, pp. 18798–18806.
+Cited by: §5,
+§5.
+Luan et al. (2023)
+S. Luan, C. Hua, M. Xu, Q. Lu, J. Zhu, X. Chang, J. Fu, J. Leskovec, and D. Precup
+When do graph neural networks help with node classification? investigating the homophily principle on node distinguishability.
+Advances in Neural Information Processing Systems 36, pp. 28748–28760.
+Cited by: §1,
+§4.1.
+Maron et al. (2019)
+H. Maron, H. Ben-Hamu, H. Serviansky, and Y. Lipman
+Provably powerful graph networks.
+Advances in neural information processing systems 32.
+Cited by: §A.2.
+Morris et al. (2020)
+C. Morris, G. Rattan, and P. Mutzel
+Weisfeiler and leman go sparse: towards scalable higher-order graph embeddings.
+In Proceedings of the 34th International Conference on Neural Information Processing Systems,
+NIPS ’20, Red Hook, NY, USA.
+External Links: ISBN 9781713829546
+Cited by: §A.2,
+§D.2,
+§D.2,
+Lemma D.5,
+§1.
+Morris et al. (2019)
+C. Morris, M. Ritzert, M. Fey, W. L. Hamilton, J. E. Lenssen, G. Rattan, and M. Grohe
+Weisfeiler and leman go neural: higher-order graph neural networks.
+In Proceedings of the Thirty-Third AAAI Conference on Artificial Intelligence and Thirty-First Innovative Applications of Artificial Intelligence Conference and Ninth AAAI Symposium on Educational Advances in Artificial Intelligence,
+AAAI’19/IAAI’19/EAAI’19.
+External Links: ISBN 978-1-57735-809-1,
+Link,
+Document
+Cited by: §A.2,
+§1.
+Pei et al. (2020)
+H. Pei, B. Wei, K. C. C. Chang, Y. Lei, and B. Yang
+GEOM-gcn: geometric graph convolutional networks.
+In 8th International Conference on Learning Representations, ICLR 2020,
+Cited by: Table 6,
+Table 6.
+Platonov et al. (2023)
+O. Platonov, D. Kuznedelev, M. Diskin, A. Babenko, and L. Prokhorenkova
+A critical look at the evaluation of gnns under heterophily: are we really making progress?.
+In The Eleventh International Conference on Learning Representations,
+Cited by: Table 6,
+Table 6,
+§5.
+Roth and Liebig (2025)
+A. Roth and T. Liebig
+What can we learn from mimo graph convolutions?.
+In Proceedings of the Thirty-Fourth International Joint Conference on Artificial Intelligence,
+IJCAI ’25.
+External Links: ISBN 978-1-956792-06-5,
+Link,
+Document
+Cited by: §A.2,
+§B.2,
+§1.
+Rozemberczki et al. (2021)
+B. Rozemberczki, C. Allen, and R. Sarkar
+Multi-scale attributed node embedding.
+Journal of Complex Networks 9 (2), pp. cnab014.
+Cited by: Table 6,
+Table 6.
+Van Loan (2000)
+C. F. Van Loan
+The ubiquitous kronecker product.
+Journal of computational and applied mathematics 123 (1-2), pp. 85–100.
+Cited by: Lemma 2.3.
+Velickovic et al. (2018)
+P. Velickovic, G. Cucurull, A. Casanova, A. Romero, P. Lio, and Y. Bengio
+GRAPH attention networks.
+stat 1050, pp. 4.
+Cited by: §4.2.
+Wang et al. (2024)
+J. Wang, Y. Guo, L. Yang, and Y. Wang
+Understanding heterophily for graph neural networks.
+In International Conference on Machine Learning,
+pp. 50489–50529.
+Cited by: §4.1.
+Wang and Zhang (2022)
+X. Wang and M. Zhang
+How powerful are spectral graph neural networks.
+In International conference on machine learning,
+pp. 23341–23362.
+Cited by: §A.1,
+§A.2,
+§D.2,
+§D.2,
+§D.2,
+§1,
+§3.3,
+§5.
+Wikipedia contributors (2025)
+Wikipedia contributors
+Frucht graph — Wikipedia, the free encyclopedia.
+Note: [Online; accessed 18-November-2025]
+External Links: Link
+Cited by: Figure 4,
+Figure 4.
+Xu et al. (2019)
+K. Xu, W. Hu, J. Leskovec, and S. Jegelka
+How powerful are graph neural networks?.
+In International Conference on Learning Representations,
+Cited by: §A.2,
+§1.
+Yan et al. (2023)
+Y. Yan, Y. Chen, H. Chen, M. Xu, M. Das, H. Yang, and H. Tong
+From trainable negative depth to edge heterophily in graphs.
+Advances in Neural Information Processing Systems 36, pp. 70162–70178.
+Cited by: §A.1.
+Zhang et al. (2024)
+B. Zhang, J. Gai, Y. Du, Q. Ye, D. He, and L. Wang
+Beyond weisfeiler-lehman: a quantitative framework for gnn expressiveness.
+In The Twelfth International Conference on Learning Representations,
+Cited by: §A.2,
+§B.1,
+§1,
+§1,
+§1,
+§3.3,
+§5.2,
+§5,
+§5.
+Zhao et al. (2022)
+L. Zhao, W. Jin, L. Akoglu, and N. Shah
+From stars to subgraphs: uplifting any GNN with local structure awareness.
+In International Conference on Learning Representations,
+External Links: Link
+Cited by: §5.
+Appendix A More Related Work
+A.1 Spectral GNN Architectures
+Spectral GNNs implement graph convolution as a Laplacian filter g⁡(L)g(L), but exact eigendecomposition is typically avoided via scalable approximations. Defferrard et al. (2016) introduced truncated Chebyshev polynomial parameterizations to realize localized spectral filtering, and GCN (Kipf and Welling, 2017) can be viewed as a first-order simplification that yields an efficient, widely used propagation rule. Subsequent work increasingly emphasizes stable and flexible spectral-response parameterizations beyond vanilla Chebyshev expansions: ChebNetII (He et al., 2022) attributes ChebNet’s weaker performance to poorly behaved learned coefficients, while BernNet (He et al., 2021) learns arbitrary spectral filters via Bernstein approximation, enabling controlled realization of diverse frequency responses. In parallel, diffusion-based formulations connect propagation to PageRank: PPNP/APPNP (Gasteiger et al., 2019) derive personalized-PageRank propagation decoupled from prediction, and GPR-GNN (Chien et al., 2021) generalizes this view by learning generalized PageRank weights to adapt across homophily/heterophily regimes. Finally, recent research finds that the choice of polynomial basis materially affects optimization and practical performance, motivating a sequence of methods that select or learn improved polynomial bases for spectral filtering (Wang and Zhang, 2022; Guo and Wei, 2023). Moreover, spectral methods have been explored for heterophily by moving beyond purely low-pass smoothing: either by injecting learnable high-pass responses or by combining multiple spectral filters to adapt across homophily/heterophily regimes (Bo et al., 2021; Yan et al., 2023).
+Recent studies also highlight the role of polynomial bases under heterophily, motivating heterophily-aware and universal basis construction beyond predefined Laplacian bases (Huang et al., 2024).
+A.2 Expressivity of Spectral GNNs
+Expressivity has been a central theme in the GNN literature, and is most commonly studied through the WL-based hierarchy.
+Xu et al. (2019) shows that standard neighborhood aggregation is at most as powerful as 11-WL for graph discrimination, which catalyzed extensive WL-based analyses and the development of higher-order GNNs matching stronger WL variants (Morris et al., 2019; Maron et al., 2019; Morris et al., 2020).
+Going beyond this coarse WL lens, (Zhang et al., 2024) propose homomorphism expressivity as a finer quantitative hierarchy for comparing substructure-counting capabilities.
+In contrast, theoretical understanding of spectral GNN expressivity is relatively limited:
+Wang and Zhang (2022) establish universality results for spectral filtering on node signals, while also relating spectral models to 11-WL limitations.
+More recently, (Roth and Liebig, 2025) extend the universality analysis to multi-channel (MIMO) settings.
+Gai et al. (2025) study spectral-invariant architectures that inject spectral information as basis-invariant positional encodings; their expressivity has been characterized via WL- and homomorphism-based analysis.
+Appendix B Discussions and Potential Limitations
+B.1 Discussions on FSpecGNN
+Extending Full-Spectrum Filtering to Higher Orders.
+Although we instantiate the framework at second order, i.e. the node-pair domain,
+the same construction extends canonically to kk-th order signals on VkV^{k}.
+Let LL be a chosen graph Laplacian on GG and let InI_{n} be the n×nn\times n identity.
+On the kk-fold product domain, define the commuting operators
+|
+| L(1):=L⊗In⊗(k−1),L(2):=In⊗L⊗In⊗(k−2),…,L(k):=In⊗(k−1)⊗L.L^{(1)}:=L\otimes I_{n}^{\otimes(k-1)},\quad L^{(2)}:=I_{n}\otimes L\otimes I_{n}^{\otimes(k-2)},\ \ldots,\ L^{(k)}:=I_{n}^{\otimes(k-1)}\otimes L.
+|
+A kk-variate spectral filter can then be parameterized as
+g⁡(L(1),…,L(k))g\!\left(L^{(1)},\ldots,L^{(k)}\right).
+For example, the third-order case acts on V3V^{3} via
+|
+| g⁡(L⊗In⊗In,In⊗L⊗In,In⊗In⊗L),g(L\otimes I_{n}\otimes I_{n},\ I_{n}\otimes L\otimes I_{n},\ I_{n}\otimes I_{n}\otimes L),
+|
+which propagates along each coordinate while keeping the others fixed.
+This higher-order viewpoint provides a systematic route to designing spectral GNNs
+that operate on kk-tuple domains, and enables a systematic connection between higher-order spectral constructions and the expressiveness hierarchy of GNNs, e.g. (Zhang et al., 2024).
+Beyond Graph Laplacians.
+A further direction is to move beyond graph Laplacians to Laplacians defined on
+higher-dimensional combinatorial structures, such as simplicial or cell complexes.
+These domains admit Laplacian operators, e.g. Hodge Laplacians, acting on pp-cochains,
+including edge/face-signals, whose spectra encode topology/geometry-related modes that are invisible to purely node-level models.
+From this perspective, our use of the Cartesian product provides one concrete instance of how additional structure induces a corresponding notion of propagation:
+full-spectrum filtering can be interpreted as propagation along different coordinates of a product graph.
+For richer higher-order structures, the induced propagation is generally governed not by the graph Laplacian alone,
+but by the Laplacians intrinsic to the underlying domain, suggesting that analogous spectral formalisms could be developed
+to capture these more complex propagation patterns.
+For example, cell complex neural networks generalize message passing via boundary/coboundary operators, inducing propagation patterns determined by higher-order incidence relations (Hajij et al., 2020),
+and BScNets further exploit block Hodge-Laplacians to couple interactions across different dimensions, enabling information mixing between cells of different orders (Chen et al., 2022).
+Developing spectral analyses and learning methods for these Laplacians remains under-explored and is a natural extension of our perspective.
+B.2 Potential Limitations and Future Work
+Universal Approximation on Multi-channel Node-pair Signals
+Our discussion on universal approximation focuses on 11-dimensional node-pair signals.
+In practice, approximation capacity can be strengthened by adopting a MIMO design similar to Roth and Liebig (2025),
+i.e., learning multiple input/output channels with channel mixing,
+which is standard in spectral GNNs and can be incorporated into our framework directly.
+Underexplored implementation choices for FSpecGNN.
+While our framework is general, our empirical instantiation explores only a limited portion of the design space.
+First, for heterophily node classification we adopt a particular initial convolution in the form of the pair-domain signal,
+ε=I+α​GAT\varepsilon=I+\alpha\,\mathrm{GAT}, which is a reasonable but by no means canonical choice; alternative initial convolutions
+may yield better performance.
+Second, for scalability we mainly use the low-rank parameterization with S=1S=1, i.e., a single filter pair (f,h)(f,h).
+The general form allows S>1S>1 with multiple filter pairs, raising additional questions on how to compose and coordinate these components effectively.
+A systematic exploration of ε\varepsilon and multi-component designs is left to future work.
+Appendix C Algebraic Properties and Parameterizations of Full-Spectrum Filters
+C.1 Basic Properties
+Definition C.1.
+Let G=(V,E)G=(V,E) be an undirected graph.
+The Cartesian product graph G​□​GG\square G is the graph with vertex set V×VV\times V, where
+two vertices (u,v)(u,v) and (u′,v′)(u^{\prime},v^{\prime}) are adjacent if and only if either
+u=u′u=u^{\prime} and (v,v′)∈E(v,v^{\prime})\in E, or
+v=v′v=v^{\prime} and (u,u′)∈E(u,u^{\prime})\in E.
+Under the above convention, the action of L⊗InL\otimes I_{n} and In⊗LI_{n}\otimes L can be described explicitly as follows:
+for (u,v)∈V×V(u,v)\in V\times V,
+|
+| ((L⊗In)​ε)​(u,v)=(ε​L)​(u,v)\displaystyle\bigl((L\otimes I_{n})\varepsilon\bigr)(u,v)=(\varepsilon L)(u,v)
+| =∑v′∈Vε⁡(u,v′)​Lv′,v,\displaystyle=\sum_{v^{\prime}\in V}\varepsilon(u,v^{\prime})\,L_{v^{\prime},v},
+|
+|
+| ((In⊗L)​ε)​(u,v)=(L​ε)​(u,v)\displaystyle\bigl((I_{n}\otimes L)\varepsilon\bigr)(u,v)=(L\varepsilon)(u,v)
+| =∑u′∈VLu,u′​ε​(u′,v).\displaystyle=\sum_{u^{\prime}\in V}L_{u,u^{\prime}}\,\varepsilon(u^{\prime},v).
+|
+That is, right (resp. left) multiplication by LL propagates the signal by changing the second (resp. first)
+coordinate of G​□​GG\square G while keeping the other fixed, see the first row of Figure 1 for an illustration.
+We restate and prove Proposition 3.2 as follows.
+Proposition C.2.
+Let L∈ℝn×nL\in\mathbb{R}^{n\times n} be symmetric with eigendecomposition
+L=U​Λ​U⊤L=U\Lambda U^{\top}, where U=[u1,…,un]U=[u_{1},\dots,u_{n}] is orthogonal and
+Λ=diag⁡(λ1,…,λn)\Lambda=\mathrm{diag}(\lambda_{1},\dots,\lambda_{n}).
+Let q:ℝ×ℝ→ℝq:\mathbb{R}\times\mathbb{R}\to\mathbb{R} be a bivariate polynomial
+|
+| q⁡(s,t)=∑a,b≥0αa​b​sa​tb.q(s,t)=\sum_{a,b\geq 0}\alpha_{ab}s^{a}t^{b}.
+|
+Define
+|
+| q⁡(L⊗In,In⊗L)≔∑a,b≥0αa​b​(L⊗In)a​(In⊗L)b.q(L\otimes I_{n},\ I_{n}\otimes L)\ \coloneqq\ \sum_{a,b\geq 0}\alpha_{ab}\,(L\otimes I_{n})^{a}(I_{n}\otimes L)^{b}.
+|
+Then
+|
+| q⁡(L⊗In,In⊗L)=(U⊗U)​diag​(q⁡(λi,λj))1≤i,j≤n​(U⊗U)⊤,q(L\otimes I_{n},\ I_{n}\otimes L)=(U\otimes U)\,\mathrm{diag}\!\Big(q(\lambda_{i},\lambda_{j})\Big)_{1\leq i,j\leq n}\,(U\otimes U)^{\top},
+|
+i.e., the operator is diagonal in the basis {ui⊗uj}i,j=1n\{u_{i}\otimes u_{j}\}_{i,j=1}^{n}, with eigenvalues q⁡(λi,λj)q(\lambda_{i},\lambda_{j}).
+Proof.
+Since L=U​Λ​U⊤L=U\Lambda U^{\top}, we have La=U​Λa​U⊤L^{a}=U\Lambda^{a}U^{\top} for any integer a≥0a\geq 0.
+Using the mixed-product property of the Kronecker product,
+|
+| (A⊗B)​(C⊗D)=(A​C)⊗(B​D),(A\otimes B)(C\otimes D)=(AC)\otimes(BD),
+|
+we obtain
+|
+| (L⊗In)a=La⊗In,(In⊗L)b=In⊗Lb,(L\otimes I_{n})^{a}=L^{a}\otimes I_{n},\qquad(I_{n}\otimes L)^{b}=I_{n}\otimes L^{b},
+|
+and hence
+|
+| (L⊗In)a​(In⊗L)b=(La⊗In)​(In⊗Lb)=La⊗Lb.(L\otimes I_{n})^{a}(I_{n}\otimes L)^{b}=(L^{a}\otimes I_{n})(I_{n}\otimes L^{b})=L^{a}\otimes L^{b}.
+|
+Therefore,
+|
+| q⁡(L⊗In,In⊗L)=∑a,b≥0αa​b​La⊗Lb.q(L\otimes I_{n},\ I_{n}\otimes L)=\sum_{a,b\geq 0}\alpha_{ab}\,L^{a}\otimes L^{b}.
+|
+Substituting La=U​Λa​U⊤L^{a}=U\Lambda^{a}U^{\top} and Lb=U​Λb​U⊤L^{b}=U\Lambda^{b}U^{\top} gives
+|
+| q⁡(L⊗In,In⊗L)\displaystyle q(L\otimes I_{n},\ I_{n}\otimes L)
+| =∑a,b≥0αa​b​(U​Λa​U⊤)⊗(U​Λb​U⊤)\displaystyle=\sum_{a,b\geq 0}\alpha_{ab}\,(U\Lambda^{a}U^{\top})\otimes(U\Lambda^{b}U^{\top})
+|
+|
+|
+| =(U⊗U)​(∑a,b≥0αa​b​Λa⊗Λb)​(U⊤⊗U⊤).\displaystyle=(U\otimes U)\Big(\sum_{a,b\geq 0}\alpha_{ab}\,\Lambda^{a}\otimes\Lambda^{b}\Big)(U^{\top}\otimes U^{\top}).
+|
+It remains to identify the middle term. Since Λa\Lambda^{a} and Λb\Lambda^{b} are diagonal,
+Λa⊗Λb\Lambda^{a}\otimes\Lambda^{b} is diagonal with diagonal entries λia​λjb\lambda_{i}^{a}\lambda_{j}^{b}
+indexed by pairs (i,j)(i,j) such that 1≤i,j≤n{1\leq i,j\leq n}. Hence
+|
+| ∑a,b≥0αa​b​Λa⊗Λb=diag​(∑a,b≥0αa​b​λia​λjb)1≤i,j≤n=diag​(q⁡(λi,λj))1≤i,j≤n.\sum_{a,b\geq 0}\alpha_{ab}\,\Lambda^{a}\otimes\Lambda^{b}=\mathrm{diag}\!\Big(\sum_{a,b\geq 0}\alpha_{ab}\lambda_{i}^{a}\lambda_{j}^{b}\Big)_{1\leq i,j\leq n}=\mathrm{diag}\!\Big(q(\lambda_{i},\lambda_{j})\Big)_{1\leq i,j\leq n}.
+|
+Finally, U⊤⊗U⊤=(U⊗U)⊤U^{\top}\otimes U^{\top}=(U\otimes U)^{\top} because UU is orthogonal, which yields
+|
+| q⁡(L⊗In,In⊗L)=(U⊗U)​diag​(q⁡(λi,λj))1≤i,j≤n​(U⊗U)⊤.q(L\otimes I_{n},\ I_{n}\otimes L)=(U\otimes U)\,\mathrm{diag}\!\Big(q(\lambda_{i},\lambda_{j})\Big)_{1\leq i,j\leq n}\,(U\otimes U)^{\top}.
+|
+∎
+We restate and prove Proposition 3.3 as follows.
+Proposition C.3.
+Define the diagonal embedding ℰ:ℝn→ℝn×n\mathcal{E}:\mathbb{R}^{n}\to\mathbb{R}^{n\times n} and
+the projection 𝒫:ℝn×n→ℝn\mathcal{P}:\mathbb{R}^{n\times n}\to\mathbb{R}^{n} by
+|
+| ℰ⁡(x):=∑i=1nx^i​ui​ui⊤,x^i:=ui⊤​x,\mathcal{E}(x)\;:=\;\sum_{i=1}^{n}\hat{x}_{i}\,u_{i}u_{i}^{\top},\qquad\hat{x}_{i}:=u_{i}^{\top}x,
+|
+and
+|
+| 𝒫⁡(H):=∑i=1n(ui⊤​H​ui)​ui.\mathcal{P}(H)\;:=\;\sum_{i=1}^{n}(u_{i}^{\top}Hu_{i})\,u_{i}.
+|
+Then
+|
+| 𝒫⁡(g⁡(L⊗In,In⊗L)​ℰ​(x))=U​diag​(g⁡(λ1,λ1),…,g⁡(λn,λn))​U⊤​x.\mathcal{P}\!\left(g(L\otimes I_{n},\ I_{n}\otimes L)\,\mathcal{E}(x)\right)\;=\;U\,\mathrm{diag}\!\big(g(\lambda_{1},\lambda_{1}),\dots,g(\lambda_{n},\lambda_{n})\big)\,U^{\top}x.
+|
+Equivalently, if we define a univariate spectral response g~​(λ):=g​(λ,λ)\tilde{g}(\lambda):=g(\lambda,\lambda),
+then
+|
+| 𝒫⁡(g⁡(L⊗In,In⊗L)​ℰ​(x))=U​g~​(Λ)​U⊤​x,\mathcal{P}\!\left(g(L\otimes I_{n},\ I_{n}\otimes L)\,\mathcal{E}(x)\right)\;=\;U\,\tilde{g}(\Lambda)\,U^{\top}x,
+|
+which recovers the classical spectral filtering with response g~\tilde{g}.
+Proof.
+We first record two elementary facts: (i) By definition, ℰ⁡(x)∈span​{ui​ui⊤}i=1n\mathcal{E}(x)\in\mathrm{span}\{u_{i}u_{i}^{\top}\}_{i=1}^{n}; (ii)
+L⁡(ui​ui⊤)=(L​ui)​ui⊤=λi​ui​ui⊤,L(u_{i}u_{i}^{\top})=(Lu_{i})u_{i}^{\top}=\lambda_{i}\,u_{i}u_{i}^{\top},
+and
+(ui​ui⊤)​L=ui​(ui⊤​L)=λi​ui​ui⊤(u_{i}u_{i}^{\top})L=u_{i}(u_{i}^{\top}L)=\lambda_{i}\,u_{i}u_{i}^{\top}
+as L​ui=λi​uiLu_{i}=\lambda_{i}u_{i} and LL is symmetric.
+Therefore we have
+|
+| g⁡(L⊗In,In⊗L)​(ui​ui⊤)=g⁡(λi,λi)​ui​ui⊤.g(L\otimes I_{n},\ I_{n}\otimes L)\,(u_{i}u_{i}^{\top})\;=\;g(\lambda_{i},\lambda_{i})\,u_{i}u_{i}^{\top}.
+|
+Linearity then gives
+|
+| g⁡(L⊗In,In⊗L)​ℰ​(x)=∑i=1ng⁡(λi,λi)​x^i​ui​ui⊤.g(L\otimes I_{n},\ I_{n}\otimes L)\,\mathcal{E}(x)=\sum_{i=1}^{n}g(\lambda_{i},\lambda_{i})\,\hat{x}_{i}\,u_{i}u_{i}^{\top}.
+|
+Finally, we apply 𝒫\mathcal{P} and get
+|
+| 𝒫⁡(∑i=1ng⁡(λi,λi)​x^i​ui​ui⊤)=∑k=1n(uk⊤​(∑i=1ng⁡(λi,λi)​x^i​ui​ui⊤)​uk)​uk.\mathcal{P}\!\left(\sum_{i=1}^{n}g(\lambda_{i},\lambda_{i})\,\hat{x}_{i}\,u_{i}u_{i}^{\top}\right)=\sum_{k=1}^{n}\left(u_{k}^{\top}\left(\sum_{i=1}^{n}g(\lambda_{i},\lambda_{i})\,\hat{x}_{i}\,u_{i}u_{i}^{\top}\right)u_{k}\right)u_{k}.
+|
+Using orthonormality uk⊤​ui=δk​iu_{k}^{\top}u_{i}=\delta_{ki},
+|
+| uk⊤​(ui​ui⊤)​uk=(uk⊤​ui)​(ui⊤​uk)=δk​i,u_{k}^{\top}(u_{i}u_{i}^{\top})u_{k}=(u_{k}^{\top}u_{i})(u_{i}^{\top}u_{k})=\delta_{ki},
+|
+hence the coefficient of uku_{k} is exactly g⁡(λk,λk)​x^kg(\lambda_{k},\lambda_{k})\hat{x}_{k}. Thus
+|
+| 𝒫⁡(g⁡(L⊗In,In⊗L)​ℰ​(x))=∑k=1ng⁡(λk,λk)​x^k​uk=U​diag​(g⁡(λ1,λ1),…,g⁡(λn,λn))​U⊤​x,\mathcal{P}\!\left(g(L\otimes I_{n},\ I_{n}\otimes L)\,\mathcal{E}(x)\right)=\sum_{k=1}^{n}g(\lambda_{k},\lambda_{k})\,\hat{x}_{k}\,u_{k}=U\,\mathrm{diag}(g(\lambda_{1},\lambda_{1}),\dots,g(\lambda_{n},\lambda_{n}))\,U^{\top}x,
+|
+which proves the claim.
+∎
+C.2 Tensor Decomposition of Full-Spectrum Filters.
+Note that (L⊗I)i​(I⊗L)j=(I⊗L)j​(L⊗I)i=Li⊗Lj(L\otimes I)^{i}(I\otimes L)^{j}=(I\otimes L)^{j}(L\otimes I)^{i}=L^{i}\otimes L^{j}. We restate and prove Proposition 3.9 as follows.
+Proposition C.4.
+Let P⁡(I⊗L,L⊗I)P(I\otimes L,\,L\otimes I) be a bivariate polynomial of total degree nn in the two matrix variables I⊗LI\otimes L and L⊗IL\otimes I. We write
+|
+| P⁡(I⊗L,L⊗I)=∑0≤i,j≤ni+j≤nci​j​(I⊗L)i​(L⊗I)j=∑0≤i,j≤ni+j≤nci​j​Li⊗Lj,P(I\otimes L,\,L\otimes I)=\sum_{\begin{subarray}{c}0\leq i,j\leq n\\
+i+j\leq n\end{subarray}}c_{ij}\,(I\otimes L)^{i}(L\otimes I)^{j}=\sum_{\begin{subarray}{c}0\leq i,j\leq n\\
+i+j\leq n\end{subarray}}c_{ij}\,L^{\,i}\otimes L^{\,j},
+|
+where the coefficients are collected into a (n+1)×(n+1)(n{+}1)\times(n{+}1) matrix
+A=(ci​j)0≤i,j≤nA=(c_{ij})_{0\leq i,j\leq n}.
+Here, ci​j=0c_{ij}=0 whenever i+j>ni+j>n.
+Then there exist polynomial pairs {(fr,hr)}r=1R\{(f_{r},h_{r})\}_{r=1}^{R} with deg⁡fr≤n\deg f_{r}\leq n and deg⁡hr≤n\deg h_{r}\leq n for all rr, such that
+|
+| P⁡(I⊗L,L⊗I)=∑r=1Rfr​(L)⊗hr​(L),P(I\otimes L,\,L\otimes I)\;=\;\sum_{r=1}^{R}f_{r}(L)\otimes h_{r}(L),
+|
+if and only if R≥rank⁡(A)R\geq\mathrm{rank}(A).
+Lemma C.5.
+Let A∈ℝn×nA\in\mathbb{R}^{n\times n} be a square matrix. Then
+1.
+If rank⁡(A)=R\mathrm{rank}(A)=R, there exist vectors
+α1,…,αR∈ℝn\alpha_{1},\dots,\alpha_{R}\in\mathbb{R}^{n} and
+β1,…,βR∈ℝn\beta_{1},\dots,\beta_{R}\in\mathbb{R}^{n} such that
+|
+| A=∑i=1Rαi​βi⊤.A\;=\;\sum_{i=1}^{R}\alpha_{i}\beta_{i}^{\top}.
+|
+2.
+Conversely, if AA can be written as
+|
+| A=∑i=1Rαi​βi⊤,A=\sum_{i=1}^{R}\alpha_{i}\beta_{i}^{\top},
+|
+then rank⁡(A)≤R\mathrm{rank}(A)\leq R.
+In particular, the minimal number of rank-one matrices {αi​βi⊤}\{\alpha_{i}\beta_{i}^{\top}\} required in such a decomposition equals rank⁡(A)\mathrm{rank}(A).
+Proof.
+(1) Since rank⁡(A)=R\mathrm{rank}(A)=R, the column space of AA has dimension RR.
+Choose a basis c1,…,cR∈ℝnc_{1},\dots,c_{R}\in\mathbb{R}^{n} for the column space and set
+C=[c1⋯cR]∈ℝn×RC=[\,c_{1}\ \cdots\ c_{R}\,]\in\mathbb{R}^{n\times R}. Then there exists
+D∈ℝR×nD\in\mathbb{R}^{R\times n} such that A=C​DA=CD. Writing DD row-wise as
+D=[b1⋯bR]⊤D=[\,b_{1}\ \cdots\ b_{R}\,]^{\top} with bi∈ℝnb_{i}\in\mathbb{R}^{n},
+we obtain
+|
+| A=∑i=1Rci​bi⊤,A=\sum_{i=1}^{R}c_{i}b_{i}^{\top},
+|
+where we set αi=ci\alpha_{i}=c_{i}, βi=bi\beta_{i}=b_{i}.
+(2) Suppose A=∑i=1Rαi​βi⊤A=\sum_{i=1}^{R}\alpha_{i}\beta_{i}^{\top}. For any x∈ℝnx\in\mathbb{R}^{n},
+|
+| A​x=∑i=1Kαi​(βi⊤​x)∈span⁡{α1,…,αK}.Ax=\sum_{i=1}^{K}\alpha_{i}(\beta_{i}^{\top}x)\in\mathrm{span}\{\alpha_{1},\dots,\alpha_{K}\}.
+|
+Hence the column space of AA is contained in span​{αi}\mathrm{span}\{\alpha_{i}\}, which has dimension at most KK. Therefore rank⁡(A)≤K\mathrm{rank}(A)\leq K. Combining with part (1), the minimal number of rank-one matrices required is exactly rank⁡(A)\mathrm{rank}(A).
+∎
+Proof of Proposition C.4.
+We may write
+|
+| fr​(L)=∑i=0nαr,i​Li,hr​(L)=∑j=0nβr,j​Lj,f_{r}(L)=\sum_{i=0}^{n}\alpha_{r,i}L^{i},\qquad h_{r}(L)=\sum_{j=0}^{n}\beta_{r,j}L^{j},
+|
+where αr,i=0\alpha_{r,i}=0 and βr,j=0\beta_{r,j}=0 whenever i>deg⁡fri>\deg f_{r} or j>deg⁡hrj>\deg h_{r}, and deg⁡fr+deg⁡hr≤n\deg f_{r}+\deg h_{r}\leq n for all rr.
+Then
+|
+| ∑r=1Rfr​(L)⊗hr​(L)=∑r=1R∑i,j=0nαr,i​βr,j​Li⊗Lj=∑i,j=0n(∑r=1Rαr,i​βr,j)​Li⊗Lj.\displaystyle\sum_{r=1}^{R}f_{r}(L)\otimes h_{r}(L)=\sum_{r=1}^{R}\;\sum_{i,j=0}^{n}\alpha_{r,i}\,\beta_{r,j}\;L^{i}\otimes L^{j}=\sum_{i,j=0}^{n}\Bigl(\sum_{r=1}^{R}\alpha_{r,i}\beta_{r,j}\Bigr)\,L^{i}\otimes L^{j}.
+|
+For each rr, define coefficient vectors
+|
+| αr=[αr,0,αr,1,…,αr,n]⊤∈ℝn+1,βr=[βr,0,βr,1,…,βr,n]⊤∈ℝn+1.\alpha_{r}=[\,\alpha_{r,0},\alpha_{r,1},\dots,\alpha_{r,n}\,]^{\top}\in\mathbb{R}^{n+1},\qquad\beta_{r}=[\,\beta_{r,0},\beta_{r,1},\dots,\beta_{r,n}\,]^{\top}\in\mathbb{R}^{n+1}.
+|
+Let B∈ℝ(n+1)×(n+1)B\in\mathbb{R}^{(n+1)\times(n+1)} be the coefficient matrix
+B=∑r=1Rαr​βr⊤B\;=\;\sum_{r=1}^{R}\alpha_{r}\beta_{r}^{\top}, i.e.
+Bi​j=∑r=1Rαr,i​βr,j.B_{ij}=\sum_{r=1}^{R}\alpha_{r,i}\beta_{r,j}.
+Then
+|
+| ∑r=1Rfr​(L)⊗hr​(L)=∑i,j=0nBi​j​Li⊗Lj.\sum_{r=1}^{R}f_{r}(L)\otimes h_{r}(L)\;=\;\sum_{i,j=0}^{n}B_{ij}\,L^{i}\otimes L^{j}.
+|
+On the other hand,we know
+P⁡(I⊗L,L⊗I)=∑i,j=0nAi​j​Li⊗Lj,P(I\otimes L,\,L\otimes I)=\sum_{i,j=0}^{n}A_{ij}\,L^{i}\otimes L^{j},
+then we have the equivalence
+|
+| P(I⊗L,L⊗I)=∑r=1Rfr(L)⊗hr(L)⟺A=B.P(I\otimes L,\,L\otimes I)\;=\;\sum_{r=1}^{R}f_{r}(L)\otimes h_{r}(L)\quad\Longleftrightarrow\quad A=B.
+|
+Suppose there exists such frf_{r} and hrh_{r}, with A=B=∑r=1Rαr​βr⊤A=B=\sum_{r=1}^{R}\alpha_{r}\beta_{r}^{\top}, we know rank⁡(A)≤R\mathrm{rank}(A)\leq R by Lemma C.5. Conversely, without loss of generality, we assume rank⁡(A)=R\mathrm{rank}(A)=R. Through the decomposition in Lemma C.5, we have A=∑r=1Kαr​βr⊤A=\sum_{r=1}^{K}\alpha_{r}\beta_{r}^{\top}. Then the polynomials can be constructed by fr​(L)=∑i=0nαr,i​Lif_{r}(L)=\sum_{i=0}^{n}\alpha_{r,i}L^{i} and hr​(L)=∑i=0nβr,i​Lih_{r}(L)=\sum_{i=0}^{n}\beta_{r,i}L^{i}.
+∎
+Corollary C.6.
+Let P⁡(L⊕L)P(L\oplus L) be a univariate polynomial of degree nn, so that
+|
+| P⁡(L⊕L)=∑k=0nck​(L⊕L)k=∑0≤i,j≤ni+j≤nci+j​(i+ji)​Li⊗Lj.P(L\oplus L)=\sum_{k=0}^{n}c_{k}\,(L\oplus L)^{k}=\sum_{\begin{subarray}{c}0\leq i,j\leq n\\
+i+j\leq n\end{subarray}}c_{i+j}\binom{i+j}{\,i\,}\,L^{\,i}\otimes L^{\,j}.
+|
+Then the coefficients {ci+j​(i+ji)}\{c_{i+j}\binom{i+j}{i}\} assemble into the
+(n+1)×(n+1)(n{+}1)\times(n{+}1) matrix
+|
+| Ai​j=ci+j​(i+ji),0≤i,j≤n,A_{ij}=c_{i+j}\binom{i+j}{i},\qquad 0\leq i,j\leq n,
+|
+where Ai​j=0A_{ij}=0 whenever i+j>ni+j>n.
+Then there exist polynomial pairs {(fr,hr)}r=1R\{(f_{r},h_{r})\}_{r=1}^{R} with
+deg⁡fr≤n\deg f_{r}\leq n and deg⁡hr≤n\deg h_{r}\leq n for all rr, such that
+|
+| P⁡(L⊕L)=∑r=1Rfr​(L)⊗hr​(L),P(L\oplus L)\;=\;\sum_{r=1}^{R}f_{r}(L)\otimes h_{r}(L),
+|
+if and only if R≥rank⁡(A)R\geq\mathrm{rank}(A).
+Corollary C.7.
+Let L=U​Λ​U⊤∈ℝn×nL=U\Lambda U^{\top}\in\mathbb{R}^{n\times n} denote the eigendecomposition of a symmetric Laplacian,
+and let MM be a square matrix of the same dimension.
+Then the filtered matrix
+P⁡(I⊗L,L⊗I)​vec​(M)P(I\otimes L,L\otimes I)\,\mathrm{vec}(M)
+admits the spectral expansion
+|
+| P⁡(I⊗L,L⊗I)​(M)=∑i,jg⁡(λi,λj)​⟨ui,M​uj⟩​ui​uj⊤P(I\otimes L,L\otimes I)\,(M)\;=\;\sum_{i,j}g(\lambda_{i},\lambda_{j})\langle u_{i},Mu_{j}\rangle u_{i}u_{j}^{\top}
+|
+where
+g⁡(λi,λj)=∑r=1Rfr​(λi)​hr​(λj)g(\lambda_{i},\lambda_{j})\;=\;\sum_{r=1}^{R}f_{r}(\lambda_{i})\,h_{r}(\lambda_{j}) for polynomial pairs {(fr,hr)}r=1R\{(f_{r},h_{r})\}_{r=1}^{R}.
+Proof.
+According to Proposition C.4, there exist polynomial pairs {(fr,hr)}r=1R\{(f_{r},h_{r})\}_{r=1}^{R} such that
+|
+| P⁡(I⊗L,L⊗I)=∑r=1Rfr​(L)⊗hr​(L).P(I\otimes L,\,L\otimes I)\;=\;\sum_{r=1}^{R}f_{r}(L)\otimes h_{r}(L).
+|
+Since fr​(L)=∑ifr​(λi)​ui​ui⊤f_{r}(L)=\sum_{i}f_{r}(\lambda_{i})\,u_{i}u_{i}^{\top} and
+hr​(L)=∑jhr​(λj)​uj​uj⊤h_{r}(L)=\sum_{j}h_{r}(\lambda_{j})\,u_{j}u_{j}^{\top}, we have
+|
+| (fr​(L)⊗hr​(L))​(M)\displaystyle\Big(f_{r}(L)\otimes h_{r}(L)\Big)(M)
+| =fr​(L)​M​hr​(L)=(∑ifr​(λi)​ui​ui⊤)​M​(∑jhr​(λj)​uj​uj⊤)\displaystyle=f_{r}(L)\,M\,h_{r}(L)=\Big(\sum_{i}f_{r}(\lambda_{i})u_{i}u_{i}^{\top}\Big)M\Big(\sum_{j}h_{r}(\lambda_{j})u_{j}u_{j}^{\top}\Big)
+|
+|
+|
+| =∑i,jfr​(λi)​hr​(λj)​ui​(ui⊤​M​uj)⏟⟨ui,M​uj⟩​uj⊤.\displaystyle=\sum_{i,j}f_{r}(\lambda_{i})h_{r}(\lambda_{j})\,u_{i}\underbrace{(u_{i}^{\top}Mu_{j})}_{\langle u_{i},Mu_{j}\rangle}\,u_{j}^{\top}.
+|
+Summing over rr completes the proof.
+∎
+Appendix D Expressivity of Full-Spectrum GNN
+D.1 Universal Approximation on Node-Pair Signals
+We restate and prove Theorem 3.4 as follows.
+Theorem D.1.
+Let L~=U​Λ​U⊤\tilde{L}=U\Lambda U^{\top} be the normalized Laplacian with a simple spectrum
+, i.e., λ1,…,λn\lambda_{1},\dots,\lambda_{n} are pairwise distinct.
+Consider a linear FSpecGNN acting on a dd-channel node-pair
+representation H∈ℝn×n×d≅ℝn2×dH\in\mathbb{R}^{n\times n\times d}\cong\mathbb{R}^{n^{2}\times d}:
+|
+| 𝒯g,W​(H):=(U⊗U)​(Gλ⊙((U⊗U)⊤​H))​W,(Gλ)i​j=g⁡(λi,λj),\mathcal{T}_{g,W}(H)\;:=\;(U\otimes U)\Big(G_{\lambda}\odot\big((U\otimes U)^{\top}H\big)\Big)\,W,\qquad(G_{\lambda})_{ij}=g(\lambda_{i},\lambda_{j}),
+|
+where g:ℝ2→ℝg:\mathbb{R}^{2}\to\mathbb{R} is a bivariate spectral function, and
+W∈ℝd×1W\in\mathbb{R}^{d\times 1} produces a one-dimensional output.
+Assume that the input HH satisfies that
+for every 1≤i,j≤n1\leq i,j\leq n there exists at least one channel c∈{1,⋯,d}c\in\{1,\cdots,d\} with
+|
+| (U⊤​H(c)​U)i​j≠0.\big(U^{\top}H^{(c)}U\big)_{ij}\neq 0.
+|
+Then for any target one-dimensional node-pair signal Y∈ℝn×n≅ℝn2Y\in\mathbb{R}^{n\times n}\cong\mathbb{R}^{n^{2}},
+there exist a vector W∈ℝd×1W\in\mathbb{R}^{d\times 1} and a bivariate function gg such that 𝒯g,W​(H)=Y\mathcal{T}_{g,W}(H)=Y.
+Proof.
+Write the cc-th channel of HH as H(c)∈ℝn×nH^{(c)}\in\mathbb{R}^{n\times n}, and define
+|
+| C(c):=U⊤​H(c)​U∈ℝn×n,c∈{1,⋯,d}.C^{(c)}:=U^{\top}H^{(c)}U\in\mathbb{R}^{n\times n},\qquad c\in\{1,\cdots,d\}.
+|
+For a feature transformation matrix W=(w1,…,wd)⊤∈ℝd×1W=(w_{1},\dots,w_{d})^{\top}\in\mathbb{R}^{d\times 1}, define the
+transformed one-dimensional representation
+|
+| H¯:=∑c=1dwc​H(c)∈ℝn×n,C¯:=U⊤​H¯​U=∑c=1dwc​C(c).\bar{H}\;:=\;\sum_{c=1}^{d}w_{c}\,H^{(c)}\in\mathbb{R}^{n\times n},\qquad\bar{C}\;:=\;U^{\top}\bar{H}U\;=\;\sum_{c=1}^{d}w_{c}\,C^{(c)}.
+|
+Therefore we have:
+|
+| 𝒯g,W​(H)=U⁡(Gλ⊙(U⊤​H¯​U))​U⊤=U⁡(Gλ⊙C¯)​U⊤.\mathcal{T}_{g,W}(H)=U\Big(G_{\lambda}\odot(U^{\top}\bar{H}U)\Big)U^{\top}=U\Big(G_{\lambda}\odot\bar{C}\Big)U^{\top}.
+|
+Hence, to realize an arbitrary target YY, it suffices to choose WW so that
+C¯i​j≠0\bar{C}_{ij}\neq 0 for all i,ji,j, and then choose gg so that
+g⁡(λi,λj)​C¯i​j=Y^i​jg(\lambda_{i},\lambda_{j})\bar{C}_{ij}=\widehat{Y}_{ij}, where
+Y^:=U⊤​Y​U\widehat{Y}:=U^{\top}YU.
+Choose WW.
+Fix any (i,j)(i,j). By the support assumption, there exists at least one channel
+cc with Ci​j(c)≠0C^{(c)}_{ij}\neq 0. Therefore the scalar linear form
+|
+| C¯i​j=∑c=1dwc​Ci​j(c)\bar{C}_{ij}\;=\;\sum_{c=1}^{d}w_{c}\,C^{(c)}_{ij}
+|
+is not identically zero, and its zero set
+{W:C¯i​j=0}\{W:\bar{C}_{ij}=0\}
+is a proper hyperplane in ℝd\mathbb{R}^{d}.
+Since there are finitely many pairs (i,j)(i,j), the union
+|
+| 𝒵:=⋃i=1n⋃j=1n{W:C¯i​j=0}\mathcal{Z}\;:=\;\bigcup_{i=1}^{n}\bigcup_{j=1}^{n}\{W:\bar{C}_{ij}=0\}
+|
+is a finite union of proper hyperplanes, hence a measure-zero subset of
+ℝd\mathbb{R}^{d}.
+Consequently, we can pick W∉𝒵W\notin\mathcal{Z}, so that
+|
+| C¯i​j≠0,∀i,j∈{1,⋯,n}.\bar{C}_{ij}\neq 0,\qquad\forall\,i,j\in\{1,\cdots,n\}.
+|
+Choose gg.
+With such a choice of WW, define Y^:=U⊤​Y​U\widehat{Y}:=U^{\top}YU and
+|
+| Mi​j:=Y^i​jC¯i​j,∀i,j∈{1,⋯,n}.M_{ij}\;:=\;\frac{\widehat{Y}_{ij}}{\bar{C}_{ij}},\qquad\forall\,i,j\in\{1,\cdots,n\}.
+|
+If we construct gg satisfying g⁡(λi,λj)=Mi​jg(\lambda_{i},\lambda_{j})=M_{ij} for all i,ji,j, then
+we will entrywisely have
+|
+| (U⊤​𝒯g,W​(H)​U)i​j=g⁡(λi,λj)​C¯i​j=Mi​j​C¯i​j=Y^i​j,\big(U^{\top}\mathcal{T}_{g,W}(H)U\big)_{ij}=g(\lambda_{i},\lambda_{j})\,\bar{C}_{ij}=M_{ij}\,\bar{C}_{ij}=\widehat{Y}_{ij},
+|
+so U⊤​𝒯g,W​(H)​U=Y^U^{\top}\mathcal{T}_{g,W}(H)U=\widehat{Y} and thus 𝒯g,W​(H)=Y\mathcal{T}_{g,W}(H)=Y.
+Because the spectrum is simple, define the univariate Lagrange polynomials
+|
+| ℓi(s):=∏k≠is−λkλi−λk,so thatℓi(λi′)=𝟏[i=i′].\ell_{i}(s)\;:=\;\prod_{k\neq i}\frac{s-\lambda_{k}}{\lambda_{i}-\lambda_{k}},\qquad\text{so that}\qquad\ell_{i}(\lambda_{i^{\prime}})=\mathbf{1}[i=i^{\prime}].
+|
+Now define the bivariate polynomial
+|
+| q⁡(s,t):=∑i=1n∑j=1nMi​j​ℓi​(s)​ℓj​(t).q(s,t)\;:=\;\sum_{i=1}^{n}\sum_{j=1}^{n}M_{ij}\,\ell_{i}(s)\,\ell_{j}(t).
+|
+Then for any pair (i,j)(i,j),
+|
+| q⁡(λi,λj)=∑i′=1n∑j′=1nMi′​j′​ℓi′​(λi)​ℓj′​(λj)=Mi​j.q(\lambda_{i},\lambda_{j})=\sum_{i^{\prime}=1}^{n}\sum_{j^{\prime}=1}^{n}M_{i^{\prime}j^{\prime}}\,\ell_{i^{\prime}}(\lambda_{i})\,\ell_{j^{\prime}}(\lambda_{j})=M_{ij}.
+|
+Taking g=qg=q completes the construction and yields 𝒯q,W​(H)=Y\mathcal{T}_{q,W}(H)=Y.
+∎
+D.2 Non-Isomorphic Graph Distinguishability of FSpecGNN
+At the node level, we have the following result reformulated from (Wang and Zhang, 2022), which states that any spectral GNN expressed as a polynomial of the normalized Laplacian is upper-bounded in expressive power by 11-WL\mathrm{WL}.
+Proposition D.2.
+Let G=(V,E,ℓ)G=(V,E,\ell) be a labeled graph with node labels
+ℓ:V→ℝd\ell:V\to\mathbb{R}^{d}, and let L~\widetilde{L} denote its normalized
+graph Laplacian.
+Consider a KK-th order linear polynomial spectral GNN
+|
+| Z=p⁡(L~)​X​W=∑t=0Kαt​L~t​(X​W),Z=p(\widetilde{L})XW=\sum_{t=0}^{K}\alpha_{t}\,\widetilde{L}^{t}(XW),
+|
+where XX is the matrix form of ℓ\ell and W∈ℝd×d′W\in\mathbb{R}^{d\times d^{\prime}}.
+For each node u∈Vu\in V, define the output at node uu by Z(u)=[Z]u,:Z(u)=[\,Z\,]_{u,:}, i.e. the uu-th row of Z∈ℝn×d′Z\in\mathbb{R}^{n\times d^{\prime}}.
+Let χG1−WL,(k)​(u)\chi^{1-\mathrm{WL},(k)}_{G}(u) denote the color of node uu on graph GG after
+kk iterations of the 1-WL refinement
+initialized with labels ℓ\ell.
+Then, for any i,j∈Vi,j\in V,
+|
+| χG1−WL,(K+1)​(i)=χG1−WL,(K+1)​(j)⟹Z⁡(i)=Z⁡(j).\chi^{\mathrm{1-WL},(K+1)}_{G}(i)=\chi^{\mathrm{1-WL},(K+1)}_{G}(j)\quad\Longrightarrow\quad Z(i)=Z(j).
+|
+Proof.
+Let A~=I−L~\widetilde{A}=I-\widetilde{L} denote the normalized adjacency matrix, then there exist real coefficients {θt}t=0K\{\theta_{t}\}_{t=0}^{K} such that ZZ can be equivalently written as
+|
+| Z=∑t=0Kαt​(I−A~)t​(X​W)=∑t=0Kθt​A~t​(X​W),Z=\sum_{t=0}^{K}\alpha_{t}(I-\widetilde{A})^{t}(XW)=\sum_{t=0}^{K}\theta_{t}\,\widetilde{A}^{\,t}(XW),
+|
+Accordingly, ZZ can be viewed as a (K+1)(K{+}1)-step embedding
+|
+| hi(k+1)=H(k)​(hi(k),{{hj(k):j∈NG​(i)}}),h_{i}^{(k+1)}=H^{(k)}\!\left(h_{i}^{(k)},\ \big\{\!\!\big\{\,h_{j}^{(k)}:j\in N_{G}(i)\,\big\}\!\!\big\}\right),
+|
+where hi(k)h_{i}^{(k)} is the embedding of node ii at step kk with hi(0)=(XW)i,:h_{i}^{(0)}=(XW)_{i,:}, NG​(i)N_{G}(i) denotes the neighborhood of node ii in graph GG and each update function H(k)H^{(k)} is defined as follows.
+•
+For the first step k=0k=0:
+|
+| H(0)​(ℓ⁡(i),{{ℓ⁡(j):j∈N⁡(i)}})=(|N⁡(i)|,θK​ℓ​(i),ℓ⁡(i)).H^{(0)}\!\Big(\ell(i),\ \big\{\!\!\big\{\,\ell(j):j\in N(i)\,\big\}\!\!\big\}\Big)=\big(\,|N(i)|,\ \theta_{K}\ell(i),\ \ell(i)\,\big).
+|
+•
+For intermediate steps k∈{1,2,…,K−1}k\in\{1,2,\dots,K-1\}:
+|
+|
+| H(k)​(hi(k),{{hj(k):j∈N⁡(i)}})=\displaystyle H^{(k)}\!\Big(h_{i}^{(k)},\ \big\{\!\!\big\{\,h_{j}^{(k)}:j\in N(i)\,\big\}\!\!\big\}\Big)=
+|
+|
+| (p1​(hi(k))CLOSE\displaystyle\Big(p_{1}(h_{i}^{(k)})
+| ,∑j∈N⁡(i)p2​(hj(k))p1​(hi(k))​p1​(hj(k))+θK−kp3(hi(k)),p3(hi(k))).\displaystyle,\ \sum_{j\in N(i)}\frac{p_{2}(h_{j}^{(k)})}{\sqrt{p_{1}(h_{i}^{(k)})\,p_{1}(h_{j}^{(k)})}}+\theta_{K-k}\,p_{3}(h_{i}^{(k)}),\ p_{3}(h_{i}^{(k)})\Big).
+|
+•
+For the final step k=Kk=K:
+|
+| H(K)​(hi(K),{{hj(K):j∈N⁡(i)}})=∑j∈N⁡(i)p2​(hj(K))p1​(hi(K))​p1​(hj(K))+θ0​p3​(hi(K)).H^{(K)}\!\left(h_{i}^{(K)},\ \big\{\!\!\big\{\,h_{j}^{(K)}:j\in N(i)\,\big\}\!\!\big\}\right)=\sum_{j\in N(i)}\frac{p_{2}(h_{j}^{(K)})}{\sqrt{p_{1}(h_{i}^{(K)})\,p_{1}(h_{j}^{(K)})}}+\theta_{0}\,p_{3}(h_{i}^{(K)}).
+|
+Here p1p_{1}, p2p_{2} and p3p_{3} denote the projections onto the respective coordinates
+of the vector hi(k)h_{i}^{(k)}, namely,
+|
+|
+| p1​(hi(k+1))=p1​(hi(k)),\displaystyle p_{1}(h_{i}^{(k+1)})=p_{1}(h_{i}^{(k)}),
+|
+| (6)
+|
+|
+| p2​(hi(k+1))=∑j∈N⁡(i)p2​(hj(k))p1​(hi(k))​p1​(hj(k))+θK−k​p3​(hi(k)),\displaystyle p_{2}(h_{i}^{(k+1)})=\sum_{j\in N(i)}\frac{p_{2}(h_{j}^{(k)})}{\sqrt{p_{1}(h_{i}^{(k)})\,p_{1}(h_{j}^{(k)})}}+\theta_{K-k}\,p_{3}(h_{i}^{(k)}),
+|
+| (7)
+|
+|
+| p3​(hi(k+1))=p3​(hi(k))\displaystyle p_{3}(h_{i}^{(k+1)})=p_{3}(h_{i}^{(k)})
+|
+| (8)
+for k∈{0,1,⋯,K−1}k\in\{0,1,\cdots,K-1\} with p1​(hi(0))=|N⁡(i)|p_{1}(h_{i}^{(0)})=|N(i)|, p2​(hi(0))=θK​ℓ​(i)p_{2}(h_{i}^{(0)})=\theta_{K}\ell(i) and p3​(hi(0))=ℓ⁡(i)p_{3}(h_{i}^{(0)})=\ell(i).
+According to (6) and (8) with their initializations, we can rewrite (7) as
+|
+| p2​(hi(k+1))=∑j∈NG​(i)A~i​j​p2​(hj(k))+θK−k​ℓ​(i)=∑jA~i​j​p2​(hj(k))+θK−k​ℓ​(i),p_{2}(h_{i}^{(k+1)})=\sum_{j\in N_{G}(i)}\widetilde{A}_{ij}\,p_{2}(h_{j}^{(k)})+\theta_{K-k}\,\ell(i)=\sum_{j}\widetilde{A}_{ij}\,p_{2}(h_{j}^{(k)})+\theta_{K-k}\,\ell(i),
+|
+in which A~i​j\widetilde{A}_{ij} denotes the (i,j)(i,j)-entry of the normalized adjacency matrix A~\widetilde{A}. For the final step, we similarly have
+|
+| hi(K+1)=∑jA~i​j​p2​(hj(K))+θ0​ℓ​(i).h_{i}^{(K+1)}=\sum_{j}\widetilde{A}_{ij}\,p_{2}(h_{j}^{(K)})+\theta_{0}\,\ell(i).
+|
+Hence, we inductively find that the overall output is the composition of all
+embedding steps
+|
+| Z=H(K)∘H(K−1)∘⋯∘H(0)(XW).Z=H^{(K)}\circ H^{(K-1)}\circ\cdots\circ H^{(0)}(XW).
+|
+Recall that the 1-WL color refinement is defined by
+|
+| χ1−WL,(k+1)​(i)=𝗁𝖺𝗌𝗁⁡(χ1−WL,(k)​(i),{{χ1−WL,(k)​(j):j∈N⁡(i)}}),\chi^{\mathrm{1-WL},(k+1)}(i)=\mathsf{hash}\!\left(\chi^{\mathrm{1-WL},(k)}(i),\;\big\{\!\!\big\{\chi^{\mathrm{1-WL},(k)}(j):j\in N(i)\big\}\!\!\big\}\right),
+|
+where 𝗁𝖺𝗌𝗁\mathsf{hash} is a perfect hash function and
+χ1−WL,(0)​(i)=ℓ​(i)\chi^{\mathrm{1-WL},(0)}(i)=\ell(i).
+Since each update function H(k)H^{(k)} depends only on
+the current state of node ii and the multiset of its neighbors’ states
+through permutation-invariant operations that are shared across all nodes,
+the updates H(k)H^{(k)} are consistent with the refinement steps of 1-WL.
+Consequently, if two nodes have the same 1-WL color after the kk-th iteration,
+then they receive identical updates under H(k)H^{(k)}, i.e.,
+|
+| χG1−WL,(k)​(i)=χG1−WL,(k)​(j)⟹hi(k)=hj(k).\chi^{\mathrm{1-WL},(k)}_{G}(i)=\chi^{\mathrm{1-WL},(k)}_{G}(j)\quad\Longrightarrow\quad h_{i}^{(k)}=h_{j}^{(k)}.
+|
+By induction over kk, all intermediate representations remain equal,
+and therefore the final outputs coincide:
+|
+| χG1−WL,(K+1)​(i)=χG1−WL,(K+1)​(j)⟹y⁡(i)=y⁡(j).\chi^{\mathrm{1-WL},(K+1)}_{G}(i)=\chi^{\mathrm{1-WL},(K+1)}_{G}(j)\quad\Longrightarrow\quad y(i)=y(j).
+|
+∎
+A subtle conceptual issue arises when bridging the apparent inconsistency noted in (Wang and Zhang, 2022). In (Wang and Zhang, 2022), Proposition 4.3 shows that, for a fixed graph and fixed node
+features, a linear GNN with a degree-KK spectral polynomial filter is bounded by
+(K+1)(K\!+\!1) iterations of the 1-WL test, as formulated above. On the other hand, Theorem 4.1 establishes
+that, under the “no multiple eigenvalues” and “no missing frequency components” conditions,
+linear spectral GNNs enjoy a universal approximation property and can, in principle,
+map all nodes to distinct outputs. This seems at odds with the well-known fact that
+1-WL often fails to distinguish certain pairs of vertices.
+To bridge this gap, (Wang and Zhang, 2022) argues that their spectral conditions imply
+that 1-WL can distinguish all “non-isomorphic nodes” (Corollary 4.4), and moreover
+that the graph admits no nontrivial labeled automorphisms (Theorem 4.6). Consequently,
+every pair of nodes becomes non-isomorphic in their sense, and 1-WL must distinguish
+all vertices, thereby removing the apparent contradiction with Proposition 4.3.
+Although the formal statements of
+Theorem 4.5 and Theorem 4.6 are mathematically correct, the way they are invoked to
+resolve the apparent inconsistency is
+not justified, as it is important to distinguish between two similar yet inequivalent notions of
+node equivalence. One notion is automorphism-based equivalence: two vertices
+are considered “isomorphic” if they lie in the same orbit of the labeled automorphism
+group Aut⁡(G,ℓ)\mathrm{Aut}(G,\ell). The other is 11-WL\mathrm{WL} equivalence: two vertices receive the
+same stable 11-WL\mathrm{WL} color or, equivalently, have isomorphic unrolling trees (Morris et al., 2020).
+In general, these notions do not coincide. Even with a trivial automorphism group, 1-WL may still collapse all nodes to a single color. A classical example is the Frucht graph:
+it is 33-regular and asymmetric, i.e. its automorphism group consists only of the identity, yet
+11-WL\mathrm{WL} with uniform initial labels fails to distinguish any of its vertices.
+Figure 4: The Frucht graph (image adapted from (Wikipedia contributors, 2025)). Despite having a trivial automorphism group, the stable 1-WL refinement assigns a single color to all vertices.
+The reconciliation between
+universality and the 11-WL\mathrm{WL} upper bound does not actually stem from the absence
+of nontrivial automorphisms. Rather, it is the universality assumptions themselves that
+severely constrain the admissible graph-signal pairs: a simple Laplacian spectrum, together
+with labels having full spectral support, enforces a highly non-degenerate labeling. When 11-WL\mathrm{WL} is run on such labels,
+its refinement becomes much more discriminative; in fact, combined with the upper bound in
+Proposition 4.3, universality forces the stable 11-WL\mathrm{WL} partition on (G,ℓ)(G,\ell) to
+refine all the way down to singletons, since any two vertices mapped to different values by
+a universal linear spectral GNN must already be separated by 11-WL\mathrm{WL}.
+We restate and prove Theorem 3.7 as follows.
+Theorem D.3.
+Let G=(V,E,ℓ)G=(V,E,\ell) be a labeled graph with node labels
+ℓ:V→ℝd\ell:V\to\mathbb{R}^{d}, and let L~\widetilde{L} denote its normalized graph Laplacian.
+Define
+|
+| A:=L~⊗In,B:=In⊗L~,A:=\widetilde{L}\otimes I_{n},\qquad B:=I_{n}\otimes\widetilde{L},
+|
+where n=|V|n=|V|.
+Let
+|
+| p⁡(x,y)=∑a,b≥0a+b≤Kαa​b​xa​ybp(x,y)=\sum_{\begin{subarray}{c}a,b\geq 0\\
+a+b\leq K\end{subarray}}\alpha_{ab}x^{a}y^{b}
+|
+be a bivariate polynomial of total degree at most KK.
+Consider the edge-level signal
+|
+| ε:V×V→ℝ2​d+2,ε(u,v)=(ℓ(u),ℓ(v),𝕀[u=v],𝕀[{u,v}∈E]),\varepsilon:V\times V\to\mathbb{R}^{2d+2},\qquad\varepsilon(u,v)=\bigl(\ell(u),\ell(v),\mathbb{I}[u=v],\mathbb{I}[\{u,v\}\in E]\bigr),
+|
+and let ℒ∈ℝn2×(2​d+2)\mathcal{L}\in\mathbb{R}^{n^{2}\times(2d+2)} be its matrix form, i.e.,
+the (u,v)(u,v)-th row of ℒ\mathcal{L} is ε⁡(u,v)\varepsilon(u,v).
+For a learnable matrix W∈ℝ(2​d+2)×d′W\in\mathbb{R}^{(2d+2)\times d^{\prime}}, define
+|
+| ℒ′:=p⁡(A,B)​ℒ​W∈ℝn2×d′.\mathcal{L}^{\prime}:=p(A,B)\mathcal{L}W\in\mathbb{R}^{n^{2}\times d^{\prime}}.
+|
+For (u,v)∈V×V(u,v)\in V\times V, denote by
+|
+| ℒ′(u,v):=ℒ(u,v),:′\mathcal{L}^{\prime}(u,v):=\mathcal{L}^{\prime}_{(u,v),:}
+|
+the (u,v)(u,v)-th row of ℒ′\mathcal{L}^{\prime}.
+Let χGLocal2​-​GNN,(k)​(u,v)\chi_{G}^{\mathrm{Local2\text{-}GNN},(k)}(u,v) denote the color of the pair
+(u,v)(u,v) after kk iterations of the Local 22-GNN refinement initialized with
+the pair label ε\varepsilon.
+Then for any (u1,v1),(u2,v2)∈V×V(u_{1},v_{1}),(u_{2},v_{2})\in V\times V,
+|
+| χGLocal2​-​GNN,(K)​(u1,v1)=χGLocal2​-​GNN,(K)​(u2,v2)⟹ℒ′​(u1,v1)=ℒ′​(u2,v2).\chi_{G}^{\mathrm{Local2\text{-}GNN},(K)}(u_{1},v_{1})=\chi_{G}^{\mathrm{Local2\text{-}GNN},(K)}(u_{2},v_{2})\quad\Longrightarrow\quad\mathcal{L}^{\prime}(u_{1},v_{1})=\mathcal{L}^{\prime}(u_{2},v_{2}).
+|
+We utilize the following definition and lemma from Morris et al. (2020).
+Definition D.4.
+Let G=(V,E,ℓ)G=(V,E,\ell) be a labeled graph.
+For a pair (u,v)∈V×V(u,v)\in V\times V, define its depth-kk local unrolling tree,
+denoted by
+|
+| L​-​UNRG(k)​(u,v),\mathrm{L\text{-}UNR}_{G}^{(k)}(u,v),
+|
+recursively as follows.
+•
+For k=0k=0, L​-​UNRG(0)​(u,v)\mathrm{L\text{-}UNR}_{G}^{(0)}(u,v) consists of a single root,
+whose vertex label is the initial pair label
+|
+| ε(u,v)=(ℓ(u),ℓ(v),𝕀[u=v],𝕀[{u,v}∈E]).\varepsilon(u,v)=\bigl(\ell(u),\ell(v),\mathbb{I}[u=v],\mathbb{I}[\{u,v\}\in E]\bigr).
+|
+•
+For k≥1k\geq 1, L​-​UNRG(k)​(u,v)\mathrm{L\text{-}UNR}_{G}^{(k)}(u,v) is the rooted directed tree
+obtained by taking a root labeled by ε⁡(u,v)\varepsilon(u,v) and attaching:
+1.
+for every u′∈NG​(u)u^{\prime}\in N_{G}(u), one child whose attached subtree is
+L​-​UNRG(k−1)​(u′,v)\mathrm{L\text{-}UNR}_{G}^{(k-1)}(u^{\prime},v), with the edge from the root to this child
+labeled by 11;
+2.
+for every v′∈NG​(v)v^{\prime}\in N_{G}(v), one child whose attached subtree is
+L​-​UNRG(k−1)​(u,v′)\mathrm{L\text{-}UNR}_{G}^{(k-1)}(u,v^{\prime}), with the edge from the root to this child
+labeled by 22.
+Two such trees are said to be isomorphic if there exists a bijection between
+their vertex sets that preserves:
+(i) the root,
+(ii) the parent–child relation,
+(iii) the vertex labels, and
+(iv) the directed edge labels in {1,2}\{1,2\}.
+Lemma D.5 (Morris et al. (2020)).
+For any labeled graph GG, any (u1,v1),(u2,v2)∈V×V(u_{1},v_{1}),(u_{2},v_{2})\in V\times V, and any
+k≥0k\geq 0,
+|
+| χGLocal2​-​GNN,(k)​(u1,v1)=χGLocal2​-​GNN,(k)​(u2,v2)\chi_{G}^{\mathrm{Local2\text{-}GNN},(k)}(u_{1},v_{1})=\chi_{G}^{\mathrm{Local2\text{-}GNN},(k)}(u_{2},v_{2})
+|
+if and only if
+|
+| L​-​UNRG(k)​(u1,v1)≅L​-​UNRG(k)​(u2,v2).\mathrm{L\text{-}UNR}_{G}^{(k)}(u_{1},v_{1})\cong\mathrm{L\text{-}UNR}_{G}^{(k)}(u_{2},v_{2}).
+|
+Proof of Theorem D.3.
+Assume that
+|
+| χGLocal2​-​GNN,(K)​(u1,v1)=χGLocal2​-​GNN,(K)​(u2,v2).\chi_{G}^{\mathrm{Local2\text{-}GNN},(K)}(u_{1},v_{1})=\chi_{G}^{\mathrm{Local2\text{-}GNN},(K)}(u_{2},v_{2}).
+|
+By Lemma D.5, this implies
+|
+| L​-​UNRG(K)​(u1,v1)≅L​-​UNRG(K)​(u2,v2).\mathrm{L\text{-}UNR}_{G}^{(K)}(u_{1},v_{1})\cong\mathrm{L\text{-}UNR}_{G}^{(K)}(u_{2},v_{2}).
+|
+Set
+|
+| X:=ℒ​W∈ℝn2×d′.X:=\mathcal{L}W\in\mathbb{R}^{n^{2}\times d^{\prime}}.
+|
+Since the initial pair label is exactly ε\varepsilon, and X⁡(u,v)=ε⁡(u,v)​WX(u,v)=\varepsilon(u,v)W,
+the value X⁡(u,v)X(u,v) depends only on the root label of
+L​-​UNRG(0)​(u,v)\mathrm{L\text{-}UNR}_{G}^{(0)}(u,v).
+Hence, whenever two depth-00 local unrolling trees are isomorphic, the
+corresponding rows of XX are equal.
+We now claim that for every a,b≥0a,b\geq 0 with a+b≤Ka+b\leq K,
+|
+| (Aa​Bb​X)​(u1,v1)=(Aa​Bb​X)​(u2,v2),(A^{a}B^{b}X)(u_{1},v_{1})=(A^{a}B^{b}X)(u_{2},v_{2}),
+|
+where A:=L~⊗InA:=\widetilde{L}\otimes I_{n}
+and B:=In⊗L~.B:=I_{n}\otimes\widetilde{L}.
+Once this is proved, linearity yields
+|
+| ℒ′​(u1,v1)=∑a+b≤Kαa​b​(Aa​Bb​X)​(u1,v1)=∑a+b≤Kαa​b​(Aa​Bb​X)​(u2,v2)=ℒ′​(u2,v2),\mathcal{L}^{\prime}(u_{1},v_{1})=\sum_{a+b\leq K}\alpha_{ab}(A^{a}B^{b}X)(u_{1},v_{1})=\sum_{a+b\leq K}\alpha_{ab}(A^{a}B^{b}X)(u_{2},v_{2})=\mathcal{L}^{\prime}(u_{2},v_{2}),
+|
+which is exactly the desired conclusion.
+It remains to prove the claim. We proceed by induction on the total degree
+a+ba+b.
+Base case: a+b=0a+b=0.
+Then a=b=0a=b=0, so
+|
+| A0​B0​X=X.A^{0}B^{0}X=X.
+|
+Since the roots of
+L​-​UNRG(0)​(u1,v1)\mathrm{L\text{-}UNR}_{G}^{(0)}(u_{1},v_{1}) and
+L​-​UNRG(0)​(u2,v2)\mathrm{L\text{-}UNR}_{G}^{(0)}(u_{2},v_{2})
+have the same label under the above isomorphism, we obtain
+|
+| X⁡(u1,v1)=X⁡(u2,v2).X(u_{1},v_{1})=X(u_{2},v_{2}).
+|
+Induction step:
+Assume the claim holds for all pairs (a′,b′)(a^{\prime},b^{\prime}) with a′+b′≤t−1a^{\prime}+b^{\prime}\leq t-1, where
+1≤t≤K1\leq t\leq K, and let a+b=ta+b=t.
+We consider two cases.
+Case 1: a≥1a\geq 1.
+Write
+|
+| Aa​Bb​X=A⁡(Aa−1​Bb​X).A^{a}B^{b}X=A(A^{a-1}B^{b}X).
+|
+For any (u,v)∈V×V(u,v)\in V\times V, using the row-wise action of
+A=L~⊗InA=\widetilde{L}\otimes I_{n}, we have
+|
+| (Aa​Bb​X)​(u,v)=L~u​u​(Aa−1​Bb​X)​(u,v)+∑u′∈NG​(u)L~u​u′​(Aa−1​Bb​X)​(u′,v).(A^{a}B^{b}X)(u,v)=\widetilde{L}_{uu}\,(A^{a-1}B^{b}X)(u,v)+\sum_{u^{\prime}\in N_{G}(u)}\widetilde{L}_{uu^{\prime}}\,(A^{a-1}B^{b}X)(u^{\prime},v).
+|
+Since
+|
+| L​-​UNRG(K)​(u1,v1)≅L​-​UNRG(K)​(u2,v2),\mathrm{L\text{-}UNR}_{G}^{(K)}(u_{1},v_{1})\cong\mathrm{L\text{-}UNR}_{G}^{(K)}(u_{2},v_{2}),
+|
+their roots have the same label ε\varepsilon, hence in particular
+ℓ⁡(u1)=ℓ⁡(u2)\ell(u_{1})=\ell(u_{2}), ℓ⁡(v1)=ℓ⁡(v2)\ell(v_{1})=\ell(v_{2}), and
+|
+| 𝕀[u1=v1]=𝕀[u2=v2],𝕀[{u1,v1}∈E]=𝕀[{u2,v2}∈E].\mathbb{I}[u_{1}=v_{1}]=\mathbb{I}[u_{2}=v_{2}],\qquad\mathbb{I}[\{u_{1},v_{1}\}\in E]=\mathbb{I}[\{u_{2},v_{2}\}\in E].
+|
+Moreover, because the rooted tree isomorphism preserves the multiset of
+children connected by an edge labeled 11, there is a bijection between the
+neighbors of u1u_{1} and the neighbors of u2u_{2} matching
+|
+| L​-​UNRG(K−1)​(u′,v1)andL​-​UNRG(K−1)​(ϕ⁡(u′),v2)\mathrm{L\text{-}UNR}_{G}^{(K-1)}(u^{\prime},v_{1})\quad\text{and}\quad\mathrm{L\text{-}UNR}_{G}^{(K-1)}(\phi(u^{\prime}),v_{2})
+|
+for a suitable bijection ϕ:NG​(u1)→NG​(u2)\phi:N_{G}(u_{1})\to N_{G}(u_{2}).
+In particular,
+|
+| degG⁡(u1)=degG⁡(u2),\deg_{G}(u_{1})=\deg_{G}(u_{2}),
+|
+and therefore the corresponding normalized Laplacian coefficients coincide:
+|
+| L~u1​u1=L~u2​u2,L~u1​u′=L~u2​ϕ​(u′)for all ​u′∈NG​(u1),\widetilde{L}_{u_{1}u_{1}}=\widetilde{L}_{u_{2}u_{2}},\qquad\widetilde{L}_{u_{1}u^{\prime}}=\widetilde{L}_{u_{2}\phi(u^{\prime})}\quad\text{for all }u^{\prime}\in N_{G}(u_{1}),
+|
+since for the normalized Laplacian the off-diagonal entry depends only on the
+existence of the edge and the endpoint degrees.
+Now a−1+b=t−1≤K−1a-1+b=t-1\leq K-1, so by the induction hypothesis,
+|
+| (Aa−1​Bb​X)​(u1,v1)=(Aa−1​Bb​X)​(u2,v2),(A^{a-1}B^{b}X)(u_{1},v_{1})=(A^{a-1}B^{b}X)(u_{2},v_{2}),
+|
+and for every u′∈NG​(u1)u^{\prime}\in N_{G}(u_{1}),
+|
+| (Aa−1​Bb​X)​(u′,v1)=(Aa−1​Bb​X)​(ϕ⁡(u′),v2).(A^{a-1}B^{b}X)(u^{\prime},v_{1})=(A^{a-1}B^{b}X)(\phi(u^{\prime}),v_{2}).
+|
+Substituting these equalities into the above expansion gives
+|
+| (Aa​Bb​X)​(u1,v1)=(Aa​Bb​X)​(u2,v2).(A^{a}B^{b}X)(u_{1},v_{1})=(A^{a}B^{b}X)(u_{2},v_{2}).
+|
+Case 2: b≥1b\geq 1.
+This is completely analogous. Writing
+|
+| Aa​Bb​X=B⁡(Aa​Bb−1​X),A^{a}B^{b}X=B(A^{a}B^{b-1}X),
+|
+for any (u,v)∈V×V(u,v)\in V\times V we have
+|
+| (Aa​Bb​X)​(u,v)=L~v​v​(Aa​Bb−1​X)​(u,v)+∑v′∈NG​(v)L~v​v′​(Aa​Bb−1​X)​(u,v′).(A^{a}B^{b}X)(u,v)=\widetilde{L}_{vv}\,(A^{a}B^{b-1}X)(u,v)+\sum_{v^{\prime}\in N_{G}(v)}\widetilde{L}_{vv^{\prime}}\,(A^{a}B^{b-1}X)(u,v^{\prime}).
+|
+Since the rooted tree isomorphism preserves the children connected by an edge
+labeled 22, there is a bijection
+|
+| ψ:NG​(v1)→NG​(v2)\psi:N_{G}(v_{1})\to N_{G}(v_{2})
+|
+such that
+|
+| L​-​UNRG(K−1)​(u1,v′)≅L​-​UNRG(K−1)​(u2,ψ⁡(v′))\mathrm{L\text{-}UNR}_{G}^{(K-1)}(u_{1},v^{\prime})\cong\mathrm{L\text{-}UNR}_{G}^{(K-1)}(u_{2},\psi(v^{\prime}))
+|
+for all v′∈NG​(v1)v^{\prime}\in N_{G}(v_{1}).
+Hence
+|
+| degG⁡(v1)=degG⁡(v2),\deg_{G}(v_{1})=\deg_{G}(v_{2}),
+|
+and the corresponding normalized Laplacian coefficients also coincide. Since
+a+(b−1)=t−1a+(b-1)=t-1, the induction hypothesis implies
+|
+| (Aa​Bb−1​X)​(u1,v1)=(Aa​Bb−1​X)​(u2,v2),(A^{a}B^{b-1}X)(u_{1},v_{1})=(A^{a}B^{b-1}X)(u_{2},v_{2}),
+|
+and for every v′∈NG​(v1)v^{\prime}\in N_{G}(v_{1}),
+|
+| (Aa​Bb−1​X)​(u1,v′)=(Aa​Bb−1​X)​(u2,ψ⁡(v′)).(A^{a}B^{b-1}X)(u_{1},v^{\prime})=(A^{a}B^{b-1}X)(u_{2},\psi(v^{\prime})).
+|
+Therefore,
+|
+| (Aa​Bb​X)​(u1,v1)=(Aa​Bb​X)​(u2,v2).(A^{a}B^{b}X)(u_{1},v_{1})=(A^{a}B^{b}X)(u_{2},v_{2}).
+|
+This completes the induction, and hence proves the theorem.
+∎
+We restate and prove Theorem 3.8 as follows.
+Theorem D.6.
+Following the notation of Theorem D.3, consider linear polynomial FSpecGNN of the form
+|
+| ℒ′=q⁡(L~⊗I,I⊗L~)​(ℒ​W),\mathcal{L}^{\prime}=q(\widetilde{L}\otimes I,\;I\otimes\widetilde{L})(\mathcal{L}W),
+|
+where W∈ℝn2×1W\in\mathbb{R}^{n^{2}\times 1} is a transform matrix.
+Let
+{ui}i=1n\{u_{i}\}_{i=1}^{n} denote the eigenvectors in the eigendecomposition
+L~=∑i=1nλi​ui​ui⊤\widetilde{L}=\sum_{i=1}^{n}\lambda_{i}u_{i}u_{i}^{\top}. Suppose that the graph
+and signal satisfy:
+(i)
+L~\widetilde{L} has a simple spectrum, i.e. λ1,…,λn\lambda_{1},\dots,\lambda_{n}
+are pairwise distinct;
+(ii)
+the spectral coefficients
+ci​j:=ui⊤​Matrix​(ℒ​W)​ujc_{ij}:=u_{i}^{\top}\mathrm{Matrix}(\mathcal{L}W)\,u_{j}
+are nonzero for every pair (i,j)∈{1,…,n}2(i,j)\in\{1,\dots,n\}^{2}.
+Let χGLocal2​-​GNN,(∞)​(i,j)\chi^{\mathrm{Local2\text{-}GNN},(\infty)}_{G}(i,j) denote the stable Local
+22-GNN color of the pair (u,v)∈V×V(u,v)\in V\times V. Then there exists a polynomial
+qq in two variables such that the output
+satisfies
+|
+| ℒ′​(u1,v1)=ℒ′​(u2,v2)⟹χGLocal2​-​GNN,(∞)​(u1,v1)=χGLocal2​-​GNN,(∞)​(u2,v2).\mathcal{L}^{\prime}(u_{1},v_{1})=\mathcal{L}^{\prime}(u_{2},v_{2})\quad\Longrightarrow\quad\chi^{\mathrm{Local2\text{-}GNN},(\infty)}_{G}(u_{1},v_{1})=\chi^{\mathrm{Local2\text{-}GNN},(\infty)}_{G}(u_{2},v_{2}).
+|
+Equivalently, the partition of V×VV\times V induced by ℒ′\mathcal{L}^{\prime} is a refinement of the
+stable Local 22-GNN coloring. Moreover, if the stable Local 22-GNN partition on V×VV\times V
+is not discrete, i.e. some color class has size at least two, then this refinement
+is strict.
+Proof.
+Since L~\widetilde{L} has eigendecomposition
+L~=∑i=1nλi​ui​ui⊤\widetilde{L}=\sum_{i=1}^{n}\lambda_{i}u_{i}u_{i}^{\top} with pairwise distinct
+eigenvalues, the commuting operators
+|
+| A:=L~⊗IandB:=I⊗L~A:=\widetilde{L}\otimes I\quad\text{and}\quad B:=I\otimes\widetilde{L}
+|
+on ℝn2\mathbb{R}^{n^{2}} admit a joint eigenbasis
+{ui⊗uj}i,j=1n\{u_{i}\otimes u_{j}\}_{i,j=1}^{n}. On this basis, AA and BB act as
+|
+| A⁡(ui⊗uj)=λi​(ui⊗uj),B⁡(ui⊗uj)=λj​(ui⊗uj).A(u_{i}\otimes u_{j})=\lambda_{i}(u_{i}\otimes u_{j}),\qquad B(u_{i}\otimes u_{j})=\lambda_{j}(u_{i}\otimes u_{j}).
+|
+Viewing ε\varepsilon as a vector in ℝn2\mathbb{R}^{n^{2}} via the usual
+vectorization, it has a unique expansion
+|
+| ε=∑i,j=1nci​j​(ui⊗uj),ci​j=(ui⊗uj)⊤​ε=ui⊤​ε​uj.\varepsilon=\sum_{i,j=1}^{n}c_{ij}\,(u_{i}\otimes u_{j}),\qquad c_{ij}=(u_{i}\otimes u_{j})^{\top}\varepsilon=u_{i}^{\top}\varepsilon\,u_{j}.
+|
+By assumption (ii), all ci​jc_{ij} are nonzero.
+For any real-valued function g:V×V→ℝg:V\times V\to\mathbb{R}, we may write its
+vectorization in the same basis as
+|
+| g=∑i,j=1ndi​j​(ui⊗uj)g=\sum_{i,j=1}^{n}d_{ij}\,(u_{i}\otimes u_{j})
+|
+for suitable coefficients di​j∈ℝd_{ij}\in\mathbb{R}. Consider a polynomial
+qq in two variables. Its action on ε\varepsilon is
+diagonal in the joint eigenbasis:
+|
+| q⁡(A,B)​ε=∑i,j=1nq⁡(λi,λj)​ci​j​(ui⊗uj).q(A,B)\,\varepsilon=\sum_{i,j=1}^{n}q(\lambda_{i},\lambda_{j})\,c_{ij}\,(u_{i}\otimes u_{j}).
+|
+Thus, to realize the desired set of coefficients {di​j}\{d_{ij}\}, it suffices to
+choose qq such that
+|
+| q(λi,λj)ci​j=di​j⟺q(λi,λj)=di​jci​jfor all i,j.q(\lambda_{i},\lambda_{j})\,c_{ij}=d_{ij}\quad\Longleftrightarrow\quad q(\lambda_{i},\lambda_{j})=\frac{d_{ij}}{c_{ij}}\quad\text{for all }i,j.
+|
+Since the grid {(λi,λj):1≤i,j≤n}\{(\lambda_{i},\lambda_{j}):1\leq i,j\leq n\} is finite and all
+ci​j≠0c_{ij}\neq 0, there always exists a bivariate polynomial qq interpolating the
+values di​j/ci​jd_{ij}/c_{ij} at these n2n^{2} points, e.g. by multivariate Lagrange
+interpolation. Therefore, under assumptions (i) and (ii), the family
+q⁡(L~⊗I,I⊗L~)q(\widetilde{L}\otimes I,\;I\otimes\widetilde{L}) acting on ε\varepsilon is
+universal on the finite domain V×VV\times V: it can realize any target signal
+g:V×V→ℝg:V\times V\to\mathbb{R}.
+Now let 𝒞={C1,…,Cs}\mathcal{C}=\{C_{1},\dots,C_{s}\} denote the stable Local 2-GNN partition of
+V×VV\times V, where each CtC_{t} is a color class
+|
+| Ct={(i,j)∈V×V:χGLocal2​-​GNN,(∞)​(i,j)=t}.C_{t}=\big\{(i,j)\in V\times V:\chi^{\mathrm{Local2\text{-}GNN},(\infty)}_{G}(i,j)=t\big\}.
+|
+Choose pairwise disjoint intervals I1,…,Is⊂ℝI_{1},\dots,I_{s}\subset\mathbb{R}, and for each
+t∈{1,…,s}t\in\{1,\dots,s\} assign distinct real values
+{γt,α∈It:(iα,jα)∈Ct}\{\gamma_{t,\alpha}\in I_{t}:(i_{\alpha},j_{\alpha})\in C_{t}\}
+to the elements of CtC_{t}. Define the target function
+g:V×V→ℝg:V\times V\to\mathbb{R} by
+|
+| g⁡(i,j)=γt,αif ​(i,j)=(iα,jα)∈Ct.g(i,j)=\gamma_{t,\alpha}\quad\text{if }(i,j)=(i_{\alpha},j_{\alpha})\in C_{t}.
+|
+By construction, if two pairs belong to different Local 22-GNN color classes, say
+(u1,v1)∈Ct1(u_{1},v_{1})\in C_{t_{1}} and (u2,v2)∈Ct2(u_{2},v_{2})\in C_{t_{2}} with t1≠t2t_{1}\neq t_{2}, then
+g⁡(u1,v1)∈It1g(u_{1},v_{1})\in I_{t_{1}} and g⁡(u2,v2)∈It2g(u_{2},v_{2})\in I_{t_{2}}, so g⁡(u1,v1)≠g⁡(u2,v2)g(u_{1},v_{1})\neq g(u_{2},v_{2}).
+Hence
+|
+| g⁡(u1,v1)=g⁡(u2,v2)⟹χGLocal2​-​GNN,(∞)​(u1,v1)=χGLocal2​-​GNN,(∞)​(u2,v2).g(u_{1},v_{1})=g(u_{2},v_{2})\quad\Longrightarrow\quad\chi^{\mathrm{Local2\text{-}GNN},(\infty)}_{G}(u_{1},v_{1})=\chi^{\mathrm{Local2\text{-}GNN},(\infty)}_{G}(u_{2},v_{2}).
+|
+Moreover, if some color class CtC_{t} has size at least two, we chose the
+γt,α\gamma_{t,\alpha} within ItI_{t} to be pairwise distinct, so gg is not
+constant on CtC_{t} and the induced partition strictly refines 𝒞\mathcal{C}.
+By Theorem D.1, there exists a polynomial qq such that
+|
+| ℒ′=q⁡(L~⊗I,I⊗L~)​(ℒ​W).\mathcal{L}^{\prime}=q(\widetilde{L}\otimes I,\;I\otimes\widetilde{L})\,(\mathcal{L}W).
+|
+For this qq we therefore have
+|
+| ℒ′​(u1,v1)=ℒ′​(u2,v2)⟹χGLocal2​-​GNN,(∞)​(u1,v1)=χGLocal2​-​GNN,(∞)​(u2,v2).\mathcal{L}^{\prime}(u_{1},v_{1})=\mathcal{L}^{\prime}(u_{2},v_{2})\quad\Longrightarrow\quad\chi^{\mathrm{Local2\text{-}GNN},(\infty)}_{G}(u_{1},v_{1})=\chi^{\mathrm{Local2\text{-}GNN},(\infty)}_{G}(u_{2},v_{2}).
+|
+i.e. the partition refines the stable Local 22-GNN coloring. If some
+CtC_{t} has size at least two, the refinement is strict by our choice of gg.
+∎
+Appendix E An Analysis of Spectral Filters for Class-Wise Separability
+E.1 Optimal Convolution under Classwise Separability
+E.1.1 Setting and Notation
+Let G=(V,E)G=(V,E) be a graph with |V|=n|V|=n. Nodes are partitioned into kk classes
+Π={V1,…,Vk}\Pi=\{V_{1},\dots,V_{k}\} with |Va|=na|V_{a}|=n_{a} and ∑ana=n\sum_{a}n_{a}=n.
+For each class a∈{1,…,k}a\in\{1,\dots,k\}, we associate a mean vector
+ma∈ℝdm_{a}\in\mathbb{R}^{d}, drawn independently and uniformly at random from the unit
+sphere 𝕊d−1\mathbb{S}^{d-1}.
+Conditioned on these means, node features are drawn independently according to
+their class labels:
+|
+| xi∼𝒟ai,ai​ such that ​i∈Vai,x_{i}\ \sim\ \mathcal{D}_{a_{i}},\qquad a_{i}\text{ such that }i\in V_{a_{i}},
+|
+where each class distribution 𝒟a\mathcal{D}_{a} on ℝd\mathbb{R}^{d} has mean
+mam_{a} and finite covariance Σa⪰0\Sigma_{a}\succeq 0.
+Denote by
+X∈ℝn×dX\in\mathbb{R}^{n\times d} the resulting feature matrix with rows xi⊤x_{i}^{\top},
+and write τa:=tr⁡(Σa)\tau_{a}:=\mathrm{tr}(\Sigma_{a}) for the total variance of class aa, where we assume τa>0\tau_{a}>0 for every aa.
+This model can be viewed as a high-dimensional isotropic mixture in which class
+means are randomly oriented and features fluctuate around them with bounded
+covariance.
+A (linear) convolution is a matrix C∈ℝn×nC\in\mathbb{R}^{n\times n} producing Y:=C​XY:=CX.
+We evaluate CC by the classwise mean-regression MSE
+|
+| ℒ⁡(C):=∑a=1k1na​∑p∈Va𝔼​‖Yp−ma‖22.\mathcal{L}(C)\ :=\ \sum_{a=1}^{k}\frac{1}{n_{a}}\sum_{p\in V_{a}}\ \mathbb{E}\,\big\|\,Y_{p}-m_{a}\big\|_{2}^{2}.
+|
+| (9)
+Definition E.1.
+Let Π={V1,…,Vk}\Pi=\{V_{1},\dots,V_{k}\} be the class partition of the node set VV with |Va|=na|V_{a}|=n_{a}.
+For each class aa, let 𝔖na\mathfrak{S}_{n_{a}} be the permutation group acting on the indices VaV_{a},
+and define the product group
+|
+| 𝒢:=∏a=1k𝔖na,\mathcal{G}\ :=\ \prod_{a=1}^{k}\mathfrak{S}_{n_{a}},
+|
+whose elements π=(π1,…,πk)\pi=(\pi_{1},\dots,\pi_{k}) act on VV by independently permuting
+the nodes within each class.
+The corresponding permutation matrix PπP_{\pi} acts on vectors or matrices
+as a block permutation operator.
+A matrix C∈ℝn×nC\in\mathbb{R}^{n\times n} is said to be classwise permutation equivariant if
+|
+| C=Pπ​C​Pπ⊤,∀π∈𝒢.C\ =\ P_{\pi}\,C\,P_{\pi}^{\top},\qquad\forall\,\pi\in\mathcal{G}.
+|
+Equivalently, CC commutes with the representation of 𝒢\mathcal{G} on ℝn\mathbb{R}^{n}.
+For any matrix CC, its Reynolds average with respect to
+𝒢\mathcal{G} is defined as
+|
+| C¯:=𝔼π∼Unif⁡(𝒢)​[Pπ​C​Pπ⊤],\overline{C}\ :=\ \mathbb{E}_{\pi\sim\mathrm{Unif}(\mathcal{G})}\big[P_{\pi}\,C\,P_{\pi}^{\top}\big],
+|
+which is classwise permutation equivariant and thus belongs to the commutant of 𝒢\mathcal{G}.
+E.1.2 Algebraic Structure and a Bias–Variance Decomposition
+Before analyzing the loss ℒ⁡(C)\mathcal{L}(C) in its explicit form, we first show that the Reynolds average of any matrix CC can only decrease the loss.
+This allows us to restrict attention, without loss of generality, to classwise-equivariant matrices.
+Lemma E.2.
+Let 𝒢=∏a=1k𝔖na\mathcal{G}=\prod_{a=1}^{k}\mathfrak{S}_{n_{a}} act on indices by classwise permutations,
+and define the Reynolds average of C∈ℝn×nC\in\mathbb{R}^{n\times n} by
+C¯\overline{C}.
+Then the classwise mean-regression loss satisfies
+|
+| ℒ⁡(C¯)≤ℒ⁡(C).\mathcal{L}(\overline{C})\ \leq\ \mathcal{L}(C).
+|
+Proof.
+For fixed feature matrix X∈ℝn×dX\in\mathbb{R}^{n\times d}, with ∥⋅∥F\|\cdot\|_{F} denoting the Frobenius norm, write
+|
+| ℓ⁡(C,X):=∑a=1k1na​‖(C​X)a−𝟏na​ma⊤‖F2.\ell(C;X)\ :=\ \sum_{a=1}^{k}\frac{1}{n_{a}}\big\|\,(CX)_{a}-\mathbf{1}_{n_{a}}m_{a}^{\top}\,\big\|_{F}^{2}.
+|
+The map C↦C​XC\mapsto CX is linear, and
+A↦∑a1na​‖Aa−𝟏​ma⊤‖F2A\mapsto\sum_{a}\frac{1}{n_{a}}\|A_{a}-\mathbf{1}m_{a}^{\top}\|_{F}^{2} is a quadratic form in AA, and thus convex.
+Hence ℓ⁡(C,X)\ell(C;X) is convex in CC, and taking expectation over XX
+preserves convexity, so ℒ⁡(C)=𝔼X​[ℓ⁡(C,X)]\mathcal{L}(C)=\mathbb{E}_{X}[\ell(C;X)] is convex in CC.
+Since C¯\overline{C} is the group average of linear transforms of CC,
+convexity gives
+|
+| ℓ⁡(C¯,X)=ℓ⁡(𝔼π​[Pπ​C​Pπ⊤],X)≤𝔼π​ℓ​(Pπ​C​Pπ⊤,X).\ell(\overline{C};X)\ =\ \ell\!\big(\mathbb{E}_{\pi}[P_{\pi}CP_{\pi}^{\top}];X\big)\ \leq\ \mathbb{E}_{\pi}\,\ell(P_{\pi}CP_{\pi}^{\top};X).
+|
+Taking expectation in XX and exchanging the order of expectations,
+|
+| ℒ⁡(C¯)=𝔼X​ℓ​(C¯,X)≤𝔼π​𝔼X​ℓ​(Pπ​C​Pπ⊤,X).\mathcal{L}(\overline{C})\ =\ \mathbb{E}_{X}\ell(\overline{C};X)\ \leq\ \mathbb{E}_{\pi}\,\mathbb{E}_{X}\ell(P_{\pi}CP_{\pi}^{\top};X).
+|
+For any π∈𝒢\pi\in\mathcal{G},
+|
+| ℓ⁡(Pπ​C​Pπ⊤,X)=ℓ⁡(C,Pπ⊤​X),\ell(P_{\pi}CP_{\pi}^{\top};X)=\ell(C;P_{\pi}^{\top}X),
+|
+because (Pπ​C​Pπ⊤)​X=Pπ​[C⁡(Pπ⊤​X)](P_{\pi}CP_{\pi}^{\top})X=P_{\pi}[C(P_{\pi}^{\top}X)]
+and Frobenius norms are invariant under left multiplication by the permutation
+matrices PπaP_{\pi_{a}} within each class.
+Under the classwise i.i.d. model in Section E.1.1, Pπ⊤​XP_{\pi}^{\top}X and XX are identically distributed,
+so 𝔼X​ℓ​(C,Pπ⊤​X)=𝔼X​ℓ​(C,X)=ℒ⁡(C)\mathbb{E}_{X}\ell(C;P_{\pi}^{\top}X)=\mathbb{E}_{X}\ell(C;X)=\mathcal{L}(C).
+Substituting this into the previous inequality yields
+|
+| ℒ⁡(C¯)≤ℒ⁡(C).\mathcal{L}(\overline{C})\ \leq\ \mathcal{L}(C).
+|
+∎
+Corollary E.3.
+An optimal solution of minC⁡ℒ⁡(C)\min_{C}\mathcal{L}(C) can be chosen among classwise permutation equivariant matrices.
+We next characterize the algebraic structure of all
+classwise permutation equivariant matrices,
+which will serve as the reduced parameter space in which the optimization can be carried out according to Corollary E.3.
+Lemma E.4.
+Let 𝒢=∏a=1k𝔖na\mathcal{G}=\prod_{a=1}^{k}\mathfrak{S}_{n_{a}} act on ℝn\mathbb{R}^{n} by permuting
+the coordinates within each class VaV_{a}.
+A matrix C∈ℝn×nC\in\mathbb{R}^{n\times n} is classwise permutation equivariant
+if and only if there exist real scalars
+{αa,βa}a=1k\{\alpha_{a},\beta_{a}\}_{a=1}^{k} and {γa​b}a≠b\{\gamma_{ab}\}_{a\neq b} such that
+|
+| C=∑a=1k(αa​IVa+βa​JVa)+∑a≠bγa​b​JVa,Vb,C=\sum_{a=1}^{k}\big(\alpha_{a}I_{V_{a}}+\beta_{a}J_{V_{a}}\big)+\sum_{a\neq b}\gamma_{ab}\,J_{V_{a},V_{b}},
+|
+| (10)
+where:
+•
+IVaI_{V_{a}} denotes the identity matrix on the coordinates indexed by VaV_{a};
+•
+JVaJ_{V_{a}} is the na×nan_{a}\times n_{a} all-ones matrix;
+•
+JVa,VbJ_{V_{a},V_{b}} is the na×nbn_{a}\times n_{b} all-ones block between classes aa and bb.
+Equivalently, the commutant of the representation of 𝒢\mathcal{G} on ℝn\mathbb{R}^{n}
+is spanned by the matrices {IVa,JVa,JVa,Vb:a≠b}\{I_{V_{a}},J_{V_{a}},J_{V_{a},V_{b}}:a\neq b\}.
+Proof.
+Let CC commute with every Pπ∈𝒢P_{\pi}\in\mathcal{G}.
+Since 𝒢\mathcal{G} acts independently on each class block,
+the condition Pπ​C=C​PπP_{\pi}C=CP_{\pi} decomposes into intra-class and inter-class parts.
+Intra-class blocks:
+Fix a class aa and consider CVa,VaC_{V_{a},V_{a}},
+the submatrix of CC with both rows and columns indexed by the nodes in VaV_{a}.
+For any πa∈𝔖na\pi_{a}\in\mathfrak{S}_{n_{a}},
+Pπa​CVa,Va=CVa,Va​PπaP_{\pi_{a}}C_{V_{a},V_{a}}=C_{V_{a},V_{a}}P_{\pi_{a}}.
+It is a classical result that the commutant of the full symmetric group
+acting by permutation matrices on ℝna\mathbb{R}^{n_{a}} is two-dimensional,
+spanned by IVaI_{V_{a}} and JVaJ_{V_{a}}.
+Hence there exist scalars αa,βa\alpha_{a},\beta_{a} such that
+CVa,Va=αa​IVa+βa​JVaC_{V_{a},V_{a}}=\alpha_{a}I_{V_{a}}+\beta_{a}J_{V_{a}}.
+Inter-class blocks:
+For a≠ba\neq b, consider CVa,VbC_{V_{a},V_{b}}.
+The commutation condition with independent permutations
+PπaP_{\pi_{a}} on VaV_{a} and PπbP_{\pi_{b}} on VbV_{b} implies
+|
+| Pπa​CVa,Vb​Pπb⊤=CVa,Vb,∀(πa,πb)∈𝔖na×𝔖nb.P_{\pi_{a}}\,C_{V_{a},V_{b}}\,P_{\pi_{b}}^{\top}=C_{V_{a},V_{b}},\qquad\forall\,(\pi_{a},\pi_{b})\in\mathfrak{S}_{n_{a}}\times\mathfrak{S}_{n_{b}}.
+|
+The only matrices invariant under left and right actions of the full symmetric groups
+are constant matrices, i.e. scalar multiples of the all-ones block JVa,VbJ_{V_{a},V_{b}}.
+Thus there exists γa​b∈ℝ\gamma_{ab}\in\mathbb{R} such that
+CVa,Vb=γa​b​JVa,VbC_{V_{a},V_{b}}=\gamma_{ab}J_{V_{a},V_{b}}.
+Combining all blocks yields (10).
+Conversely, any CC of the form (10) clearly commutes with every
+Pπ∈𝒢P_{\pi}\in\mathcal{G}, so the characterization is complete.
+∎
+Corollary E.5.
+For any matrix C∈ℝn×nC\in\mathbb{R}^{n\times n}, its Reynolds average
+C¯=𝔼π∼Unif⁡(𝒢)​[Pπ​C​Pπ⊤]\overline{C}=\mathbb{E}_{\pi\sim\mathrm{Unif}(\mathcal{G})}[P_{\pi}CP_{\pi}^{\top}]
+lies in the commutant characterized in Lemma E.4 and thus
+admits the representation (10).
+We then turn to the statistical objective ℒ⁡(C)\mathcal{L}(C) and express it in a form amenable to optimization.
+Lemma E.6.
+Let Y=C​XY=CX and write Dτ:=⨁a=1kτa​IVaD_{\tau}:=\bigoplus_{a=1}^{k}\tau_{a}I_{V_{a}}.
+For any CC and any p∈Vap\in V_{a},
+|
+| 𝔼​Yp=∑b=1kCp,Vb​(𝟏nb​mb⊤),tr​Var​(Yp)=∑b=1kτb​‖Cp,Vb‖22.\mathbb{E}\,Y_{p}\ =\ \sum_{b=1}^{k}C_{p,V_{b}}\,(\mathbf{1}_{n_{b}}m_{b}^{\top}),\qquad\mathrm{tr\,Var}(Y_{p})\ =\ \sum_{b=1}^{k}\tau_{b}\,\|C_{p,V_{b}}\|_{2}^{2}.
+|
+Consequently,
+|
+| ℒ⁡(C)=∑a=1k1na​∑p∈Va‖𝔼​Yp−ma‖22⏟squared bias+∑a=1k1na​∑p∈Va∑b=1kτb​‖Cp,Vb‖22⏟variance.\mathcal{L}(C)\ =\ \underbrace{\sum_{a=1}^{k}\frac{1}{n_{a}}\sum_{p\in V_{a}}\big\|\mathbb{E}Y_{p}-m_{a}\big\|_{2}^{2}}_{\text{\emph{squared bias}}}\ +\ \underbrace{\sum_{a=1}^{k}\frac{1}{n_{a}}\sum_{p\in V_{a}}\sum_{b=1}^{k}\tau_{b}\,\|C_{p,V_{b}}\|_{2}^{2}}_{\text{\emph{variance}}}.
+|
+| (11)
+Proof.
+For each class bb, the random vectors {xj:j∈Vb}\{x_{j}:j\in V_{b}\} are i.i.d. with
+𝔼⁡[xj]=mb\mathbb{E}[x_{j}]=m_{b} and Cov⁡(xj)=Σb\operatorname{Cov}(x_{j})=\Sigma_{b}.
+Hence
+|
+| 𝔼⁡[XVb]=𝟏nb​mb⊤.\mathbb{E}[X_{V_{b}}]=\mathbf{1}_{n_{b}}m_{b}^{\top}.
+|
+Let Cp,Vb∈ℝ1×nbC_{p,V_{b}}\in\mathbb{R}^{1\times n_{b}} denote the row of CC restricted to columns VbV_{b}.
+By classwise independence,
+|
+| Var⁡(Cp,Vb​XVb)=∑j∈VbCp​j2​Σb=‖Cp,Vb‖22​Σb,\operatorname{Var}\!\big(C_{p,V_{b}}X_{V_{b}}\big)=\sum_{j\in V_{b}}C_{pj}^{2}\,\Sigma_{b}=\|C_{p,V_{b}}\|_{2}^{2}\,\Sigma_{b},
+|
+so that
+|
+| 𝔼​‖Cp,Vb​(XVb−𝔼​XVb)‖22=tr⁡[Var⁡(Cp,Vb​XVb)]=‖Cp,Vb‖22​tr⁡(Σb)=τb​‖Cp,Vb‖22.\mathbb{E}\big\|C_{p,V_{b}}(X_{V_{b}}-\mathbb{E}X_{V_{b}})\big\|_{2}^{2}=\operatorname{tr}\!\big[\operatorname{Var}(C_{p,V_{b}}X_{V_{b}})\big]=\|C_{p,V_{b}}\|_{2}^{2}\,\operatorname{tr}(\Sigma_{b})=\tau_{b}\|C_{p,V_{b}}\|_{2}^{2}.
+|
+Finally, using the bias–variance identity
+|
+| 𝔼​‖Z−m‖22=‖𝔼​Z−m‖22+tr⁡Var⁡(Z),\mathbb{E}\|Z-m\|_{2}^{2}=\|\mathbb{E}Z-m\|_{2}^{2}+\operatorname{tr}\operatorname{Var}(Z),
+|
+and substituting Z=Yp=Cp,;​XZ=Y_{p}=C_{p,;}X, we obtain (11).
+∎
+Corollary E.7.
+Suppose CC is classwise permutation equivariant, i.e. it has the form (10).
+Then, for any p∈Vap\in V_{a},
+|
+| 𝔼​Yp=(αa+βa​na)​ma+∑b≠aγa​b​nb​mb,\mathbb{E}Y_{p}\ =\ (\alpha_{a}+\beta_{a}n_{a})\,m_{a}\ +\ \sum_{b\neq a}\gamma_{ab}n_{b}\,m_{b},
+|
+and, writing τb:=tr⁡(Σb)\tau_{b}:=\mathrm{tr}(\Sigma_{b}),
+|
+| tr​Var​(Yp)=τa​((αa+βa)2+(na−1)​βa2)+∑b≠aτb​nb​γa​b2.\mathrm{tr\,Var}(Y_{p})\ =\ \tau_{a}\Big((\alpha_{a}+\beta_{a})^{2}+(n_{a}-1)\beta_{a}^{2}\Big)\ +\ \sum_{b\neq a}\tau_{b}n_{b}\gamma_{ab}^{2}.
+|
+Consequently, the per-class contribution to the loss equals the quadratic
+|
+| ϕa(αa,βa,γa∙)=∥ua+M−aγa∙∥22+τa((αa+βa)2+(na−1)βa2)+γa∙⊤D−aγa∙,\phi_{a}(\alpha_{a},\beta_{a},\gamma_{a\bullet})=\Big\|\,u_{a}+M_{-a}\gamma_{a\bullet}\,\Big\|_{2}^{2}+\tau_{a}\Big((\alpha_{a}+\beta_{a})^{2}+(n_{a}-1)\beta_{a}^{2}\Big)+\gamma_{a\bullet}^{\top}D_{-a}\gamma_{a\bullet},
+|
+| (12)
+where γa∙≔(γa​b)b≠a∈ℝk−1\gamma_{a\bullet}\coloneqq(\gamma_{ab})_{b\neq a}\in\mathbb{R}^{k-1}, ua≔(αa+na​βa−1)​mau_{a}\coloneqq(\alpha_{a}+n_{a}\beta_{a}-1)m_{a},
+M−a=[nb​mb]b≠a∈ℝd×(k−1)M_{-a}=[\,n_{b}m_{b}\,]_{b\neq a}\in\mathbb{R}^{d\times(k-1)},
+D−a=diag​(τb​nb)b≠a⪰0D_{-a}=\mathrm{diag}(\tau_{b}n_{b})_{b\neq a}\succeq 0.
+Theorem E.8.
+Under the model assumed in Section E.1.1, the minimizer of minC⁡ℒ⁡(C)\min_{C}\mathcal{L}(C) has the following block structure.
+(1) Intra-class blocks.
+For each class aa,
+|
+| (C⋆)a​a=αa⋆​IVa+βa⋆​JVa.(C^{\star})_{aa}=\alpha_{a}^{\star}I_{V_{a}}+\beta_{a}^{\star}J_{V_{a}}.
+|
+•
+If na>1n_{a}>1, then αa⋆=0\alpha_{a}^{\star}=0 and
+|
+| βa⋆=Aana​Aa+τa,Aa=‖ma‖22−∑b≠ac≠anb​nc​⟨ma,mb⟩​[(G−a+D−a)−1]b​c​⟨mc,ma⟩,\beta_{a}^{\star}=\frac{A_{a}}{\,n_{a}A_{a}+\tau_{a}\,},\ A_{a}=\|m_{a}\|_{2}^{2}-\sum_{\begin{subarray}{c}b\neq a\\
+c\neq a\end{subarray}}n_{b}n_{c}\,\langle m_{a},m_{b}\rangle\big[(G_{-a}+D_{-a})^{-1}\big]_{bc}\langle m_{c},m_{a}\rangle,
+|
+where G−aG_{-a} and D−aD_{-a} are defined in Corollary E.7.
+•
+If na=1n_{a}=1, the objective depends only on αa+βa\alpha_{a}+\beta_{a},
+and one may set αa⋆=0\alpha_{a}^{\star}=0 without loss of generality.
+(2) Inter-class blocks.
+For every b≠ab\neq a,
+|
+| (C⋆)a​b=γa​b⋆​JVa,Vb,(C^{\star})_{ab}=\gamma_{ab}^{\star}\,J_{V_{a},V_{b}},
+|
+where the coefficients γa​b⋆\gamma_{ab}^{\star} satisfy the linear system
+|
+| ∑c≠a(G−a+D−a)b​c​γa​c⋆=(1−na​βa⋆)​nb​⟨ma,mb⟩,b≠a.\sum_{c\neq a}(G_{-a}+D_{-a})_{bc}\,\gamma_{ac}^{\star}=(1-n_{a}\beta_{a}^{\star})\,n_{b}\,\langle m_{a},m_{b}\rangle,\quad b\neq a.
+|
+Equivalently, solving for γa​b⋆\gamma_{ab}^{\star} gives
+|
+| γa​b⋆=τana​Aa+τa​∑c≠a[(G−a+D−a)−1]b​c​nc​⟨ma,mc⟩.\gamma_{ab}^{\star}=\frac{\tau_{a}}{\,n_{a}A_{a}+\tau_{a}\,}\sum_{c\neq a}\big[(G_{-a}+D_{-a})^{-1}\big]_{bc}\,n_{c}\,\langle m_{a},m_{c}\rangle.
+|
+The minimizer C⋆C^{\star} is unique.
+Proof.
+By Corollary E.3, we may restrict to the commutant form (10).
+Fix a class aa. From Corollary E.7, the per-class contribution of VaV_{a} to ℒ⁡(C)\mathcal{L}(C) is (12).
+Convexity and strict convexity:
+For each class aa, recall from (12) that
+|
+| ϕa(αa,βa,γa∙)=∥ua+M−aγa∙∥22+τa((αa+βa)2+(na−1)βa2)+γa∙⊤D−aγa∙,\phi_{a}(\alpha_{a},\beta_{a},\gamma_{a\bullet})=\Big\|\,u_{a}+M_{-a}\gamma_{a\bullet}\,\Big\|_{2}^{2}+\tau_{a}\Big((\alpha_{a}+\beta_{a})^{2}+(n_{a}-1)\beta_{a}^{2}\Big)+\gamma_{a\bullet}^{\top}D_{-a}\gamma_{a\bullet},
+|
+where ua=(αa+na​βa−1)​mau_{a}=(\alpha_{a}+n_{a}\beta_{a}-1)m_{a}, M−a=[nb​mb]b≠aM_{-a}=[\,n_{b}m_{b}\,]_{b\neq a},
+and D−a=diag​(τb​nb)b≠a≻0D_{-a}=\mathrm{diag}(\tau_{b}n_{b})_{b\neq a}\succ 0 as we assume any τb>0\tau_{b}>0 in Section E.1.1.
+The Hessian of ϕa\phi_{a} with respect to (αa,βa,γa∙)(\alpha_{a},\beta_{a},\gamma_{a\bullet})
+is the block matrix
+|
+| Ha=2​[ABB⊤G−a+D−a],A=[‖ma‖22+τana​‖ma‖22+τana​‖ma‖22+τana2​‖ma‖22+na​τa],B=[ha⊤na​ha⊤],H_{a}=2\begin{bmatrix}A&B\\
+B^{\top}&G_{-a}+D_{-a}\end{bmatrix},\qquad A=\begin{bmatrix}\|m_{a}\|_{2}^{2}+\tau_{a}&n_{a}\|m_{a}\|_{2}^{2}+\tau_{a}\\[2.0pt]
+n_{a}\|m_{a}\|_{2}^{2}+\tau_{a}&n_{a}^{2}\|m_{a}\|_{2}^{2}+n_{a}\tau_{a}\end{bmatrix},\quad B=\begin{bmatrix}h_{a}^{\top}\\[2.0pt]
+n_{a}\,h_{a}^{\top}\end{bmatrix},
+|
+with G−a=M−a⊤​M−a⪰0G_{-a}=M_{-a}^{\top}M_{-a}\succeq 0
+and ha=M−a⊤​mah_{a}=M_{-a}^{\top}m_{a}.
+Each term in (12) is a nonnegative quadratic form:
+the first term is a squared Euclidean norm,
+the second is τa\tau_{a} times a positive semidefinite quadratic in (αa,βa)(\alpha_{a},\beta_{a}),
+and the last is γa∙⊤D−aγa∙\gamma_{a\bullet}^{\top}D_{-a}\gamma_{a\bullet} with D−a≻0D_{-a}\succ 0.
+Therefore ϕa\phi_{a} is convex and Ha⪰0H_{a}\succeq 0 for any class aa.
+To determine when HaH_{a} is positive definite,
+apply the Schur complement criterion to its block form:
+|
+| Ha≻0⟺A≻0andS:=G−a+D−a−B⊤A−1B≻0.H_{a}\succ 0\quad\Longleftrightarrow\quad A\succ 0\ \text{and}\ S:=G_{-a}+D_{-a}-B^{\top}A^{-1}B\succ 0.
+|
+A direct calculation gives
+|
+| detA=τa​(na−1)​(na​‖ma‖22+τa),A11=‖ma‖22+τa>0.\det A=\tau_{a}\,(n_{a}-1)\,(n_{a}\|m_{a}\|_{2}^{2}+\tau_{a}),\qquad A_{11}=\|m_{a}\|_{2}^{2}+\tau_{a}>0.
+|
+Hence A≻0A\succ 0 if and only if na>1n_{a}>1 and τa>0\tau_{a}>0.
+Under these assumptions, we compute
+|
+| B⊤​A−1​B=c​ha​ha⊤,c=nana​‖ma‖22+τa∈(0,1‖ma‖22),B^{\top}A^{-1}B=c\,h_{a}h_{a}^{\top},\qquad c=\frac{n_{a}}{\,n_{a}\|m_{a}\|_{2}^{2}+\tau_{a}\,}\in\Bigl(0,\frac{1}{\|m_{a}\|_{2}^{2}}\Bigr),
+|
+so that
+|
+| S=(G−a−c​ha​ha⊤)+D−a.S=(G_{-a}-c\,h_{a}h_{a}^{\top})+D_{-a}.
+|
+For any v∈ℝk−1v\in\mathbb{R}^{k-1}, the Cauchy–Schwarz inequality yields
+|
+| v⊤​(G−a−c​ha​ha⊤)​v=‖M−a​v‖22−c​⟨ma,M−a​v⟩2≥(1−c​‖ma‖22)​‖M−a​v‖22.v^{\top}(G_{-a}-c\,h_{a}h_{a}^{\top})v=\|M_{-a}v\|_{2}^{2}-c\,\langle m_{a},M_{-a}v\rangle^{2}\ \geq\ (1-c\|m_{a}\|_{2}^{2})\,\|M_{-a}v\|_{2}^{2}.
+|
+Since τa>0\tau_{a}>0 implies 1−c​‖ma‖22>01-c\|m_{a}\|_{2}^{2}>0 and D−a≻0D_{-a}\succ 0 when all τb>0\tau_{b}>0,
+we obtain
+|
+| v⊤​S​v≥(1−c​‖ma‖22)​‖M−a​v‖22+∑b≠aτb​nb​vb2> 0for all ​v≠0.v^{\top}Sv\;\geq\;(1-c\|m_{a}\|_{2}^{2})\,\|M_{-a}v\|_{2}^{2}+\sum_{b\neq a}\tau_{b}n_{b}\,v_{b}^{2}\;>\;0\quad\text{for all }v\neq 0.
+|
+Thus S≻0S\succ 0 and hence Ha≻0H_{a}\succ 0 whenever na>1n_{a}>1 and τa>0\tau_{a}>0
+for all classes.
+Consequently, each ϕa\phi_{a} is strictly convex, so is the overall loss
+ℒ⁡(C)=∑a1na​ϕa\mathcal{L}(C)=\sum_{a}\frac{1}{n_{a}}\phi_{a}.
+Eliminating γa∙\gamma_{a\bullet}:
+For fixed (αa,βa)(\alpha_{a},\beta_{a}),
+|
+| ∇γϕa=2M−a⊤(ua+M−aγa∙)+2D−aγa∙.\nabla_{\gamma}\phi_{a}=2M_{-a}^{\top}(u_{a}+M_{-a}\gamma_{a\bullet})+2D_{-a}\gamma_{a\bullet}.
+|
+Setting the gradient to zero gives the normal equations
+|
+| (G−a+D−a)γa∙+M−a⊤ua=0.(G_{-a}+D_{-a})\,\gamma_{a\bullet}+M_{-a}^{\top}u_{a}=0.
+|
+Note that G−a+D−a≻0G_{-a}+D_{-a}\succ 0, its unique solution is
+|
+| γa∙⋆(αa,βa)=−(G−a+D−a)−1M−a⊤ua=−(αa+naβa−1)(G−a+D−a)−1ha.\gamma_{a\bullet}^{\star}(\alpha_{a},\beta_{a})=-(G_{-a}+D_{-a})^{-1}M_{-a}^{\top}u_{a}=-(\alpha_{a}+n_{a}\beta_{a}-1)\,(G_{-a}+D_{-a})^{-1}h_{a}.
+|
+| (13)
+Solving for αa⋆\alpha_{a}^{\star}, βa⋆\beta_{a}^{\star} and γa∙⋆\gamma_{a\bullet}^{\star}:
+Define the reduced function
+|
+| ϕ~a(αa,βa):=minγϕa(αa,βa,γ)=ϕa(αa,βa,γa∙⋆(αa,βa)).\tilde{\phi}_{a}(\alpha_{a},\beta_{a}):=\min_{\gamma}\phi_{a}(\alpha_{a},\beta_{a},\gamma)=\phi_{a}(\alpha_{a},\beta_{a},\gamma_{a\bullet}^{\star}(\alpha_{a},\beta_{a})).
+|
+Because ϕa\phi_{a} is convex-quadratic and the minimizer in γ\gamma is unique,
+the envelope theorem implies that the partial derivatives of ϕ~a\tilde{\phi}_{a} are simply the partial derivatives of ϕa\phi_{a} evaluated at γa∙⋆\gamma_{a\bullet}^{\star}; that is,
+|
+| ∂ϕ~a∂αa=∂ϕa∂αa|γ=γa∙⋆,∂ϕ~a∂βa=∂ϕa∂βa|γ=γa∙⋆.\frac{\partial\tilde{\phi}_{a}}{\partial\alpha_{a}}=\left.\frac{\partial\phi_{a}}{\partial\alpha_{a}}\right|_{\gamma=\gamma_{a\bullet}^{\star}},\qquad\frac{\partial\tilde{\phi}_{a}}{\partial\beta_{a}}=\left.\frac{\partial\phi_{a}}{\partial\beta_{a}}\right|_{\gamma=\gamma_{a\bullet}^{\star}}.
+|
+Hence, when differentiating we may treat γa∙⋆\gamma_{a\bullet}^{\star} as a constant.
+Let za:=ua+M−aγa∙⋆z_{a}:=u_{a}+M_{-a}\gamma_{a\bullet}^{\star}, we obtain the first-order conditions
+|
+| ∂αaϕ~a=2​⟨za,ma⟩+2​τa​(αa+βa)=0,∂βaϕ~a=2​na​⟨za,ma⟩+2​τa​(αa+na​βa)=0.\partial_{\alpha_{a}}\tilde{\phi}_{a}=2\langle z_{a},m_{a}\rangle+2\tau_{a}(\alpha_{a}+\beta_{a})=0,\qquad\partial_{\beta_{a}}\tilde{\phi}_{a}=2n_{a}\langle z_{a},m_{a}\rangle+2\tau_{a}(\alpha_{a}+n_{a}\beta_{a})=0.
+|
+| (14)
+Multiply the first equality of (14) by nan_{a} and subtract it from the second:
+|
+| 0=2​(na−1)​τa​αa.0=2(n_{a}-1)\tau_{a}\,\alpha_{a}.
+|
+Thus αa⋆=0\alpha_{a}^{\star}=0 for na>1n_{a}>1.
+When na=1n_{a}=1, the two equations coincide, so the loss depends only on αa+βa\alpha_{a}+\beta_{a}; we set αa⋆=0\alpha_{a}^{\star}=0 without loss of generality.
+With αa=0\alpha_{a}=0, ua=(na​βa−1)​mau_{a}=(n_{a}\beta_{a}-1)m_{a}.
+Using (13),
+|
+| M−aγa∙⋆=−(naβa−1)M−a(G−a+D−a)−1ha,M_{-a}\gamma_{a\bullet}^{\star}=-(n_{a}\beta_{a}-1)\,M_{-a}(G_{-a}+D_{-a})^{-1}h_{a},
+|
+and hence
+|
+| ⟨za,ma⟩=(na​βa−1)​(‖ma‖22−ha⊤​(G−a+D−a)−1​ha)=(na​βa−1)​Aa,\langle z_{a},m_{a}\rangle=(n_{a}\beta_{a}-1)\Big(\|m_{a}\|_{2}^{2}-h_{a}^{\top}(G_{-a}+D_{-a})^{-1}h_{a}\Big)=(n_{a}\beta_{a}-1)A_{a},
+|
+where
+|
+| Aa:=‖ma‖22−ha⊤​(G−a+D−a)−1​ha.A_{a}:=\|m_{a}\|_{2}^{2}-h_{a}^{\top}(G_{-a}+D_{-a})^{-1}h_{a}.
+|
+Substituting into the first equation of (14) (with αa=0\alpha_{a}=0) gives
+|
+| (na​βa−1)​Aa+τa​βa=0,⇒βa⋆=Aana​Aa+τa.(n_{a}\beta_{a}-1)A_{a}+\tau_{a}\beta_{a}=0,\qquad\Rightarrow\qquad\beta_{a}^{\star}=\frac{A_{a}}{\,n_{a}A_{a}+\tau_{a}\,}.
+|
+Substituting βa⋆\beta_{a}^{\star} into (13) yields
+|
+| γa∙⋆=−(naβa⋆−1)(G−a+D−a)−1ha=τana​Aa+τa(G−a+D−a)−1ha,\gamma_{a\bullet}^{\star}=-(n_{a}\beta_{a}^{\star}-1)(G_{-a}+D_{-a})^{-1}h_{a}=\frac{\tau_{a}}{\,n_{a}A_{a}+\tau_{a}\,}(G_{-a}+D_{-a})^{-1}h_{a},
+|
+which is equivalent to the stated linear system and its explicit solution.
+Nonnegativity of AaA_{a} and uniqueness:
+The quantity AaA_{a} is nonnegative.
+Indeed, for any scalar tt,
+|
+| minγ⁡‖t​ma+M−a​γ‖22+γ⊤​D−a​γ=t2​(‖ma‖22−ha⊤​(G−a+D−a)−1​ha)=t2​Aa≥0.\min_{\gamma}\big\|\,t\,m_{a}+M_{-a}\gamma\,\big\|_{2}^{2}+\gamma^{\top}D_{-a}\gamma=t^{2}\!\Big(\|m_{a}\|_{2}^{2}-h_{a}^{\top}(G_{-a}+D_{-a})^{-1}h_{a}\Big)=t^{2}A_{a}\geq 0.
+|
+Hence Aa≥0A_{a}\geq 0.
+Finally, given na>1n_{a}>1 for every aa, strict convexity of ϕa\phi_{a} ensures uniqueness of the minimizer.
+When na=1n_{a}=1, the function ϕa\phi_{a} depends on (αa,βa)(\alpha_{a},\beta_{a}) only through their sum
+sa=αa+βas_{a}=\alpha_{a}+\beta_{a}. Indeed, substituting na=1n_{a}=1 into (12) gives
+|
+| ϕa(αa,βa,γa∙)=∥(sa−1)ma+M−aγa∙∥22+τasa2+γa∙⊤D−aγa∙,sa=αa+βa.\phi_{a}(\alpha_{a},\beta_{a},\gamma_{a\bullet})=\big\|(s_{a}-1)m_{a}+M_{-a}\gamma_{a\bullet}\big\|_{2}^{2}+\tau_{a}s_{a}^{2}+\gamma_{a\bullet}^{\top}D_{-a}\gamma_{a\bullet},\qquad s_{a}=\alpha_{a}+\beta_{a}.
+|
+Hence ϕa\phi_{a} is strictly convex in sas_{a} and γa∙\gamma_{a\bullet},
+but flat along the direction (1,−1,0,…,0)(1,-1,0,\dots,0) in the parameter space of (αa,βa,γa∙)(\alpha_{a},\beta_{a},\gamma_{a\bullet}).
+Consequently, the minimizer (αa⋆,βa⋆,γa∙⋆)(\alpha_{a}^{\star},\beta_{a}^{\star},\gamma_{a\bullet}^{\star}) is not unique:
+all pairs (αa,βa)(\alpha_{a},\beta_{a}) satisfying αa+βa=sa⋆\alpha_{a}+\beta_{a}=s_{a}^{\star} yield the same minimal value,
+where sa⋆s_{a}^{\star} and γa∙⋆\gamma_{a\bullet}^{\star} are uniquely determined.
+Nevertheless, the corresponding intra-class block
+|
+| (C⋆)a​a=αa⋆​IVa+βa⋆​JVa=(αa⋆+βa⋆)​JVa=sa⋆​JVa(C^{\star})_{aa}=\alpha_{a}^{\star}I_{V_{a}}+\beta_{a}^{\star}J_{V_{a}}=(\alpha_{a}^{\star}+\beta_{a}^{\star})J_{V_{a}}=s_{a}^{\star}J_{V_{a}}
+|
+is unique, so the matrix C⋆C^{\star} itself remains uniquely defined.
+∎
+When features are sampled from a high-dimensional distribution, the optimal convolution is nearly block-diagonal, and its intra-class coefficients asymptotically approach a deterministic limit. We restate and prove Theorem 4.1 as follows.
+Theorem E.9.
+Under the model assumed in Section 2.1,
+let C⋆C^{\star} be the minimizer characterized in Theorem E.8.
+Assume τb​nb≥τ0>0\tau_{b}n_{b}\geq\tau_{0}>0 for all bb,
+where τ0\tau_{0} is a fixed positive constant providing a uniform lower bound
+on the classwise variance scales.
+Then, as the dimensions of features d→∞d\to\infty,
+|
+| βa⋆→ℙ1na+τa,γa​b⋆→ℙ0(b≠a).\beta_{a}^{\star}\xrightarrow{\ \mathbb{P}\ }\frac{1}{\,n_{a}+\tau_{a}\,},\qquad\gamma^{\star}_{ab}\xrightarrow{\ \mathbb{P}\ }0\quad(b\neq a).
+|
+Hence the optimal convolution C⋆C^{\star} becomes asymptotically block-diagonal,
+with intra-class rank-one blocks
+sa⋆​JVas_{a}^{\star}J_{V_{a}} where sa⋆→(na+τa)−1s_{a}^{\star}\to(n_{a}+\tau_{a})^{-1} in probability.
+Proof.
+We keep kk and the class sizes {nb}b=1k\{n_{b}\}_{b=1}^{k} fixed as d→∞d\to\infty.
+Under the model in Section 2.1, the class means satisfy ‖ma‖2≡1\|m_{a}\|_{2}\equiv 1 for all aa, and each τa\tau_{a} is fixed, hence 1/(na+τa)1/(n_{a}+\tau_{a}) denotes a deterministic limit.
+Concentration of random directions:
+If u,v∼Unif⁡(𝕊d−1)u,v\sim\mathrm{Unif}(\mathbb{S}^{d-1}) are independent, then
+Pr⁡(|⟨u,v⟩|≥t/d)≤2​e−c​t2\Pr\!\big(|\langle u,v\rangle|\geq t/\sqrt{d}\big)\leq 2e^{-ct^{2}} for some universal c>0c>0.
+Let t=C​log⁡dt=\sqrt{C\log d} with C>2/cC>2/c. By a union bound over ordered pairs (a,b)(a,b) with b≠ab\neq a,
+with probability at least 1−2​k​(k−1)​d−c​C1-2k(k-1)d^{-cC},
+|
+| |⟨ma,mb⟩|≤C​log⁡ddfor all ​a≠b.|\langle m_{a},m_{b}\rangle|\leq\sqrt{\frac{C\operatorname{log}d}{d}}\quad\text{for all }a\neq b.
+|
+Writing ha:=M−a⊤​mah_{a}:=M_{-a}^{\top}m_{a} with entries (ha)b=nb​⟨mb,ma⟩(h_{a})_{b}=n_{b}\langle m_{b},m_{a}\rangle (b≠ab\neq a),
+|
+| ‖ha‖22=∑b≠anb2​⟨mb,ma⟩2≤C​log⁡dd​∑b≠anb2,\|h_{a}\|_{2}^{2}=\sum_{b\neq a}n_{b}^{2}\,\langle m_{b},m_{a}\rangle^{2}\ \leq\ \frac{C\operatorname{log}d}{d}\sum_{b\neq a}n_{b}^{2},
+|
+and since k,{nb}k,\{n_{b}\} are fixed, uniformly for all aa,
+|
+| ‖ha‖2=𝒪ℙ​(log⁡dd),\|h_{a}\|_{2}\ =\ \mathcal{O}_{\mathbb{P}}\!\left(\sqrt{\frac{\log d}{d}}\right),
+|
+where 𝒪ℙ\mathcal{O}_{\mathbb{P}} indicates that the bound holds in probability, i.e., |ha|2/log⁡dd|h_{a}|_{2}/\sqrt{\tfrac{\log d}{d}} is bounded in probability.
+Controlling (G−a+D−a)−1(G_{-a}+D_{-a})^{-1}.
+By assumption, D−a=diag​(τb​nb)b≠a⪰τ0​ID_{-a}=\mathrm{diag}(\tau_{b}n_{b})_{b\neq a}\succeq\tau_{0}I, hence
+|
+| G−a+D−a⪰D−a⪰τ0​I⟹‖(G−a+D−a)−1‖op≤τ0−1.G_{-a}+D_{-a}\ \succeq\ D_{-a}\ \succeq\ \tau_{0}I\quad\Longrightarrow\quad\|(G_{-a}+D_{-a})^{-1}\|_{\mathrm{op}}\leq\tau_{0}^{-1}.
+|
+Here ∥⋅∥op\|\cdot\|_{\mathrm{op}} denotes the operator norm, equal to the largest singular value of a symmetric matrix
+and to the maximal eigenvalue in absolute value.
+Therefore,
+|
+| ha⊤​(G−a+D−a)−1​ha≤‖(G−a+D−a)−1‖op⋅‖ha‖22=𝒪ℙ​(log⁡dd),h_{a}^{\top}(G_{-a}+D_{-a})^{-1}h_{a}\ \leq\ \|(G_{-a}+D_{-a})^{-1}\|_{\mathrm{op}}\cdot\|h_{a}\|_{2}^{2}\ =\ \mathcal{O}_{\mathbb{P}}\!\left(\frac{\log d}{d}\right),
+|
+uniformly in aa.
+Asymptotics of AaA_{a}, γa∙⋆\gamma_{a\bullet}^{\star}, and the diagonal block coefficients:
+By Theorem E.8, we have
+|
+| Aa:=‖ma‖22−ha⊤​(G−a+D−a)−1​ha= 1−𝒪ℙ​(log⁡dd)A_{a}:=\|m_{a}\|_{2}^{2}-h_{a}^{\top}(G_{-a}+D_{-a})^{-1}h_{a}\ =\ 1-\mathcal{O}_{\mathbb{P}}\!\left(\frac{\log d}{d}\right)
+|
+and
+|
+| na​Aa+τa=(na+τa)​[1+𝒪ℙ​((log⁡d)/d)].n_{a}A_{a}+\tau_{a}\ =\ (n_{a}+\tau_{a})\,\bigl[1+\mathcal{O}_{\mathbb{P}}((\log d)/d)\bigr].
+|
+Moreover, the inter-class coefficients satisfy
+|
+| γa∙⋆=τana​Aa+τa(G−a+D−a)−1ha,\gamma_{a\bullet}^{\star}=\frac{\tau_{a}}{\,n_{a}A_{a}+\tau_{a}\,}\,(G_{-a}+D_{-a})^{-1}h_{a},
+|
+so using the bounds above with k,{nb}k,\{n_{b}\} fixed,
+|
+| ∥γa∙⋆∥2≤τana+τa⋅1+𝒪ℙ​((log⁡d)/d)τ0⋅∥ha∥2=𝒪ℙ(log⁡dd),\|\gamma_{a\bullet}^{\star}\|_{2}\ \leq\ \frac{\tau_{a}}{n_{a}+\tau_{a}}\cdot\frac{1+\mathcal{O}_{\mathbb{P}}((\log d)/d)}{\tau_{0}}\cdot\|h_{a}\|_{2}\ =\ \mathcal{O}_{\mathbb{P}}\!\left(\sqrt{\frac{\log d}{d}}\right),
+|
+uniformly in aa. Hence each component γa​b⋆→0\gamma_{ab}^{\star}\to 0 in probability for b≠ab\neq a.
+For the diagonal blocks we distinguish the two cases but treat them under a unified limit.
+•
+Case na>1n_{a}>1. Theorem E.8 yields αa⋆=0\alpha_{a}^{\star}=0 and
+|
+| βa⋆=Aana​Aa+τa=1−𝒪ℙ​((log⁡d)/d)(na+τa)​[1+𝒪ℙ​((log⁡d)/d)]=1na+τa+𝒪ℙ​(log⁡dd),\beta_{a}^{\star}=\frac{A_{a}}{\,n_{a}A_{a}+\tau_{a}\,}=\frac{1-\mathcal{O}_{\mathbb{P}}((\log d)/d)}{(n_{a}+\tau_{a})\,[1+\mathcal{O}_{\mathbb{P}}((\log d)/d)]}=\frac{1}{\,n_{a}+\tau_{a}\,}+\mathcal{O}_{\mathbb{P}}\!\left(\frac{\log d}{d}\right),
+|
+so βa⋆→ℙ1/(na+τa)\beta_{a}^{\star}\xrightarrow{\mathbb{P}}1/(n_{a}+\tau_{a}) and
+(C⋆)a​a=βa⋆​JVa(C^{\star})_{aa}=\beta_{a}^{\star}J_{V_{a}}.
+•
+Case na=1n_{a}=1. In this case ϕa\phi_{a} depends on (αa,βa)(\alpha_{a},\beta_{a}) only through sa=αa+βas_{a}=\alpha_{a}+\beta_{a} and
+|
+| γa∙⋆=−(sa−1)(G−a+D−a)−1ha,ϕ~a(sa)=minγϕa(sa,γ)=(sa−1)2Aa+τasa2.\gamma_{a\bullet}^{\star}=-(s_{a}-1)(G_{-a}+D_{-a})^{-1}h_{a},\qquad\tilde{\phi}_{a}(s_{a})=\min_{\gamma}\phi_{a}(s_{a},\gamma)=(s_{a}-1)^{2}A_{a}+\tau_{a}s_{a}^{2}.
+|
+The first-order condition gives (sa−1)​Aa+τa​sa=0(s_{a}-1)A_{a}+\tau_{a}s_{a}=0, hence
+|
+| sa⋆=AaAa+τa=1−𝒪ℙ​((log⁡d)/d)(1+τa)​[1+𝒪ℙ​((log⁡d)/d)]=1 1+τa+𝒪ℙ​(log⁡dd),s_{a}^{\star}=\frac{A_{a}}{A_{a}+\tau_{a}}=\frac{1-\mathcal{O}_{\mathbb{P}}((\log d)/d)}{(1+\tau_{a})\,[1+\mathcal{O}_{\mathbb{P}}((\log d)/d)]}=\frac{1}{\,1+\tau_{a}\,}+\mathcal{O}_{\mathbb{P}}\!\left(\frac{\log d}{d}\right),
+|
+so sa⋆→ℙ1/(1+τa)s_{a}^{\star}\xrightarrow{\mathbb{P}}1/(1+\tau_{a}) and
+(C⋆)a​a=sa⋆​JVa(C^{\star})_{aa}=s_{a}^{\star}J_{V_{a}}.
+Combining the two cases, define the diagonal block coefficient
+|
+| ta⋆:={βa⋆,na>1,sa⋆,na=1,t_{a}^{\star}:=\begin{cases}\beta_{a}^{\star},&n_{a}>1,\\
+s_{a}^{\star},&n_{a}=1,\end{cases}
+|
+then in both cases ta⋆→ℙ1/(na+τa)t_{a}^{\star}\xrightarrow{\mathbb{P}}1/(n_{a}+\tau_{a}) and (C⋆)a​a=ta⋆​JVa(C^{\star})_{aa}=t_{a}^{\star}J_{V_{a}}.
+Asymptotic block-diagonality.
+Each off-diagonal block satisfies (C⋆)a​b=γa​b⋆​JVa,Vb(C^{\star})_{ab}=\gamma_{ab}^{\star}\,J_{V_{a},V_{b}}, thus
+|
+| ∥(C⋆)a​b∥op=na​nb|γa​b⋆|≤na​nb∥γa∙⋆∥2=𝒪ℙ(log⁡dd)→0.\|(C^{\star})_{ab}\|_{\mathrm{op}}=\sqrt{n_{a}n_{b}}\,|\gamma_{ab}^{\star}|\ \leq\ \sqrt{n_{a}n_{b}}\,\|\gamma_{a\bullet}^{\star}\|_{2}=\mathcal{O}_{\mathbb{P}}\!\left(\sqrt{\frac{\log d}{d}}\right)\to 0.
+|
+Therefore C⋆C^{\star} converges in probability to a block-diagonal matrix with intra-class rank-one blocks
+ta⋆​JVat_{a}^{\star}J_{V_{a}}, where ta⋆→(na+τa)−1t_{a}^{\star}\to(n_{a}+\tau_{a})^{-1} in probability.
+∎
+E.2 Spectral GNNs Cannot Express the Optimal Convolution
+Definition E.10.
+Let L∈ℝn×nL\in\mathbb{R}^{n\times n} be a real symmetric matrix, e.g. a graph Laplacian.
+Denote by
+|
+| spec(L)={λ1<λ2<⋯<λm}\mathrm{spec}(L)=\{\lambda_{1}<\lambda_{2}<\cdots<\lambda_{m}\}
+|
+the set of distinct eigenvalues of LL, and let each λ\lambda have multiplicity
+mλ=dimker⁡(L−λ​I)m_{\lambda}=\dim\ker(L-\lambda I).
+For each λ∈spec⁡(L)\lambda\in\mathrm{spec}(L), let
+Uλ∈ℝn×mλU_{\lambda}\in\mathbb{R}^{n\times m_{\lambda}} collect an orthonormal basis of
+ker⁡(L−λ​I)\ker(L-\lambda I).
+Define the orthogonal projector onto this eigenspace by
+|
+| Eλ:=Uλ​Uλ⊤.E_{\lambda}\;:=\;U_{\lambda}U_{\lambda}^{\top}.
+|
+Remark E.11.
+Then {Eλ}λ∈spec⁡(L)\{E_{\lambda}\}_{\lambda\in\mathrm{spec}(L)} satisfies
+|
+| Eλ⊤=Eλ,Eλ2=Eλ,Eλ​Eμ=0​(λ≠μ),∑λ∈spec⁡(L)Eλ=In,E_{\lambda}^{\top}=E_{\lambda},\quad E_{\lambda}^{2}=E_{\lambda},\quad E_{\lambda}E_{\mu}=0\ (\lambda\neq\mu),\quad\sum_{\lambda\in\mathrm{spec}(L)}E_{\lambda}=I_{n},
+|
+and the spectral resolution
+|
+| L=∑λ∈spec⁡(L)λ​Eλ.L\;=\;\sum_{\lambda\in\mathrm{spec}(L)}\lambda\,E_{\lambda}.
+|
+Moreover, EλE_{\lambda} is independent of the choice of orthonormal basis UλU_{\lambda}.
+To simplify the discussion, we assume the feature dimension d→+∞d\to+\infty,
+under which the optimal convolution minimizing ℒ⁡(C)\mathcal{L}(C) becomes block-diagonal:
+|
+| (C⋆)a​a=1na+τa,(C⋆)a​b=0​(b≠a).(C^{\star})_{aa}=\frac{1}{n_{a}+\tau_{a}},\qquad(C^{\star})_{ab}=0\ (b\neq a).
+|
+From the viewpoint of expressiveness, our discussion concerns not a single operator
+but an entire family of convolution operators parameterized by learnable coefficients.
+A spectral GNN corresponds to the family
+|
+| 𝒮=span⁡{Eλ:λ∈spec⁡(L)}={C⁡(g)=∑λg⁡(λ)​Eλ:g∈ℝspec⁡(L)},\mathcal{S}=\mathrm{span}\{E_{\lambda}:\lambda\in\mathrm{spec}(L)\}=\{\,C(g)=\textstyle\sum_{\lambda}g(\lambda)\,E_{\lambda}:\ g\in\mathbb{R}^{\mathrm{spec}(L)}\,\},
+|
+that is, all linear filters expressible as functions of the Laplacian LL.
+The expressive power of this model family depends on whether, through learning,
+it can realize or approximate the desired target convolution C⋆C^{\star}.
+We show that the optimal convolution C⋆C^{\star} lies strictly outside this spectral subspace
+and cannot even be approximated within it to arbitrary accuracy.
+In other words, no choice of spectral coefficients g⁡(λ)g(\lambda) can reproduce or
+arbitrarily approach C⋆C^{\star}.
+In analogy with control theory,
+the family of spectral convolutions is structurally unreachable from C⋆C^{\star},
+indicating that this function class is inherently incapable of reaching
+the optimal convolution during learning,
+and thereby revealing a fundamental limitation in its representational capacity. We restate and prove Theorem 4.2 as follows.
+Theorem E.12.
+Let G=(V,E)G=(V,E) be a connected graph with Laplacian eigendecomposition
+L=∑λ∈spec⁡(L)λ​EλL=\sum_{\lambda\in\mathrm{spec}(L)}\lambda\,E_{\lambda} as in the definition above, and
+|V|=n|V|=n. Define the class of spectral convolution matrices
+|
+| 𝒞:={C⁡(c)=∑λ∈spec⁡(L)cλ​Eλ:c=(cλ)λ∈spec⁡(L)∈ℝm},\mathcal{C}\;:=\;\Bigl\{\,C(c)\;=\;\sum_{\lambda\in\mathrm{spec}(L)}c_{\lambda}\,E_{\lambda}\ :\ c=(c_{\lambda})_{\lambda\in\mathrm{spec}(L)}\in\mathbb{R}^{m}\,\Bigr\},
+|
+where m=|spec⁡(L)|m=|\mathrm{spec}(L)|. Each C⁡(c)C(c) applies a scalar response cλc_{\lambda} to the
+entire eigenspace of eigenvalue λ\lambda.
+Then there exists an integer K≥1K\geq 1 such that, for any integer K<k≤nK<k\leq n, there exists a
+kk-partition V=V1∪⋯∪VkV=V_{1}\cup\cdots\cup V_{k}, with labels yi=ty_{i}=t if and only if vi∈Vtv_{i}\in V_{t}, having
+the following property: if C⁡(c)∈𝒞C(c)\in\mathcal{C} satisfies
+|
+| C​(c)i​j=0whenever ​yi≠yj,C(c)_{ij}=0\quad\text{whenever }y_{i}\neq y_{j},
+|
+then necessarily C⁡(c)=α​InC(c)=\alpha I_{n} for some α∈ℝ\alpha\in\mathbb{R}.
+To prove the theorem, we begin with some preparations.
+Definition E.13 (Indexing conventions).
+Let M∈ℝa×bM\in\mathbb{R}^{a\times b} be a matrix.
+•
+For a row index i∈[a]i\in[a], we denote by M−i∈ℝ(a−1)×bM_{-i}\in\mathbb{R}^{(a-1)\times b}
+the matrix obtained by removing the ii-th row of MM.
+•
+For row and column indices i∈[a]i\in[a] and j∈[b]j\in[b], we denote by
+M−i,−j∈ℝ(a−1)×(b−1)M_{-i,-j}\in\mathbb{R}^{(a-1)\times(b-1)}
+the matrix obtained by removing the ii-th row and the jj-th column of MM.
+•
+For a column subset S⊆[b]S\subseteq[b], we write
+M[:,S]∈ℝa×|S|M_{[:,S]}\in\mathbb{R}^{a\times|S|} for the submatrix consisting of the columns of MM indexed by SS.
+•
+When S={ℓ}S=\{\ell\} is a singleton, we abbreviate M[:,{ℓ}]M_{[:,\{\ell\}]} as M:,ℓM_{:,\ell}.
+These notations will be used throughout for brevity.
+Let L=U​Λ​U⊤L=U\Lambda U^{\top} be as above.
+For a vertex i∈Vi\in V, set
+|
+| Di:=diag⁡(u1​(i),u2​(i),…,un​(i))∈ℝn×n.D_{i}\;:=\;\operatorname{diag}\big(u_{1}(i),u_{2}(i),\dots,u_{n}(i)\big)\in\mathbb{R}^{n\times n}.
+|
+Define
+|
+| Mi:=U−i​Di∈ℝ(n−1)×n.M_{i}\;:=\;U_{-i}\,D_{i}\;\in\;\mathbb{R}^{(n-1)\times n}.
+|
+Equivalently, the ℓ\ell-th column of MiM_{i} is
+(Mi):,ℓ=uℓ(i)(uℓ)−i,(M_{i})_{:,\ell}\;=\;u_{\ell}(i)\,\big(u_{\ell}\big)_{-i},
+i.e. it vanishes if and only if uℓ​(i)=0u_{\ell}(i)=0, and otherwise it is a nonzero scalar multiple of uℓu_{\ell} with its ii-th entry removed.
+We will collect a vertical stack of such matrices so that each newly added block
+activates at least one previously-zero column and together they cover all columns:
+Definition E.14.
+Let I=(i1,…,ir)I=(i_{1},\dots,i_{r}) be an ordered list of vertices, and define the stacked matrix
+|
+| MI:=[Mi1Mir]∈ℝr⁡(n−1)×n.M_{I}\;:=\;\begin{bmatrix}M_{i_{1}}\\[2.0pt]
+\vdots\\[2.0pt]
+M_{i_{r}}\end{bmatrix}\in\mathbb{R}^{r(n-1)\times n}.
+|
+For each vertex i∈Vi\in V, denote by
+|
+| Si:={ℓ∈[n]:(Mi):,ℓ≠0}S_{i}\;:=\;\{\ell\in[n]:(M_{i})_{:,\ell}\neq 0\}
+|
+the set of column indices activated by MiM_{i}.
+We say that II is column-activating if it satisfies
+•
+Every column of MIM_{I} contains at least one nonzero entry, i.e.
+⋃k=1rSik=[n].\bigcup_{k=1}^{r}S_{i_{k}}=[n].
+•
+Each step kk introduces a new activation, i.e.
+∃ℓ∈Sik∖⋃t<kSit.\exists\,\ell\in S_{i_{k}}\setminus\bigcup_{t<k}S_{i_{t}}.
+Equivalently, MikM_{i_{k}} contributes a nonzero entry in a column that was entirely
+zero in the previous partial stack [Mi1;…;Mik−1][M_{i_{1}};\dots;M_{i_{k-1}}].
+We call such an index list II minimal
+if it is inclusion-minimal with respect to the activated columns, namely
+|
+| ⋃i∈JSi=⋃i∈ISi⟹J=Ifor all ​J⊆I.\bigcup_{i\in J}S_{i}=\bigcup_{i\in I}S_{i}\;\Longrightarrow\;J=I\quad\text{for all }J\subseteq I.
+|
+Remark E.15 (Greedy construction).
+The greedy rule produces a column-activating list II.
+Starting from the empty cover S(0):=∅S^{(0)}:=\varnothing,
+we iteratively choose nodes that maximally enlarge the current coverage:
+|
+| ik:=arg⁡maxi∈V​|Si∖S(k−1)|,S(k):=S(k−1)∪Sik.i_{k}\;:=\;\arg\max_{i\in V}\;\bigl|\,S_{i}\setminus S^{(k-1)}\,\bigr|,\qquad S^{(k)}\;:=\;S^{(k-1)}\cup S_{i_{k}}.
+|
+The process stops once S(k)=[n]S^{(k)}=[n], meaning each column of MIM_{I} is nonzero in some block MitM_{i_{t}}.
+The resulting index list I=(i1,i2,…,iK)I=(i_{1},i_{2},\ldots,i_{K}) is column-activating.
+While we do not rely on the optimality of its length,
+each selected block MikM_{i_{k}} strictly increases the coverage S(k)S^{(k)},
+so the greedy rule yields a minimal column-activating list in the sense of Definition E.14.
+Proposition E.16.
+Let U=[u1,…,un]∈ℝn×nU=[u_{1},\dots,u_{n}]\in\mathbb{R}^{n\times n} be an orthogonal matrix U⊤​U=InU^{\top}U=I_{n},
+and let Uk=[u1,…,uk]∈ℝn×kU_{k}=[u_{1},\dots,u_{k}]\in\mathbb{R}^{n\times k} with 1≤k≤n1\leq k\leq n.
+Fix an index s∈{1,…,n}s\in\{1,\dots,n\}, and let es∈ℝne_{s}\in\mathbb{R}^{n} denote the ss-th standard basis vector.
+Define the row-selection matrix
+|
+| R:=[Is−10000In−s]∈ℝ(n−1)×n,R\;:=\;\begin{bmatrix}I_{s-1}&0&0\\[3.00003pt]
+0&0&I_{n-s}\end{bmatrix}\in\mathbb{R}^{(n-1)\times n},
+|
+which deletes the ss-th row of any vector or matrix it multiplies on the left.
+Let U~k:=R​Uk=(Uk)−s\widetilde{U}_{k}:=RU_{k}=(U_{k})_{-s} be the matrix obtained by removing the ss-th row of UkU_{k}.
+Then
+|
+| rank⁡(U~k)={k,if and only if ∑i=1kui​(s)2<1,k−1,if and only if ∑i=1kui​(s)2=1.\operatorname{rank}(\widetilde{U}_{k})=\begin{cases}k,&\text{if and only if }\quad\displaystyle\sum_{i=1}^{k}u_{i}(s)^{2}<1,\\[6.00006pt]
+k-1,&\text{if and only if }\quad\displaystyle\sum_{i=1}^{k}u_{i}(s)^{2}=1.\end{cases}
+|
+Equivalently,
+|
+| rank⁡(U~k)=k⇔es∉span⁡(Uk)⇔∃i>k​ such that ​ui​(s)≠0,\operatorname{rank}(\widetilde{U}_{k})=k\iff e_{s}\notin\mathrm{span}(U_{k})\iff\exists\,i>k\text{ such that }u_{i}(s)\neq 0,
+|
+and
+|
+| rank⁡(U~k)=k−1⇔es∈span⁡(Uk)⇔uk+1​(s)=⋯=un​(s)=0.\operatorname{rank}(\widetilde{U}_{k})=k-1\iff e_{s}\in\mathrm{span}(U_{k})\iff u_{k+1}(s)=\cdots=u_{n}(s)=0.
+|
+Proof.
+Since RR deletes the ss-th row, its nullspace is span​{es}\mathrm{span}\{e_{s}\},
+and R⊤​R=In−es​es⊤R^{\top}R=I_{n}-e_{s}e_{s}^{\top}.
+We compute the Gram matrix
+|
+| G:=U~k⊤​U~k=Uk⊤​R⊤​R​Uk=Uk⊤​(In−es​es⊤)​Uk=Ik−v​v⊤,v:=Uk⊤​es∈ℝk.G:=\widetilde{U}_{k}^{\top}\widetilde{U}_{k}=U_{k}^{\top}R^{\top}R\,U_{k}=U_{k}^{\top}(I_{n}-e_{s}e_{s}^{\top})U_{k}=I_{k}-vv^{\top},\qquad v:=U_{k}^{\top}e_{s}\in\mathbb{R}^{k}.
+|
+The matrix GG is a rank-one perturbation of IkI_{k}, whose eigenvalues are
+|
+| spec⁡(G)={ 1−|v|2,1,…,1⏟k−1}.\operatorname{spec}(G)=\{\,1-|v|^{2},\underbrace{1,\dots,1}_{k-1}\,\}.
+|
+Hence GG is invertible if and only if |v|2≠1|v|^{2}\neq 1; that is,
+|
+| |v|2=‖Uk⊤​es‖2=∑i=1kui​(s)2<1.|v|^{2}=\|U_{k}^{\top}e_{s}\|^{2}=\sum_{i=1}^{k}u_{i}(s)^{2}<1.
+|
+Since ∑i=1nui​(s)2=1\sum_{i=1}^{n}u_{i}(s)^{2}=1, we have 0≤∑i=1kui​(s)2≤10\leq\sum_{i=1}^{k}u_{i}(s)^{2}\leq 1.
+Therefore GG is invertible if and only if ∑i=1kui​(s)2<1\sum_{i=1}^{k}u_{i}(s)^{2}<1,
+yielding rank⁡(U~k)=k\operatorname{rank}(\widetilde{U}_{k})=k in this case,
+because a Gram matrix A⊤​AA^{\top}A is positive definite if and only if the columns of AA are linearly independent.
+In the remaining case ∑i=1kui​(s)2=1\sum_{i=1}^{k}u_{i}(s)^{2}=1, GG has a single zero eigenvalue,
+so rank⁡(G)=k−1\operatorname{rank}(G)=k-1, and hence rank⁡(U~k)=k−1\operatorname{rank}(\widetilde{U}_{k})=k-1.
+∎
+Lemma E.17.
+Let A∈ℝm1×nA\in\mathbb{R}^{m_{1}\times n} and B∈ℝm2×nB\in\mathbb{R}^{m_{2}\times n}. Denote by
+SA,SB⊆[n]S_{A},S_{B}\subseteq[n] the index sets of their nonzero columns with |SA|=p|S_{A}|=p and |SB|=q|S_{B}|=q.
+Assume
+|
+| rank⁡(A)=p−1,rank⁡(B)=q−1.\mathrm{rank}(A)=p-1,\qquad\mathrm{rank}(B)=q-1.
+|
+Let J:=SA∩SBJ:=S_{A}\cap S_{B} with s:=|J|s:=|J|, and S:=SA∪SBS:=S_{A}\cup S_{B} with u:=|S|u:=|S|.
+Let α,β∈ℝn\alpha,\beta\in\mathbb{R}^{n} be (uniquely determined up to a nonzero scalar on their supports)
+such that
+|
+| supp⁡(α)⊆SA,A​α=0,α|SA≠0,supp⁡(β)⊆SB,B​β=0,β|SB≠0.\mathrm{supp}(\alpha)\subseteq S_{A},\ A\alpha=0,\ \alpha|_{S_{A}}\neq 0,\qquad\mathrm{supp}(\beta)\subseteq S_{B},\ B\beta=0,\ \beta|_{S_{B}}\neq 0.
+|
+Write αJ,βJ∈ℝs\alpha_{J},\beta_{J}\in\mathbb{R}^{s} for their restrictions to JJ, and define
+|
+| R:ℝ2→ℝs,(t,s)↦t​αJ−s​βJ.R:\mathbb{R}^{2}\to\mathbb{R}^{s},\qquad(t,s)\mapsto t\,\alpha_{J}-s\,\beta_{J}.
+|
+Let M:=[AB]M:=\begin{bmatrix}A\\
+B\end{bmatrix}. Then
+|
+| rank⁡(M)=u−2+rank⁡(R).\mathrm{rank}(M)=u-2+\mathrm{rank}(R).
+|
+Proof.
+Let C:=M[:,S]C:=M[:,S] denote the submatrix formed by the uu nonzero columns of MM; clearly
+rank⁡(M)=rank⁡(C)\mathrm{rank}(M)=\mathrm{rank}(C). For any γ∈ℝu\gamma\in\mathbb{R}^{u},
+|
+| Cγ=0⟺A[:,S]γ=0andB[:,S]γ=0.C\gamma=0\ \Longleftrightarrow\ A[:,S]\gamma=0\ \text{and}\ B[:,S]\gamma=0.
+|
+Since rank(A[:,SA])=p−1\mathrm{rank}(A[:,S_{A}])=p-1 (resp. rank(B[:,SB])=q−1\mathrm{rank}(B[:,S_{B}])=q-1), the column
+dependencies on SAS_{A} (resp. on SBS_{B}) each form a one-dimensional subspace spanned by
+α|SA\alpha|_{S_{A}} (resp. β|SB\beta|_{S_{B}}). Hence there exist (t,s)∈ℝ2(t,s)\in\mathbb{R}^{2} such that
+|
+| γ|SA=t​α|SA,γ|SB=s​β|SB.\gamma|_{S_{A}}=t\,\alpha|_{S_{A}},\qquad\gamma|_{S_{B}}=s\,\beta|_{S_{B}}.
+|
+On the intersection J=SA∩SBJ=S_{A}\cap S_{B}, these two prescriptions must coincide, i.e.
+t​αJ=s​βJt\,\alpha_{J}=s\,\beta_{J}, which is equivalent to R⁡(t,s)=0R(t,s)=0.
+Define the linear map
+|
+| Φ:ker⁡R⟶ker⁡C,(t,s)⟼γ⁡(t,s),\Phi:\ker R\longrightarrow\ker C,\qquad(t,s)\longmapsto\gamma(t,s),
+|
+where γ⁡(t,s)\gamma(t,s) is the unique vector satisfying
+γSA=t​αSA\gamma_{S_{A}}=t\alpha_{S_{A}} and γSB=s​βSB\gamma_{S_{B}}=s\beta_{S_{B}}.
+The condition (t,s)∈ker⁡R(t,s)\in\ker R ensures that γ⁡(t,s)\gamma(t,s) is well defined on the overlap JJ.
+The map Φ\Phi is linear, injective (since α|SA\alpha|_{S_{A}} and β|SB\beta|_{S_{B}} are nonzero),
+and surjective (as every γ∈ker⁡C\gamma\in\ker C arises from some (t,s)(t,s) satisfying R⁡(t,s)=0R(t,s)=0).
+Hence Φ\Phi is a linear isomorphism, and therefore
+|
+| dimker⁡C=dimker⁡R=2−rank⁡(R).\dim\ker C=\dim\ker R=2-\mathrm{rank}(R).
+|
+Finally, applying the rank–nullity theorem to CC (which has uu columns) yields
+|
+| rank⁡(C)=u−dimker⁡C=u−(2−rank⁡(R))=u−2+rank⁡(R).\mathrm{rank}(C)=u-\dim\ker C=u-\bigl(2-\mathrm{rank}(R)\bigr)=u-2+\mathrm{rank}(R).
+|
+Since rank⁡(M)=rank⁡(C)\mathrm{rank}(M)=\mathrm{rank}(C), the claimed formula follows.
+∎
+Corollary E.18.
+With the notation above:
+1.
+If s=0s=0, then rank⁡(R)=0\mathrm{rank}(R)=0 and rank⁡(M)=u−2\mathrm{rank}(M)=u-2.
+2.
+If s=1s=1, then rank⁡(R)∈{0,1}\mathrm{rank}(R)\in\{0,1\}; in particular,
+αJ=βJ=0⇔rank⁡(R)=0\alpha_{J}=\beta_{J}=0\iff\mathrm{rank}(R)=0, otherwise rank⁡(R)=1\mathrm{rank}(R)=1,
+hence rank⁡(M)=u−1\mathrm{rank}(M)=u-1.
+3.
+If s≥2s\geq 2, then:
+•
+if αJ\alpha_{J} and βJ\beta_{J} are linearly independent, rank⁡(R)=2\mathrm{rank}(R)=2 and rank⁡(M)=u\mathrm{rank}(M)=u;
+•
+if they are collinear but not both zero, rank⁡(R)=1\mathrm{rank}(R)=1 and rank⁡(M)=u−1\mathrm{rank}(M)=u-1;
+•
+if αJ=βJ=0\alpha_{J}=\beta_{J}=0, rank⁡(R)=0\mathrm{rank}(R)=0 and rank⁡(M)=u−2\mathrm{rank}(M)=u-2.
+Proof of Theorem E.12.
+Let U=[u1,…,un]U=[u_{1},\dots,u_{n}] be the orthogonal eigenbasis of LL, and define
+Mi=U−i​diag⁡(u1​(i),…,un​(i))M_{i}=U_{-i}\operatorname{diag}(u_{1}(i),\dots,u_{n}(i)) as above.
+The ℓ\ell-th column of MiM_{i} equals uℓ​(i)​(uℓ)−iu_{\ell}(i)\,(u_{\ell})_{-i} and
+vanishes if and only if uℓ​(i)=0u_{\ell}(i)=0.
+Let I=(i1,…,iK)I=(i_{1},\dots,i_{K}) be a minimal column-activating list according to
+Definition E.14,
+so that each MikM_{i_{k}} introduces at least one previously inactivated column.
+We denote K=|I|K=|I| as the length of this activating list.
+Problem Reduction.
+We first assume that the graph GG has a simple spectrum, so that all eigenvalues of LL are distinct.
+Accordingly, each frequency component can be assigned an independent coefficient, and the spectral response vector cc lies in ℝn\mathbb{R}^{n}.
+For any c∈ℝnc\in\mathbb{R}^{n}, recall the spectral convolution matrix
+|
+| C⁡(c)=U​diag⁡(c)​U⊤=∑ℓ=1ncℓ​uℓ​uℓ⊤.C(c)\;=\;U\operatorname{diag}(c)U^{\top}\;=\;\sum_{\ell=1}^{n}c_{\ell}\,u_{\ell}u_{\ell}^{\top}.
+|
+For each vertex ii, denote by uℓ​(i)u_{\ell}(i) the ii-th entry of the eigenvector uℓu_{\ell}.
+Then the (i,j)(i,j) -entry of C⁡(c)C(c) can be written explicitly as
+C​(c)i​j=∑ℓ=1ncℓ​uℓ​(i)​uℓ​(j).C(c)_{ij}\;=\;\sum_{\ell=1}^{n}c_{\ell}\,u_{\ell}(i)\,u_{\ell}(j).
+Fix a vertex ii,
+collect all off-diagonal entries of the ii-th row into a row vector C​(c)i,−i∈ℝ1×(n−1)C(c)_{i,-i}\in\mathbb{R}^{1\times(n-1)}.
+Using the above expression, we obtain
+|
+| C​(c)i,−i=[C​(c)i​j]j≠i=∑ℓ=1ncℓ​uℓ​(i)​uℓ,−i⊤.C(c)_{i,-i}\;=\;\bigl[\,C(c)_{ij}\,\bigr]_{j\neq i}\;=\;\sum_{\ell=1}^{n}c_{\ell}\,u_{\ell}(i)\,u_{\ell,-i}^{\top}.
+|
+Hence we can write
+|
+| C​(c)i,−i\displaystyle C(c)_{i,-i}
+| =[u1​(i)​u1​(−i)⊤,u2​(i)​u2​(−i)⊤,…,un​(i)​un​(−i)⊤]​c\displaystyle=\bigl[\,u_{1}(i)u_{1}(-i)^{\top},\;u_{2}(i)u_{2}(-i)^{\top},\;\dots,\;u_{n}(i)u_{n}(-i)^{\top}\bigr]\,c
+|
+|
+|
+| =U−i​diag⁡(u1​(i),…,un​(i))​c\displaystyle=U_{-i}\,\operatorname{diag}\!\bigl(u_{1}(i),\dots,u_{n}(i)\bigr)\,c
+|
+|
+|
+| =U−i​Di​c\displaystyle=U_{-i}D_{i}\,c
+|
+|
+|
+| =Mi​c.\displaystyle=M_{i}\,c.
+|
+Then for any subset I=(i1,…,is)I=(i_{1},\dots,i_{s}),
+|
+| MI​c=[Mi1Mis]​c=[C​(c)i1,−i1C​(c)is,−is].M_{I}c=\begin{bmatrix}M_{i_{1}}\\
+\vdots\\
+M_{i_{s}}\end{bmatrix}c=\begin{bmatrix}C(c)_{i_{1},-i_{1}}\\
+\vdots\\
+C(c)_{i_{s},-i_{s}}\end{bmatrix}.
+|
+Hence MI​c=0M_{I}c=0 if and only if C​(c)i​j=0C(c)_{ij}=0 for all i∈Ii\in I and j≠ij\neq i,
+meaning that all off-diagonal entries of C⁡(c)C(c) in those rows vanish.
+We now construct a (K+1)(K{+}1)-partition of VV as follows:
+assign the vertices i1,…,iKi_{1},\dots,i_{K} to distinct singleton classes
+V1,…,VKV_{1},\dots,V_{K}, and group all remaining vertices into the (K+1)(K{+}1)-th class VK+1V_{K+1}.
+Let yi=ty_{i}=t if and only if vi∈Vtv_{i}\in V_{t}.
+For this labeling, define the linear operator
+|
+| T:ℝn⟶ℝNT,T⁡(c)=(C​(c)i​j)yi≠yj,T:\mathbb{R}^{n}\longrightarrow\mathbb{R}^{N_{T}},\qquad T(c)=(C(c)_{ij})_{y_{i}\neq y_{j}},
+|
+which collects all cross-class entries of C⁡(c)C(c) and the codomain dimension NTN_{T} equals the number of such pairs.
+Then
+|
+| ker⁡(T)={c:C​(c)i​j=0​ whenever ​yi≠yj}\ker(T)=\{\,c:\,C(c)_{ij}=0\text{ whenever }y_{i}\neq y_{j}\,\}
+|
+represents the set of filters that vanish on all cross-class entries.
+Since MIM_{I} encodes a subset of these cross-class constraints, we always have
+|
+| ker⁡(T)⊆ker⁡(MI).\ker(T)\subseteq\ker(M_{I}).
+|
+Moreover, the constant vector 𝟏\mathbf{1} satisfies C⁡(𝟏)=InC(\mathbf{1})=I_{n},
+hence 𝟏∈ker⁡(T)\mathbf{1}\in\ker(T) and 𝟏∈ker⁡(MI)\mathbf{1}\in\ker(M_{I}).
+Therefore, to prove Theorem E.12, it suffices to show
+ker⁡(T)=span​{𝟏},\ker(T)=\mathrm{span}\{\mathbf{1}\},
+which in turn follows if we can establish that rank⁡(MI)=n−1\operatorname{rank}(M_{I})=n-1.
+We will analyze this rank condition in the following discussion.
+Single block analysis:
+For i∈Vi\in V, let Si:={ℓ∈[n]:uℓ​(i)≠0}S_{i}:=\{\ell\in[n]:u_{\ell}(i)\neq 0\} be the set of nonzero columns of MiM_{i}.
+Restrict to these columns and write
+|
+| Mi[:,Si]=(U−i)[:,Si]diag(uℓ(i))ℓ∈Si.M_{i}[:,S_{i}]\;=\;(U_{-i})_{[:,S_{i}]}\,\mathrm{diag}\big(u_{\ell}(i)\big)_{\ell\in S_{i}}.
+|
+Since the diagonal factor is invertible,
+rank(Mi[:,Si])=rank((U−i)[:,Si])\mathrm{rank}\big(M_{i}[:,S_{i}]\big)=\mathrm{rank}\big((U_{-i})_{[:,S_{i}]}\big).
+According to Proposition E.16, we have
+|
+| rank⁡(Mi)=|Si|−1\mathrm{rank}(M_{i})=|S_{i}|-1
+|
+as ∑ℓ∈Siuℓ​(i)2=1\sum_{\ell\in S_{i}}u_{\ell}(i)^{2}=1 by its definition.
+Moreover, the unique (up to scale) column dependency of Mi[:,Si]M_{i}[:,S_{i}] is
+the constant vector on SiS_{i}: indeed,
+|
+| ∑ℓ∈Si1⋅(uℓ​(i)​(uℓ)−i)=(∑ℓ∈Siuℓ​(i)​uℓ)−i=(ei)−i= 0,\sum_{\ell\in S_{i}}1\cdot\big(u_{\ell}(i)\,(u_{\ell})_{-i}\big)=\Big(\sum_{\ell\in S_{i}}u_{\ell}(i)\,u_{\ell}\Big)_{-i}=(e_{i})_{-i}\;=\;0,
+|
+so the kernel of Mi[:,Si]M_{i}[:,S_{i}] is spanned by 𝟏Si\mathbf{1}_{S_{i}}.
+We will denote this support–restricted kernel vector by α(i)=𝟏Si\alpha^{(i)}=\mathbf{1}_{S_{i}}.
+Two–block stacking:
+Let A:=MiA:=M_{i} and B:=MjB:=M_{j} with supports SA=SiS_{A}=S_{i} and SB=SjS_{B}=S_{j},
+and let J:=SA∩SBJ:=S_{A}\cap S_{B}.
+By single block analysis, each block has a one–dimensional support–restricted kernel generated by
+α=𝟏SA\alpha=\mathbf{1}_{S_{A}} and β=𝟏SB\beta=\mathbf{1}_{S_{B}}, respectively.
+On the overlap JJ we have
+|
+| αJ=𝟏J,βJ=𝟏J,\alpha_{J}=\mathbf{1}_{J},\qquad\beta_{J}=\mathbf{1}_{J},
+|
+so αJ\alpha_{J} and βJ\beta_{J} are collinear and nonzero whenever J≠∅J\neq\varnothing.
+Applying corollary E.18, with u=|SA∪SB|u=|S_{A}\cup S_{B}| and R:ℝ2→ℝ|J|R:\mathbb{R}^{2}\to\mathbb{R}^{|J|},
+(t,s)↦t​αJ−s​βJ(t,s)\mapsto t\,\alpha_{J}-s\,\beta_{J}, we obtain
+|
+| rank​[AB]=u−2+rank⁡(R).\mathrm{rank}\!\begin{bmatrix}A\\
+B\end{bmatrix}\;=\;u-2+\mathrm{rank}(R).
+|
+Since αJ\alpha_{J} and βJ\beta_{J} are collinear and not both zero when J≠∅J\neq\varnothing,
+we get
+|
+| rank⁡(R)=1whenever ​J≠∅.\mathrm{rank}(R)=1\quad\text{whenever }J\neq\varnothing.
+|
+Therefore,
+|
+| rank​[MiMj]=|Si∪Sj|−1whenever ​Si∩Sj≠∅.\mathrm{rank}\!\begin{bmatrix}M_{i}\\
+M_{j}\end{bmatrix}=|S_{i}\cup S_{j}|-1\quad\text{whenever }S_{i}\cap S_{j}\neq\varnothing.
+|
+We claim Si∩Sj≠∅S_{i}\cap S_{j}\neq\varnothing is always true.
+For a connected graph Laplacian, either combinatorial or symmetric normalized, the eigenvector
+corresponding to λ=0\lambda=0 is u1∝𝟏u_{1}\propto\mathbf{1} or u1∝D1/2​𝟏u_{1}\;\propto\;D^{1/2}\mathbf{1} respectively,
+whose entries are all nonzero. Hence 1∈Si1\in S_{i} for every i∈Vi\in V,
+so Si∩SjS_{i}\cap S_{j} always contains the index 11. Consequently, in the Laplacian setting
+considered in Theorem E.12, we indeed have rank⁡(R)=1\mathrm{rank}(R)=1 for every pair of blocks.
+Multi–block induction:
+Let I=(i1,…,iK)I=(i_{1},\dots,i_{K}) be any minimal column–activating list and define
+S(r):=⋃t=1rSitS^{(r)}:=\bigcup_{t=1}^{r}S_{i_{t}}.
+By induction with the two–block formula above,
+|
+| rank​[Mi1Mir]=|S(r)|−1(r=1,2,…,K),\mathrm{rank}\!\begin{bmatrix}M_{i_{1}}\\
+\vdots\\
+M_{i_{r}}\end{bmatrix}=|S^{(r)}|-1\quad(r=1,2,\dots,K),
+|
+because at each step the overlap is nonempty (it contains the constant eigenvector’s index).
+By minimal activation, S(K)=[n]S^{(K)}=[n], and hence
+|
+| rank⁡(MI)=n−1.\mathrm{rank}(M_{I})=n-1.
+|
+Non-simple spectra and larger partitions:
+The above reasoning does not rely on the spectrum being simple. Let
+|
+| W=⨁λ∈spec⁡(L)span{𝟏mλ}={c=∑λαλ 1mλ}.W\;=\;\bigoplus_{\lambda\in\mathrm{spec}(L)}\mathrm{span}\{\mathbf{1}_{m_{\lambda}}\}\;=\;\bigl\{\,c=\sum_{\lambda}\alpha_{\lambda}\,\mathbf{1}_{m_{\lambda}}\bigr\}.
+|
+Since ker⁡(T)=span​{𝟏}\ker(T)=\mathrm{span}\{\mathbf{1}\} for all c∈ℝnc\in\mathbb{R}^{n}, we have
+ker⁡(T)∩W=span​{𝟏}\ker(T)\cap W=\mathrm{span}\{\mathbf{1}\}.
+Hence cλ≡αc_{\lambda}\equiv\alpha for all λ\lambda, and thus
+C⁡(c)=α​IC(c)=\alpha I.
+Moreover, once the minimal activating family II of length KK is found,
+any larger partition with k>Kk>K that refines this structure
+(i.e. containing all vertices of II in separate classes)
+will also satisfy the same property, since stacking additional MiM_{i}
+cannot decrease the rank of MIM_{I}.
+∎
+Remark E.19.
+In practice, for many real-world graphs the minimal activating length KK
+is often K=1K=1, since there typically exists at least one vertex ii
+whose corresponding Laplacian eigenvector coordinates {uℓ​(i)}ℓ=1n\{u_{\ell}(i)\}_{\ell=1}^{n}
+are all nonzero. In such cases, the bipartition obtained by isolating this single vertex
+already achieves rank⁡(MI)=n−1\operatorname{rank}(M_{I})=n-1 and thus suffices to guarantee
+C⁡(c)=α​InC(c)=\alpha I_{n}.
+Corollary E.20.
+Assume that at least one class contains more than one node.
+Then the optimal convolution C⋆C^{\star} lies at a positive distance from
+the spectral convolution subspace
+𝒮=span⁡{Eλ:λ∈spec⁡(L)}\mathcal{S}=\mathrm{span}\{E_{\lambda}:\lambda\in\mathrm{spec}(L)\}.
+Proof.
+Under this assumption, C⋆C^{\star} has the block-diagonal form
+|
+| (C⋆)a​a=1na+τa,(C⋆)a​b=0​(b≠a),(C^{\star})_{aa}=\frac{1}{n_{a}+\tau_{a}},\qquad(C^{\star})_{ab}=0\ (b\neq a),
+|
+and hence all inter-class blocks vanish.
+Since at least one block has size greater than one, C⋆C^{\star} is not a scalar multiple of the identity.
+By Theorem E.12, any spectral convolution matrix
+C⁡(g)=∑λg⁡(λ)​EλC(g)=\sum_{\lambda}g(\lambda)E_{\lambda}
+with vanishing inter-class entries must collapse to a scalar multiple of the identity.
+Therefore no choice of coefficients g⁡(λ)g(\lambda) can yield C⁡(g)=C⋆C(g)=C^{\star}, i.e. the system of equations
+C⁡(g)=C⋆C(g)=C^{\star} has no solution.
+As 𝒮\mathcal{S} is a finite-dimensional (hence closed) subspace of the matrix space
+ℝn×n\mathbb{R}^{n\times n},
+a point outside it must have a strictly positive distance to it.
+Consequently, dist⁡(C⋆,𝒮)>0\operatorname{dist}(C^{\star},\mathcal{S})>0.
+∎
+Remark E.21.
+Corollary E.20 implies that
+the spectral convolution family cannot represent the optimal convolution C⋆C^{\star},
+nor can it approximate it arbitrarily closely.
+In fact, this limitation is robust:
+even if one perturbs C⋆C^{\star} slightly within the class of block-diagonal matrices
+with vanishing inter-class entries,
+no spectral convolution can realize or approximate these perturbed operators either.
+The reason is structural rather than numerical:
+according to Theorem E.12, as long as at least one class contains more than one node
+and the inter-class interference is suppressed (Ca​b=0C_{ab}=0 for a≠ba\neq b),
+any nontrivial intra-class variation leads to matrices that fall outside the spectral subspace.
+This shows that the expressive capacity of spectral convolutions
+is severely constrained by their diagonal structure in the spectral domain.
+Appendix F Experimental Details
+All experiments are run on a GPU NVIDIA RTX A6000 with 48G memory.
+F.1 Heterophilic Node Classification
+Datasets
+The dataset statistics, including the numbers of nodes and edges, feature dimensionality, number of node classes, and edge homophily ratios, are summarized in Table 6.
+Table 6: Statistics of heterophilic  (Pei et al., 2020; Rozemberczki et al., 2021; Platonov et al., 2023).
+| Statistics
+| Texas
+| Wisconsin
+| Chameleon
+| Squirrel
+| Roman_Empire
+| Minesweeper
+| Tolokers
+| Questions
+| # Nodes
+| 183
+| 251
+| 890
+| 2,223
+| 22,662
+| 10,000
+| 11,758
+| 48,921
+| # Edges
+| 295
+| 466
+| 27,168
+| 131,436
+| 32,927
+| 39,402
+| 519,000
+| 153,540
+| # Features
+| 1,703
+| 1,703
+| 2,325
+| 2,089
+| 300
+| 7
+| 10
+| 301
+| # Classes
+| 5
+| 5
+| 5
+| 5
+| 18
+| 2
+| 2
+| 2
+| # Edge Homophily
+| 0.11
+| 0.21
+| 0.24
+| 0.22
+| 0.05
+| 0.68
+| 0.59
+| 0.84
+Hyperparameter Setting
+For all datasets, we train for at most 1,0001{,}000 epochs with early stopping (patience =200=200).
+On the four large heterophilic datasets (Roman Empire, Tolokers, Minesweeper, Questions), we fix the MLP hidden size to 512512 and the polynomial order to 55. For the remaining datasets, we use a hidden size of 6464 and set the polynomial order to 22.
+We perform a grid search over the training hyperparameters of FSpecGNN, including the dropout rate, learning rate, weight decay, and the number of GAT heads. The corresponding search ranges are reported in Table 7.
+Table 7: Hyperparameter search ranges.
+| Hyper-parameters
+| Range
+| dropout in MLP
+| 0.3, 0.5, 0.7, 0.8, 0.9
+| dropout after MLP
+| 0.3, 0.5, 0.7, 0.8, 0.9
+| learning rate of WW
+| 0.001, 0.01, 0.02, 0.05
+| weight decay of WW
+| 0.0, 0.0001, 0.0005
+| learning rate of Propagation
+| 0.005, 0.01, 0.02, 0.05
+| weight decay of Propagation
+| 0.0, 0.0001, 0.0005
+| #GAT heads
+| 1, 2, 4, 8
+F.2 GNN Expressivity
+For all tasks, we use the distance-encoding hyperparameter max_dis=5=5. Since spectral models can achieve long-range propagation with fewer layers than spatial models, we use depth L=2L=2 with hidden dimension d=150d=150 for most tasks. For edge-level homomorphism-counting tasks, we use L=3L=3 and d=128d=128 to match the parameter budget. The parameter counts are reported in the table 8.
+Table 8: Model size in different tasks.
+| Task
+| #Hidden dim
+| #Parameters
+| MPNN
+| 128
+| 314,119
+| Subgraph GNN
+| 128
+| 314,759
+| Local 2-GNN
+| 96
+| 317,388
+| Local 2-FGNN
+| 96
+| 317,388
+| FSpecGNN
+| 150
+| 319,204
+Time and Space Overhead
+We report the average iteration time and the peak GPU memory usage for each task in Table 10. We also provide a visual mapping between task names and their corresponding substructures in Table 9.
+Table 9: Reference of task names and their corresponding substructures.
+(a) Homomorphism count tasks.
+Name
+chordal4
+boat
+chordal6
+chordal4_1
+chordal4_4
+chordal5_13
+chordal5_31
+chordal5_24
+Substructure
+(b) (Chordal) cycle count tasks.
+Name
+cycle3
+cycle4
+cycle5
+cycle6
+chordal4
+chordal5
+Substructure
+Table 10: Average iteration time and peak GPU memory per model–task pair.
+| Model+Task
+| Avg. Time
+| Max Mem
+| Model+Task
+| Avg. Time
+| Max Mem
+|
+| (s/it)
+| (MB)
+|
+| (s/it)
+| (MB)
+| boat(g)(MPNN)
+| 6.180
+| 6730
+| chordal5_13(e)(MPNN)
+| 6.160
+| 9688
+| boat(g)(Subgraph)
+| 6.230
+| 11228
+| chordal5_13(e)(Subgraph)
+| 6.288
+| 9692
+| boat(g)(Local 2-GNN)
+| 7.638
+| 11532
+| chordal5_13(e)(Local 2-GNN)
+| 7.492
+| 11468
+| boat(g)(Local 2-FGNN)
+| 4.894
+| 9512
+| chordal5_13(e)(Local 2-FGNN)
+| 4.865
+| 19886
+| boat(g)(FSpecGNN)
+| 1.110
+| 7686
+| chordal5_13(e)(FSpecGNN)
+| 1.173
+| 9532
+| chordal4(e)(MPNN)
+| 6.232
+| 9688
+| chordal5_24(e)(MPNN)
+| 6.279
+| 9688
+| chordal4(e)(Subgraph)
+| 6.110
+| 9692
+| chordal5_24(e)(Subgraph)
+| 6.106
+| 9692
+| chordal4(e)(Local 2-GNN)
+| 7.484
+| 11468
+| chordal5_24(e)(Local 2-GNN)
+| 7.559
+| 11468
+| chordal4(e)(Local 2-FGNN)
+| 4.888
+| 19886
+| chordal5_24(e)(Local 2-FGNN)
+| 4.874
+| 19886
+| chordal4(e)(FSpecGNN)
+| 1.180
+| 9532
+| chordal5_24(e)(FSpecGNN)
+| 1.192
+| 9532
+| chordal4(g)(MPNN)
+| 6.162
+| 6730
+| chordal5_31(e)(MPNN)
+| 6.106
+| 9688
+| chordal4(g)(Subgraph)
+| 5.977
+| 11228
+| chordal5_31(e)(Subgraph)
+| 6.220
+| 9692
+| chordal4(g)(Local 2-GNN)
+| 7.764
+| 11532
+| chordal5_31(e)(Local 2-GNN)
+| 7.658
+| 11468
+| chordal4(g)(Local 2-FGNN)
+| 4.812
+| 9512
+| chordal5_31(e)(Local 2-FGNN)
+| 4.856
+| 19886
+| chordal4(g)(FSpecGNN)
+| 1.097
+| 7686
+| chordal5_31(e)(FSpecGNN)
+| 1.172
+| 9532
+| chordal4(v)(MPNN)
+| 6.125
+| 6730
+| chordal6(g)(MPNN)
+| 6.090
+| 6730
+| chordal4(v)(Subgraph)
+| 6.176
+| 11228
+| chordal6(g)(Subgraph)
+| 6.274
+| 11228
+| chordal4(v)(Local 2-GNN)
+| 7.483
+| 11532
+| chordal6(g)(Local 2-GNN)
+| 7.593
+| 11532
+| chordal4(v)(Local 2-FGNN)
+| 4.758
+| 9512
+| chordal6(g)(Local 2-FGNN)
+| 4.791
+| 9512
+| chordal4(v)(FSpecGNN)
+| 1.082
+| 7686
+| chordal6(g)(FSpecGNN)
+| 1.071
+| 7686
+| chordal4_1(g)(MPNN)
+| 6.009
+| 6730
+| cycle3(e)(MPNN)
+| 6.179
+| 9688
+| chordal4_1(g)(Subgraph)
+| 6.141
+| 11228
+| cycle3(e)(Subgraph)
+| 6.121
+| 9692
+| chordal4_1(g)(Local 2-GNN)
+| 7.686
+| 11532
+| cycle3(e)(Local 2-GNN)
+| 7.588
+| 11468
+| chordal4_1(g)(Local 2-FGNN)
+| 4.894
+| 9512
+| cycle3(e)(Local 2-FGNN)
+| 4.899
+| 19886
+| chordal4_1(g)(FSpecGNN)
+| 1.101
+| 7686
+| cycle3(e)(FSpecGNN)
+| 1.029
+| 9532
+| chordal4_1(v)(MPNN)
+| 6.215
+| 6730
+| cycle3(g)(MPNN)
+| 6.114
+| 6730
+| chordal4_1(v)(Subgraph)
+| 6.174
+| 11228
+| cycle3(g)(Subgraph)
+| 6.245
+| 11228
+| chordal4_1(v)(Local 2-GNN)
+| 7.419
+| 11532
+| cycle3(g)(Local 2-GNN)
+| 7.126
+| 11532
+| chordal4_1(v)(Local 2-FGNN)
+| 4.727
+| 9512
+| cycle3(g)(Local 2-FGNN)
+| 5.115
+| 9512
+| chordal4_1(v)(FSpecGNN)
+| 1.077
+| 7686
+| cycle3(g)(FSpecGNN)
+| 1.102
+| 7686
+| chordal4_4(v)(MPNN)
+| 6.019
+| 6730
+| cycle3(v)(MPNN)
+| 6.344
+| 6730
+| chordal4_4(v)(Subgraph)
+| 6.131
+| 11228
+| cycle3(v)(Subgraph)
+| 6.199
+| 11228
+| chordal4_4(v)(Local 2-GNN)
+| 7.530
+| 11532
+| cycle3(v)(Local 2-GNN)
+| 7.600
+| 11532
+| chordal4_4(v)(Local 2-FGNN)
+| 4.808
+| 9512
+| cycle3(v)(Local 2-FGNN)
+| 4.814
+| 9512
+| chordal4_4(v)(FSpecGNN)
+| 1.080
+| 7686
+| cycle3(v)(FSpecGNN)
+| 1.065
+| 7686
+| chordal5(e)(MPNN)
+| 6.133
+| 9688
+| cycle4(e)(MPNN)
+| 6.255
+| 9688
+| chordal5(e)(Subgraph)
+| 6.158
+| 9692
+| cycle4(e)(Subgraph)
+| 6.200
+| 9692
+| chordal5(e)(Local 2-GNN)
+| 7.579
+| 11468
+| cycle4(e)(Local 2-GNN)
+| 7.689
+| 11468
+| chordal5(e)(Local 2-FGNN)
+| 4.839
+| 19886
+| cycle4(e)(Local 2-FGNN)
+| 4.867
+| 19886
+| chordal5(e)(FSpecGNN)
+| 1.184
+| 9532
+| cycle4(e)(FSpecGNN)
+| 1.157
+| 9532
+| chordal5(g)(MPNN)
+| 6.113
+| 6730
+| cycle4(g)(MPNN)
+| 6.083
+| 6730
+| chordal5(g)(Subgraph)
+| 6.186
+| 11228
+| cycle4(g)(Subgraph)
+| 6.146
+| 11228
+| chordal5(g)(Local 2-GNN)
+| 7.615
+| 11532
+| cycle4(g)(Local 2-GNN)
+| 7.671
+| 11532
+| chordal5(g)(Local 2-FGNN)
+| 4.816
+| 9512
+| cycle4(g)(Local 2-FGNN)
+| 4.859
+| 9512
+| chordal5(g)(FSpecGNN)
+| 1.099
+| 7686
+| cycle4(g)(FSpecGNN)
+| 1.034
+| 7686
+| chordal5(v)(MPNN)
+| 6.249
+| 6730
+| cycle4(v)(MPNN)
+| 6.226
+| 6730
+| chordal5(v)(Subgraph)
+| 6.149
+| 11228
+| cycle4(v)(Subgraph)
+| 6.050
+| 11228
+| chordal5(v)(Local 2-GNN)
+| 7.561
+| 11532
+| cycle4(v)(Local 2-GNN)
+| 7.680
+| 11532
+| chordal5(v)(Local 2-FGNN)
+| 4.864
+| 9512
+| cycle4(v)(Local 2-FGNN)
+| 4.862
+| 9512
+| chordal5(v)(FSpecGNN)
+| 1.105
+| 7686
+| cycle4(v)(FSpecGNN)
+| 1.011
+| 7686
+| cycle5(e)(MPNN)
+| 6.110
+| 9688
+| cycle5(e)(Subgraph)
+| 6.111
+| 9692
+| cycle5(e)(Local 2-GNN)
+| 7.460
+| 11468
+| cycle5(e)(Local 2-FGNN)
+| 4.901
+| 19886
+| cycle5(e)(FSpecGNN)
+| 1.173
+| 9532
+| cycle5(g)(MPNN)
+| 6.193
+| 6730
+| cycle5(g)(Subgraph)
+| 6.011
+| 11228
+| cycle5(g)(Local 2-GNN)
+| 7.569
+| 11532
+| cycle5(g)(Local 2-FGNN)
+| 4.872
+| 9512
+| cycle5(g)(FSpecGNN)
+| 1.097
+| 7686
+| cycle5(v)(MPNN)
+| 6.157
+| 6730
+| cycle5(v)(Subgraph)
+| 6.130
+| 11228
+| cycle5(v)(Local 2-GNN)
+| 7.605
+| 11532
+| cycle5(v)(Local 2-FGNN)
+| 4.858
+| 9512
+| cycle5(v)(FSpecGNN)
+| 1.101
+| 7686
+| cycle6(e)(MPNN)
+| 6.106
+| 9688
+| cycle6(e)(Subgraph)
+| 6.086
+| 9692
+| cycle6(e)(Local 2-GNN)
+| 7.565
+| 11468
+| cycle6(e)(Local 2-FGNN)
+| 4.825
+| 19886
+| cycle6(e)(FSpecGNN)
+| 1.198
+| 9532
+| cycle6(g)(MPNN)
+| 6.210
+| 6730
+| cycle6(g)(Subgraph)
+| 6.162
+| 11228
+| cycle6(g)(Local 2-GNN)
+| 7.622
+| 11532
+| cycle6(g)(Local 2-FGNN)
+| 4.916
+| 9512
+| cycle6(g)(FSpecGNN)
+| 1.085
+| 7686
+| cycle6(v)(MPNN)
+| 6.164
+| 6730
+| cycle6(v)(Subgraph)
+| 5.991
+| 11228
+| cycle6(v)(Local 2-GNN)
+| 7.548
+| 11532
+| cycle6(v)(Local 2-FGNN)
+| 4.776
+| 9512
+| cycle6(v)(FSpecGNN)
+| 1.032
+| 7686
+Table 11: Average runtime per run in seconds on heterophilic datasets. “–” indicates out-of-memory.
+| Model
+| Texas
+| Wisconsin
+| Chameleon
+| Squirrel
+| Roman
+| Minesweeper
+| Tolokers
+| Questions
+| GPRGNN
+| 1.06
+| 0.90
+| 1.05
+| 0.95
+| 0.99
+| 1.19
+| 1.30
+| 1.55
+| JacobiConv
+| 1.10
+| 1.13
+| 1.08
+| 1.09
+| 1.24
+| 1.98
+| 1.23
+| 1.65
+| Subgraph GNN
+| 15.70
+| 33.16
+| –
+| –
+| –
+| –
+| –
+| –
+| Local 2-GNN
+| 23.20
+| 51.24
+| –
+| –
+| –
+| –
+| –
+| –
+| ChebNet
+| 0.94
+| 0.97
+| 1.51
+| 1.93
+| 1.66
+| 1.90
+| 2.32
+| 2.45
+| FSpecGNN(Cheb)
+| 2.04
+| 2.10
+| 2.55
+| 2.51
+| 3.88
+| 3.83
+| 3.96
+| 3.40
+| ChebNetII
+| 2.07
+| 1.90
+| 2.55
+| 2.73
+| 2.96
+| 3.07
+| 3.63
+| 3.49
+| FSpecGNN(ChebII)
+| 2.41
+| 2.78
+| 3.17
+| 3.27
+| 4.31
+| 4.34
+| 4.80
+| 5.16
+| BernNet
+| 2.21
+| 2.15
+| 2.21
+| 2.24
+| 2.53
+| 3.25
+| 3.85
+| 4.13
+| FSpecGNN(Bern)
+| 2.17
+| 2.48
+| 2.69
+| 3.35
+| 3.05
+| 3.52
+| 4.66
+| 6.01
+Table 12: GPU memory usage (MiB) on heterophilic datasets. “–” indicates out-of-memory.
+| Model
+| Texas
+| Wisconsin
+| Chameleon
+| Squirrel
+| Roman
+| Minesweeper
+| Tolokers
+| Questions
+| GPRGNN
+| 646
+| 648
+| 652
+| 688
+| 954
+| 750
+| 876
+| 1160
+| JacobiConv
+| 648
+| 648
+| 652
+| 672
+| 982
+| 752
+| 876
+| 1172
+| Subgraph GNN
+| 1724
+| 2896
+| –
+| –
+| –
+| –
+| –
+| –
+| Local 2-GNN
+| 1830
+| 3128
+| –
+| –
+| –
+| –
+| –
+| –
+| ChebNet
+| 534
+| 534
+| 558
+| 594
+| 864
+| 654
+| 742
+| 1150
+| FSpecGNN(Cheb)
+| 646
+| 648
+| 692
+| 760
+| 1130
+| 754
+| 976
+| 1242
+| ChebNetII
+| 646
+| 648
+| 660
+| 716
+| 954
+| 750
+| 914
+| 1230
+| FSpecGNN(ChebII)
+| 650
+| 658
+| 698
+| 752
+| 1062
+| 756
+| 998
+| 1244
+| BernNet
+| 648
+| 648
+| 658
+| 698
+| 1058
+| 756
+| 954
+| 1254
+| FSpecGNN(Bern)
+| 652
+| 658
+| 694
+| 758
+| 1102
+| 774
+| 1040
+| 1276
+Experimental support, please
+view the build logs
+for errors. Generated by
+L
+A
+T
+E
+xml
+.
+Instructions for reporting errors
+We are continuing to improve HTML versions of papers, and your feedback helps enhance accessibility and mobile
+support. To report errors in the HTML that will help us improve conversion and rendering, choose any of the
+methods listed below:
+Click the "Report Issue" (
+) button, located in the page header.
+Tip: You can select the relevant text first, to include it in your report.
+Our team has already identified the following issues. We appreciate your time reviewing and reporting rendering errors we
+may not have found yet. Your efforts will help us improve the HTML versions for all readers, because disability
+should not be a barrier to accessing research. Thank you for your continued support in championing open access for
+all.
+Have a free development cycle? Help support accessibility at arXiv! Our collaborators at LaTeXML maintain a list of packages that need conversion, and welcome developer contributions.
+We gratefully acknowledge support from
+our major funders,
+member institutions, ,
+and all contributors.
+About
+·
+Help
+·
+Contact
+·
+Subscribe
+·
+Copyright
+·
+Privacy
+·
+Accessibility
+·
+Operational Status (opens in new tab)
+Major funding support from

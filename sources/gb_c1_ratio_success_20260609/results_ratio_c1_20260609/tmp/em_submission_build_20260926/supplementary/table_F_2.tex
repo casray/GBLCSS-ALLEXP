@@ -1,0 +1,35 @@
+\begingroup
+\fontsize{9}{11}\selectfont
+\setlength{\tabcolsep}{3pt}
+\renewcommand{\arraystretch}{1.12}
+\setlength{\TableWidth}{\dimexpr\linewidth-4\tabcolsep\relax}
+\begin{longtable}{@{}>{\raggedright\arraybackslash}p{\dimexpr 0.200000\TableWidth\relax}>{\raggedright\arraybackslash}p{\dimexpr 0.500000\TableWidth\relax}>{\raggedright\arraybackslash}p{\dimexpr 0.300000\TableWidth\relax}@{}}
+\caption{Key method-specific settings used in the main comparisons.}\label{tab:F.2}\\
+\toprule
+\textbf{Method} & \textbf{Key settings} & \textbf{Parameter selection} \\
+\midrule\endfirsthead
+\multicolumn{3}{l}{\small\itshape Table \thetable{} (continued)}\\
+\toprule
+\textbf{Method} & \textbf{Key settings} & \textbf{Parameter selection} \\
+\midrule\endhead
+\midrule\multicolumn{3}{r}{\small\itshape Continued on the next page}\\\endfoot
+\bottomrule\endlastfoot
+Small-loss & Discarded fraction (forget rate) increases linearly to the synthetic noise rate over 10 epochs; exponent 1.0 & Fixed schedule across datasets; final rate given by synthetic noise level \\
+Co-teaching & Two independent MLPs; same forget-rate schedule as Small-loss & NoisyGL configuration; Small-loss schedule \\
+JoCoR & Two independent MLPs; same forget-rate schedule as Small-loss; consistency weight 0.1 & NoisyGL configuration; Small-loss schedule \\
+SCE & Cross-entropy weight 0.1; reverse-cross-entropy weight 1.0 & NoisyGL configuration \\
+ELR & Moving-average coefficient 0.7; regularization weight 1.0 & Fixed across datasets \\
+LogitClip & Logit-clipping threshold 1.0 & Fixed across datasets \\
+PosteL & Soft-label ratio 0.8; smoothing ratio 0.4; degree cutoff 1; temperature 1.0; iterative pseudo-labeling disabled & Authors' target code under the common training protocol \\
+ALS & 2 propagation steps; residual coefficient 0.5; KL weight 1e-3; exponential pacing; maximum smoothing weight 0.1 & Fixed across datasets \\
+SALS & epsilon = 0.4; gamma = 0.8; unlabeled neighborhoods use the uniform distribution & Fixed across datasets \\
+Graph-MLP & Graph batch size 512; neighborhood-contrastive weight 0.5; temperature 0.5 & Fixed across datasets \\
+GSDN & Graph batch size 512; weights of 0.8 at both feature and label levels; negative-constraint weight 0.1; initial mixup coefficient 0.5 & Fixed across datasets \\
+GB-LCSS & \(B_{\max}=64\), \(n_{\min}=32\), \(\delta=0.05\), \(s_{\min}=2\), \(\beta=0.5\); current node excluded from voting; ties keep the empirical distribution; 2-means uses Euclidean distance, k-means++, and 10 restarts & Established through iterative method development; used unchanged in the main comparisons \\
+GCN(X)+CE teacher & Two-layer GCN teacher and two-layer MLP student, both width 64; 200 epochs; temperature 1.0 & Shared settings for teacher and student training \\
+FF-G2M & Two-layer GCN teacher, width 64; low- and high-frequency distillation weights 0.4; temperature 1.5 & Fixed across datasets \\
+KRD & 4 feature perturbations, standard deviation 0.01; top 50\% of nodes retained by reliability; temperature 1.0 & Fixed across datasets \\
+VQGraph & 128 soft codes; codebook temperature 1.0; token, node, and edge weights of 1.0, 0.001, and 0.03; 4096 edges sampled per epoch & Fixed across datasets \\
+GCN teacher trained on GB-LCSS targets & Two-layer GCN(X) teacher, width 64; GB-LCSS targets from Eq.~(12); student temperature 1.0; student fits teacher predictions over all nodes & Shared settings for teacher and student training; GB-LCSS targets \\
+\end{longtable}
+\endgroup

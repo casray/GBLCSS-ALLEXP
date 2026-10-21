@@ -1,0 +1,38 @@
+model:
+  method: vqgraph_faithful
+  parameter_source: VQGraph_ICLR2024_Tables10_12
+  n_hidden: 128
+  n_layer: 2
+  dropout: 0.6
+  norm_type: none
+  teacher_architecture: sage_gcn_aggregate_fullbatch_port
+  teacher_hidden: 128
+  teacher_dropout: 0.0
+  teacher_epochs: 100
+  teacher_patience: 50
+  teacher_lr: 0.01
+  teacher_weight_decay: 0.0005
+  codebook_size: 4096
+  vq_decay: 0.8
+  vq_commitment_weight: 0.25
+  vq_lambda_node: 0.001
+  vq_lambda_edge: 0.03
+  batch_size: 512
+  lambda_soft_labels: 0.0
+  lambda_soft_tokens: 0.00000001
+  token_temperature: 4.0
+
+training:
+  lr: 0.01
+  weight_decay: 0.005
+  n_epochs: 500
+  patience: 50
+  criterion: metric
+
+dataset:
+  sparse: true
+
+analysis:
+  flag: false
+  project: gnn-with-label-noise
+  save_graph: false

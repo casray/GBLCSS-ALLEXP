@@ -1,0 +1,59 @@
+{
+  "datasets": [
+    "Cora",
+    "CiteSeer"
+  ],
+  "split_seed": 0,
+  "split_mode": "ratio",
+  "train_ratios": [
+    0.2
+  ],
+  "val_ratio": 0.1,
+  "noise_type": "symmetric",
+  "noise_rates": [
+    0.2,
+    0.4
+  ],
+  "seeds": [
+    0,
+    1,
+    2,
+    3,
+    4
+  ],
+  "methods": [
+    "gb",
+    "gagb",
+    "khop_only",
+    "grace_gagb",
+    "grace_gagb_emb_only",
+    "grace_gagb_topo_only",
+    "kmeans_grace_gagb_matched",
+    "topk_grace_gagb_train_matched",
+    "grace_gagb_shuffled_alpha_matched",
+    "grace_gagb_qb_conflict_gate_alpha03",
+    "grace_gagb_qb_conflict_gate_alpha07"
+  ],
+  "alpha_max": 0.3,
+  "min_train_per_ball": 3,
+  "gb_min_ball_size": 5,
+  "gb_min_radius_gain": 0.01,
+  "gagb_max_hops": 2,
+  "gagb_tau_add": 0.55,
+  "gagb_lambda_h": 0.7,
+  "gagb_lambda_t": 0.3,
+  "gagb_max_ball_size": 128,
+  "eps": 1e-08,
+  "teacher_epochs": 100,
+  "teacher_lr": 0.01,
+  "teacher_weight_decay": 0.0005,
+  "teacher_temperature": 1.0,
+  "qb_pred_beta": 0.5,
+  "qb_teacher_gamma": 2.0,
+  "conflict_noisy_support_max": 0.35,
+  "conflict_target_conf_min": 0.55,
+  "gpu_id": null,
+  "output_dir": "reports\\gagb_v2_5_grace_first_grouping_diag_20260604",
+  "pretrain_seed": 4,
+  "noise_seed": 4
+}

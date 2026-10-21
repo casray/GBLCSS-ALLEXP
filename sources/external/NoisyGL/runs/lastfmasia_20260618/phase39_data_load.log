@@ -1,0 +1,61 @@
+﻿python.exe : Downloading https://graphmining.ai/datasets/ptg/lastfm_asia.npz
+At line:2 char:1
++ & 'C:\Users\Admin\Desktop\三论文融合\三论文融合\GRACE-master\.venv-rocm\Scripts ...
++ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (Downloading htt...lastfm_asia.npz:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+Traceback (most recent call last):
+  File "<string>", line 1, in <module>
+  File "C:\Users\Admin\Desktop\ʵ��8ȥ��5.19-\external\NoisyGL\utils\dataloader.py", line 78, in __init__
+    self.prepare_data(data, feat_norm, from_npz)
+  File "C:\Users\Admin\Desktop\ʵ��8ȥ��5.19-\external\NoisyGL\utils\dataloader.py", line 129, in prepare_data
+    self.data_raw = pyg_load_dataset(ds_name, path=self.path)
+                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Admin\Desktop\ʵ��8ȥ��5.19-\external\NoisyGL\utils\dataloader.py", line 338, in pyg_load_dataset
+    dataset = LastFMAsia(root=path)
+              ^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Admin\Desktop\�������ں�\�������ں�\GRACE-master\.venv-rocm\Lib\site-packages\torch_geometric\datasets\l
+astfm_asia.py", line 39, in __init__
+    super().__init__(root, transform, pre_transform,
+  File "C:\Users\Admin\Desktop\�������ں�\�������ں�\GRACE-master\.venv-rocm\Lib\site-packages\torch_geometric\data\in_me
+mory_dataset.py", line 81, in __init__
+    super().__init__(root, transform, pre_transform, pre_filter, log,
+  File "C:\Users\Admin\Desktop\�������ں�\�������ں�\GRACE-master\.venv-rocm\Lib\site-packages\torch_geometric\data\datas
+et.py", line 112, in __init__
+    self._download()
+  File "C:\Users\Admin\Desktop\�������ں�\�������ں�\GRACE-master\.venv-rocm\Lib\site-packages\torch_geometric\data\datas
+et.py", line 230, in _download
+    self.download()
+  File "C:\Users\Admin\Desktop\�������ں�\�������ں�\GRACE-master\.venv-rocm\Lib\site-packages\torch_geometric\datasets\l
+astfm_asia.py", line 52, in download
+    download_url(self.url, self.raw_dir)
+  File "C:\Users\Admin\Desktop\�������ں�\�������ں�\GRACE-master\.venv-rocm\Lib\site-packages\torch_geometric\data\downl
+oad.py", line 47, in download_url
+    data = urllib.request.urlopen(url, context=context)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Admin\AppData\Local\Programs\Python\Python312\Lib\urllib\request.py", line 215, in urlopen
+    return opener.open(url, data, timeout)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Admin\AppData\Local\Programs\Python\Python312\Lib\urllib\request.py", line 521, in open
+    response = meth(req, response)
+               ^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Admin\AppData\Local\Programs\Python\Python312\Lib\urllib\request.py", line 630, in http_response
+    response = self.parent.error(
+               ^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Admin\AppData\Local\Programs\Python\Python312\Lib\urllib\request.py", line 559, in error
+    return self._call_chain(*args)
+           ^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Admin\AppData\Local\Programs\Python\Python312\Lib\urllib\request.py", line 492, in _call_chain
+    result = func(*args)
+             ^^^^^^^^^^^
+  File "C:\Users\Admin\AppData\Local\Programs\Python\Python312\Lib\urllib\request.py", line 639, in http_error_default
+    raise HTTPError(req.full_url, code, msg, hdrs, fp)
+urllib.error.HTTPError: HTTP Error 404: Not Found
+----Data statistics------'
+                Name: lastfmasia
+                #Nodes 7624
+                #Edges 27806
+                #Classes 18
+                #Ave_degree 7.29
+LASTFM_ASIA_EDGE_HOMOPHILY=0.873876142

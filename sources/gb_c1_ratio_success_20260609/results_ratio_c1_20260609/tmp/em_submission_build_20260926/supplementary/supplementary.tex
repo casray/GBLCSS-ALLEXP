@@ -1,0 +1,284 @@
+% !TeX program = xelatex
+\RequirePackage{fix-cm}
+\documentclass[10pt,letterpaper,nopreprintline]{elsarticle}
+\usepackage[letterpaper,left=17mm,right=17mm,top=28mm,bottom=28mm]{geometry}
+\usepackage[OT1]{fontenc}
+\renewcommand{\rmdefault}{cmr}
+\renewcommand{\sfdefault}{cmss}
+\renewcommand{\ttdefault}{cmtt}
+\usepackage{setspace}
+\setstretch{1.15}
+\usepackage{amsmath,amssymb}
+\usepackage{graphicx}
+\usepackage{booktabs,array,longtable}
+\usepackage{enumitem}
+\usepackage{placeins}
+\usepackage{needspace}
+\usepackage[font=small,labelfont=bf,labelsep=period]{caption}
+\usepackage[ruled,linesnumbered,longend]{algorithm2e}
+\usepackage{xurl}
+\usepackage{xcolor}
+\definecolor{linkblue}{HTML}{1597D0}
+\usepackage[colorlinks=true,linkcolor=linkblue,citecolor=linkblue,
+    urlcolor=linkblue,filecolor=linkblue,anchorcolor=linkblue,
+    breaklinks=true,bookmarksnumbered=true,unicode]{hyperref}
+\AtBeginDocument{\hypersetup{linkcolor=linkblue,
+    citecolor=linkblue,urlcolor=linkblue,filecolor=linkblue,
+    anchorcolor=linkblue,menucolor=linkblue}}
+\biboptions{numbers,sort&compress}
+\setcounter{secnumdepth}{3}
+\setlength{\emergencystretch}{2em}
+\setlength{\LTpre}{6pt}
+\setlength{\LTpost}{6pt}
+\setlength{\LTcapwidth}{\textwidth}
+\newlength{\TableWidth}
+\setlist{itemsep=3pt,topsep=5pt,parsep=0pt,leftmargin=*}
+\SetAlgoNoLine
+\SetAlgoLongEnd
+\DontPrintSemicolon
+\SetAlgorithmName{Algorithm}{Algorithm}{List of Algorithms}
+\SetKwInput{KwIn}{Input}
+\SetKwInput{KwOut}{Output}
+\SetKw{KwBreak}{break}
+\SetKw{KwRet}{return}
+\SetAlFnt{\small}
+\SetAlCapFnt{\small\bfseries}
+\SetAlCapNameFnt{\small\bfseries}
+\SetNlSty{textnormal}{}{\hspace{0.45em}}
+\setlength{\textfloatsep}{12pt plus 2pt minus 2pt}
+\setlength{\floatsep}{12pt plus 2pt minus 2pt}
+\setlength{\intextsep}{12pt plus 2pt minus 2pt}
+\raggedbottom
+\renewcommand{\topfraction}{0.9}
+\renewcommand{\bottomfraction}{0.85}
+\renewcommand{\textfraction}{0.08}
+\renewcommand{\floatpagefraction}{0.7}
+\hyphenation{Coauthor CiteSeer CoraFull GB-LCSS Graph-MLP}
+
+\widowpenalty=10000
+\clubpenalty=10000
+\hypersetup{pdfauthor={Silei Cao, Kun Wang, Jingyu Zhu, Tianxing Wang, Bing Huang},pdftitle={Granular ball local consensus for graph-free node classification under label noise}}
+
+\begin{document}
+\begin{center}{\Large\bfseries Supplementary Material}\par\medskip Granular ball local consensus for graph-free node classification under label noise\end{center}
+
+\appendix
+\renewcommand{\thetable}{\Alph{section}.\arabic{table}}
+\renewcommand{\theHtable}{\Alph{section}.\arabic{table}}
+
+\FloatBarrier
+
+\setcounter{table}{0}
+
+\section{Results of the main comparisons under all noise settings}\label{sec:A}
+
+All accuracies in this supplement are percentages, reported as the mean \(\pm\) sample standard deviation over five paired seeds. Bold marks the highest mean within each dataset and noise setting; in Table~C.1, the highest mean is marked separately for each validation protocol.
+
+\Needspace{120pt}
+
+\subsection{Cora}\label{sec:A.1}
+
+\input{table_A_1.tex}
+
+\Needspace{120pt}
+
+\subsection{CiteSeer}\label{sec:A.2}
+
+\input{table_A_2.tex}
+
+\Needspace{120pt}
+
+\subsection{CoraFull}\label{sec:A.3}
+
+\input{table_A_3.tex}
+
+\Needspace{120pt}
+
+\subsection{Coauthor-CS}\label{sec:A.4}
+
+\input{table_A_4.tex}
+
+\Needspace{120pt}
+
+\subsection{Amazon-Photo}\label{sec:A.5}
+
+\input{table_A_5.tex}
+
+\FloatBarrier
+
+\setcounter{table}{0}
+
+\section{Paired statistical tests}\label{sec:B}
+
+For each dataset and noise setting, we compute the accuracy difference between GB-LCSS and the reference method on each of the five paired seeds. Table~\ref{tab:B.1} reports the mean difference and an unadjusted 95\% confidence interval in percentage points. ``Wins (seeds)'' counts the seeds on which GB-LCSS has higher accuracy. Two-sided paired \(t\)-test \(p\)-values are Holm-adjusted across the 25 comparisons with each reference method. The differences remain significant after correction in 24 of the 25 settings against MLP+CE and in 11 against JoCoR. GB-LCSS also exceeds JoCoR on all five seeds in 22 of the 25 settings.
+
+\input{table_B_1.tex}
+
+\FloatBarrier
+
+\setcounter{table}{0}
+
+\section{Sensitivity to noisy validation labels}\label{sec:C}
+
+We evaluate checkpoint selection with noisy validation labels under uniform 0.4 training-label noise. The data splits and noisy training labels are unchanged, and validation labels are independently corrupted at the same rate using a separate random seed. Test labels remain clean. GB-LCSS and random size-matched grouping use the targets from Section~3.3 of the main paper; GSDN and PosteL use the implementations described in Section~4.1.3 and Appendix~F.
+
+\input{table_C_1.tex}
+
+Using noisy validation labels changes the test accuracy of GB-LCSS by at most 0.68 percentage points across the three datasets. GB-LCSS remains above random size-matched grouping by 13.69, 12.35, and 4.87 points on Cora, CiteSeer, and CoraFull, respectively, and above MLP+CE by 13.51, 11.93, and 4.91 points. It also retains the highest mean accuracy among the six methods on all three datasets (Table~\ref{tab:C.1}).
+
+\FloatBarrier
+
+\setcounter{table}{0}
+
+\section{Analysis of target construction}\label{sec:D}
+
+Table~\ref{tab:D.1} summarizes the leave-one-out and clean-label checks. Excluding each node's own label from its local vote improves mean accuracy on all five datasets when averaged over the five noise settings. In the least favorable individual setting, excluding the vote lowers accuracy by 0.49 points.
+
+With clean training labels (\(\eta=0\)) and all other settings unchanged, GB-LCSS has higher mean accuracy than MLP+CE on CiteSeer and lower mean accuracy on the other four datasets. Targets can change only in balls whose training nodes belong to more than one class.
+
+\input{table_D_1.tex}
+
+When two or more classes receive the same highest vote count, GB-LCSS retains the empirical vote distribution as the consensus, \(\mathbf q_n=\mathbf r_n\) (Eq.~(10)). Across the five datasets, five noise settings, and five seeds, these ties affect 12,788 of the 259,000 training-node targets (4.94\%).
+
+\FloatBarrier
+
+\setcounter{table}{0}
+
+\section{Results of graph-based soft-target methods under all noise settings}\label{sec:E}
+
+Table~\ref{tab:E.1} reports GB-LCSS, PosteL, ALS, and SALS on the five main datasets under all five noise settings, using the common splits, noise realizations, and graph-free inference protocol (Appendix~F). GB-LCSS has the highest mean in 24 of the 25 settings; the exception is CoraFull under uniform 0.2, where PosteL and SALS are higher.
+
+\input{table_E_1.tex}
+
+\FloatBarrier
+
+\setcounter{table}{0}
+
+\section{Implementation details and key settings}\label{sec:F}
+
+For seeds 0--4, the NoisyGL percentage-split routine randomly assigns nodes to disjoint training, validation, and test sets of sizes \(\lfloor 0.2N\rfloor\), \(\lfloor 0.1N\rfloor\), and \(\lfloor 0.7N\rfloor\). Sampling is independent of class labels. Representation learning and partitioning use all nodes as unlabeled transductive context.
+
+Table~\ref{tab:F.1} identifies the implementation used for each method and the components retained under the common protocol. All methods share the data splits and noise realizations and deploy an attribute-only MLP. Table~\ref{tab:F.2} lists their method-specific settings and sources.
+
+\input{table_F_1.tex}
+
+The optimizer and MLP settings shared across methods are given in Section~4.1.4 of the main paper.
+
+\input{table_F_2.tex}
+
+Table~\ref{tab:F.3} lists the GRACE settings for each dataset. Each dataset uses one frozen representation across noise settings and downstream seeds.
+
+\input{table_F_3.tex}
+
+\FloatBarrier
+
+\setcounter{table}{0}
+
+\section{Results on additional datasets}\label{sec:G}
+
+The six additional datasets were first evaluated under uniform 0.4 noise. CiteSeerFull was subsequently evaluated under the remaining four noise settings as an exploratory follow-up. Table~\ref{tab:G.1} summarizes the statistics of the six datasets; data processing and edge homophily follow Table~2 of the main paper.
+
+\input{table_G_1.tex}
+
+Table~\ref{tab:G.2} compares GB-LCSS with the strongest of the seven noisy-label baselines in Table~3 of the main paper and with random size-matched grouping under uniform 0.4 noise. For each dataset, the best baseline is identified by its five-seed mean accuracy. Differences are GB-LCSS minus the corresponding method, in percentage points; ``Wins (seeds)'' counts the paired seeds on which GB-LCSS exceeds the listed best baseline. The same definitions apply to Table~\ref{tab:G.3}.
+
+\input{table_G_2.tex}
+
+GB-LCSS has a higher mean accuracy than random size-matched grouping on all six datasets, by 4.33--14.25 percentage points, and exceeds the strongest noisy-label baseline on three. The difference from the strongest baseline ranges from \ensuremath{-}5.24 points on PubMed to +1.46 points on CiteSeerFull. Table~\ref{tab:G.3} reports the results for CiteSeerFull under all five noise settings: GB-LCSS has a mean accuracy at least as high as that of the strongest baseline in four settings, whereas the strongest baseline is higher by 4.20 points under uniform 0.6.
+
+\input{table_G_3.tex}
+
+\FloatBarrier
+\setcounter{table}{0}
+\section{Analysis of local-consensus supervision}\label{sec:H}
+\setcounter{equation}{0}
+\renewcommand{\theequation}{H.\arabic{equation}}
+\renewcommand{\theHequation}{H.\arabic{equation}}
+
+Appendix~H.1 proves the local-vote error bound in Proposition~1. Appendix~H.2 derives the target-error identity in Eq.~(16) and the sufficient condition in Corollary~1 for reducing expected target error. As in Section~3.4, the graph, representation, ball assignments, training-node set, and clean labels are fixed, and randomness comes only from independent symmetric label corruption at rate \(\eta\).
+
+\subsection{Reliability of the local vote}\label{sec:H.1}
+
+Consider a training node \(v_n\) with \(s_n=|U_n|\geq s_{\min}\) other training nodes voting in its ball. The clean class proportions \(a_{n,i}\) and the margin \(\Delta_n\) are defined in Eq.~(14). As in Proposition~1, assume \(\Delta_n>0\) and \(0\leq\eta<(C-1)/C\). Each voting label retains its clean class with probability \(1-\eta\) and changes to any particular incorrect class with probability \(\eta/(C-1)\). With \(\gamma=1-C\eta/(C-1)>0\), the expected proportion of observed votes for class \(i\) is
+\begin{equation}\label{eq:H.1}
+\mathbb{E}[r_{n,i}]=(1-\eta)a_{n,i}
++\frac{\eta}{C-1}(1-a_{n,i})
+=\gamma a_{n,i}+\frac{\eta}{C-1}.
+\end{equation}
+The expected vote difference between the true class of node \(v_n\) and any competing class \(i\ne y_n\) is therefore
+\begin{equation}\label{eq:H.2}
+\mathbb{E}[r_{n,y_n}-r_{n,i}]
+=\gamma(a_{n,y_n}-a_{n,i})\geq\gamma\Delta_n.
+\end{equation}
+Symmetric noise therefore moves the expected vote proportions toward \(1/C\) and reduces the margin over the closest competitor from \(\Delta_n\) to \(\gamma\Delta_n\). For \(\gamma>0\), the true class retains its lead in expectation. At \(\eta=(C-1)/C\), all observed classes are equally likely.
+
+For a competing class \(i\ne y_n\), define \(\xi_\ell=\mathbb I(z_\ell=y_n)-\mathbb I(z_\ell=i)\) for each voting node \(v_\ell\in U_n\). This variable equals \(+1\) for a vote for the true class of \(v_n\), \(-1\) for a vote for class \(i\), and 0 otherwise. The variables are independent across nodes and lie in \([-1,1]\), and their average is \(r_{n,y_n}-r_{n,i}\). Using the expected difference in Eq.~\eqref{eq:H.2}, Hoeffding's inequality [H1] bounds the probability that class \(i\) ties or exceeds the true class:
+\begin{equation}\label{eq:H.3}
+\Pr(r_{n,i}\geq r_{n,y_n})
+\leq\exp\!\left[-\frac{s_n\gamma^2(a_{n,y_n}-a_{n,i})^2}{2}\right]
+\leq\exp\!\left(-\frac{s_n\gamma^2\Delta_n^2}{2}\right).
+\end{equation}
+Applying the union bound to the \(C-1\) competing classes and capping the result at one gives Eq.~(15), proving Proposition~1.
+
+Equation~(10) preserves the most-voted classes, so the same bound applies to \(\mathbf q_n\). Because Proposition~1 requires \(\Delta_n>0\), Appendix~I.2 reports the proportion of training nodes satisfying this condition.
+
+\subsection{Error of the consensus-weighted target}\label{sec:H.2}
+
+For a training node \(v_n\) with \(|U_n|\geq s_{\min}\), let \(\mathbf e_{z_n}\) and \(\mathbf e_{y_n}\) be its observed and clean one-hot labels. The Brier score of a target \(\mathbf b\) is \(\operatorname{BS}_n(\mathbf b)=\lVert\mathbf b-\mathbf e_{y_n}\rVert_2^2\). For any fixed realization of the observed labels, substituting \(\mathbf t_n=(1-\alpha_n)\mathbf e_{z_n}+\alpha_n\mathbf q_n\) and expanding the squared Euclidean distance gives
+\begin{equation}\label{eq:H.4}
+\lVert \mathbf t_n-\mathbf e_{y_n}\rVert_2^2=(1-\alpha_n)^2\lVert \mathbf e_{z_n}-\mathbf e_{y_n}\rVert_2^2+\alpha_n^2\lVert \mathbf q_n-\mathbf e_{y_n}\rVert_2^2
++2\alpha_n(1-\alpha_n)\langle \mathbf e_{z_n}-\mathbf e_{y_n},\mathbf q_n-\mathbf e_{y_n}\rangle.
+\end{equation}
+Substituting \(2\langle \mathbf e_{z_n}-\mathbf e_{y_n},\mathbf q_n-\mathbf e_{y_n}\rangle=\lVert \mathbf e_{z_n}-\mathbf e_{y_n}\rVert_2^2+\lVert \mathbf q_n-\mathbf e_{y_n}\rVert_2^2-\lVert \mathbf e_{z_n}-\mathbf q_n\rVert_2^2\) into Eq.~\eqref{eq:H.4} and collecting terms gives Eq.~(16), relating the target error to the errors of the observed label and the local consensus. Nodes with fewer than \(s_{\min}\) votes retain their observed labels and hence their original errors.
+
+Two cases follow directly. If the observed label is correct, then \(\mathbf e_{z_n}=\mathbf e_{y_n}\), \(\operatorname{BS}_n(\mathbf e_{z_n})=0\), and Eq.~(16) reduces to \(\operatorname{BS}_n(\mathbf t_n)=\alpha_n^2\operatorname{BS}_n(\mathbf q_n)\). If the observed label is corrupted, then \(\mathbf e_{z_n}\) and \(\mathbf e_{y_n}\) are distinct one-hot vectors, so \(\operatorname{BS}_n(\mathbf e_{z_n})=2\), and \(\operatorname{BS}_n(\mathbf t_n)<2\) whenever \(\alpha_n>0\) and \(\operatorname{BS}_n(\mathbf q_n)<2\).
+
+\Needspace{80pt}
+For the full training set, let \(\mathcal V_{\mathrm{err}}=\{v_n\in\mathcal V_L:z_n\ne y_n\}\) denote the set of nodes with corrupted labels and \(\mathcal V_{\mathrm{clean}}=\mathcal V_L\setminus\mathcal V_{\mathrm{err}}\) the set of nodes with correct labels. For a target matrix, \(\operatorname{BS}\) denotes the mean of the node-wise scores \(\operatorname{BS}_n\) over the labeled training nodes. With \(\mathbf Z\) and \(\mathbf T\) denoting the observed one-hot and soft-target matrices, respectively, the difference between their mean Brier scores is
+\begin{equation}\label{eq:H.5}
+\operatorname{BS}(\mathbf Z)-\operatorname{BS}(\mathbf T)
+=\frac{1}{|\mathcal V_L|}\sum_{v_n\in\mathcal V_{\mathrm{err}}}\bigl(2-\operatorname{BS}_n(\mathbf t_n)\bigr)
+-\frac{1}{|\mathcal V_L|}\sum_{v_n\in\mathcal V_{\mathrm{clean}}}\operatorname{BS}_n(\mathbf t_n).
+\end{equation}
+The first term measures the error removed on corrupted labels, and the second measures the error introduced on correct labels. Both are averaged over the full training set, and their difference is the net reduction reported in Table~I.2. A target can have a lower Brier score while still assigning its largest probability to an incorrect class, because this score evaluates the full probability distribution.
+
+For Corollary~1, fix the observed labels of all training nodes except \(v_n\). The leave-one-out rule then keeps \(\mathbf q_n\) and \(\alpha_n\) fixed as the observed label of \(v_n\) varies. The observed one-hot label has squared error 0 when correct and 2 when corrupted, so \(\mathbb E[\operatorname{BS}_n(\mathbf e_{z_n})]=2\eta\), where the expectation is over the corruption of \(v_n\)'s label. Taking this expectation in Eq.~(16) and dropping its nonpositive final term gives
+\begin{equation}\label{eq:H.6}
+\mathbb{E}[\operatorname{BS}_n(\mathbf t_n)]\leq2\eta(1-\alpha_n)+\alpha_n\operatorname{BS}_n(\mathbf q_n).
+\end{equation}
+This proves Eq.~(17). When \(\operatorname{BS}_n(\mathbf q_n)<2\eta\) and \(\alpha_n>0\), the upper bound is strictly below \(2\eta\), the expected error of the observed one-hot label. The consensus-weighted target therefore has lower expected error, proving Corollary~1. Section~4.3.1 and Appendix~I.2 evaluate these target errors empirically.
+
+\paragraph{Reference for Appendix H}
+[H1] W. Hoeffding, Probability inequalities for sums of bounded random variables, J. Am. Stat. Assoc. 58 (1963) 13--30.
+
+\FloatBarrier
+\setcounter{table}{0}
+\section{Parameter sensitivity and target-error decomposition}\label{sec:I}
+
+\subsection{Parameter sensitivity and representation controls}\label{sec:I.1}
+
+We evaluate the grouping representations and target-construction parameters on the five main datasets under uniform 0.4 noise and seeds 0--4. Each variant uses the same data splits, noisy labels, initialization seeds, MLP, optimizer, 200 training epochs, and checkpoint-selection rule as the default configuration (Section~4.1). GRACE-based variants reuse the frozen representations from the main comparisons.
+
+Each parameter variant in Table~\ref{tab:I.1} changes one parameter from its default value in Section~4.1.4. The ball assignments remain fixed when varying \(\beta\) or \(s_{\min}\); \(\beta=0\) uses the empirical vote distribution as the consensus. Random size-matched grouping and the raw \(\mathbf{X}\) and \(\mathbf{A}^2\mathbf{X}\) representations are the controls described in Sections~4.3.1 and 4.3.3. Bold marks the highest mean in each column.
+
+\input{table_I_1.tex}
+
+The best-performing setting varies across datasets. Increasing \(\beta\) from 0.5 to 1 raises mean accuracy on four datasets and lowers it on CoraFull.
+
+With \(B_{\max}=128\), construction produces 52--53 balls on Cora, 63--66 on CiteSeer, 128 on CoraFull and Coauthor-CS, and 124--128 on Amazon-Photo. The larger budget leaves the ball-count range unchanged on Cora and expands it from 63--64 to 63--66 on CiteSeer. On CoraFull, accuracy improves over the default on all five seeds, with a mean paired gain of \(1.53\pm0.40\) percentage points. This setting gives its highest mean accuracy and lowers the target Brier score from 0.6321 to 0.6026. On Coauthor-CS and Amazon-Photo, mean accuracy changes by \(-0.12\) and \(-0.41\) points, respectively.
+
+Reducing the minimum child-ball size \(n_{\min}\) from 32 to 1 changes mean accuracy by \(-1.61\), \(+0.70\), \(-0.23\), \(-0.34\), and \(-1.02\) points on Cora, CiteSeer, CoraFull, Coauthor-CS, and Amazon-Photo, respectively. Allowing smaller child balls thus improves the mean only on CiteSeer.
+
+Raising \(s_{\min}\) requires more voting nodes before consensus can modify a target. At \(s_{\min}=10\), the proportions of training nodes with a positive consensus weight are 56.52\%, 58.32\%, 99.13\%, 98.98\%, and 90.03\% in the same dataset order. On Cora and CiteSeer, more than 40\% of training nodes retain their observed one-hot targets, and accuracy falls by more than 5 points (Table~\ref{tab:I.1}).
+
+\subsection{Error reduction on training targets}\label{sec:I.2}
+
+Equation~\eqref{eq:H.5} separates the reduction in target Brier score into error removed on corrupted labels and error introduced on correct labels. Both components are measured against the clean labels and divided by the total number of training nodes. Table~\ref{tab:I.2} reports their five-seed means for the default configuration under uniform 0.4 noise.
+
+\input{table_I_2.tex}
+
+Error removed on corrupted labels exceeds error introduced on correct labels in all 25 dataset--seed runs. The five-seed mean reductions are 6.7--18.1 times the increases, with net reductions from 0.1690 on CoraFull to 0.4877 on Coauthor-CS. Random size-matched grouping also reduces Brier score but yields lower accuracy on all five datasets (Table~\ref{tab:I.1}). Average target error alone therefore does not explain the accuracy advantage of representation-based grouping, consistent with the observation in Appendix~H.2 that a target with a lower Brier score can still favor an incorrect class.
+
+Proposition~1 requires \(\Delta_n>0\): node \(v_n\)'s true class receives more clean votes than any other class. This holds for 75.64\%, 65.02\%, 36.13\%, 88.93\%, and 84.64\% of training nodes on Cora, CiteSeer, CoraFull, Coauthor-CS, and Amazon-Photo, respectively. The net reductions in Table~\ref{tab:I.2} follow the same ordering across the five datasets. Table~\ref{tab:I.2} includes nodes with zero or negative margins.
+
+\end{document}

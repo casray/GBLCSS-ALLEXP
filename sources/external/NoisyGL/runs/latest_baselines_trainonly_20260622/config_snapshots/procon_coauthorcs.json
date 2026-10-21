@@ -1,0 +1,42 @@
+{
+  "base": {
+    "dataset": {
+      "sparse": true
+    },
+    "model": {
+      "alpha": 0.5,
+      "candidate_limit": 512,
+      "clean_threshold": 0.5,
+      "dropout": 0.5,
+      "edge_drop": 0.2,
+      "exact_max_nodes": 5000,
+      "feature_drop": 0.2,
+      "lambda_supervised": 0.1,
+      "method": "procon",
+      "n_hidden": 256,
+      "n_layer": 2,
+      "peer_k": 10,
+      "prototype_momentum": 0.9,
+      "target_momentum": 0.99
+    },
+    "training": {
+      "criterion": "metric",
+      "lr": 0.005,
+      "n_epochs": 500,
+      "patience": 50,
+      "weight_decay": 0.0005
+    }
+  },
+  "dataset": "coauthorcs",
+  "method": "procon",
+  "selection": {
+    "config_id": "68922abc66e571ec",
+    "config_index": 3,
+    "overrides": {
+      "model.alpha": 0.5,
+      "model.lambda_supervised": 0.1,
+      "model.peer_k": 5
+    },
+    "valid": 0.9307146753955264
+  }
+}

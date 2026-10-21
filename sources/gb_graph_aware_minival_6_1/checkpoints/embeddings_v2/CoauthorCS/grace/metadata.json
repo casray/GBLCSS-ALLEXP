@@ -1,0 +1,33 @@
+{
+  "dataset": "CoauthorCS",
+  "method": "grace",
+  "output_method": "grace",
+  "seed": 0,
+  "embedding_shape": [
+    18333,
+    256
+  ],
+  "config": {
+    "epochs": 1000,
+    "lr": 0.001,
+    "weight_decay": 1e-05,
+    "hidden_dim": 256,
+    "proj_dim": 256,
+    "num_layers": 2,
+    "activation": "relu",
+    "drop_edge_1": 0.1,
+    "drop_edge_2": 0.4,
+    "drop_feat_1": 0.1,
+    "drop_feat_2": 0.0,
+    "tau": 0.7,
+    "uniformity_weight": 0.0,
+    "uniformity_t": 2.0,
+    "uniformity_max_nodes": 2048,
+    "config_source_dataset": "DBLP",
+    "fallback_note": "official GRACE config missing for CoauthorCS; preregistered fallback uses DBLP unchanged"
+  },
+  "source_reference": "upstream/GRACE/config.yaml fixed tau",
+  "upstream_commits": "GRACE:b3b5ac3,bgrl:60f9f19,GraphMAE:b14f080,CCA-SSG:ce5b2c0",
+  "label_free": true,
+  "used_labels_or_masks_in_training": false
+}

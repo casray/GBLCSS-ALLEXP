@@ -1,0 +1,17 @@
+{
+  "datasets": ["amazon_ratings", "tolokers", "roman", "coauthorcs"],
+  "new_datasets": ["amazon_ratings", "tolokers"],
+  "protocol_seeds": [0, 1, 2, 3, 4],
+  "multiclass_conditions": {"clean": ["uniform", 0.0], "uniform": ["uniform", 0.4], "pair": ["pair", 0.4]},
+  "binary_conditions": {"clean": ["uniform", 0.0], "symmetric02": ["uniform", 0.2], "symmetric04": ["uniform", 0.4]},
+  "baseline_arms": ["CE", "OLD64", "H_TREE", "X_TREE", "BFS"],
+  "candidate_arms": ["R_TREE", "SHUFFLE_TREE"],
+  "generator": {"budget": "ceil(sqrt(N))", "min_leaf_size": 16, "min_train_per_ball": 16, "random_state": "protocol_seed"},
+  "residual": {"definition": "PX-X", "P": "loop-free undirected row-normalized adjacency", "concatenation": "[rowL2(X),rowL2(PX-X)]/sqrt(2)", "shuffle_seed": 20261015},
+  "grace": {"epochs": 1000, "chunk_size": 512, "seed": 0, "checkpoint": "fixed last epoch"},
+  "training": {"hidden": 64, "layers": 2, "dropout": 0.5, "learning_rate": 0.01, "weight_decay": 0.0005, "epochs": 200},
+  "threads": 4,
+  "gate": {"mean_brier_delta_max": -0.005, "minimum_improved_seeds": 4, "references": ["X_TREE", "SHUFFLE_TREE"], "require_all_noisy_conditions": true},
+  "classification": {"primary": {"tolokers": "roc_auc", "default": "accuracy"}, "clean_tolerance_pp": 1.0, "noisy_mean_min_gain_pp": 0.5, "minimum_improved_seeds": 4},
+  "official_commit": "a431395582e929d88271309716bea4fe24ce6318"
+}

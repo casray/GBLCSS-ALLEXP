@@ -1,0 +1,95 @@
+\FloatBarrier
+\setcounter{table}{0}
+\section{Analysis of local-consensus supervision}\label{sec:H}
+\setcounter{equation}{0}
+\renewcommand{\theequation}{H.\arabic{equation}}
+\renewcommand{\theHequation}{H.\arabic{equation}}
+
+This appendix proves Proposition~1 and derives the squared-error identity in Section~3.4 of the main paper. All probabilities in Section~\ref{sec:H.1} condition on the graph, frozen representation, granular ball assignments, training-node set, and clean training labels. The randomness comes from independent label corruption.
+
+\subsection{Reliability of the local vote}\label{sec:H.1}
+
+Fix a training node \(v\) in ball \(B_j\), with \(s_v=|T_{j,-v}|\geq s_{\min}\). The clean class proportions \(p^{\mathrm{clean}}_{v,c}\) and the target-class margin \(\Delta_v\) are defined in Eq.~(14) of the main paper. Each voting label independently stays unchanged with probability \(1-\eta\) or changes to any particular incorrect class with probability \(\eta/(C-1)\). For \(\gamma=1-C\eta/(C-1)\), the expected empirical vote proportion is
+\begin{equation}\label{eq:H.1}
+\mathbb{E}[p_{j,-v,c}]=(1-\eta)p^{\mathrm{clean}}_{v,c}
++\frac{\eta}{C-1}(1-p^{\mathrm{clean}}_{v,c})
+=\gamma p^{\mathrm{clean}}_{v,c}+\frac{\eta}{C-1}.
+\end{equation}
+The expected vote difference between the current node's true class and any competing class \(c\ne y_v\) is therefore
+\begin{equation}\label{eq:H.2}
+\mathbb{E}[p_{j,-v,y_v}-p_{j,-v,c}]
+=\gamma(p^{\mathrm{clean}}_{v,y_v}-p^{\mathrm{clean}}_{v,c})\geq\gamma\Delta_v.
+\end{equation}
+When \(\gamma>0\), symmetric noise preserves the ordering of the clean class proportions in expectation. A positive margin means that the true class has more votes than each competing class, even if it accounts for less than half of the voting nodes.
+
+For each competing class, define \(Z_{u,c}=\mathbb{I}(\widetilde y_u=y_v)-\mathbb{I}(\widetilde y_u=c)\) for \(u\in T_{j,-v}\). The variables \(Z_{u,c}\) are independent across voting nodes and lie in \([-1,1]\); their distributions may differ. Their average equals \(p_{j,-v,y_v}-p_{j,-v,c}\). Applying Hoeffding's inequality [H1] gives
+\begin{equation}\label{eq:H.3}
+\begin{aligned}
+\Pr(p_{j,-v,c}\geq p_{j,-v,y_v})
+&\leq\exp\!\left[-\frac{s_v\gamma^2(p^{\mathrm{clean}}_{v,y_v}-p^{\mathrm{clean}}_{v,c})^2}{2}\right]\\
+&\leq\exp\!\left(-\frac{s_v\gamma^2\Delta_v^2}{2}\right).
+\end{aligned}
+\end{equation}
+A union bound over the \(C-1\) competing classes, capped at one, proves Eq.~(15) of the main paper. A tie is included in the failure event. If the empirical winner is unique, Eq.~(10) sharpens that winner without changing its identity; if several classes tie, it retains the empirical distribution. Thus, the maximizing class set is unchanged for every \(\beta\in[0,1]\), and the same probability bound applies to \(q_{j,-v}\).
+
+The clean class composition is fixed in this analysis; independence is required of the corruption process. The positive-margin condition is node-specific because a ball's dominant clean class may differ from that of some members. With a nonpositive margin, more votes can reinforce evidence for a competing class. With few votes or a small positive margin, the bound may equal one and provide no informative numerical guarantee. Extending the result to pair or instance-dependent noise would require a different class-ordering argument.
+
+\subsection{Error of the consensus-weighted target}\label{sec:H.2}
+
+Fix any realization of the labels. For a node with sufficient voting support, use the abbreviations \(z=e_{\widetilde y_v}\), \(q=q_{j,-v}\), \(\alpha=\alpha_{j,-v}\), and \(e=e_{y_v}\). Expanding the square gives
+\begin{equation}\label{eq:H.4}
+\begin{aligned}
+\lVert t_v-e\rVert_2^2={}&(1-\alpha)^2\lVert z-e\rVert_2^2+\alpha^2\lVert q-e\rVert_2^2\\
+&+2\alpha(1-\alpha)\langle z-e,q-e\rangle.
+\end{aligned}
+\end{equation}
+Substituting \(2\langle z-e,q-e\rangle=\lVert z-e\rVert_2^2+\lVert q-e\rVert_2^2-\lVert z-q\rVert_2^2\) yields Eq.~(16) of the main paper. This identity holds for every realization, including when \(\alpha\) and \(q\) depend on the same local votes. For a node below the support threshold, Eq.~(12) retains \(z\), giving zero change in target error.
+
+If the observed label is correct, \(z=e\) and \(L_v(t_v)=\alpha^2L_v(q)\). If it is corrupted, \(L_v(z)=2\), and the soft target can lower this error. Consequently, the change in the mean Brier score is
+\begin{equation}\label{eq:H.5}
+\begin{aligned}
+\operatorname{BS}(Z)-\operatorname{BS}(T)={}&
+\frac{1}{|\mathcal{V}_L|}\sum_{v\in\mathcal{N}}\bigl(2-L_v(t_v)\bigr)\\
+&-\frac{1}{|\mathcal{V}_L|}\sum_{v\in\mathcal{K}}L_v(t_v),
+\end{aligned}
+\end{equation}
+where \(\mathcal{N}=\{v\in\mathcal{V}_L:\widetilde y_v\ne y_v\}\) is the set of nodes with corrupted training labels and \(\mathcal{K}=\mathcal{V}_L\setminus\mathcal{N}\). The matrices \(Z\) and \(T\) contain the observed one-hot targets and GB-LCSS targets, respectively. The Brier score sums over classes and averages over training nodes. Equation~\eqref{eq:H.5} separates the reduction in error on corrupted labels from the increase on initially correct labels. Squared probability error can decrease even when a target's most-probable class stays unchanged.
+
+A conditional sufficient condition follows under the independent symmetric-noise model. Hold the other observed training labels fixed, together with the quantities conditioned on in Section~\ref{sec:H.1}. Because the current node is excluded from voting, \(q\) and \(\alpha\) stay fixed as its observed label varies. Taking expectation over this node's label corruption gives \(\mathbb{E}_v L_v(z)=2\eta\). Equation~(16) then implies
+\begin{equation}\label{eq:H.6}
+\mathbb{E}_v L_v(t_v)\leq(1-\alpha)\,2\eta+\alpha L_v(q).
+\end{equation}
+Hence, \(L_v(q)<2\eta\) and \(\alpha>0\) are sufficient for lower conditional expected target error than the observed one-hot label. This condition concerns the squared probability error of the local distribution. Proposition~1 concerns its most-voted class, so satisfying the proposition's assumptions alone is insufficient to establish this error condition. The Brier comparisons in Section~4.3.1 evaluate target quality, while the classification experiments assess the trained MLP.
+
+\paragraph{Reference for Appendix H.}
+[H1] W. Hoeffding, Probability inequalities for sums of bounded random variables, J. Am. Stat. Assoc. 58 (1963) 13--30.
+
+\FloatBarrier
+\setcounter{table}{0}
+\section{Parameter sensitivity and target-error decomposition}\label{sec:I}
+
+\subsection{Parameter sensitivity and representation controls}\label{sec:I.1}
+
+The representation and parameter comparisons cover the five datasets in Table~2 of the main paper under uniform 0.4 noise, using seeds 0--4 and the protocol in Section~4.1. Each dataset uses the same frozen GRACE representation as in the main comparisons. Variants use the same data split, noisy labels, and initialization seed as the default configuration, together with the same MLP, optimizer, 200-epoch budget, and checkpoint-selection rule.
+
+For these paired runs, targets were constructed on the CPU and the MLP was trained on the AMD Radeon RX 7700 XT. The software settings were PyTorch 2.9.1+rocm7.2.1 with four host threads and scikit-learn 1.8.0 with six threads for 2-means. The default configuration was rerun in this setup and provides the reference for Table~7 and Table~\ref{tab:I.1}. Its results differ slightly from the main comparisons, which used GPU target construction.
+
+The default parameters are listed in Section~4.1.4. Each sensitivity row changes only the indicated parameter. The threshold \(s_{\min}\) counts votes after excluding the current node. With \(\beta=0\), the empirical class distribution still contributes to the target. Random grouping preserves the default ball sizes; raw \(X\) and \(A^2X\) change the representation used for grouping (Section~4.3.3).
+
+\input{tables/table_I_1.tex}
+
+The ball counts help explain the effect of the budget. Increasing \(B_{\max}\) to 128 left Cora at 52--53 balls and CiteSeer at 63--66, while the other three datasets reached 128. The finer partition improved CoraFull on all five seeds, with a paired gain of \(1.57\pm0.54\) percentage points and a decrease in target Brier score from 0.6321 to 0.6026. Coauthor-CS and Amazon-Photo instead had small decreases in mean accuracy.
+
+Reducing the minimum child-ball size \(n_{\min}\) from 32 to 1 changed mean accuracy by \(-1.65\), \(+0.70\), \(-0.05\), \(-0.31\), and \(-0.47\) points on Cora, CiteSeer, CoraFull, Coauthor-CS, and Amazon-Photo, respectively.
+
+The voting threshold affects how many training nodes receive consensus supervision. At \(s_{\min}=10\), the fractions receiving a positive consensus weight were 56.53\%, 58.32\%, 99.13\%, 98.98\%, and 89.96\% in the same dataset order. The large reduction in coverage on Cora and CiteSeer coincided with the accuracy losses reported in Section~4.3.4.
+
+\subsection{Error reduction on training targets}\label{sec:I.2}
+
+Equation~\eqref{eq:H.5} separates the change in target error into the reduction on corrupted labels and the increase on initially correct labels. For each seed, both components are divided by the total number of training nodes; their difference is the net reduction in Brier score. Table~\ref{tab:I.2} reports their means over five seeds for the default configuration. Clean training labels provide the reference for this diagnostic.
+
+\input{tables/table_I_2.tex}
+
+The reduction on corrupted labels exceeded the increase on initially correct labels in all 25 dataset--seed runs. Mean net reductions ranged from 0.1690 on CoraFull to 0.4877 on Coauthor-CS. Random grouping also reduced Brier scores but produced much lower classification accuracy (Table~\ref{tab:I.1}), indicating that lower target error alone does not explain the accuracy advantage of representation-based grouping.
+
+We also counted training nodes satisfying the positive-margin condition in Proposition~1: their true class was more frequent than every competing class among the other training nodes in their ball. Using clean labels, the mean proportions were 75.64\%, 65.02\%, 36.13\%, 88.94\%, and 84.76\% on Cora, CiteSeer, CoraFull, Coauthor-CS, and Amazon-Photo, respectively. The proposition applies to these nodes; Table~\ref{tab:I.2} includes all training nodes.

@@ -1,0 +1,402 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>图级噪声标签实验交接简报</title>
+  <style>
+    :root {
+      --bg: #f6f7f9;
+      --paper: #ffffff;
+      --ink: #1f2933;
+      --muted: #5c6670;
+      --line: #d8dee6;
+      --accent: #2457a6;
+      --accent-soft: #e9f0fb;
+      --warn: #8a4b00;
+      --warn-soft: #fff3dd;
+      --bad: #8d1f1f;
+      --bad-soft: #fde7e7;
+      --good: #17633a;
+      --good-soft: #e5f5ec;
+      --code: #f0f2f5;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--ink);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Microsoft YaHei", Arial, sans-serif;
+      line-height: 1.65;
+    }
+
+    main {
+      max-width: 1080px;
+      margin: 0 auto;
+      padding: 32px 20px 64px;
+    }
+
+    header, section {
+      background: var(--paper);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 24px;
+      margin: 16px 0;
+    }
+
+    h1, h2, h3 {
+      line-height: 1.25;
+      margin: 0 0 14px;
+    }
+
+    h1 { font-size: 30px; }
+    h2 { font-size: 22px; color: var(--accent); }
+    h3 { font-size: 18px; margin-top: 20px; }
+
+    p { margin: 10px 0; }
+
+    ul, ol {
+      margin: 10px 0 10px 24px;
+      padding: 0;
+    }
+
+    li { margin: 6px 0; }
+
+    code, pre {
+      font-family: "Cascadia Code", "Consolas", monospace;
+      background: var(--code);
+      border-radius: 5px;
+    }
+
+    code {
+      padding: 2px 5px;
+      font-size: 0.94em;
+    }
+
+    pre {
+      padding: 14px;
+      overflow-x: auto;
+      border: 1px solid var(--line);
+      white-space: pre-wrap;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 12px 0;
+      font-size: 14px;
+    }
+
+    th, td {
+      border: 1px solid var(--line);
+      padding: 9px 10px;
+      vertical-align: top;
+      text-align: left;
+    }
+
+    th {
+      background: #eef2f7;
+      font-weight: 650;
+    }
+
+    .meta {
+      color: var(--muted);
+      font-size: 14px;
+    }
+
+    .box {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 14px 16px;
+      margin: 12px 0;
+      background: #fafbfc;
+    }
+
+    .good {
+      border-color: #b9dfca;
+      background: var(--good-soft);
+    }
+
+    .warn {
+      border-color: #efd19d;
+      background: var(--warn-soft);
+    }
+
+    .bad {
+      border-color: #f0b6b6;
+      background: var(--bad-soft);
+    }
+
+    .accent {
+      border-color: #bdd0ee;
+      background: var(--accent-soft);
+    }
+
+    .tag {
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 999px;
+      background: var(--accent-soft);
+      color: var(--accent);
+      border: 1px solid #bdd0ee;
+      font-size: 13px;
+      margin-right: 6px;
+    }
+
+    .small { font-size: 14px; color: var(--muted); }
+  </style>
+</head>
+<body>
+<main>
+  <header>
+    <h1>图级噪声标签实验交接简报</h1>
+    <p class="meta">创建日期：2026-06-08。用途：供新开的实验主窗口读取，快速继承旧实验结论并启动新方向。</p>
+    <p>
+      本文只写大方向、实验动机、gate 设计、旧实验教训和执行边界。
+      具体算法细节、实现方案和代码结构后续由 Claude 在新窗口中继续设计。
+    </p>
+    <div class="box accent">
+      <strong>新方向一句话：</strong>
+      从 node-level frozen GRACE 后处理，转向 <strong>图级 noisy-label graph classification</strong>。
+      用图对比学习得到 graph embedding，再用 granular ball 在 i.i.d. 样本表示空间中做去噪可靠性建模。
+    </div>
+  </header>
+
+  <section>
+    <h2>给新窗口的建议启动提示</h2>
+    <p>可以把下面这段作为新窗口第一条消息，然后附上 Claude 的具体算法设计。</p>
+    <pre>请先读取这个 HTML 交接文件，理解旧实验的失败链、新方向的定位、第一阶段 gate 和实验边界。接下来我要让你基于“图级 noisy-label graph classification + contrastive graph representation + granular-ball denoising”设计具体算法和实验实现。请不要沿用旧的 frozen node-level GRACE 修补路线，也不要直接使用 hard same-ball positive 或 prototype pulling。</pre>
+  </section>
+
+  <section>
+    <h2>旧实验核心结论</h2>
+    <p>
+      旧项目在 Cora 节点分类、frozen GRACE 表示、symmetric 0.4 噪声、ratio split 等设置下，
+      系统验证了多条粒球后处理路线。最重要的总教训是：
+    </p>
+    <div class="box bad">
+      <strong>冻结通用节点表示上的粒球结构没有稳定证明出 kNN consensus 之外的独立增量。</strong>
+      粒球有局部结构信号，但在当前 node-level homophily 图任务中，这些信号大多被 kNN 共识覆盖，或者无法转化成下游收益。
+    </div>
+
+    <table>
+      <thead>
+        <tr>
+          <th>阶段</th>
+          <th>做了什么</th>
+          <th>关键结果</th>
+          <th>对新方向的教训</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>S2a headroom / soft target</td>
+          <td>frozen GRACE 表示上做 GB soft target、reweight、oracle CE 诊断。</td>
+          <td>oracle 有约 3.4pp headroom，但真实 GB / DCGB soft target 无法有效利用球成员关系。</td>
+          <td>问题不是完全没油水，而是“球信号到训练目标”的转化形态不对。</td>
+        </tr>
+        <tr>
+          <td>S2-redesign-v1 selection</td>
+          <td>改成 commit-style sample selection。预注册方法为 reliable mutual-kNN ball。</td>
+          <td>单格主 gate 失败：<code>sel_dcgb_emb 0.7788 &lt; gb_soft 0.7962</code>。但 selection 机制能显著赢 no-ball/shuffled/random。</td>
+          <td>commit-style 比 soft target 更能转化局部可靠性，但当时的主球构造不够稳。</td>
+        </tr>
+        <tr>
+          <td>S3 Phase 1</td>
+          <td>5 seed 验证 ordinary GB、reliable DCGB、topk、shuffled/random/noball。</td>
+          <td><code>sel_dcgb_emb 0.8002 &gt; topk 0.7969 &gt; sel_gb 0.7702</code>。DCGB 对 shuffled/random/noball 5/5 成立。</td>
+          <td>reliable 局部信号是稳健正信号；seed0 的 ordinary GB 倒挂是假象。</td>
+        </tr>
+        <tr>
+          <td>Q2: DCGB vs topk</td>
+          <td>同 coverage、同 schedule、topk k 匹配球大小，检验“显式建球是否多于 kNN”。</td>
+          <td>DCGB test 只比 topk 高 0.327pp，t≈0.71 不显著；selection precision 和 noise exclusion 反而 0/5 输给 topk。</td>
+          <td>在 frozen node embedding 上，显式建球不能作为独立卖点。</td>
+        </tr>
+        <tr>
+          <td>Density-guided GB</td>
+          <td>引入 GBmooer 风格的球级密度结构：density × compactness × noisy consensus。</td>
+          <td><code>sel_density 0.7714 &lt; topk 0.7969</code>，但 density 赢自己的 shuffled/random。</td>
+          <td>球级密度结构不是噪声，但在 frozen GRACE 上仍被 topk 覆盖。</td>
+        </tr>
+        <tr>
+          <td>最小 encoder coupling</td>
+          <td>在 GRACE init 后加弱球损失，检查球质量是否改善。</td>
+          <td>coupled 与 baseline 的 purity 完全相同；球损失被 GRACE loss 淹没，预注册早停。</td>
+          <td>轻量 coupling 不够。若要让球成为主角，需要真正 ball-aware 表示学习，而不是小权重补丁。</td>
+        </tr>
+      </tbody>
+    </table>
+  </section>
+
+  <section>
+    <h2>为什么转向图级任务</h2>
+    <p>
+      旧实验的失败不是“粒球完全没有信息”，而是 node-level frozen GRACE 条件下，
+      粒球结构很难提供 kNN consensus 之外的可转化增量。图级任务更接近 CGBC 和 GBmooer 的成功条件。
+    </p>
+    <ul>
+      <li><strong>节点任务的 homophily 会让局部一致性饱和。</strong> 邻接、表示和 kNN 已经高度重合，粒球容易退化为 kNN 包装。</li>
+      <li><strong>图级分类是样本级 i.i.d. embedding 空间。</strong> 每个图是一个样本，更适合构建局部密度、多尺度球和成员一致性。</li>
+      <li><strong>对比学习可以先塑造 graph embedding。</strong> GraphCL/InfoGraph/MVGRL 等骨架可以让相似图靠近，再让球在这个空间中做可靠区域建模。</li>
+      <li><strong>去噪 headroom 更可能足够。</strong> 图分类可系统设置 symmetric、pair/asymmetric、高噪声，避免 Cora 单格 headroom 太小的问题。</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>新实验主方向</h2>
+    <div class="box good">
+      <strong>主攻方向：</strong>
+      图级噪声标签分类 + 图对比表示学习 + 粒球去噪。
+    </div>
+    <p>建议英文题目雏形：</p>
+    <pre>Granular-Ball Assisted Contrastive Graph Representation Learning for Noisy-Label Graph Classification</pre>
+    <p>建议中文题目雏形：</p>
+    <pre>面向噪声标签图分类的粒球辅助图对比表示学习</pre>
+
+    <h3>核心流程</h3>
+    <ol>
+      <li>选择图分类数据集，优先 NCI1，PROTEINS 作为辅助，MUTAG 仅用于 debug。</li>
+      <li>用 GIN encoder + GraphCL/SimCLR-style augmentations 训练图级 graph embedding。</li>
+      <li>在 graph embedding 上构造 granular balls，优先考虑 density-guided 或 multi-scale GB。</li>
+      <li>注入训练标签噪声，只污染 train labels，validation/test 保持 clean。</li>
+      <li>用 GB 做 sample selection、local label smoothing 或 label correction。</li>
+      <li>与 kNN、kmeans、shuffled/random GB、robust CE 等强对照比较。</li>
+      <li>只有当 GB 明确赢过 kNN/kmeans 后，才进入 encoder coupling 或更复杂方法。</li>
+    </ol>
+  </section>
+
+  <section>
+    <h2>第一阶段 Gate</h2>
+    <p>
+      第一阶段不是完整论文方法，而是回答一个硬问题：
+    </p>
+    <div class="box accent">
+      <strong>在图级 i.i.d. embedding 空间里，GB denoising 是否能稳定超过 kNN/kmeans denoising？</strong>
+    </div>
+
+    <h3>推荐设置</h3>
+    <table>
+      <tbody>
+        <tr>
+          <th>数据集</th>
+          <td>NCI1 主 smoke；PROTEINS 辅助；MUTAG 只做管线 debug；DD/OGBG 后续加。</td>
+        </tr>
+        <tr>
+          <th>表示骨架</th>
+          <td>先用 PyG + GIN encoder + GraphCL/SimCLR-style augmentations 跑通，不必一开始绑定复杂外部 repo。</td>
+        </tr>
+        <tr>
+          <th>噪声</th>
+          <td>先 symmetric 0.4；通过后补 0.2 / 0.6；pair/asymmetric 作为第二阶段。</td>
+        </tr>
+        <tr>
+          <th>seed</th>
+          <td>先 seed0 冒烟，只看管线和 headroom；正式 gate 用 5 seeds。</td>
+        </tr>
+        <tr>
+          <th>主指标</th>
+          <td>test accuracy at best validation、selection precision、noise exclusion recall、paired seed delta、mean/std。</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <h3>最低对照组</h3>
+    <ul>
+      <li><code>GraphCL embedding + CE noisy</code></li>
+      <li><code>GraphCL embedding + robust loss</code>，如 SCE 或 GCE</li>
+      <li><code>kNN selection / smoothing</code></li>
+      <li><code>kmeans selection / smoothing</code></li>
+      <li><code>GB density / multi-scale selection</code></li>
+      <li><code>shuffled GB / random GB</code></li>
+      <li><code>clean-label oracle</code>，只作 headroom 诊断，不作为方法</li>
+    </ul>
+
+    <h3>通过标准</h3>
+    <div class="box good">
+      <ul>
+        <li>GB 在 test 上稳定赢 kNN 和 kmeans，建议门槛为 5 seeds 中至少 4 seeds 胜出。</li>
+        <li>mean gain 至少 0.5pp，最好达到 1pp；如果 std 很大，需要 paired delta 支持。</li>
+        <li>selection precision 和 noise exclusion recall 也应支持 GB 更可靠，而不是只有 test 偶然更高。</li>
+        <li>shuffled/random GB 明显掉，证明不是分组数量或 coverage 造成的假象。</li>
+      </ul>
+    </div>
+
+    <h3>失败标准</h3>
+    <div class="box bad">
+      <ul>
+        <li>GB 被 kNN/kmeans 稳定追平或超过。</li>
+        <li>GB 只赢 CE，但不赢局部对照。</li>
+        <li>只在一个小数据集或一个 seed 上有效。</li>
+        <li>clean oracle headroom 很小，说明该设置不适合展示去噪收益。</li>
+      </ul>
+    </div>
+  </section>
+
+  <section>
+    <h2>第二阶段才考虑的内容</h2>
+    <p>以下内容不要在第一阶段就混入，否则失败原因会变复杂。</p>
+    <ul>
+      <li><strong>Encoder coupling：</strong>只有 frozen graph embedding gate 通过后，再设计 <code>L = L_contrastive + λ_ball L_ball + L_robust_cls</code>。</li>
+      <li><strong>多尺度 GB：</strong>先验证单尺度/密度 GB 是否有信号，再扩展。</li>
+      <li><strong>pair/asymmetric/high-noise：</strong>作为稳健性和更大 headroom 的扩展，不与第一张 gate 表混报。</li>
+      <li><strong>更换骨架：</strong>先跑通一个 GIN + GraphCL-style baseline，再考虑 InfoGraph、MVGRL、GCC 或更强 encoder。</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>严格禁止重复的旧坑</h2>
+    <div class="box warn">
+      <ul>
+        <li>不要把 same-ball membership 直接当 hard positive。</li>
+        <li>不要做全量 prototype pulling 或 hard inter-ball negative separation。</li>
+        <li>不要只比较 CE baseline，必须保留 kNN/kmeans/shuffled/random。</li>
+        <li>不要从单 seed、单数据集、within-std 小提升宣称成功。</li>
+        <li>不要让 clean labels 进入训练、构球或方法选择。clean labels 只能用于 oracle/diagnostics。</li>
+        <li>不要把 graph-level 结果和旧 node-level Cora minival 结果混成一张表。</li>
+      </ul>
+    </div>
+  </section>
+
+  <section>
+    <h2>新窗口需要优先完成的事情</h2>
+    <ol>
+      <li>确认新项目代码目录、依赖和数据下载方式。</li>
+      <li>选择第一版图对比学习骨架，建议 PyG + GIN + GraphCL-style augmentations。</li>
+      <li>定义图分类数据集 split、噪声注入协议和 label artifact 保存格式。</li>
+      <li>实现或复用 graph embedding 提取、classifier 训练和评估。</li>
+      <li>实现 GB/kNN/kmeans/shuffled/random 的统一 selection 或 smoothing 接口。</li>
+      <li>先跑 NCI1 symmetric 0.4 seed0，记录 clean oracle headroom 和各方法基本可用性。</li>
+      <li>seed0 不崩后再跑 5 seeds gate。</li>
+    </ol>
+  </section>
+
+  <section>
+    <h2>旧实验关键文件</h2>
+    <p class="small">这些文件在旧项目目录中，可供新窗口回查。新实验不应直接修改旧项目代码。</p>
+    <ul>
+      <li><code>C:\Users\Admin\Desktop\实验8去噪5.19-\gb_graph_aware_minival_6_1\reports\s2a_plan_20260607\s2a_redesign_v1_selection_report.md</code></li>
+      <li><code>C:\Users\Admin\Desktop\实验8去噪5.19-\gb_graph_aware_minival_6_1\reports\s3_phase1_20260607\s3_phase1_report.md</code></li>
+      <li><code>C:\Users\Admin\Desktop\实验8去噪5.19-\gb_graph_aware_minival_6_1\reports\s3_phase1_20260607\s3_phase2_q2_dcgb_vs_topk_report.md</code></li>
+      <li><code>C:\Users\Admin\Desktop\实验8去噪5.19-\gb_graph_aware_minival_6_1\reports\s3_phase1c_density_20260607\s3_phase1c_report.md</code></li>
+      <li><code>C:\Users\Admin\Desktop\实验8去噪5.19-\gb_graph_aware_minival_6_1\reports\s3_phase2_coupling_20260607\s3_phase2_coupling_report.md</code></li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>给 Claude 的边界提醒</h2>
+    <div class="box accent">
+      <p>
+        你可以设计具体算法，但请先把第一阶段写成预注册 gate。
+        当前最重要的问题不是“方法复杂不复杂”，而是图级空间里 GB 是否有 kNN/kmeans 之外的独立去噪价值。
+      </p>
+      <p>
+        如果 gate 失败，要如实降级或换任务；不要通过调参、换 coverage、删强对照来保留粒球卖点。
+      </p>
+    </div>
+  </section>
+</main>
+</body>
+</html>

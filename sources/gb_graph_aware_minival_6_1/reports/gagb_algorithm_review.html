@@ -1,0 +1,724 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Graph-aware Granular Ball (GAGB) Fair-Comparison Review Pack</title>
+  <style>
+    :root {
+      --bg: #f6f7f9;
+      --paper: #ffffff;
+      --ink: #1f2933;
+      --muted: #5d6778;
+      --line: #d9dee8;
+      --soft: #eef3f8;
+      --accent: #2457a6;
+      --warn: #8a4b00;
+      --bad: #8a1f1f;
+      --good: #17613a;
+      --code-bg: #101820;
+      --code-ink: #e8edf3;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--ink);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Microsoft YaHei", sans-serif;
+      line-height: 1.62;
+    }
+
+    main {
+      width: min(1120px, calc(100% - 40px));
+      margin: 32px auto 64px;
+      background: var(--paper);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 36px 44px;
+      box-shadow: 0 10px 28px rgba(28, 35, 45, 0.08);
+    }
+
+    h1, h2, h3 {
+      line-height: 1.28;
+      color: #111827;
+    }
+
+    h1 {
+      margin: 0 0 8px;
+      font-size: 30px;
+    }
+
+    h2 {
+      margin-top: 36px;
+      padding-top: 20px;
+      border-top: 1px solid var(--line);
+      font-size: 23px;
+    }
+
+    h3 {
+      margin-top: 26px;
+      font-size: 18px;
+    }
+
+    p {
+      margin: 10px 0;
+    }
+
+    ul, ol {
+      margin: 10px 0 10px 22px;
+      padding: 0;
+    }
+
+    li {
+      margin: 5px 0;
+    }
+
+    code {
+      font-family: "Cascadia Mono", Consolas, "Courier New", monospace;
+      font-size: 0.94em;
+    }
+
+    pre {
+      margin: 12px 0 18px;
+      padding: 16px 18px;
+      overflow: auto;
+      background: var(--code-bg);
+      color: var(--code-ink);
+      border-radius: 8px;
+      line-height: 1.45;
+      font-size: 13px;
+    }
+
+    pre code {
+      color: inherit;
+      font-size: inherit;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 12px 0 20px;
+      font-size: 14px;
+    }
+
+    th, td {
+      border: 1px solid var(--line);
+      padding: 8px 10px;
+      text-align: left;
+      vertical-align: top;
+    }
+
+    th {
+      background: var(--soft);
+      font-weight: 650;
+    }
+
+    .subtitle {
+      color: var(--muted);
+      margin-bottom: 22px;
+    }
+
+    .note {
+      border-left: 4px solid var(--accent);
+      background: #f2f6fd;
+      padding: 12px 16px;
+      margin: 16px 0;
+    }
+
+    .warning {
+      border-left-color: var(--warn);
+      background: #fff8ed;
+    }
+
+    .failure {
+      border-left-color: var(--bad);
+      background: #fff3f3;
+    }
+
+    .success {
+      border-left-color: var(--good);
+      background: #effaf4;
+    }
+
+    .tag {
+      display: inline-block;
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      padding: 1px 9px;
+      margin: 0 4px 4px 0;
+      background: #fafbfc;
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .small {
+      color: var(--muted);
+      font-size: 13px;
+    }
+  </style>
+</head>
+<body>
+<main>
+  <h1>Graph-aware Granular Ball (GAGB) Fair-Comparison Review Pack</h1>
+  <p class="subtitle">面向 GPT / 同行审查的算法说明、流程复现、关键代码摘录与当前最小验证结论。</p>
+
+  <div class="note">
+    <strong>审查目标：</strong>
+    判断当前 <code>Graph-aware GB</code> v1 是否在 frozen-GRACE noisy-label gate 中证明了独立价值。
+    这里的“独立价值”不是只超过 ordinary GB，而是要超过 embedding-only greedy、topology-only、GAGB-matched kmeans/top-k
+    和 alpha-matched shuffled grouping 等公平控制组。
+  </div>
+
+  <h2>1. 当前研究问题</h2>
+  <p>
+    任务族是 <strong>带噪标签属性图节点分类</strong>。输入为属性图 <code>G=(V,E,X)</code>、
+    部分训练节点的 noisy labels，以及 frozen GRACE 预训练得到的节点表示。目标是在不改变 backbone
+    训练协议的前提下，验证图感知粒球是否能作为局部可信区域，帮助 noisy-label smoothing 或 reweighting。
+  </p>
+  <p>
+    本轮只做最小验证，不声称完整方法已经成立。当前实验不接入 RTGNN，不加入 prediction consistency，
+    不加入 <code>Q(B)</code> 质量函数，不调 alpha，不扩展 PubMed 或 pair noise。
+  </p>
+
+  <h2>2. 核心假设</h2>
+  <p>
+    ordinary embedding GB 只看表示空间相似性，可能把图上距离很远但 embedding 接近的节点放进同一个球。
+    GAGB v1 试图让球同时满足两个条件：
+  </p>
+  <ol>
+    <li>embedding 上接近，说明语义或表示相似。</li>
+    <li>图拓扑上局部可达，说明局部结构关系更可信。</li>
+  </ol>
+  <p>
+    如果这个假设成立，GAGB 生成的球应当比 ordinary GB、纯拓扑分组、随机同尺寸分组和普通聚类更适合作为
+    noisy-label smoothing 的局部监督单元。
+  </p>
+
+  <h2>3. 算法总流程</h2>
+  <pre><code>Dataset with noisy train labels
+        |
+        v
+GRACE pretraining / embedding extraction
+        |
+        v
+Save payload: H.pt = normalized embedding H + edge_index + labels + masks
+        |
+        v
+run_noisy_classifier.py
+        |
+        +-- build ordinary GB
+        +-- build GAGB
+        +-- build fair controls
+        |
+        v
+build_method_targets(...)
+        |
+        +-- noisy-label CE
+        +-- local group soft target
+        +-- coverage-aware fallback
+        +-- alpha-matched shuffled target
+        |
+        v
+Frozen classifier training
+        |
+        v
+Accuracy + diagnostics + paired deltas</code></pre>
+
+  <h2>4. GAGB 构球算法</h2>
+  <p>
+    核心函数位于
+    <code>src/noisy_label_gb_grace/balls/graph_aware_ball.py::build_graph_aware_balls</code>。
+    输入为 normalized embedding <code>H</code>、<code>edge_index</code> 和构球参数。
+  </p>
+
+  <h3>4.1 输入参数</h3>
+  <table>
+    <thead>
+      <tr>
+        <th>参数</th>
+        <th>含义</th>
+        <th>当前默认 / 用法</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><code>embeddings</code></td>
+        <td>节点表示矩阵 <code>H</code></td>
+        <td>通常是 L2 normalized GRACE embedding</td>
+      </tr>
+      <tr>
+        <td><code>edge_index</code></td>
+        <td>图边</td>
+        <td>构造无向邻接表，用于 k-hop candidate 和 topo score</td>
+      </tr>
+      <tr>
+        <td><code>max_hops</code></td>
+        <td>局部候选范围</td>
+        <td>默认 <code>2</code></td>
+      </tr>
+      <tr>
+        <td><code>min_ball_size</code></td>
+        <td>最小球大小</td>
+        <td>不足时补最高分候选</td>
+      </tr>
+      <tr>
+        <td><code>max_ball_size</code></td>
+        <td>最大球大小</td>
+        <td>默认 <code>128</code>，避免巨型球</td>
+      </tr>
+      <tr>
+        <td><code>tau_add</code></td>
+        <td>成员加入阈值</td>
+        <td>score 大于阈值加入</td>
+      </tr>
+      <tr>
+        <td><code>lambda_h</code></td>
+        <td>embedding 相似性权重</td>
+        <td>GAGB 使用 <code>0.7</code></td>
+      </tr>
+      <tr>
+        <td><code>lambda_t</code></td>
+        <td>topology 相似性权重</td>
+        <td>GAGB 使用 <code>0.3</code></td>
+      </tr>
+      <tr>
+        <td><code>candidate_scope</code></td>
+        <td>候选池范围</td>
+        <td><code>khop</code> 或 <code>global</code></td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h3>4.2 成员分数</h3>
+  <p>
+    对中心节点 <code>c</code> 和候选节点 <code>i</code>，GAGB v1 使用线性组合分数：
+  </p>
+  <pre><code>score(i, c) = lambda_h * cosine(z_i, z_c) + lambda_t * topo(i, c)
+
+topo(i, c) = 1.0                 if i == c
+           = 1.0 / hop_distance  if i reachable within max_hops
+           = 0.0                 otherwise</code></pre>
+
+  <h3>4.3 Greedy 构球伪代码</h3>
+  <pre><code>unassigned = all nodes
+while unassigned is not empty:
+    center = unassigned node with largest degree plus tiny random tie break
+
+    if candidate_scope == "khop":
+        candidates = unassigned nodes within max_hops from center
+    else:
+        candidates = all unassigned nodes
+
+    score each candidate with lambda_h * cosine + lambda_t * khop_similarity
+    members = candidates with score >= tau_add
+
+    if len(members) < min_ball_size:
+        members = top-scoring candidates up to min_ball_size
+
+    members = top-scoring members up to max_ball_size
+    assign all members to the current ball
+
+return group_ids, groups, centers, radii, node_distances, diagnostics</code></pre>
+
+  <h3>4.4 关键代码摘录</h3>
+  <pre><code class="language-python">def build_graph_aware_balls(
+    embeddings: torch.Tensor,
+    edge_index: torch.Tensor,
+    *,
+    max_hops: int = 2,
+    min_ball_size: int = 5,
+    max_ball_size: int = 128,
+    tau_add: float = 0.55,
+    lambda_h: float = 0.7,
+    lambda_t: float = 0.3,
+    lambda_p: float = 0.0,
+    teacher_probs: torch.Tensor | None = None,
+    candidate_scope: str = "khop",
+    seed: int = 0,
+) -> GraphAwareBallResult:
+    if candidate_scope not in {"khop", "global"}:
+        raise ValueError("candidate_scope must be 'khop' or 'global'")
+
+    z = F.normalize(embeddings.detach().cpu().float(), p=2, dim=1)
+    adjacency = _build_adjacency(edge_index, z.size(0))
+    degrees = torch.tensor([len(neighbors) for neighbors in adjacency], dtype=torch.float32)
+
+    unassigned = set(range(z.size(0)))
+    groups: list[list[int]] = []
+    centers: list[int] = []
+
+    while unassigned:
+        center = _select_center(unassigned, degrees, rng)
+        hop_dist = _khop_distances(center, adjacency, max_hops)
+
+        if candidate_scope == "khop":
+            candidates = [node for node in hop_dist.keys() if node in unassigned]
+            if center not in candidates:
+                candidates.append(center)
+        else:
+            candidates = list(unassigned)
+
+        scored = []
+        for node in candidates:
+            cos = float(torch.dot(z[center], z[node]).item())
+            topo = _topology_similarity(node, hop_dist)
+            pred = _prediction_similarity(center, node, probs)
+            score = lambda_h * cos + lambda_t * topo + lambda_p * pred
+            scored.append((score, node))
+
+        scored.sort(key=lambda item: (-item[0], item[1]))
+        members = [node for score, node in scored if score >= tau_add]
+        if len(members) < min_ball_size:
+            members = [node for _, node in scored[:min(min_ball_size, len(scored))]]
+        if len(members) > max_ball_size:
+            members = members[:max_ball_size]
+
+        for node in members:
+            unassigned.remove(node)
+        groups.append(members)
+        centers.append(center)</code></pre>
+
+  <h2>5. Fair-Comparison 控制组设计</h2>
+  <p>
+    本轮 patch 的核心不是让 GAGB 涨点，而是让结论可审查：GAGB 是否真的优于若干只缺少一个因素的对照组。
+  </p>
+
+  <table>
+    <thead>
+      <tr>
+        <th>方法</th>
+        <th>设计目的</th>
+        <th>与 GAGB 的差异</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><code>gb</code></td>
+        <td>ordinary embedding GB</td>
+        <td>不用图拓扑，不用 GAGB greedy builder</td>
+      </tr>
+      <tr>
+        <td><code>gagb</code></td>
+        <td>当前主方法</td>
+        <td><code>candidate_scope=khop, lambda_h=0.7, lambda_t=0.3</code></td>
+      </tr>
+      <tr>
+        <td><code>emb_only_gagb_local</code></td>
+        <td>隔离 topology score 的价值</td>
+        <td>同样 k-hop candidate，但 <code>lambda_h=1.0, lambda_t=0.0</code></td>
+      </tr>
+      <tr>
+        <td><code>emb_only_gagb_global</code></td>
+        <td>隔离 k-hop candidate restriction 的价值</td>
+        <td>global candidate，embedding-only score</td>
+      </tr>
+      <tr>
+        <td><code>khop_only</code></td>
+        <td>判断是否只是 topology grouping 有用</td>
+        <td><code>lambda_h=0.0, lambda_t=1.0</code></td>
+      </tr>
+      <tr>
+        <td><code>kmeans_gagb_matched</code></td>
+        <td>控制 group count</td>
+        <td>KMeans 的 K 等于 GAGB ball count</td>
+      </tr>
+      <tr>
+        <td><code>topk_gagb_matched</code></td>
+        <td>控制 smoothing neighborhood size</td>
+        <td>k 等于 GAGB eligible train nodes 均值减一</td>
+      </tr>
+      <tr>
+        <td><code>gagb_shuffled_size_only</code></td>
+        <td>旧 shuffled 控制</td>
+        <td>保留球大小分布但打乱成员；alpha 和 coverage 可能变化</td>
+      </tr>
+      <tr>
+        <td><code>gagb_shuffled_alpha_matched</code></td>
+        <td>更干净的随机控制</td>
+        <td>保留球大小分布，并复用 GAGB per-node alpha 与 coverage</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h2>6. Smoothing Target 构造</h2>
+  <p>
+    目标构造位于
+    <code>src/noisy_label_gb_grace/smoothing/targets.py::build_method_targets</code>。
+    clean label 只用于 diagnostics，不进入训练 target。
+  </p>
+
+  <h3>6.1 局部 soft label</h3>
+  <p>
+    对一个 group / ball，只使用训练节点 noisy labels 统计标签分布：
+  </p>
+  <pre><code>q_B[y] = count(noisy_label == y among train nodes in B) / train_node_count(B)
+
+target_i = (1 - alpha_i) * one_hot(noisy_y_i) + alpha_i * q_B</code></pre>
+  <p>
+    <code>alpha_i</code> 由局部半径和节点到中心距离得到。覆盖不到或不满足条件的节点回退到 noisy one-hot target。
+  </p>
+
+  <h3>6.2 Alpha-matched shuffled 控制</h3>
+  <p>
+    <code>gagb_shuffled_alpha_matched</code> 的关键是：成员随机打乱后，训练时复用原始 GAGB 的
+    <code>alpha_i</code> 与 coverage mask，只改变每个节点拿到的 shuffled group label distribution。
+    这样可以避免 shuffled 控制组因为干预强度变化而不公平。
+  </p>
+
+  <pre><code class="language-python">def _local_group_targets(
+    labels_noisy: torch.Tensor,
+    train_mask: torch.Tensor,
+    groups: list[list[int]],
+    *,
+    num_classes: int,
+    alpha: float,
+    group_ids: torch.Tensor,
+    node_distances: torch.Tensor | None = None,
+    radii: torch.Tensor | None = None,
+    alpha_override: torch.Tensor | None = None,
+    coverage_override: torch.Tensor | None = None,
+) -> tuple[torch.Tensor, torch.Tensor, dict[str, float]]:
+    targets = F.one_hot(labels_noisy, num_classes=num_classes).float()
+    weights = torch.ones(labels_noisy.numel(), dtype=torch.float32)
+    alpha_values = torch.zeros(labels_noisy.numel(), dtype=torch.float32)
+    covered = torch.zeros(labels_noisy.numel(), dtype=torch.bool)
+
+    for group_index, nodes in enumerate(groups):
+        train_nodes = [node for node in nodes if bool(train_mask[node])]
+        if not train_nodes:
+            continue
+
+        label_dist = _label_distribution(labels_noisy[train_nodes], num_classes)
+        for node in train_nodes:
+            local_alpha = _node_alpha(node, group_index, alpha, node_distances, radii)
+            if alpha_override is not None:
+                local_alpha = float(alpha_override[node].item())
+            targets[node] = (1.0 - local_alpha) * targets[node] + local_alpha * label_dist
+            alpha_values[node] = local_alpha
+            covered[node] = True
+
+    if coverage_override is not None:
+        covered = coverage_override.bool().clone()
+
+    return targets, weights, diagnostics</code></pre>
+
+  <h2>7. 诊断指标</h2>
+  <p>
+    这些指标用于判断机制是否成立，而不是只看 accuracy。
+  </p>
+  <table>
+    <thead>
+      <tr>
+        <th>指标</th>
+        <th>含义</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><code>ball_count</code>, <code>avg_ball_size</code></td>
+        <td>分组规模与粒度</td>
+      </tr>
+      <tr>
+        <td><code>effective_smoothing_coverage</code></td>
+        <td>训练节点实际被 smoothing 影响的比例</td>
+      </tr>
+      <tr>
+        <td><code>eligible_train_node_count</code></td>
+        <td>用于 soft label 统计的有效训练节点数</td>
+      </tr>
+      <tr>
+        <td><code>alpha_mean_all_train</code>, <code>alpha_mean_nonzero</code>, <code>alpha_std_train</code></td>
+        <td>干预强度统计</td>
+      </tr>
+      <tr>
+        <td><code>alpha_q25_train</code>, <code>alpha_q50_train</code>, <code>alpha_q75_train</code></td>
+        <td>干预强度分位数</td>
+      </tr>
+      <tr>
+        <td><code>clean_purity</code></td>
+        <td>使用 clean labels 诊断球内真实标签一致性，不用于训练</td>
+      </tr>
+      <tr>
+        <td><code>noisy_label_entropy</code></td>
+        <td>球内 noisy label 混杂程度</td>
+      </tr>
+      <tr>
+        <td><code>noise_detection_auroc</code></td>
+        <td>局部分布对噪声节点的识别能力</td>
+      </tr>
+      <tr>
+        <td><code>noise_correction_rate</code>, <code>clean_damage_rate</code></td>
+        <td>soft label 是否拉回错误标签、是否误伤干净标签</td>
+      </tr>
+      <tr>
+        <td><code>alpha_match_max_abs_diff</code>, <code>coverage_match_abs_diff</code></td>
+        <td>alpha-matched shuffled 控制组是否真的匹配 GAGB 干预强度</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h2>8. 实验命令</h2>
+  <pre><code class="language-powershell">cd C:\Users\Admin\Desktop\实验8去噪5.19-\gb_graph_aware_minival_6_1
+
+py -3 tests\run_unit_tests.py
+
+py -3 scripts\run_gate_experiment.py `
+  --allow-external-python `
+  --python C:\Users\Admin\AppData\Local\Programs\Python\Python312\python.exe `
+  --datasets Cora CiteSeer `
+  --split-mode ratio `
+  --train-ratios 0.2 `
+  --val-ratio 0.1 `
+  --noise-rates 0.2 0.4 `
+  --seeds 0 1 2 3 4 `
+  --mode frozen `
+  --alphas 0.3 `
+  --methods ce global gb gb_ca_ce gagb gagb_ca_ce emb_only_gagb_local emb_only_gagb_global khop_only kmeans_gagb_matched topk_gagb_matched gagb_shuffled_size_only gagb_shuffled_alpha_matched `
+  --save-diagnostics
+
+py -3 scripts\summarize_gate_results.py `
+  --results-root results `
+  --output-dir reports\gagb_fair_minival_20260601</code></pre>
+
+  <h2>9. 当前最小验证结果</h2>
+  <div class="failure">
+    <strong>当前结论：</strong>
+    GAGB v1 没有通过独立价值标准。它在 3/4 个 dataset-noise setting 上略高于 ordinary GB，
+    但没有稳定超过 <code>khop_only</code>、<code>emb_only_gagb_local/global</code>、
+    <code>kmeans_gagb_matched</code>、<code>topk_gagb_matched</code> 或
+    <code>gagb_shuffled_alpha_matched</code>。
+  </div>
+
+  <h3>9.1 主 paired delta</h3>
+  <p class="small">
+    表中数值为 <code>gagb - baseline</code> 的 paired mean delta。正数表示 GAGB 更高。
+  </p>
+  <table>
+    <thead>
+      <tr>
+        <th>Setting</th>
+        <th>vs gb</th>
+        <th>vs emb local</th>
+        <th>vs emb global</th>
+        <th>vs khop</th>
+        <th>vs kmeans matched</th>
+        <th>vs topk matched</th>
+        <th>vs shuffled alpha</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>Cora, noise 0.2</td>
+        <td>+0.00011</td>
+        <td>-0.00053</td>
+        <td>+0.00063</td>
+        <td>-0.00011</td>
+        <td>+0.00063</td>
+        <td>+0.00127</td>
+        <td>-0.00021</td>
+      </tr>
+      <tr>
+        <td>Cora, noise 0.4</td>
+        <td>-0.00232</td>
+        <td>+0.00084</td>
+        <td>+0.00211</td>
+        <td>+0.00137</td>
+        <td>-0.00116</td>
+        <td>+0.00665</td>
+        <td>+0.00264</td>
+      </tr>
+      <tr>
+        <td>CiteSeer, noise 0.2</td>
+        <td>+0.00034</td>
+        <td>+0.00026</td>
+        <td>-0.00043</td>
+        <td>-0.00670</td>
+        <td>-0.00490</td>
+        <td>-0.00129</td>
+        <td>+0.00103</td>
+      </tr>
+      <tr>
+        <td>CiteSeer, noise 0.4</td>
+        <td>+0.00043</td>
+        <td>-0.00034</td>
+        <td>-0.00034</td>
+        <td>-0.00069</td>
+        <td>-0.00034</td>
+        <td>+0.00447</td>
+        <td>-0.00034</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h3>9.2 Alpha-matched shuffled sanity</h3>
+  <p>
+    <code>gagb_shuffled_alpha_matched</code> 的 sanity diagnostics 在四个 setting 中均为：
+    <code>alpha_match_max_abs_diff = 0.0</code>，
+    <code>coverage_match_abs_diff = 0.0</code>。
+    因此该控制组在干预强度上是干净的。
+  </p>
+
+  <h2>10. 需要 GPT 重点审查的问题</h2>
+  <ol>
+    <li>
+      <strong>GAGB 是否真的只比控制组多了 graph-aware score？</strong>
+      特别是 <code>emb_only_gagb_local</code> 与 <code>khop_only</code> 是否足以拆分 embedding score 和 topology score。
+    </li>
+    <li>
+      <strong><code>gagb_shuffled_alpha_matched</code> 是否足够干净？</strong>
+      它保留 alpha 与 coverage 后，只改变 shuffled group label distribution，这是否是合适的随机控制？
+    </li>
+    <li>
+      <strong><code>topk_gagb_matched</code> 的匹配规则是否合理？</strong>
+      当前使用 mean eligible GAGB train nodes minus 1，而不是 all-node avg ball size。
+    </li>
+    <li>
+      <strong>target construction 是否存在 noisy-label self-confirmation？</strong>
+      当前局部分布完全由同一批 noisy train labels 统计，可能强化局部错误多数类。
+    </li>
+    <li>
+      <strong>当前失败说明什么？</strong>
+      是图感知粒球思想不成立，还是 v1 的构球质量函数太弱、alpha 机制太粗、缺少 prediction consistency？
+    </li>
+    <li>
+      <strong>是否值得进入 v2？</strong>
+      如果值得，v2 应优先加入 prediction consistency、ball quality <code>Q(B)</code>、
+      homophily-aware weighting，还是完全换成可学习增强 / view optimization？
+    </li>
+  </ol>
+
+  <h2>11. 当前可接受的论文表述边界</h2>
+  <div class="warning">
+    <p>
+      当前不能写成“GAGB 已证明优于普通 GB 或其他控制组”。更合适的表述是：
+    </p>
+    <p>
+      <strong>
+        在 frozen-GRACE noisy-label gate 中，GAGB v1 展示了构造图感知局部分组的可执行性，
+        但公平控制组显示其独立贡献尚未被稳定证明。当前版本更适合作为诊断基线，而不是主方法。
+      </strong>
+    </p>
+  </div>
+
+  <h2>12. 相关文件</h2>
+  <ul>
+    <li><code>src/noisy_label_gb_grace/balls/graph_aware_ball.py</code>：GAGB 构球主逻辑。</li>
+    <li><code>src/noisy_label_gb_grace/smoothing/targets.py</code>：soft target、coverage-aware CE、alpha-matched shuffled。</li>
+    <li><code>scripts/run_noisy_classifier.py</code>：构建 GB/GAGB/controls 并训练 frozen classifier。</li>
+    <li><code>scripts/run_gate_experiment.py</code>：批量实验 orchestration。</li>
+    <li><code>src/noisy_label_gb_grace/evaluation/summary.py</code>：summary 和 paired deltas。</li>
+    <li><code>reports/gagb_fair_minival_20260601/gate_summary.csv</code>：聚合结果。</li>
+    <li><code>reports/gagb_fair_minival_20260601/gate_paired_deltas.csv</code>：paired delta 结果。</li>
+    <li><code>reports/2026-06-01_gagb_fair_minival_result.md</code>：本轮实验结论报告。</li>
+  </ul>
+
+  <p class="small">
+    本 HTML 仅用于方法审查和研究复盘。若进入下一阶段实验，应新建 v2 计划并记录假设、成功标准、失败标准和可追溯结果。
+  </p>
+</main>
+</body>
+</html>

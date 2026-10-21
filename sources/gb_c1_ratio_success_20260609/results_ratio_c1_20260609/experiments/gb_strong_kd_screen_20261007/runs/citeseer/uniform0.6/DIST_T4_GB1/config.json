@@ -1,0 +1,57 @@
+{
+  "dataset": "citeseer",
+  "noise_rate": 0.6,
+  "student_seed": 0,
+  "family": "DIST",
+  "temperature": 4.0,
+  "region": true,
+  "replay": false,
+  "settings": {
+    "student_seed": 0,
+    "protocol_seed": 0,
+    "hidden": 64,
+    "layers": 2,
+    "dropout": 0.5,
+    "batch_norm": true,
+    "lr": 0.01,
+    "weight_decay": 0.0005,
+    "epochs": 200,
+    "region_strength": 1.0,
+    "candidates": {
+      "KD": [
+        1.0,
+        4.0
+      ],
+      "DIST": [
+        1.0,
+        4.0
+      ],
+      "DGKD-T": [
+        0.7,
+        1.0
+      ]
+    },
+    "scope": "all nodes",
+    "dgkd_alpha": 15.0,
+    "dgkd_beta": 3.0,
+    "dgkd_target": "frozen teacher argmax on ALL nodes",
+    "selection": "first strict maximum clean validation accuracy"
+  },
+  "protocol": {
+    "split_hash": "98b2579310f10cf25b9ac8fb2b7497efa4c1e9279b738170860a2542b966de6a",
+    "noise_hash": "02ca1a71e920f4470a8c46c5e84d1a1c87196d58f46a418091367744b6e351ed",
+    "seed": 0,
+    "modified_train_count": 390,
+    "modified_val_count": 0,
+    "modified_test_count": 0,
+    "features": "raw main-experiment attributes",
+    "data_file": "C:\\Users\\Admin\\Desktop\\实验8去噪5.19-\\external\\NoisyGL\\data\\CiteSeer\\processed\\data.pt",
+    "num_nodes": 3327,
+    "num_classes": 6
+  },
+  "initial_state_hash": "b3d1ba0209df4bd1d9072e7404d6589973597203f151e68b545443fce69a5c7d",
+  "initial_rng_hash": "ee5b14eaa4b1a95c65d2dc446c424ab7c8576b08c89e032c76f4e8ee1dbdf843",
+  "teacher_source": "C:\\Users\\Admin\\Desktop\\实验8去噪5.19-\\gb_c1_ratio_success_20260609\\results_ratio_c1_20260609\\experiments\\robust_graph_seed0_20261006\\runs\\citeseer\\uniform0.6\\erase",
+  "input_cache": "C:\\Users\\Admin\\Desktop\\实验8去噪5.19-\\gb_c1_ratio_success_20260609\\results_ratio_c1_20260609\\experiments\\gb_regional_distillation_seed0_20261007\\cache\\citeseer\\uniform0.6\\regional.pt",
+  "assignment_hash": "f9eed36ce9411b8e82052ec4620ba07f4f0325e5a03c54e89a8de5e2b5892511"
+}

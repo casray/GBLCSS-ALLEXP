@@ -1,0 +1,45 @@
+﻿python.exe : C:\Users\Admin\Desktop\�������ں�\�������ں�\GRACE-master\.venv-rocm\Lib\site-packages\torch_geometric\nn\co
+nv\gcn_conv.py:274: UserWarning: Converting sparse tensor to CSR format for more efficient processing. Consider convert
+ing your sparse tensor to CSR format beforehand to avoid repeated conversion (got 'torch.sparse_coo')
+At line:2 char:86
++ ... ython.exe'; & $py scripts\run_standard_downstream.py --datasets cites ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (C:\Users\Admin\...ch.sparse_coo'):String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+  return spmm(adj_t, x, reduce=self.aggr)
+C:\Users\Admin\Desktop\�������ں�\�������ں�\GRACE-master\.venv-rocm\Lib\site-packages\torch_geometric\utils\_spmm.py:71:
+ UserWarning: Sparse CSR tensor support is in beta state. If you miss a functionality in the sparse tensor support, ple
+ase submit a feature request to https://github.com/pytorch/pytorch/issues. (Triggered internally at C:\b\pytorch\aten\s
+rc\ATen\SparseCsrTensorImpl.cpp:55.)
+  src = src.to_sparse_csr()
+C:\Users\Admin\Desktop\ʵ��8ȥ��5.19-\external\NoisyGL\predictor\module\UnionNET.py:27: UserWarning: The use of `x.T` on 
+tensors of dimension other than 2 to reverse their shape is deprecated and it will throw an error in a future release. 
+Consider `x.mT` to transpose batches of matrices or `x.permute(*torch.arange(x.ndim - 1, -1, -1))` to reverse the dimen
+sions of a tensor. (Triggered internally at C:\b\pytorch\aten\src\ATen\native\TensorShape.cpp:4419.)
+  inner_sum = sum([torch.exp(torch.dot(h_x_j.view(-1), h_x_hat[i].T.view(-1))) for h_x_j in S])
+STANDARD_RUN dataset=citeseer method=unionnet seed=3
+----Data statistics------'
+                Name: citeseer
+                #Nodes 3327
+                #Edges 4552
+                #Classes 6
+                #Ave_degree 2.74
+----Split statistics------'
+                #Train samples 665 (20.0 % of nodes)
+                #Val samples 332 (10.0 % of nodes)
+                #Test samples 2328 (70.0 % of nodes)
+RESULT dataset=citeseer method=unionnet seed=3 test=0.6851
+STANDARD_RUN dataset=citeseer method=unionnet seed=4
+----Data statistics------'
+                Name: citeseer
+                #Nodes 3327
+                #Edges 4552
+                #Classes 6
+                #Ave_degree 2.74
+----Split statistics------'
+                #Train samples 665 (20.0 % of nodes)
+                #Val samples 332 (10.0 % of nodes)
+                #Test samples 2328 (70.0 % of nodes)
+RESULT dataset=citeseer method=unionnet seed=4 test=0.6671
+WROTE runs\baseline_completion_20260612\baseline_completion_citeseer_unionnet_remaining.csv

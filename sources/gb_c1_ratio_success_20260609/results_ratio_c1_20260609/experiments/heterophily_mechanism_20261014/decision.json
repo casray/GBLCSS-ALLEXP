@@ -1,0 +1,157 @@
+{
+  "stage": "exploratory",
+  "decisions": {
+    "grace": {
+      "capacity": {
+        "coauthorcs": {
+          "mean_brier_delta": 0.00717937840263483,
+          "std_brier_delta": 0.005345949638582111,
+          "positive_seed_count": 0,
+          "n_seeds": 5,
+          "clean_harm_delta": 0.0046651391162475,
+          "screening_threshold_pass": false
+        },
+        "corafull": {
+          "mean_brier_delta": -0.025593702762487475,
+          "std_brier_delta": 0.0016628100456014974,
+          "positive_seed_count": 5,
+          "n_seeds": 5,
+          "clean_harm_delta": 0.00521305215103734,
+          "screening_threshold_pass": true
+        },
+        "roman": {
+          "mean_brier_delta": -0.00523483072219192,
+          "std_brier_delta": 0.0004015344751438466,
+          "positive_seed_count": 5,
+          "n_seeds": 5,
+          "clean_harm_delta": 1.469507714915e-05,
+          "screening_threshold_pass": true
+        }
+      },
+      "ball_vs_knn": {
+        "coauthorcs": {
+          "mean_brier_delta": 0.01955752542350389,
+          "std_brier_delta": 0.006882204984900066,
+          "positive_seed_count": 0,
+          "n_seeds": 5,
+          "clean_harm_delta": 0.0046242338519966895,
+          "screening_threshold_pass": false
+        },
+        "corafull": {
+          "mean_brier_delta": 0.0248373660634206,
+          "std_brier_delta": 0.0027462018784904993,
+          "positive_seed_count": 0,
+          "n_seeds": 5,
+          "clean_harm_delta": 0.0019522958371526798,
+          "screening_threshold_pass": false
+        },
+        "roman": {
+          "mean_brier_delta": 0.00184416898256896,
+          "std_brier_delta": 0.0007124772867463626,
+          "positive_seed_count": 0,
+          "n_seeds": 5,
+          "clean_harm_delta": -0.00016016932290308,
+          "screening_threshold_pass": false
+        }
+      },
+      "ball_vs_km": {
+        "coauthorcs": {
+          "mean_brier_delta": 0.0157033832082543,
+          "std_brier_delta": 0.007949864889700954,
+          "positive_seed_count": 0,
+          "n_seeds": 5,
+          "clean_harm_delta": 0.0005223868870865199,
+          "screening_threshold_pass": false
+        },
+        "corafull": {
+          "mean_brier_delta": 0.02782469151195961,
+          "std_brier_delta": 0.0033887314621935906,
+          "positive_seed_count": 0,
+          "n_seeds": 5,
+          "clean_harm_delta": 0.00113664860874506,
+          "screening_threshold_pass": false
+        },
+        "roman": {
+          "mean_brier_delta": 0.0017788013098148001,
+          "std_brier_delta": 0.001118045750382601,
+          "positive_seed_count": 0,
+          "n_seeds": 5,
+          "clean_harm_delta": -0.00023403884203763002,
+          "screening_threshold_pass": false
+        }
+      },
+      "reliability": {
+        "coauthorcs": {
+          "mean_brier_delta": 0.00392975923420912,
+          "std_brier_delta": 0.0029310821758297433,
+          "positive_seed_count": 1,
+          "n_seeds": 5,
+          "clean_harm_delta": -9.022450968815e-05,
+          "screening_threshold_pass": false
+        },
+        "corafull": {
+          "mean_brier_delta": 0.0038138385699678923,
+          "std_brier_delta": 0.0010074239427141265,
+          "positive_seed_count": 0,
+          "n_seeds": 5,
+          "clean_harm_delta": 0.0,
+          "screening_threshold_pass": false
+        },
+        "roman": {
+          "mean_brier_delta": 0.00038043045758106436,
+          "std_brier_delta": 0.0003141771378924086,
+          "positive_seed_count": 1,
+          "n_seeds": 5,
+          "clean_harm_delta": 0.0,
+          "screening_threshold_pass": false
+        }
+      }
+    },
+    "graphacl_portable": {
+      "capacity": {
+        "roman": {
+          "mean_brier_delta": 0.0,
+          "std_brier_delta": 0.0,
+          "positive_seed_count": 0,
+          "n_seeds": 5,
+          "clean_harm_delta": 0.0,
+          "screening_threshold_pass": false
+        }
+      },
+      "ball_vs_knn": {
+        "roman": {
+          "mean_brier_delta": 0.018103878655847,
+          "std_brier_delta": 0.0006876197991079389,
+          "positive_seed_count": 0,
+          "n_seeds": 5,
+          "clean_harm_delta": -0.00017615983694258,
+          "screening_threshold_pass": false
+        }
+      },
+      "ball_vs_km": {
+        "roman": {
+          "mean_brier_delta": 0.03499971138345598,
+          "std_brier_delta": 0.005912049855441877,
+          "positive_seed_count": 0,
+          "n_seeds": 5,
+          "clean_harm_delta": 7.301401869158e-05,
+          "screening_threshold_pass": false
+        }
+      },
+      "reliability": {
+        "roman": {
+          "mean_brier_delta": -0.0002229327760490542,
+          "std_brier_delta": 9.255808916740275e-05,
+          "positive_seed_count": 5,
+          "n_seeds": 5,
+          "clean_harm_delta": -7.301401869158e-05,
+          "screening_threshold_pass": false
+        }
+      }
+    }
+  },
+  "criterion": "negative brier_delta favors first arm; pooled across uniform/pair at each paired protocol seed",
+  "no_significance_claim": true,
+  "reliability_training": "disabled unless per-dataset gates and shuffled comparator pass",
+  "multiple_heterophily_graphs_tested": false
+}

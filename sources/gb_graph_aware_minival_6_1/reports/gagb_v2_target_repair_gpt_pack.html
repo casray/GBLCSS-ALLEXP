@@ -1,0 +1,371 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>GAGB v2 Target Update Repair - GPT Self-contained Pack</title>
+  <style>
+    body { margin: 0; font-family: "Microsoft YaHei", "Segoe UI", Arial, sans-serif; color: #1f2933; background: #f6f7f9; line-height: 1.62; }
+    main { max-width: 1180px; margin: 0 auto; padding: 28px 22px 56px; background: #fff; }
+    h1 { font-size: 30px; margin: 0 0 8px; }
+    h2 { font-size: 22px; margin-top: 34px; padding-top: 18px; border-top: 1px solid #d8dee8; }
+    h3 { font-size: 18px; margin-top: 24px; }
+    p, li { font-size: 15px; }
+    code, pre { font-family: Consolas, "SFMono-Regular", monospace; }
+    pre { white-space: pre-wrap; background: #111827; color: #f9fafb; padding: 16px; border-radius: 8px; overflow-x: auto; }
+    table { width: 100%; border-collapse: collapse; margin: 14px 0 22px; font-size: 13px; }
+    th, td { border: 1px solid #d8dee8; padding: 8px 9px; vertical-align: top; text-align: left; }
+    th { background: #eef2f7; font-weight: 700; }
+    .lead { font-size: 16px; color: #394654; }
+    .box { border: 1px solid #cfd8e3; background: #f8fafc; padding: 14px 16px; border-radius: 8px; margin: 14px 0; }
+    .warn { border-color: #f4b860; background: #fff8e8; }
+    .good { border-color: #7cc99a; background: #eefbf3; }
+    .bad { border-color: #ef8f8f; background: #fff1f1; }
+    .muted { color: #64748b; }
+    .small { font-size: 13px; }
+    .tag { display: inline-block; padding: 2px 8px; border-radius: 999px; background: #e5e7eb; font-size: 12px; margin-right: 6px; }
+    .copy-prompt { background: #0f172a; color: #e5e7eb; }
+  </style>
+</head>
+<body>
+<main>
+  <h1>GAGB v2 Target Update Repair Minival：给 GPT 的自包含实验包</h1>
+  <p class="lead">用途：这份文件是给外部 GPT / Deep Research 看的。GPT 看不到本地代码、CSV、日志和文件夹，所以这里把刚才实验的目的、算法、设置、结果、诊断、结论边界和缺失信息完整整理出来。它不是代码审查材料。</p>
+
+  <div class="box warn">
+    <strong>最重要的阅读限制：</strong>请不要假设 GPT 能打开任何本地路径。下文出现的路径只用于追溯，关键事实已经在正文中复述。请不要让 GPT 做代码审查，除非另行贴出完整相关代码片段。
+  </div>
+
+  <h2>1. Context And Objective</h2>
+  <p>本项目研究的是图标签噪声任务中的 Graph-aware Granular Ball（GAGB）是否能作为局部可信区域，辅助 frozen GRACE embedding 上的 noisy-label robust node classification。</p>
+  <p>上一轮 v2 target-only minival 表面结果是 <code>gagb_qb_conflict_gate</code> 的 <code>NCR=0</code>，看起来没有真正纠错。但随后 gated-node diagnostic 发现：</p>
+  <ul>
+    <li>conflict gate 明显富集 noisy train nodes；</li>
+    <li><code>q_mix</code> 在 gated noisy nodes 上大多已经指向 clean label；</li>
+    <li>teacher 在 gated noisy nodes 上有较高 clean accuracy；</li>
+    <li>真正阻断 NCR 的是旧 target update 中 <code>alpha=0.3</code> 的 convex mixing 过弱，target argmax 仍停在 noisy label。</li>
+  </ul>
+  <p>本轮实验的目标很窄：<strong>不改 GRACE、不改 GAGB 构球、不改 teacher，只修 gated nodes 的 target update 形式</strong>，验证 pre-alpha correction signal 是否能转化成 post-target correction signal。</p>
+
+  <h2>2. Prior Experiment Chain</h2>
+  <table>
+    <thead><tr><th>阶段</th><th>核心发现</th><th>对本轮的约束</th></tr></thead>
+    <tbody>
+      <tr><td>v1 fair minival</td><td>GAGB 相比 ordinary GB、khop-only、embedding-only、shuffled control 没有稳定证明独立价值。</td><td>后续不能只看 GAGB vs CE，必须保留公平控制。</td></tr>
+      <tr><td>v2 target-only minival</td><td>teacher-aware <code>q_B</code> 和 conflict gate 没有让 NCR 变正，主成功标准失败。</td><td>不能声称 v2 target-only 已成功。</td></tr>
+      <tr><td>gated-node diagnostic</td><td>gate/q_mix/teacher 都有纠错信号；<code>alpha=0.3</code> 使 target argmax 无法翻转。</td><td>下一步应优先修 target update，而不是改球、改 teacher 或接入 view generation。</td></tr>
+      <tr><td>本轮 target update repair</td><td>只改变 gated nodes 的 target update，观察 NCR/CDR/accuracy。</td><td>仍然只是 minival；未恢复全部 fair-control suite。</td></tr>
+    </tbody>
+  </table>
+
+  <h2>3. Method / Algorithm</h2>
+  <h3>3.1 输入与固定组件</h3>
+  <ul>
+    <li>输入图：Cora / CiteSeer attributed graph。</li>
+    <li>Embedding：frozen GRACE 表示，不在本轮更新。</li>
+    <li>Grouping：沿用现有 GAGB 构球，不调 <code>lambda_h/lambda_t/tau_add</code>。</li>
+    <li>Teacher：只用 noisy train labels 在 frozen embedding 上训练 linear teacher，输出 all-node <code>teacher_probs</code>。</li>
+    <li>Clean labels：只用于 diagnostics 和 validation/test evaluation，不进入训练目标构造。</li>
+  </ul>
+
+  <h3>3.2 q_mix 构造</h3>
+  <p>对一个 graph-aware ball <code>B</code>：</p>
+  <pre>q_label_B = ball 内 train noisy label distribution
+q_pred_B  = ball 内 all-node teacher probability mean
+q_mix     = (1 - beta) * q_label_B + beta * q_pred_B
+beta      = 0.5</pre>
+
+  <h3>3.3 Conflict gate</h3>
+  <p>对 train node <code>i</code>，只有满足以下条件才改 target：</p>
+  <pre>q_mix[noisy_y_i] <= 0.35
+max(q_mix) >= 0.55</pre>
+  <p>直观含义：当前 noisy label 在局部 soft distribution 中支持度很低，同时 q_mix 有较明确 top class。</p>
+
+  <h3>3.4 本轮 target update variants</h3>
+  <table>
+    <thead><tr><th>方法</th><th>更新形式</th><th>目的</th></tr></thead>
+    <tbody>
+      <tr><td><code>gagb_qb_conflict_gate_alpha03</code></td><td>旧版本：几何置信度缩放后的 alpha 最大约 0.3。</td><td>作为 baseline，复现 NCR=0。</td></tr>
+      <tr><td><code>alpha06</code></td><td>gated nodes 使用固定 alpha=0.6。</td><td>测试较强 soft mixing 是否足够翻转 target argmax。</td></tr>
+      <tr><td><code>alpha07</code></td><td>gated nodes 使用固定 alpha=0.7。</td><td>prompt 中最小 repair 候选。</td></tr>
+      <tr><td><code>alpha09</code></td><td>gated nodes 使用固定 alpha=0.9。</td><td>测试接近 replace 的强 soft update。</td></tr>
+      <tr><td><code>replace_qmix</code></td><td>gated nodes 直接使用 <code>q_mix</code> 作为 target。</td><td>彻底移除 noisy one-hot 的 argmax 阻断。</td></tr>
+      <tr><td><code>sharpen_qmix_T05</code></td><td>gated nodes 使用 sharpen(q_mix, T=0.5)。</td><td>测试更尖锐 target 是否更有效。</td></tr>
+      <tr><td><code>margin_replace</code></td><td>在 conflict gate 基础上，若 <code>argmax(q_mix) != noisy_y_i</code> 且 <code>q_mix[top1] - q_mix[noisy_y_i] >= 0.2</code>，则 replace。</td><td>希望比直接 replace 更保守，降低 clean damage。</td></tr>
+    </tbody>
+  </table>
+  <div class="box">
+    <strong>实现细节：</strong>最初 smoke run 发现 <code>alpha06/07/09</code> 如果继续被原来的球半径/节点距离几何置信度缩放，实际 <code>alpha_max_actual</code> 仍低于 0.5，无法测试“固定 alpha repair”的假设。因此最终 <code>alpha06/07/09</code> 在 gated nodes 上使用固定 alpha。<code>alpha03</code> 保留旧版本作为对照。
+  </div>
+
+  <h2>4. Clean-Label And Data-Leakage Boundary</h2>
+  <ul>
+    <li>Clean labels 没有用于 GAGB 构球。</li>
+    <li>Clean labels 没有用于 teacher training。</li>
+    <li>Clean labels 没有用于 target construction。</li>
+    <li>Clean labels 没有用于 classifier training targets。</li>
+    <li>Clean labels 仅用于 validation/test evaluation 和 diagnostics，如 NCR、CDR、gated noisy ratio、qmix argmax 是否等于 clean label。</li>
+  </ul>
+
+  <h2>5. Experimental Protocol</h2>
+  <table>
+    <tbody>
+      <tr><th>Datasets</th><td>Cora, CiteSeer</td></tr>
+      <tr><th>Task</th><td>Noisy-label robust node classification on attributed graphs</td></tr>
+      <tr><th>Split</th><td>ratio split, train ratio 0.2, validation ratio 0.1, split seed 0</td></tr>
+      <tr><th>Noise</th><td>symmetric label noise, rates 0.2 and 0.4</td></tr>
+      <tr><th>Seeds</th><td>0, 1, 2, 3, 4</td></tr>
+      <tr><th>Training mode</th><td>frozen GRACE embedding + downstream classifier</td></tr>
+      <tr><th>Teacher</th><td>noisy-label-only linear teacher, 100 epochs, lr=0.01, weight_decay=5e-4, temperature=1.0</td></tr>
+      <tr><th>q_mix beta</th><td>0.5</td></tr>
+      <tr><th>Conflict gate</th><td><code>q_mix[noisy_y_i] <= 0.35</code>, <code>max(q_mix) >= 0.55</code></td></tr>
+      <tr><th>Margin threshold</th><td>0.2 for <code>margin_replace</code></td></tr>
+    </tbody>
+  </table>
+  <pre>py -3 scripts\run_gate_experiment.py --allow-external-python --python C:\Users\Admin\AppData\Local\Programs\Python\Python312\python.exe --datasets Cora CiteSeer --split-mode ratio --train-ratios 0.2 --val-ratio 0.1 --noise-rates 0.2 0.4 --seeds 0 1 2 3 4 --mode frozen --alphas 0.3 --methods ce gb gagb khop_only gagb_qb_conflict_gate_alpha03 gagb_qb_conflict_gate_alpha06 gagb_qb_conflict_gate_alpha07 gagb_qb_conflict_gate_alpha09 gagb_qb_conflict_gate_replace_qmix gagb_qb_conflict_gate_sharpen_qmix_T05 gagb_qb_conflict_gate_margin_replace --save-diagnostics
+
+py -3 scripts\summarize_gate_results.py --results-root results --output-dir reports\gagb_v2_target_repair_20260601</pre>
+
+  <h2>6. Baselines And Fair Controls</h2>
+  <table>
+    <thead><tr><th>方法</th><th>作用</th><th>本轮是否包含</th></tr></thead>
+    <tbody>
+      <tr><td><code>ce</code></td><td>noisy labels 直接训练。</td><td>包含，但主表主要关注 target repair。</td></tr>
+      <tr><td><code>gb</code></td><td>ordinary embedding granular ball smoothing。</td><td>包含，主成功标准之一。</td></tr>
+      <tr><td><code>gagb</code></td><td>v1 graph-aware GB local smoothing。</td><td>包含，主成功标准之一。</td></tr>
+      <tr><td><code>khop_only</code></td><td>topology-only grouping control。</td><td>包含，用于判断是否只是 topology effect。</td></tr>
+      <tr><td><code>alpha03</code></td><td>旧 conflict gate target update。</td><td>包含，用于验证 repair 是否超过旧版本。</td></tr>
+      <tr><td><code>gagb_shuffled_alpha_matched</code></td><td>打乱 group label distribution 但保持 alpha/coverage。</td><td><strong>本轮未包含</strong>，这是重要缺口。</td></tr>
+      <tr><td><code>kmeans_gagb_matched</code></td><td>ball count matched kmeans control。</td><td><strong>本轮未包含</strong>，这是重要缺口。</td></tr>
+      <tr><td><code>topk_gagb_train_matched</code></td><td>train-node effective size matched top-k control。</td><td><strong>本轮未包含</strong>，这是重要缺口。</td></tr>
+    </tbody>
+  </table>
+
+  <h2>7. Metrics And Definitions</h2>
+  <ul>
+    <li><strong>Test Acc Mean/Std:</strong> 5 seeds 的 test accuracy at best validation mean/std。</li>
+    <li><strong>NCR / noise_correction_rate:</strong> 在 noisy train nodes 上，target argmax 是否从 noisy label 指向 clean label。</li>
+    <li><strong>CDR / clean_damage_rate:</strong> 在 clean train nodes 上，target argmax 是否被错误改离 clean label。</li>
+    <li><strong>Possible Before Alpha:</strong> gated noisy nodes 中，<code>q_mix</code> argmax 是否等于 clean label。它表示 pre-alpha correction signal。</li>
+    <li><strong>Lost By Alpha:</strong> <code>q_mix</code> 本来能指向 clean label，但最终 target argmax 没有指向 clean label 的比例。</li>
+    <li><strong>Target Argmax Eq Clean Rate:</strong> gated noisy nodes 上最终 target argmax 等于 clean label 的比例。</li>
+    <li><strong>Gated Noisy Ratio:</strong> gated train nodes 中真实 noisy nodes 的比例。只用于诊断，不能用于训练。</li>
+  </ul>
+
+  <h2>8. Main Results</h2>
+  <h3>8.1 Accuracy / NCR / CDR / Target Diagnostics</h3>
+  <table>
+    <thead>
+      <tr><th>Dataset</th><th>Noise</th><th>Method</th><th>Acc Mean</th><th>Acc Std</th><th>NCR</th><th>CDR</th><th>Possible</th><th>Lost</th><th>Target Clean</th><th>Gated Noisy</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>Cora</td><td>0.2</td><td>gb</td><td>0.8118</td><td>0.0051</td><td>0.0000</td><td>0.0000</td><td>-</td><td>-</td><td>-</td><td>-</td></tr>
+      <tr><td>Cora</td><td>0.2</td><td>gagb</td><td>0.8119</td><td>0.0053</td><td>0.0000</td><td>0.0000</td><td>-</td><td>-</td><td>-</td><td>-</td></tr>
+      <tr><td>Cora</td><td>0.2</td><td>alpha03</td><td>0.8117</td><td>0.0059</td><td>0.0000</td><td>0.0000</td><td>0.9722</td><td>0.9722</td><td>0.0000</td><td>0.8101</td></tr>
+      <tr><td>Cora</td><td>0.2</td><td>alpha07</td><td>0.8080</td><td>0.0081</td><td>0.2074</td><td>0.0115</td><td>0.9722</td><td>0.1657</td><td>0.8065</td><td>0.8101</td></tr>
+      <tr><td>Cora</td><td>0.2</td><td>alpha09</td><td>0.8120</td><td>0.0081</td><td>0.2519</td><td>0.0143</td><td>0.9722</td><td>0.0000</td><td>0.9722</td><td>0.8101</td></tr>
+      <tr><td>Cora</td><td>0.2</td><td>replace_qmix</td><td>0.8136</td><td>0.0049</td><td>0.2519</td><td>0.0143</td><td>0.9722</td><td>0.0000</td><td>0.9722</td><td>0.8101</td></tr>
+      <tr><td>Cora</td><td>0.2</td><td>margin_replace</td><td>0.8136</td><td>0.0049</td><td>0.2519</td><td>0.0143</td><td>0.9722</td><td>0.0000</td><td>0.9722</td><td>0.8101</td></tr>
+      <tr><td>Cora</td><td>0.4</td><td>gb</td><td>0.7974</td><td>0.0054</td><td>0.0000</td><td>0.0000</td><td>-</td><td>-</td><td>-</td><td>-</td></tr>
+      <tr><td>Cora</td><td>0.4</td><td>gagb</td><td>0.7950</td><td>0.0062</td><td>0.0000</td><td>0.0000</td><td>-</td><td>-</td><td>-</td><td>-</td></tr>
+      <tr><td>Cora</td><td>0.4</td><td>alpha03</td><td>0.7957</td><td>0.0079</td><td>0.0000</td><td>0.0000</td><td>0.9875</td><td>0.9875</td><td>0.0000</td><td>0.9664</td></tr>
+      <tr><td>Cora</td><td>0.4</td><td>alpha07</td><td>0.7968</td><td>0.0038</td><td>0.0664</td><td>0.0006</td><td>0.9875</td><td>0.2037</td><td>0.7838</td><td>0.9664</td></tr>
+      <tr><td>Cora</td><td>0.4</td><td>alpha09</td><td>0.7966</td><td>0.0073</td><td>0.0811</td><td>0.0025</td><td>0.9875</td><td>0.0000</td><td>0.9875</td><td>0.9664</td></tr>
+      <tr><td>Cora</td><td>0.4</td><td>replace_qmix</td><td>0.7961</td><td>0.0069</td><td>0.0811</td><td>0.0025</td><td>0.9875</td><td>0.0000</td><td>0.9875</td><td>0.9664</td></tr>
+      <tr><td>Cora</td><td>0.4</td><td>margin_replace</td><td>0.7961</td><td>0.0069</td><td>0.0811</td><td>0.0025</td><td>0.9875</td><td>0.0000</td><td>0.9875</td><td>0.9664</td></tr>
+      <tr><td>CiteSeer</td><td>0.2</td><td>gb</td><td>0.7009</td><td>0.0127</td><td>0.0000</td><td>0.0000</td><td>-</td><td>-</td><td>-</td><td>-</td></tr>
+      <tr><td>CiteSeer</td><td>0.2</td><td>gagb</td><td>0.7012</td><td>0.0127</td><td>0.0000</td><td>0.0000</td><td>-</td><td>-</td><td>-</td><td>-</td></tr>
+      <tr><td>CiteSeer</td><td>0.2</td><td>alpha03</td><td>0.7083</td><td>0.0095</td><td>0.0000</td><td>0.0000</td><td>0.8426</td><td>0.8426</td><td>0.0000</td><td>0.6262</td></tr>
+      <tr><td>CiteSeer</td><td>0.2</td><td>alpha07</td><td>0.7097</td><td>0.0045</td><td>0.1203</td><td>0.0188</td><td>0.8426</td><td>0.1451</td><td>0.6975</td><td>0.6262</td></tr>
+      <tr><td>CiteSeer</td><td>0.2</td><td>alpha09</td><td>0.7101</td><td>0.0051</td><td>0.1444</td><td>0.0255</td><td>0.8426</td><td>0.0000</td><td>0.8426</td><td>0.6262</td></tr>
+      <tr><td>CiteSeer</td><td>0.2</td><td>replace_qmix</td><td>0.7077</td><td>0.0074</td><td>0.1444</td><td>0.0255</td><td>0.8426</td><td>0.0000</td><td>0.8426</td><td>0.6262</td></tr>
+      <tr><td>CiteSeer</td><td>0.2</td><td>margin_replace</td><td>0.7077</td><td>0.0074</td><td>0.1444</td><td>0.0255</td><td>0.8426</td><td>0.0000</td><td>0.8426</td><td>0.6262</td></tr>
+      <tr><td>CiteSeer</td><td>0.4</td><td>gb</td><td>0.6976</td><td>0.0097</td><td>0.0000</td><td>0.0000</td><td>-</td><td>-</td><td>-</td><td>-</td></tr>
+      <tr><td>CiteSeer</td><td>0.4</td><td>gagb</td><td>0.6980</td><td>0.0099</td><td>0.0000</td><td>0.0000</td><td>-</td><td>-</td><td>-</td><td>-</td></tr>
+      <tr><td>CiteSeer</td><td>0.4</td><td>alpha03</td><td>0.6979</td><td>0.0090</td><td>0.0000</td><td>0.0000</td><td>0.9032</td><td>0.9032</td><td>0.0000</td><td>0.8812</td></tr>
+      <tr><td>CiteSeer</td><td>0.4</td><td>alpha07</td><td>0.6991</td><td>0.0091</td><td>0.0459</td><td>0.0040</td><td>0.9032</td><td>0.2743</td><td>0.6290</td><td>0.8812</td></tr>
+      <tr><td>CiteSeer</td><td>0.4</td><td>alpha09</td><td>0.6991</td><td>0.0101</td><td>0.0617</td><td>0.0075</td><td>0.9032</td><td>0.0000</td><td>0.9032</td><td>0.8812</td></tr>
+      <tr><td>CiteSeer</td><td>0.4</td><td>replace_qmix</td><td>0.7005</td><td>0.0079</td><td>0.0617</td><td>0.0075</td><td>0.9032</td><td>0.0000</td><td>0.9032</td><td>0.8812</td></tr>
+      <tr><td>CiteSeer</td><td>0.4</td><td>margin_replace</td><td>0.7005</td><td>0.0079</td><td>0.0617</td><td>0.0075</td><td>0.9032</td><td>0.0000</td><td>0.9032</td><td>0.8812</td></tr>
+    </tbody>
+  </table>
+  <p class="small muted">注：<code>alpha06</code> 和 <code>sharpen_qmix_T05</code> 已在报告中记录；主表为减少噪声只展示关键方法。<code>sharpen_qmix_T05</code> 在 paired deltas 上 0/4 setting 超过 alpha03，应暂时放弃。</p>
+
+  <h3>8.2 Paired Delta Summary</h3>
+  <table>
+    <thead><tr><th>Method</th><th>vs alpha03</th><th>vs gb</th><th>vs gagb</th><th>vs khop_only</th><th>解释</th></tr></thead>
+    <tbody>
+      <tr><td><code>alpha07</code></td><td>3/4 settings positive</td><td>2/4</td><td>3/4</td><td>3/4</td><td>NCR 打通，但 Cora 0.2 accuracy 明显下降。</td></tr>
+      <tr><td><code>alpha09</code></td><td>4/4</td><td>3/4</td><td>4/4</td><td>4/4</td><td>最稳定的 soft-mixing repair，但部分 gain 很小。</td></tr>
+      <tr><td><code>replace_qmix</code></td><td>3/4</td><td>3/4</td><td>4/4</td><td>3/4</td><td>移除 noisy one-hot 阻断，在 Cora 0.2 和 CiteSeer 0.4 最好。</td></tr>
+      <tr><td><code>margin_replace</code></td><td>3/4</td><td>3/4</td><td>4/4</td><td>3/4</td><td>本轮与 replace_qmix 数值完全一致，需要 margin 分布诊断解释。</td></tr>
+      <tr><td><code>sharpen_qmix_T05</code></td><td>0/4</td><td>1/4</td><td>1/4</td><td>0/4</td><td>虽然 NCR 为正，但 accuracy 不支持继续。</td></tr>
+    </tbody>
+  </table>
+
+  <h2>9. Diagnostic Results</h2>
+  <div class="box good">
+    <strong>机制打通：</strong><code>alpha07/alpha09/replace_qmix/margin_replace</code> 在四个 dataset-noise settings 上都让 NCR 从 0 变成正数，并且 CDR 最大为 0.0255，低于本轮 0.05 硬阈值。
+  </div>
+  <div class="box warn">
+    <strong>仍需谨慎：</strong>accuracy 提升幅度普遍小于或接近 seed std。例如 Cora 0.4 上 <code>replace_qmix</code> 比 <code>gb</code> 低约 0.0013；CiteSeer 0.2 上 <code>replace_qmix</code> 低于 <code>alpha03</code> 约 0.0006。
+  </div>
+  <ul>
+    <li><code>alpha03</code>: NCR 仍为 0，lost-by-alpha 等于 possible correction，复现旧 failure mode。</li>
+    <li><code>alpha07</code>: 可以部分翻转 target argmax，但在 Cora 0.2 上 accuracy 下降，说明更强纠错不必然提升分类。</li>
+    <li><code>alpha09</code>: 几乎消除 lost-by-alpha，四个 setting 都超过 <code>alpha03</code>，但个别 setting 的 paired seed 一致性不强。</li>
+    <li><code>replace_qmix</code> / <code>margin_replace</code>: NCR/CDR 相同；说明 margin threshold=0.2 在当前 gated samples 上几乎没有产生额外过滤，需后续诊断。</li>
+    <li><code>sharpen_qmix_T05</code>: 机制上纠错，但 downstream accuracy 不支持继续。</li>
+  </ul>
+
+  <h2>10. Supported Conclusions</h2>
+  <ol>
+    <li>上一轮 <code>NCR=0</code> 不能解释为 GAGB 完全没有纠错信号；更准确地说，旧 target update 形式阻断了纠错信号进入 target argmax。</li>
+    <li>只修 target update 就能让 post-target NCR 变成正数，且本轮 CDR 低于 0.03。</li>
+    <li><code>alpha09</code>、<code>replace_qmix</code>、<code>margin_replace</code> 是本轮最值得保留的候选；<code>sharpen_qmix_T05</code> 应丢弃。</li>
+    <li>本轮是 mechanism-positive 和 method-promising，但不是 paper-ready main method。</li>
+  </ol>
+
+  <h2>11. Unsupported Or Still-Hypothetical Claims</h2>
+  <div class="box bad">
+    <strong>不能写成论文结论：</strong>“GAGB 已经证明有独立价值”还不成立，因为本轮没有恢复 <code>gagb_shuffled_alpha_matched</code>、<code>kmeans_gagb_matched</code>、<code>topk_gagb_train_matched</code> 等公平控制。
+  </div>
+  <ul>
+    <li>不能说 target repair 已经稳定提升 accuracy；多个 setting 的提升小于 std，paired positive count 也不是全满。</li>
+    <li>不能说 margin gate 有独立价值；当前 <code>margin_replace</code> 与 <code>replace_qmix</code> 完全一致。</li>
+    <li>不能据此改 GRACE 预训练、图增强、GAGB 构球或 teacher 架构。</li>
+    <li>不能重新走 hard same-ball positive / prototype pulling 路线。</li>
+  </ul>
+
+  <h2>12. Missing Information / Residual Risk</h2>
+  <ul>
+    <li><strong>缺少 shuffled matched repair controls：</strong>需要 <code>gagb_shuffled_alpha09_matched</code>、<code>gagb_shuffled_replace_matched</code>，否则无法判断收益是否来自真实 GAGB grouping。</li>
+    <li><strong>缺少 kmeans/topk matched repair controls：</strong>本轮只能说明 target update repair 有效，不能说明 graph-aware ball grouping 是必要的。</li>
+    <li><strong>缺少 margin distribution diagnostics：</strong>无法解释为什么 margin_replace 与 replace_qmix 完全相同。</li>
+    <li><strong>accuracy gain 小：</strong>很多 delta 小于 std，不应过度解释。</li>
+    <li><strong>数据集范围窄：</strong>仅 Cora/CiteSeer，且只有 symmetric noise 0.2/0.4。</li>
+  </ul>
+
+  <h2>13. Questions For GPT</h2>
+  <ol>
+    <li>从这些结果看，下一步最小实验是否应该优先补 shuffled/kmeans/topk matched controls，而不是继续发明 target 公式？</li>
+    <li><code>alpha09</code>、<code>replace_qmix</code>、<code>margin_replace</code> 三者中，哪个最适合作为 v2.1 主方法候选？为什么？</li>
+    <li>在 NCR 提升但 accuracy 提升很小或下降的 setting 中，最可能的原因是什么：CDR、teacher bias、target entropy、coverage 太低，还是 classifier 对 soft targets 不敏感？</li>
+    <li><code>margin_replace</code> 与 <code>replace_qmix</code> 完全一致时，应该增加什么诊断来判断 margin gate 是否有意义？</li>
+    <li>如果补齐 fair controls 后 shuffled matched 也能达到同样效果，论文叙事应该如何降级？</li>
+  </ol>
+
+  <h2>14. Full Paste-Ready GPT Prompt</h2>
+  <pre class="copy-prompt">你看不到我的本地实验文件夹、代码、CSV、日志和浏览器页面，所以我把关键信息完整整理在下面。请只基于这份 self-contained 信息进行科研判断，不要假设你能访问本地路径。
+
+请不要做代码审查；这次我只希望你做科研判断。请重点回答：
+1. 这个实验真正验证了什么，没有验证什么？
+2. 当前结果支持哪些结论，哪些只是猜测？
+3. 失败或不显著的最可能原因是什么？
+4. 是否存在 baseline/control/metric/protocol 上的信息缺口？
+5. 下一步最小实验应该是什么？
+
+实验背景：
+我在做 GAGB / GB-GCL noisy-label robust node classification。上一轮 v2 target-only 实验中，gagb_qb_conflict_gate 的 NCR=0。但 gated-node diagnostic 发现，gate 明显富集 noisy nodes，q_mix 和 noisy-label-only teacher 在 gated noisy nodes 上多数指向 clean label。问题主要是 target_i = (1-alpha_i)*one_hot(noisy_y_i) + alpha_i*q_mix 中 alpha=0.3 太弱，使 target argmax 仍停在 noisy label。
+
+本轮目标：
+只修 gated nodes 的 target update，不改 GRACE、不改 GAGB 构球、不改 teacher、不改数据划分、不改噪声生成。验证 pre-alpha correction signal 能否变成 post-target NCR，同时观察 clean damage 和 accuracy。
+
+方法：
+q_label_B = ball 内 train noisy label distribution。
+q_pred_B = ball 内 all-node teacher probability mean。
+q_mix = 0.5*q_label_B + 0.5*q_pred_B。
+Conflict gate: q_mix[noisy_y_i] <= 0.35 且 max(q_mix) >= 0.55。
+Clean labels 只用于 diagnostics/evaluation，不用于构球、teacher、target construction、classifier training。
+
+Variants：
+- alpha03: 旧版本，作为 baseline，几何置信度缩放后的 alpha 最大约 0.3。
+- alpha06/alpha07/alpha09: gated nodes 使用固定 alpha=0.6/0.7/0.9。
+- replace_qmix: gated nodes 直接用 q_mix 作为 target。
+- sharpen_qmix_T05: gated nodes 用 sharpen(q_mix, T=0.5)。
+- margin_replace: 在 conflict gate 基础上，若 argmax(q_mix) != noisy_y_i 且 q_mix[top1]-q_mix[noisy_y_i] >= 0.2，则 replace。
+
+实验设置：
+Datasets: Cora, CiteSeer。
+Split: ratio train 0.2, val 0.1, split seed 0。
+Noise: symmetric 0.2, 0.4。
+Seeds: 0,1,2,3,4。
+Embedding: frozen GRACE。
+Teacher: noisy-label-only linear teacher, epochs=100, lr=0.01, weight_decay=5e-4, temperature=1.0。
+Baselines included: gb, gagb, khop_only, alpha03。
+Important controls NOT included in this repair run: gagb_shuffled_alpha_matched, kmeans_gagb_matched, topk_gagb_train_matched. 所以本轮不能证明 GAGB grouping 独立价值。
+
+指标：
+NCR = noisy train nodes 上 target argmax 是否从 noisy label 指向 clean label。
+CDR = clean train nodes 上 target argmax 是否被错误改离 clean label。
+Possible Before Alpha = gated noisy nodes 中 q_mix argmax 是否等于 clean label。
+Lost By Alpha = q_mix 本可指向 clean label，但最终 target argmax 没有指向 clean label。
+Target Clean = gated noisy nodes 上最终 target argmax 等于 clean label 的比例。
+Gated Noisy = gated train nodes 中真实 noisy nodes 比例。
+
+主要结果：
+Cora 0.2:
+gb acc 0.8118±0.0051, NCR 0, CDR 0。
+gagb acc 0.8119±0.0053, NCR 0, CDR 0。
+alpha03 acc 0.8117±0.0059, NCR 0, CDR 0, possible 0.9722, lost 0.9722。
+alpha07 acc 0.8080±0.0081, NCR 0.2074, CDR 0.0115, target clean 0.8065。
+alpha09 acc 0.8120±0.0081, NCR 0.2519, CDR 0.0143, lost 0。
+replace_qmix acc 0.8136±0.0049, NCR 0.2519, CDR 0.0143。
+margin_replace acc 0.8136±0.0049, NCR 0.2519, CDR 0.0143。
+
+Cora 0.4:
+gb acc 0.7974±0.0054。
+gagb acc 0.7950±0.0062。
+alpha03 acc 0.7957±0.0079, NCR 0, possible 0.9875, lost 0.9875。
+alpha07 acc 0.7968±0.0038, NCR 0.0664, CDR 0.0006。
+alpha09 acc 0.7966±0.0073, NCR 0.0811, CDR 0.0025。
+replace_qmix acc 0.7961±0.0069, NCR 0.0811, CDR 0.0025。
+margin_replace acc 0.7961±0.0069, NCR 0.0811, CDR 0.0025。
+注意：Cora 0.4 上 replace/margin 仍低于 gb 约 0.0013。
+
+CiteSeer 0.2:
+gb acc 0.7009±0.0127。
+gagb acc 0.7012±0.0127。
+alpha03 acc 0.7083±0.0095, NCR 0, possible 0.8426, lost 0.8426。
+alpha07 acc 0.7097±0.0045, NCR 0.1203, CDR 0.0188。
+alpha09 acc 0.7101±0.0051, NCR 0.1444, CDR 0.0255。
+replace_qmix acc 0.7077±0.0074, NCR 0.1444, CDR 0.0255。
+margin_replace acc 0.7077±0.0074, NCR 0.1444, CDR 0.0255。
+
+CiteSeer 0.4:
+gb acc 0.6976±0.0097。
+gagb acc 0.6980±0.0099。
+alpha03 acc 0.6979±0.0090, NCR 0, possible 0.9032, lost 0.9032。
+alpha07 acc 0.6991±0.0091, NCR 0.0459, CDR 0.0040。
+alpha09 acc 0.6991±0.0101, NCR 0.0617, CDR 0.0075。
+replace_qmix acc 0.7005±0.0079, NCR 0.0617, CDR 0.0075。
+margin_replace acc 0.7005±0.0079, NCR 0.0617, CDR 0.0075。
+
+Paired delta summary：
+alpha07: vs alpha03 3/4 settings positive; vs gb 2/4; vs gagb 3/4; vs khop_only 3/4。
+alpha09: vs alpha03 4/4; vs gb 3/4; vs gagb 4/4; vs khop_only 4/4。
+replace_qmix: vs alpha03 3/4; vs gb 3/4; vs gagb 4/4; vs khop_only 3/4。
+margin_replace: vs alpha03 3/4; vs gb 3/4; vs gagb 4/4; vs khop_only 3/4。
+sharpen_qmix_T05: vs alpha03 0/4; vs gb 1/4; vs gagb 1/4; vs khop_only 0/4，应该丢弃。
+
+当前我认为可以支持：
+1. 之前 NCR=0 主要是 target update 形式阻断纠错，不是 GAGB 完全没有 correction signal。
+2. 修 target update 可以让 NCR>0，并且 CDR 在本轮低于 0.03。
+3. alpha09、replace_qmix、margin_replace 是可继续的候选。
+4. sharpen_qmix_T05 不值得继续。
+
+当前不能支持：
+1. 不能说 GAGB 已证明有独立价值，因为本轮没有 shuffled/kmeans/topk matched repair controls。
+2. 不能说 accuracy 稳定显著提升，因为很多 delta 小于 seed std。
+3. 不能说 margin_replace 优于 replace_qmix，因为二者本轮结果完全一致。
+
+请你基于以上信息回答：
+1. 这个 target repair 实验的最准确结论应该怎么写？
+2. alpha09、replace_qmix、margin_replace 哪个最适合作为下一轮 v2.1 主候选？
+3. 下一步是否应优先补 shuffled/kmeans/topk matched controls？
+4. 如果补了 shuffled control 后也有效，应该如何降级论文叙事？
+5. 如果要解释 NCR 提升但 accuracy gain 小，最应该补哪些 diagnostics？</pre>
+
+</main>
+</body>
+</html>

@@ -1,0 +1,19 @@
+\begin{algorithm}[!t]
+\caption{Recursive granular ball partitioning in the frozen representation space}\label{alg:1}
+\KwIn{Normalized frozen representation $\mathbf G$, node set $\mathcal V$, parameters $B_{\max},n_{\min},\delta$}
+\KwOut{Granular ball partition $\mathcal B$}
+$\mathcal B\gets\{\mathcal V\}$\;
+\While{$|\mathcal B|<B_{\max}$}{
+  $\mathrm{accepted}\gets\mathrm{false}$\;
+  \ForEach{$B_j\in\mathcal B$ with $|B_j|\ge 2n_{\min}$, in descending order of $D(B_j)$}{
+    Apply 2-means to the normalized representations of nodes in $B_j$ to obtain $B_j^{(1)}$ and $B_j^{(2)}$\;
+    \If{$\min(|B_j^{(1)}|,|B_j^{(2)}|)\ge n_{\min}$ and $D'(B_j)\le(1-\delta)D(B_j)$}{
+      $\mathcal B\gets(\mathcal B\setminus\{B_j\})\cup\{B_j^{(1)},B_j^{(2)}\}$\;
+      $\mathrm{accepted}\gets\mathrm{true}$\;
+      \KwBreak\;
+    }
+  }
+  \If{$\mathrm{accepted}=\mathrm{false}$}{\KwBreak\;}
+}
+\KwRet $\mathcal B$\;
+\end{algorithm}

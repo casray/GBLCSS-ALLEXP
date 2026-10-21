@@ -1,0 +1,10 @@
+﻿Method,Implementation status,Retained core mechanism,Protocol adaptation
+PosteL,Integration of the official no-IPL target construction,Label smoothing based on posterior predictions,"Integrated with our MLP, data splits, and noise protocol; iterative pseudo-labeling is disabled"
+ALS,Mechanism adaptation,"Adaptive label smoothing, pacing, and KL constraint","Uses our data splits, noise realizations, and X-only student"
+SALS,Mechanism adaptation,Neighborhood structure-aware label smoothing,"Uses our data splits, noise realizations, and X-only student"
+Graph-MLP,Protocol port,Multi-hop adjacency-based NContrast objective,Uses our noise protocol and a matched MLP classifier
+GSDN,Mechanism adaptation,Feature-level and label-level neighborhood self-distillation,Uses our noise protocol and X-only student
+GCN(X)+CE teacher,Project implementation in the style of GLNN,GCN response distillation,Uses the common teacher and student configurations and our noise protocol
+FF-G2M,Reimplementation with a common student backbone,Low- and high-frequency knowledge distillation,"Uses the common GCN teacher, MLP student, and our noise protocol"
+KRD,Mechanism adaptation,Reliable-knowledge selection based on stability to feature perturbations,Uses the common teacher and student configurations and our noise protocol
+VQGraph,Mechanism adaptation,"Soft codebook and token-, node-, and edge-level distillation",Uses the common teacher and student configurations and our noise protocol

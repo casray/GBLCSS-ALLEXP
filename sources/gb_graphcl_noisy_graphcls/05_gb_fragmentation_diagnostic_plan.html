@@ -1,0 +1,193 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <title>GB Fragmentation Salvage Diagnostic — 执行计划</title>
+  <style>
+    :root {
+      --bg: #f6f7f9; --paper: #ffffff; --ink: #1f2933; --muted: #5c6670;
+      --line: #d8dee6; --accent: #2457a6; --accent-soft: #e9f0fb;
+      --warn: #8a4b00; --warn-soft: #fff3dd; --bad: #8d1f1f; --bad-soft: #fde7e7;
+      --good: #17633a; --good-soft: #e5f5ec; --code: #f0f2f5;
+    }
+    * { box-sizing: border-box; }
+    body { margin: 0; background: var(--bg); color: var(--ink);
+           font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Microsoft YaHei", Arial, sans-serif;
+           line-height: 1.65; }
+    main { max-width: 1080px; margin: 0 auto; padding: 32px 20px 64px; }
+    header, section { background: var(--paper); border: 1px solid var(--line);
+                      border-radius: 8px; padding: 24px; margin: 16px 0; }
+    h1, h2, h3 { line-height: 1.25; margin: 0 0 14px; }
+    h1 { font-size: 28px; } h2 { font-size: 22px; color: var(--accent); }
+    h3 { font-size: 18px; margin-top: 20px; }
+    p { margin: 10px 0; } ul, ol { margin: 10px 0 10px 24px; padding: 0; } li { margin: 6px 0; }
+    code, pre { font-family: "Cascadia Code", "Consolas", monospace; background: var(--code); border-radius: 5px; }
+    code { padding: 2px 5px; font-size: 0.94em; }
+    pre { padding: 14px; overflow-x: auto; border: 1px solid var(--line); white-space: pre-wrap; }
+    table { width: 100%; border-collapse: collapse; margin: 12px 0; font-size: 14px; }
+    th, td { border: 1px solid var(--line); padding: 9px 10px; vertical-align: top; text-align: left; }
+    th { background: #eef2f7; font-weight: 650; }
+    .box { border: 1px solid var(--line); border-radius: 8px; padding: 14px 16px; margin: 12px 0; background: #fafbfc; }
+    .good { border-color: #b9dfca; background: var(--good-soft); }
+    .warn { border-color: #efd19d; background: var(--warn-soft); }
+    .bad { border-color: #f0b6b6; background: var(--bad-soft); }
+    .accent { border-color: #bdd0ee; background: var(--accent-soft); }
+    .small { font-size: 14px; color: var(--muted); }
+  </style>
+</head>
+<body>
+<main>
+
+<header>
+  <h1>GB Fragmentation Salvage Diagnostic — 一次性诊断</h1>
+  <p class="small">创建日期：2026-06-09。基于 Stage 1b NCI1 seed0 冒烟结果。</p>
+  <div class="box accent">
+    <strong>性质：</strong>这不是原 gate 的延续，也不是 Stage 2。这是一次性、预注册、仅一次的 GB 碎片化修复诊断。
+    <br><strong>唯一目标：</strong>当前 GB 平均球大小 4.2（780 球），consensus 没有统计意义。用更大的球（gb_relaxed）重跑 reweight，看 GB 结构是否有被碎片化掩盖的信号。
+    <br><strong>底线：</strong>如果修复碎片化后 rw_gb_relaxed 仍未超过 rw_noball 或 rw_gb_relaxed ≈ rw_shuffled_relaxed，则 GB 后处理在 frozen graph embedding 场景下彻底没有独立价值。结论如实记录，不再继续。
+  </div>
+</header>
+
+<!-- ============================================================ -->
+<section>
+  <h2>0. 为什么做这个诊断</h2>
+  <p>Stage 1b 已确认：</p>
+  <ol>
+    <li>Reweight 路线修复了 hard selection 的负效应（rw_* 全赢 CE）</li>
+    <li>但 <code>rw_noball</code>（纯 loss-based reweight，无 reliability）并列第一（0.6545），说明 reliability 信号增量极弱</li>
+    <li><code>rw_gb = rw_shuffled = 0.6448</code> — 打乱球的成员关系后效果一样，GB 结构零贡献</li>
+    <li>GB 平均球大小 4.2，780 球 — 4 个样本的 consensus 几乎没有统计可靠性</li>
+  </ol>
+  <p>问题是：rw_gb 的失败是因为 GB 方法本身没有价值，还是因为碎片化掩盖了价值？
+  这个诊断给出一次公平的回答机会。</p>
+</section>
+
+<!-- ============================================================ -->
+<section>
+  <h2>1. GB 配置</h2>
+  <table>
+    <thead><tr><th>配置名</th><th>purity_threshold</th><th>min_samples</th><th>max_size</th><th>预期变化</th></tr></thead>
+    <tbody>
+      <tr>
+        <td><code>gb_orig</code></td>
+        <td>0.7</td><td>5</td><td>100</td>
+        <td>基线：780 球，平均 4.2（已跑过）</td>
+      </tr>
+      <tr>
+        <td><code>gb_relaxed</code></td>
+        <td>0.6</td><td>10</td><td>200</td>
+        <td>降低 purity 门槛 + 强制最小球 10 + 放宽最大球 200。预期球更大更少。</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <div class="box warn">
+    <strong>purity_threshold=0.6 在二分类 symmetric 0.4 下的含义：</strong>
+    真实 clean rate ≈ 0.6。一个完全随机的球 purity 期望 ≈ 0.6。
+    所以 threshold=0.6 意味着"只要球内多数派占比 ≥ 60% 就不再分裂"——大多数球会很早就停止分裂。
+    这会产生远更大的球，但每个球可能包含更多噪声样本。这正是我们要测的：更大但更脏的球的 consensus 是否比碎片化的小球更有用？
+  </div>
+</section>
+
+<!-- ============================================================ -->
+<section>
+  <h2>2. 实验矩阵（最小化）</h2>
+  <p>只跑 6 个方法，全部用 reweight（Stage 1b 已证明 reweight 是唯一有效的转化机制）：</p>
+  <table>
+    <thead><tr><th>方法名</th><th>GB 配置</th><th>reliability 来源</th><th>角色</th></tr></thead>
+    <tbody>
+      <tr><td><code>rw_noball</code></td><td>—</td><td>none（纯 loss reweight）</td><td>必须赢的门槛</td></tr>
+      <tr><td><code>rw_kmeans</code></td><td>matched to gb_relaxed</td><td>kmeans consensus</td><td>必须不输的对照</td></tr>
+      <tr><td><code>rw_gb_orig</code></td><td>gb_orig</td><td>GB consensus</td><td>碎片化基线（已知结果）</td></tr>
+      <tr><td><code>rw_gb_relaxed</code></td><td>gb_relaxed</td><td>GB consensus</td><td>修复后主方法</td></tr>
+      <tr><td><code>rw_shuffled_relaxed</code></td><td>gb_relaxed shuffled</td><td>shuffled GB consensus</td><td>结构有效性对照</td></tr>
+      <tr><td><code>rw_random_relaxed</code></td><td>gb_relaxed random</td><td>random groups consensus</td><td>随机对照</td></tr>
+    </tbody>
+  </table>
+
+  <p><strong>kNN/kmeans matching：</strong>kNN 的 k = gb_relaxed 平均球大小（而非 gb_orig 的），kmeans 的 n_clusters = gb_relaxed 球数。
+  这确保比较公平——同样粒度的局部结构。</p>
+
+  <p><strong>为什么要重跑 rw_noball/rw_kmeans 而不复用 Stage 1b 结果：</strong>
+  Stage 1b 的 kmeans 用了 gb_orig 匹配的 n_clusters=780，现在需要匹配 gb_relaxed 的球数（预期远小于 780）。
+  rw_noball 理论上不受 GB 配置影响（它不用 reliability），但一起跑保证同一轮所有方法完全同条件。</p>
+</section>
+
+<!-- ============================================================ -->
+<section>
+  <h2>3. 预注册判定</h2>
+
+  <div class="box good">
+    <strong>通过标准（全部必须满足）：</strong>
+    <ol>
+      <li><code>rw_gb_relaxed > rw_noball</code> — GB 结构提供了纯 loss reweight 之外的增量</li>
+      <li><code>rw_gb_relaxed > rw_shuffled_relaxed</code> — 结构不是假象</li>
+      <li><code>rw_gb_relaxed > rw_random_relaxed</code> — 不是分组本身的效果</li>
+      <li><code>rw_gb_relaxed ≥ rw_kmeans</code>（不输）— 至少和最简单的 global clustering 一样好</li>
+    </ol>
+  </div>
+
+  <div class="box bad">
+    <strong>失败标准（任一成立即失败）：</strong>
+    <ul>
+      <li><code>rw_gb_relaxed ≤ rw_noball</code> — 加入 GB reliability 没有帮助或有害</li>
+      <li><code>rw_gb_relaxed ≈ rw_shuffled_relaxed</code>（差 < 0.5pp）— 球结构无信息</li>
+      <li><code>rw_gb_relaxed < rw_kmeans</code> by ≥ 0.5pp — 被简单 clustering 稳定超过</li>
+    </ul>
+  </div>
+
+  <div class="box accent">
+    <strong>seed0 仅冒烟。</strong>通过标准只看方向和量级。如果 seed0 冒烟通过，后续还需要 5-seed paired delta 正式验证。
+    但如果 seed0 就已经失败，直接停止。
+  </div>
+</section>
+
+<!-- ============================================================ -->
+<section>
+  <h2>4. 报告内容</h2>
+  <p>报告必须包含：</p>
+  <ol>
+    <li>gb_relaxed 的球统计：球数、平均/最小/最大球大小、平均 purity（对比 gb_orig）</li>
+    <li>6 个方法的 test_acc 排序</li>
+    <li>4 个预注册 delta：
+      <ul>
+        <li><code>rw_gb_relaxed - rw_noball</code></li>
+        <li><code>rw_gb_relaxed - rw_shuffled_relaxed</code></li>
+        <li><code>rw_gb_relaxed - rw_random_relaxed</code></li>
+        <li><code>rw_gb_relaxed - rw_kmeans</code></li>
+      </ul>
+    </li>
+    <li>碎片化修复效果：<code>rw_gb_relaxed - rw_gb_orig</code></li>
+    <li>预注册判定结论：PASS / FAIL + 理由</li>
+  </ol>
+</section>
+
+<!-- ============================================================ -->
+<section>
+  <h2>5. 如果失败</h2>
+  <div class="box bad">
+    <p>结论记录为：</p>
+    <blockquote><strong>图级 frozen embedding 下，loss-based reweight 对噪声鲁棒有效（+2.4pp over CE），但 granular ball 后处理无论碎片化程度如何都不能提供稳定独立增量。rw_noball 是该场景下最简洁有效的方法。</strong></blockquote>
+    <p>后续不再继续 GB 后处理方向。如果要继续 GB，必须转向 encoder coupling（但这需要新的预注册和动机论证，不在本诊断范围内）。</p>
+  </div>
+</section>
+
+<!-- ============================================================ -->
+<section>
+  <h2>6. 护栏</h2>
+  <div class="box bad">
+    <ol>
+      <li>只跑 gb_relaxed 一个变体。不做参数搜索。不试其他 purity_threshold / min_samples 组合。</li>
+      <li>Clean labels 不进入任何计算。</li>
+      <li>所有方法同 frozen embedding、同 split、同噪声实例。</li>
+      <li>w_min = 0.1，warmup = 20, ramp = 20，同 Stage 1b。不为通过诊断调这些参数。</li>
+      <li>不修改已有代码。新脚本独立。</li>
+      <li>数字来自 CSV，禁止手填。</li>
+      <li>如果 rw_gb_relaxed 仍然 ≤ rw_noball 或 ≈ rw_shuffled_relaxed，如实记录 FAIL。不通过增删对照或换指标挽救。</li>
+    </ol>
+  </div>
+</section>
+
+</main>
+</body>
+</html>

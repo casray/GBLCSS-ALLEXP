@@ -1,0 +1,803 @@
+{
+  "config": {
+    "method": {
+      "max_balls": 64,
+      "min_ball_size": 32,
+      "split_improvement": 0.05,
+      "min_train_per_ball": 2,
+      "beta": 0.5,
+      "leave_one_out": true,
+      "tie_mode": "distribution_only"
+    },
+    "model": {
+      "hidden": 64,
+      "layers": 2,
+      "dropout": 0.5
+    },
+    "training": {
+      "learning_rate": 0.01,
+      "weight_decay": 0.0005,
+      "epochs": 200,
+      "device": "cpu"
+    },
+    "distillation": {
+      "temperature": 1.0
+    },
+    "noise": {
+      "scope": "train",
+      "type": "uniform",
+      "rate": 0.4
+    },
+    "split": {
+      "type": "percent",
+      "train": 0.2,
+      "validation": 0.1,
+      "test": 0.7
+    },
+    "seeds": [
+      0,
+      1,
+      2,
+      3,
+      4
+    ]
+  },
+  "adaptations": {
+    "matched_backbone": {
+      "mlp_ce": {},
+      "small_loss": {
+        "forget_rate": "synthetic_noise_rate",
+        "gradual_epochs": 10
+      },
+      "coteaching": {
+        "forget_rate": "synthetic_noise_rate",
+        "gradual_epochs": 10
+      },
+      "jocor": {
+        "forget_rate": "synthetic_noise_rate",
+        "gradual_epochs": 10,
+        "co_regularization": 0.1
+      },
+      "sce": {
+        "cross_entropy_weight": 0.1,
+        "reverse_cross_entropy_weight": 1.0
+      },
+      "elr": {
+        "ema": 0.7,
+        "regularization_weight": 1.0
+      },
+      "logitclip": {
+        "threshold": 1.0
+      }
+    },
+    "structure_assisted": {
+      "postel": {
+        "implementation": "official_no_ipl_target_construction",
+        "soft_label_ratio": 0.8,
+        "smoothing_ratio": 0.4,
+        "degree_cutoff": 1,
+        "temperature": 1.0,
+        "iterative_pseudo_labeling": false
+      },
+      "als": {
+        "implementation": "mechanism_adaptation",
+        "propagation_steps": 2,
+        "residual": 0.5,
+        "kl_weight": 0.001,
+        "pacing": "exponential",
+        "max_smoothing_weight": 0.1
+      },
+      "sals": {
+        "implementation": "mechanism_adaptation",
+        "epsilon": 0.4,
+        "gamma": 0.8,
+        "unlabeled_neighbor_fallback": "uniform"
+      },
+      "graphmlp": {
+        "implementation": "matched_backbone_mechanism_adaptation",
+        "graph_batch_size": 512,
+        "contrastive_weight": 0.5,
+        "temperature": 0.5
+      },
+      "gsdn": {
+        "implementation": "mechanism_adaptation",
+        "graph_batch_size": 512,
+        "feature_weight": 0.8,
+        "label_weight": 0.8,
+        "negative_weight": 0.1,
+        "initial_mixup": 0.5
+      }
+    },
+    "graph_transfer": {
+      "glnn_style": {
+        "temperature": 1.0
+      },
+      "ffg2m": {
+        "implementation": "common_student_backbone_reimplementation",
+        "label_weight": 0.4,
+        "high_frequency_temperature": 1.5
+      },
+      "krd": {
+        "implementation": "mechanism_adaptation",
+        "perturbations": 4,
+        "perturbation_std": 0.01,
+        "reliable_fraction": 0.5,
+        "temperature": 1.0
+      },
+      "vqgraph": {
+        "implementation": "mechanism_adaptation",
+        "codebook_size": 128,
+        "codebook_temperature": 1.0,
+        "token_weight": 1.0,
+        "node_weight": 0.001,
+        "edge_weight": 0.03,
+        "sampled_edges_per_epoch": 4096
+      }
+    }
+  },
+  "plan": [
+    {
+      "suite": "target_controls",
+      "task": "train",
+      "dataset": "cora",
+      "method": "gblcss",
+      "noise_type": "uniform",
+      "noise_rate": 0.4,
+      "seed": 0,
+      "validation_protocol": "clean",
+      "variant": "default",
+      "overrides": {}
+    },
+    {
+      "suite": "target_controls",
+      "task": "train",
+      "dataset": "cora",
+      "method": "mlp_ce",
+      "noise_type": "uniform",
+      "noise_rate": 0.4,
+      "seed": 0,
+      "validation_protocol": "clean",
+      "variant": "default",
+      "overrides": {}
+    },
+    {
+      "suite": "target_controls",
+      "task": "train",
+      "dataset": "cora",
+      "method": "gblcss_shuffled",
+      "noise_type": "uniform",
+      "noise_rate": 0.4,
+      "seed": 0,
+      "validation_protocol": "clean",
+      "variant": "default",
+      "overrides": {}
+    },
+    {
+      "suite": "target_controls",
+      "task": "train",
+      "dataset": "cora",
+      "method": "uniform_smoothing",
+      "noise_type": "uniform",
+      "noise_rate": 0.4,
+      "seed": 0,
+      "validation_protocol": "clean",
+      "variant": "default",
+      "overrides": {}
+    },
+    {
+      "suite": "target_controls",
+      "task": "train",
+      "dataset": "cora",
+      "method": "prior_smoothing",
+      "noise_type": "uniform",
+      "noise_rate": 0.4,
+      "seed": 0,
+      "validation_protocol": "clean",
+      "variant": "default",
+      "overrides": {}
+    },
+    {
+      "suite": "target_controls",
+      "task": "train",
+      "dataset": "cora",
+      "method": "gblcss",
+      "noise_type": "uniform",
+      "noise_rate": 0.4,
+      "seed": 1,
+      "validation_protocol": "clean",
+      "variant": "default",
+      "overrides": {}
+    },
+    {
+      "suite": "target_controls",
+      "task": "train",
+      "dataset": "cora",
+      "method": "mlp_ce",
+      "noise_type": "uniform",
+      "noise_rate": 0.4,
+      "seed": 1,
+      "validation_protocol": "clean",
+      "variant": "default",
+      "overrides": {}
+    },
+    {
+      "suite": "target_controls",
+      "task": "train",
+      "dataset": "cora",
+      "method": "gblcss_shuffled",
+      "noise_type": "uniform",
+      "noise_rate": 0.4,
+      "seed": 1,
+      "validation_protocol": "clean",
+      "variant": "default",
+      "overrides": {}
+    },
+    {
+      "suite": "target_controls",
+      "task": "train",
+      "dataset": "cora",
+      "method": "uniform_smoothing",
+      "noise_type": "uniform",
+      "noise_rate": 0.4,
+      "seed": 1,
+      "validation_protocol": "clean",
+      "variant": "default",
+      "overrides": {}
+    },
+    {
+      "suite": "target_controls",
+      "task": "train",
+      "dataset": "cora",
+      "method": "prior_smoothing",
+      "noise_type": "uniform",
+      "noise_rate": 0.4,
+      "seed": 1,
+      "validation_protocol": "clean",
+      "variant": "default",
+      "overrides": {}
+    },
+    {
+      "suite": "target_controls",
+      "task": "train",
+      "dataset": "cora",
+      "method": "gblcss",
+      "noise_type": "uniform",
+      "noise_rate": 0.4,
+      "seed": 2,
+      "validation_protocol": "clean",
+      "variant": "default",
+      "overrides": {}
+    },
+    {
+      "suite": "target_controls",
+      "task": "train",
+      "dataset": "cora",
+      "method": "mlp_ce",
+      "noise_type": "uniform",
+      "noise_rate": 0.4,
+      "seed": 2,
+      "validation_protocol": "clean",
+      "variant": "default",
+      "overrides": {}
+    },
+    {
+      "suite": "target_controls",
+      "task": "train",
+      "dataset": "cora",
+      "method": "gblcss_shuffled",
+      "noise_type": "uniform",
+      "noise_rate": 0.4,
+      "seed": 2,
+      "validation_protocol": "clean",
+      "variant": "default",
+      "overrides": {}
+    },
+    {
+      "suite": "target_controls",
+      "task": "train",
+      "dataset": "cora",
+      "method": "uniform_smoothing",
+      "noise_type": "uniform",
+      "noise_rate": 0.4,
+      "seed": 2,
+      "validation_protocol": "clean",
+      "variant": "default",
+      "overrides": {}
+    },
+    {
+      "suite": "target_controls",
+      "task": "train",
+      "dataset": "cora",
+      "method": "prior_smoothing",
+      "noise_type": "uniform",
+      "noise_rate": 0.4,
+      "seed": 2,
+      "validation_protocol": "clean",
+      "variant": "default",
+      "overrides": {}
+    },
+    {
+      "suite": "target_controls",
+      "task": "train",
+      "dataset": "cora",
+      "method": "gblcss",
+      "noise_type": "uniform",
+      "noise_rate": 0.4,
+      "seed": 3,
+      "validation_protocol": "clean",
+      "variant": "default",
+      "overrides": {}
+    },
+    {
+      "suite": "target_controls",
+      "task": "train",
+      "dataset": "cora",
+      "method": "mlp_ce",
+      "noise_type": "uniform",
+      "noise_rate": 0.4,
+      "seed": 3,
+      "validation_protocol": "clean",
+      "variant": "default",
+      "overrides": {}
+    },
+    {
+      "suite": "target_controls",
+      "task": "train",
+      "dataset": "cora",
+      "method": "gblcss_shuffled",
+      "noise_type": "uniform",
+      "noise_rate": 0.4,
+      "seed": 3,
+      "validation_protocol": "clean",
+      "variant": "default",
+      "overrides": {}
+    },
+    {
+      "suite": "target_controls",
+      "task": "train",
+      "dataset": "cora",
+      "method": "uniform_smoothing",
+      "noise_type": "uniform",
+      "noise_rate": 0.4,
+      "seed": 3,
+      "validation_protocol": "clean",
+      "variant": "default",
+      "overrides": {}
+    },
+    {
+      "suite": "target_controls",
+      "task": "train",
+      "dataset": "cora",
+      "method": "prior_smoothing",
+      "noise_type": "uniform",
+      "noise_rate": 0.4,
+      "seed": 3,
+      "validation_protocol": "clean",
+      "variant": "default",
+      "overrides": {}
+    },
+    {
+      "suite": "target_controls",
+      "task": "train",
+      "dataset": "cora",
+      "method": "gblcss",
+      "noise_type": "uniform",
+      "noise_rate": 0.4,
+      "seed": 4,
+      "validation_protocol": "clean",
+      "variant": "default",
+      "overrides": {}
+    },
+    {
+      "suite": "target_controls",
+      "task": "train",
+      "dataset": "cora",
+      "method": "mlp_ce",
+      "noise_type": "uniform",
+      "noise_rate": 0.4,
+      "seed": 4,
+      "validation_protocol": "clean",
+      "variant": "default",
+      "overrides": {}
+    },
+    {
+      "suite": "target_controls",
+      "task": "train",
+      "dataset": "cora",
+      "method": "gblcss_shuffled",
+      "noise_type": "uniform",
+      "noise_rate": 0.4,
+      "seed": 4,
+      "validation_protocol": "clean",
+      "variant": "default",
+      "overrides": {}
+    },
+    {
+      "suite": "target_controls",
+      "task": "train",
+      "dataset": "cora",
+      "method": "uniform_smoothing",
+      "noise_type": "uniform",
+      "noise_rate": 0.4,
+      "seed": 4,
+      "validation_protocol": "clean",
+      "variant": "default",
+      "overrides": {}
+    },
+    {
+      "suite": "target_controls",
+      "task": "train",
+      "dataset": "cora",
+      "method": "prior_smoothing",
+      "noise_type": "uniform",
+      "noise_rate": 0.4,
+      "seed": 4,
+      "validation_protocol": "clean",
+      "variant": "default",
+      "overrides": {}
+    },
+    {
+      "suite": "graph_assisted",
+      "task": "train",
+      "dataset": "cora",
+      "method": "gblcss",
+      "noise_type": "uniform",
+      "noise_rate": 0.4,
+      "seed": 0,
+      "validation_protocol": "clean",
+      "variant": "default",
+      "overrides": {}
+    },
+    {
+      "suite": "graph_assisted",
+      "task": "train",
+      "dataset": "cora",
+      "method": "postel",
+      "noise_type": "uniform",
+      "noise_rate": 0.4,
+      "seed": 0,
+      "validation_protocol": "clean",
+      "variant": "default",
+      "overrides": {}
+    },
+    {
+      "suite": "graph_assisted",
+      "task": "train",
+      "dataset": "cora",
+      "method": "als",
+      "noise_type": "uniform",
+      "noise_rate": 0.4,
+      "seed": 0,
+      "validation_protocol": "clean",
+      "variant": "default",
+      "overrides": {}
+    },
+    {
+      "suite": "graph_assisted",
+      "task": "train",
+      "dataset": "cora",
+      "method": "sals",
+      "noise_type": "uniform",
+      "noise_rate": 0.4,
+      "seed": 0,
+      "validation_protocol": "clean",
+      "variant": "default",
+      "overrides": {}
+    },
+    {
+      "suite": "graph_assisted",
+      "task": "train",
+      "dataset": "cora",
+      "method": "graphmlp",
+      "noise_type": "uniform",
+      "noise_rate": 0.4,
+      "seed": 0,
+      "validation_protocol": "clean",
+      "variant": "default",
+      "overrides": {}
+    },
+    {
+      "suite": "graph_assisted",
+      "task": "train",
+      "dataset": "cora",
+      "method": "gsdn",
+      "noise_type": "uniform",
+      "noise_rate": 0.4,
+      "seed": 0,
+      "validation_protocol": "clean",
+      "variant": "default",
+      "overrides": {}
+    },
+    {
+      "suite": "graph_assisted",
+      "task": "train",
+      "dataset": "cora",
+      "method": "gblcss",
+      "noise_type": "uniform",
+      "noise_rate": 0.4,
+      "seed": 1,
+      "validation_protocol": "clean",
+      "variant": "default",
+      "overrides": {}
+    },
+    {
+      "suite": "graph_assisted",
+      "task": "train",
+      "dataset": "cora",
+      "method": "postel",
+      "noise_type": "uniform",
+      "noise_rate": 0.4,
+      "seed": 1,
+      "validation_protocol": "clean",
+      "variant": "default",
+      "overrides": {}
+    },
+    {
+      "suite": "graph_assisted",
+      "task": "train",
+      "dataset": "cora",
+      "method": "als",
+      "noise_type": "uniform",
+      "noise_rate": 0.4,
+      "seed": 1,
+      "validation_protocol": "clean",
+      "variant": "default",
+      "overrides": {}
+    },
+    {
+      "suite": "graph_assisted",
+      "task": "train",
+      "dataset": "cora",
+      "method": "sals",
+      "noise_type": "uniform",
+      "noise_rate": 0.4,
+      "seed": 1,
+      "validation_protocol": "clean",
+      "variant": "default",
+      "overrides": {}
+    },
+    {
+      "suite": "graph_assisted",
+      "task": "train",
+      "dataset": "cora",
+      "method": "graphmlp",
+      "noise_type": "uniform",
+      "noise_rate": 0.4,
+      "seed": 1,
+      "validation_protocol": "clean",
+      "variant": "default",
+      "overrides": {}
+    },
+    {
+      "suite": "graph_assisted",
+      "task": "train",
+      "dataset": "cora",
+      "method": "gsdn",
+      "noise_type": "uniform",
+      "noise_rate": 0.4,
+      "seed": 1,
+      "validation_protocol": "clean",
+      "variant": "default",
+      "overrides": {}
+    },
+    {
+      "suite": "graph_assisted",
+      "task": "train",
+      "dataset": "cora",
+      "method": "gblcss",
+      "noise_type": "uniform",
+      "noise_rate": 0.4,
+      "seed": 2,
+      "validation_protocol": "clean",
+      "variant": "default",
+      "overrides": {}
+    },
+    {
+      "suite": "graph_assisted",
+      "task": "train",
+      "dataset": "cora",
+      "method": "postel",
+      "noise_type": "uniform",
+      "noise_rate": 0.4,
+      "seed": 2,
+      "validation_protocol": "clean",
+      "variant": "default",
+      "overrides": {}
+    },
+    {
+      "suite": "graph_assisted",
+      "task": "train",
+      "dataset": "cora",
+      "method": "als",
+      "noise_type": "uniform",
+      "noise_rate": 0.4,
+      "seed": 2,
+      "validation_protocol": "clean",
+      "variant": "default",
+      "overrides": {}
+    },
+    {
+      "suite": "graph_assisted",
+      "task": "train",
+      "dataset": "cora",
+      "method": "sals",
+      "noise_type": "uniform",
+      "noise_rate": 0.4,
+      "seed": 2,
+      "validation_protocol": "clean",
+      "variant": "default",
+      "overrides": {}
+    },
+    {
+      "suite": "graph_assisted",
+      "task": "train",
+      "dataset": "cora",
+      "method": "graphmlp",
+      "noise_type": "uniform",
+      "noise_rate": 0.4,
+      "seed": 2,
+      "validation_protocol": "clean",
+      "variant": "default",
+      "overrides": {}
+    },
+    {
+      "suite": "graph_assisted",
+      "task": "train",
+      "dataset": "cora",
+      "method": "gsdn",
+      "noise_type": "uniform",
+      "noise_rate": 0.4,
+      "seed": 2,
+      "validation_protocol": "clean",
+      "variant": "default",
+      "overrides": {}
+    },
+    {
+      "suite": "graph_assisted",
+      "task": "train",
+      "dataset": "cora",
+      "method": "gblcss",
+      "noise_type": "uniform",
+      "noise_rate": 0.4,
+      "seed": 3,
+      "validation_protocol": "clean",
+      "variant": "default",
+      "overrides": {}
+    },
+    {
+      "suite": "graph_assisted",
+      "task": "train",
+      "dataset": "cora",
+      "method": "postel",
+      "noise_type": "uniform",
+      "noise_rate": 0.4,
+      "seed": 3,
+      "validation_protocol": "clean",
+      "variant": "default",
+      "overrides": {}
+    },
+    {
+      "suite": "graph_assisted",
+      "task": "train",
+      "dataset": "cora",
+      "method": "als",
+      "noise_type": "uniform",
+      "noise_rate": 0.4,
+      "seed": 3,
+      "validation_protocol": "clean",
+      "variant": "default",
+      "overrides": {}
+    },
+    {
+      "suite": "graph_assisted",
+      "task": "train",
+      "dataset": "cora",
+      "method": "sals",
+      "noise_type": "uniform",
+      "noise_rate": 0.4,
+      "seed": 3,
+      "validation_protocol": "clean",
+      "variant": "default",
+      "overrides": {}
+    },
+    {
+      "suite": "graph_assisted",
+      "task": "train",
+      "dataset": "cora",
+      "method": "graphmlp",
+      "noise_type": "uniform",
+      "noise_rate": 0.4,
+      "seed": 3,
+      "validation_protocol": "clean",
+      "variant": "default",
+      "overrides": {}
+    },
+    {
+      "suite": "graph_assisted",
+      "task": "train",
+      "dataset": "cora",
+      "method": "gsdn",
+      "noise_type": "uniform",
+      "noise_rate": 0.4,
+      "seed": 3,
+      "validation_protocol": "clean",
+      "variant": "default",
+      "overrides": {}
+    },
+    {
+      "suite": "graph_assisted",
+      "task": "train",
+      "dataset": "cora",
+      "method": "gblcss",
+      "noise_type": "uniform",
+      "noise_rate": 0.4,
+      "seed": 4,
+      "validation_protocol": "clean",
+      "variant": "default",
+      "overrides": {}
+    },
+    {
+      "suite": "graph_assisted",
+      "task": "train",
+      "dataset": "cora",
+      "method": "postel",
+      "noise_type": "uniform",
+      "noise_rate": 0.4,
+      "seed": 4,
+      "validation_protocol": "clean",
+      "variant": "default",
+      "overrides": {}
+    },
+    {
+      "suite": "graph_assisted",
+      "task": "train",
+      "dataset": "cora",
+      "method": "als",
+      "noise_type": "uniform",
+      "noise_rate": 0.4,
+      "seed": 4,
+      "validation_protocol": "clean",
+      "variant": "default",
+      "overrides": {}
+    },
+    {
+      "suite": "graph_assisted",
+      "task": "train",
+      "dataset": "cora",
+      "method": "sals",
+      "noise_type": "uniform",
+      "noise_rate": 0.4,
+      "seed": 4,
+      "validation_protocol": "clean",
+      "variant": "default",
+      "overrides": {}
+    },
+    {
+      "suite": "graph_assisted",
+      "task": "train",
+      "dataset": "cora",
+      "method": "graphmlp",
+      "noise_type": "uniform",
+      "noise_rate": 0.4,
+      "seed": 4,
+      "validation_protocol": "clean",
+      "variant": "default",
+      "overrides": {}
+    },
+    {
+      "suite": "graph_assisted",
+      "task": "train",
+      "dataset": "cora",
+      "method": "gsdn",
+      "noise_type": "uniform",
+      "noise_rate": 0.4,
+      "seed": 4,
+      "validation_protocol": "clean",
+      "variant": "default",
+      "overrides": {}
+    }
+  ],
+  "threads": 4,
+  "representation": null,
+  "data_root": "C:\\Users\\Admin\\Desktop\\\u5b9e\u9a8c8\u53bb\u566a5.19-\\gb_c1_ratio_success_20260609\\results_ratio_c1_20260609\\_work\\code_data"
+}

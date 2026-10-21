@@ -1,0 +1,302 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <title>Graph-aware Granular Ball Minival 6.1 - Deep Research Brief</title>
+  <style>
+    :root {
+      --ink: #17202a;
+      --muted: #59636e;
+      --line: #d8dee6;
+      --soft: #f5f7fa;
+      --blue: #205493;
+      --green: #196f3d;
+      --red: #922b21;
+      --amber: #8a5a00;
+    }
+    body {
+      font-family: "Segoe UI", "Microsoft YaHei", Arial, sans-serif;
+      color: var(--ink);
+      line-height: 1.58;
+      max-width: 1180px;
+      margin: 0 auto;
+      padding: 32px 28px 64px;
+      background: #fff;
+    }
+    h1, h2, h3 { line-height: 1.25; }
+    h1 { font-size: 30px; margin-bottom: 8px; }
+    h2 { border-top: 1px solid var(--line); padding-top: 24px; margin-top: 32px; }
+    h3 { margin-top: 22px; }
+    code, pre {
+      font-family: Consolas, "Courier New", monospace;
+      background: var(--soft);
+      border-radius: 5px;
+    }
+    code { padding: 2px 5px; }
+    pre {
+      padding: 14px;
+      overflow-x: auto;
+      border: 1px solid var(--line);
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 14px 0 22px;
+      font-size: 14px;
+    }
+    th, td {
+      border: 1px solid var(--line);
+      padding: 7px 8px;
+      text-align: left;
+      vertical-align: top;
+    }
+    th { background: var(--soft); }
+    .muted { color: var(--muted); }
+    .callout {
+      border-left: 4px solid var(--blue);
+      background: #f3f7fc;
+      padding: 12px 14px;
+      margin: 16px 0;
+    }
+    .ok { color: var(--green); font-weight: 600; }
+    .bad { color: var(--red); font-weight: 600; }
+    .warn { color: var(--amber); font-weight: 600; }
+    .small { font-size: 13px; }
+  </style>
+</head>
+<body>
+  <h1>Graph-aware Granular Ball 最小验证报告</h1>
+  <p class="muted">日期：2026-06-01。用途：给 GPT / Deep Research 继续设计下一阶段研究。实验目录：<code>C:\Users\Admin\Desktop\实验8去噪5.19-\gb_graph_aware_minival_6_1</code></p>
+
+  <div class="callout">
+    <strong>一句话结论：</strong>当前 v1 有局部纯度信号，但还不是成功方法。<code>gagb</code>/<code>gagb_ca_ce</code> 相对普通 <code>gb</code> 在 3/4 个 dataset-noise 设置上有小幅 accuracy 正向；但没有稳定打过 <code>khop_only</code> 和 <code>gagb_shuffled</code>，并且 <code>noise_detection_auroc</code> 没有稳定优于普通 GB。
+  </div>
+
+  <h2>1. 研究问题</h2>
+  <p>本次最小验证的目标不是提出完整论文方法，而是检查一个更小的假设：</p>
+  <pre>在 frozen GRACE embedding 上构造粒球时，
+普通 embedding-only GB 是否因为忽略图拓扑而不够好？
+如果加入 k-hop topology 约束，
+Graph-aware GB 是否更适合作为 noisy-label node classification 的局部软监督单元？</pre>
+
+  <p>粒球在本实验中的角色被严格限制为：</p>
+  <ul>
+    <li>局部 soft-label 统计单元。</li>
+    <li>样本 reliability / weight 区域。</li>
+    <li>机制诊断对象，例如 clean purity、noisy-label entropy、noise detection AUROC。</li>
+  </ul>
+  <p>粒球没有被用作 hard positive label、hard negative filter、prototype pulling 目标，也没有修改 GRACE view generation。</p>
+
+  <h2>2. 算法流程</h2>
+  <h3>2.1 输入和基本设置</h3>
+  <table>
+    <tr><th>项目</th><th>内容</th></tr>
+    <tr><td>输入图</td><td>Attributed graph <code>G=(V,E,X)</code>，节点标签含 symmetric noise。</td></tr>
+    <tr><td>embedding</td><td>复用 frozen GRACE encoder 产生的归一化节点表示 <code>H</code>。</td></tr>
+    <tr><td>拓扑信息</td><td>从 embedding payload 中保存和读取 <code>edge_index</code>。</td></tr>
+    <tr><td>标签使用限制</td><td>构球阶段不使用 noisy label 或 clean label。clean label 只用于诊断指标。</td></tr>
+    <tr><td>核心参数</td><td><code>max_hops=2</code>, <code>min_ball_size=5</code>, <code>tau_add=0.55</code>, <code>lambda_h=0.7</code>, <code>lambda_t=0.3</code>, <code>max_ball_size=128</code>。</td></tr>
+  </table>
+
+  <h3>2.2 Graph-aware GB 构球步骤</h3>
+  <ol>
+    <li>对输入 embedding 做 L2 normalization，得到单位向量表示。</li>
+    <li>由 <code>edge_index</code> 构造无向邻接表，并计算每个节点 degree。</li>
+    <li>维护未分配节点集合 <code>U</code>。</li>
+    <li>每一轮从 <code>U</code> 中选择中心节点：degree 最大者优先，随机数只用于微小 tie-break。</li>
+    <li>从中心节点出发，在未分配节点中做 BFS，收集 <code>max_hops</code> 内候选节点。</li>
+    <li>对每个候选节点计算 embedding 相似度和拓扑相似度。</li>
+    <li>用混合分数筛选成员：<code>score(i,c)=lambda_h*cos(h_i,h_c)+lambda_t*topo(i,c)</code>。</li>
+    <li>其中 <code>topo(i,c)=1</code> 如果是中心本身，否则 <code>1/hop_distance(i,c)</code>。</li>
+    <li>保留中心节点和所有 <code>score >= tau_add</code> 的候选节点。</li>
+    <li>若球大小小于 <code>min_ball_size</code>，按 score 从高到低补足；若超过 <code>max_ball_size</code>，截断。</li>
+    <li>将选中节点从 <code>U</code> 中删除，继续下一轮直到所有节点被分组。</li>
+    <li>对每个球计算中心、半径、节点到中心距离和 ball diagnostics。</li>
+  </ol>
+
+  <h3>2.3 伪代码</h3>
+  <pre>Input: normalized embeddings H, edge_index
+U = all nodes
+Adj = undirected_adjacency(edge_index)
+
+while U is not empty:
+    c = argmax_{v in U} degree(v)
+    C = k_hop_candidates(c, Adj, U, max_hops=2)
+    for i in C:
+        emb_sim = cosine(H[i], H[c])
+        topo_sim = 1.0 if i == c else 1.0 / hop_distance(i, c)
+        score[i] = 0.7 * emb_sim + 0.3 * topo_sim
+    B = {c} union {i in C: score[i] >= 0.55}
+    if |B| &lt; 5:
+        add highest-score candidates until |B| = 5
+    B = first 128 nodes by score
+    assign B as one graph-aware ball
+    U = U - B
+
+Output: group_ids, groups, centers, radii, node_distances, diagnostics</pre>
+
+  <h3>2.4 方法变体</h3>
+  <table>
+    <tr><th>方法</th><th>定义</th><th>目的</th></tr>
+    <tr><td><code>ce</code></td><td>普通 noisy-label CE。</td><td>基础下界。</td></tr>
+    <tr><td><code>global</code></td><td>全局 label distribution smoothing。</td><td>排除“只是 smoothing 有效”。</td></tr>
+    <tr><td><code>kmeans</code></td><td>用 KMeans 替代 GB，组数匹配 GB。</td><td>普通聚类对照。</td></tr>
+    <tr><td><code>topk_matched</code></td><td>按 embedding top-k 邻居做局部 smoothing。</td><td>局部邻居对照。</td></tr>
+    <tr><td><code>gb</code></td><td>普通 embedding-space granular ball。</td><td>核心 baseline。</td></tr>
+    <tr><td><code>gb_ca_ce</code></td><td>普通 GB + coverage-aware CE fallback。</td><td>避免未覆盖节点被错误处理。</td></tr>
+    <tr><td><code>gb_weighted_ce</code></td><td>普通 GB reliability weighted CE。</td><td>权重型粒球对照。</td></tr>
+    <tr><td><code>gagb</code></td><td>Graph-aware GB strict local smoothing。</td><td>核心候选方法。</td></tr>
+    <tr><td><code>gagb_ca_ce</code></td><td>Graph-aware GB + coverage-aware CE fallback。</td><td>核心候选方法，覆盖更稳。</td></tr>
+    <tr><td><code>gagb_weighted_ce</code></td><td>Graph-aware GB reliability weighted CE。</td><td>检验球作为权重区域是否有效。</td></tr>
+    <tr><td><code>khop_only</code></td><td><code>lambda_h=0</code>, <code>lambda_t=1</code> 的 topology-only grouping。</td><td>判断收益是否只是拓扑邻近。</td></tr>
+    <tr><td><code>gagb_shuffled</code></td><td>保留 GAGB 球大小分布，但随机打乱成员。</td><td>排除“只是分组大小/正则化”有效。</td></tr>
+  </table>
+
+  <h2>3. 实验协议</h2>
+  <table>
+    <tr><th>项目</th><th>设置</th></tr>
+    <tr><td>数据集</td><td>Cora, CiteSeer</td></tr>
+    <tr><td>划分</td><td>ratio split, train ratio 0.2, validation ratio 0.1, split seed 0</td></tr>
+    <tr><td>噪声类型</td><td>symmetric label noise</td></tr>
+    <tr><td>噪声率</td><td>0.2, 0.4</td></tr>
+    <tr><td>seeds</td><td>0, 1, 2, 3, 4；pretrain/noise/classifier seed 对齐。</td></tr>
+    <tr><td>训练方式</td><td>frozen GRACE embedding + noisy classifier gate。</td></tr>
+    <tr><td>alpha</td><td>0.3；weighted CE 方法 alpha 记为 0.0。</td></tr>
+    <tr><td>完整命令</td><td><code>py -3 scripts\run_gate_experiment.py --allow-external-python --python C:\Users\Admin\AppData\Local\Programs\Python\Python312\python.exe --datasets Cora CiteSeer --split-mode ratio --train-ratios 0.2 --val-ratio 0.1 --noise-rates 0.2 0.4 --seeds 0 1 2 3 4 --mode frozen --alphas 0.3 --methods ce global kmeans topk_matched gb gb_ca_ce gb_weighted_ce gagb gagb_ca_ce gagb_weighted_ce khop_only gagb_shuffled --save-diagnostics</code></td></tr>
+  </table>
+
+  <h2>4. 结果表</h2>
+  <h3>4.1 Accuracy / AUROC / 粒球质量</h3>
+  <p class="small muted">数值来自 <code>reports/gagb_minival_20260601/gate_summary.csv</code>。Acc 为 <code>test_at_best_val_mean</code>，括号为 std。</p>
+  <table>
+    <tr><th>Dataset</th><th>Noise</th><th>Method</th><th>Acc mean ± std</th><th>Noise AUROC</th><th>Clean purity</th><th>Noisy entropy</th></tr>
+    <tr><td>CiteSeer</td><td>0.2</td><td>ce</td><td>0.7064 ± 0.0087</td><td>0.5000</td><td>NA</td><td>NA</td></tr>
+    <tr><td>CiteSeer</td><td>0.2</td><td>gb</td><td>0.7009 ± 0.0127</td><td>0.6061</td><td>0.7970</td><td>0.2047</td></tr>
+    <tr><td>CiteSeer</td><td>0.2</td><td>gagb</td><td>0.7012 ± 0.0127</td><td>0.5670</td><td>0.8757</td><td>0.0864</td></tr>
+    <tr><td>CiteSeer</td><td>0.2</td><td>gagb_ca_ce</td><td>0.7015 ± 0.0129</td><td>0.6045</td><td>0.8757</td><td>0.0864</td></tr>
+    <tr><td>CiteSeer</td><td>0.2</td><td>khop_only</td><td>0.7079 ± 0.0102</td><td>0.5349</td><td>0.9075</td><td>0.0692</td></tr>
+    <tr><td>CiteSeer</td><td>0.2</td><td>gagb_shuffled</td><td>0.7081 ± 0.0093</td><td>0.4980</td><td>0.6805</td><td>0.1221</td></tr>
+
+    <tr><td>CiteSeer</td><td>0.4</td><td>ce</td><td>0.6979 ± 0.0090</td><td>0.5000</td><td>NA</td><td>NA</td></tr>
+    <tr><td>CiteSeer</td><td>0.4</td><td>gb</td><td>0.6976 ± 0.0097</td><td>0.5822</td><td>0.7970</td><td>0.2499</td></tr>
+    <tr><td>CiteSeer</td><td>0.4</td><td>gagb</td><td>0.6980 ± 0.0099</td><td>0.5542</td><td>0.8757</td><td>0.1103</td></tr>
+    <tr><td>CiteSeer</td><td>0.4</td><td>gagb_ca_ce</td><td>0.6986 ± 0.0096</td><td>0.5693</td><td>0.8757</td><td>0.1103</td></tr>
+    <tr><td>CiteSeer</td><td>0.4</td><td>khop_only</td><td>0.6987 ± 0.0103</td><td>0.5306</td><td>0.9075</td><td>0.0880</td></tr>
+    <tr><td>CiteSeer</td><td>0.4</td><td>gagb_shuffled</td><td>0.6985 ± 0.0095</td><td>0.4978</td><td>0.6805</td><td>0.1236</td></tr>
+
+    <tr><td>Cora</td><td>0.2</td><td>ce</td><td>0.8113 ± 0.0042</td><td>0.5000</td><td>NA</td><td>NA</td></tr>
+    <tr><td>Cora</td><td>0.2</td><td>gb</td><td>0.8118 ± 0.0051</td><td>0.6824</td><td>0.8934</td><td>0.1603</td></tr>
+    <tr><td>Cora</td><td>0.2</td><td>gagb</td><td>0.8119 ± 0.0053</td><td>0.6499</td><td>0.8934</td><td>0.0872</td></tr>
+    <tr><td>Cora</td><td>0.2</td><td>gagb_ca_ce</td><td>0.8129 ± 0.0059</td><td>0.7084</td><td>0.8934</td><td>0.0872</td></tr>
+    <tr><td>Cora</td><td>0.2</td><td>khop_only</td><td>0.8120 ± 0.0060</td><td>0.5710</td><td>0.9273</td><td>0.0758</td></tr>
+    <tr><td>Cora</td><td>0.2</td><td>gagb_shuffled</td><td>0.8097 ± 0.0052</td><td>0.4996</td><td>0.5915</td><td>0.1565</td></tr>
+
+    <tr><td>Cora</td><td>0.4</td><td>ce</td><td>0.7935 ± 0.0082</td><td>0.5000</td><td>NA</td><td>NA</td></tr>
+    <tr><td>Cora</td><td>0.4</td><td>gb</td><td>0.7974 ± 0.0054</td><td>0.6450</td><td>0.8934</td><td>0.2302</td></tr>
+    <tr><td>Cora</td><td>0.4</td><td>gagb</td><td>0.7950 ± 0.0062</td><td>0.6186</td><td>0.8934</td><td>0.1261</td></tr>
+    <tr><td>Cora</td><td>0.4</td><td>gagb_ca_ce</td><td>0.7952 ± 0.0062</td><td>0.6486</td><td>0.8934</td><td>0.1261</td></tr>
+    <tr><td>Cora</td><td>0.4</td><td>khop_only</td><td>0.7937 ± 0.0070</td><td>0.5507</td><td>0.9273</td><td>0.1084</td></tr>
+    <tr><td>Cora</td><td>0.4</td><td>gagb_shuffled</td><td>0.7942 ± 0.0081</td><td>0.5167</td><td>0.5915</td><td>0.1607</td></tr>
+  </table>
+
+  <h3>4.2 Paired delta：核心方法相对关键对照</h3>
+  <p class="small muted">数值来自 <code>reports/gagb_minival_20260601/gate_paired_deltas.csv</code>。Delta 为 test accuracy paired mean difference。</p>
+  <table>
+    <tr><th>Dataset</th><th>Noise</th><th>Method</th><th>Baseline</th><th>Delta mean ± std</th><th>Positive seeds</th></tr>
+    <tr><td>CiteSeer</td><td>0.2</td><td>gagb</td><td>gb</td><td>+0.00034 ± 0.00057</td><td>3/5</td></tr>
+    <tr><td>CiteSeer</td><td>0.2</td><td>gagb</td><td>khop_only</td><td>-0.00670 ± 0.01343</td><td>1/5</td></tr>
+    <tr><td>CiteSeer</td><td>0.2</td><td>gagb</td><td>gagb_shuffled</td><td>-0.00687 ± 0.01203</td><td>0/5</td></tr>
+    <tr><td>CiteSeer</td><td>0.2</td><td>gagb_ca_ce</td><td>gb</td><td>+0.00069 ± 0.00064</td><td>3/5</td></tr>
+    <tr><td>CiteSeer</td><td>0.2</td><td>gagb_ca_ce</td><td>khop_only</td><td>-0.00636 ± 0.01337</td><td>2/5</td></tr>
+    <tr><td>CiteSeer</td><td>0.2</td><td>gagb_ca_ce</td><td>gagb_shuffled</td><td>-0.00653 ± 0.01200</td><td>1/5</td></tr>
+
+    <tr><td>CiteSeer</td><td>0.4</td><td>gagb</td><td>gb</td><td>+0.00043 ± 0.00255</td><td>3/5</td></tr>
+    <tr><td>CiteSeer</td><td>0.4</td><td>gagb</td><td>khop_only</td><td>-0.00069 ± 0.00167</td><td>1/5</td></tr>
+    <tr><td>CiteSeer</td><td>0.4</td><td>gagb</td><td>gagb_shuffled</td><td>-0.00043 ± 0.00246</td><td>2/5</td></tr>
+    <tr><td>CiteSeer</td><td>0.4</td><td>gagb_ca_ce</td><td>gb</td><td>+0.00103 ± 0.00150</td><td>2/5</td></tr>
+    <tr><td>CiteSeer</td><td>0.4</td><td>gagb_ca_ce</td><td>khop_only</td><td>-0.00009 ± 0.00088</td><td>2/5</td></tr>
+    <tr><td>CiteSeer</td><td>0.4</td><td>gagb_ca_ce</td><td>gagb_shuffled</td><td>+0.00017 ± 0.00111</td><td>3/5</td></tr>
+
+    <tr><td>Cora</td><td>0.2</td><td>gagb</td><td>gb</td><td>+0.00011 ± 0.00102</td><td>2/5</td></tr>
+    <tr><td>Cora</td><td>0.2</td><td>gagb</td><td>khop_only</td><td>-0.00011 ± 0.00113</td><td>3/5</td></tr>
+    <tr><td>Cora</td><td>0.2</td><td>gagb</td><td>gagb_shuffled</td><td>+0.00222 ± 0.00108</td><td>5/5</td></tr>
+    <tr><td>Cora</td><td>0.2</td><td>gagb_ca_ce</td><td>gb</td><td>+0.00106 ± 0.00111</td><td>3/5</td></tr>
+    <tr><td>Cora</td><td>0.2</td><td>gagb_ca_ce</td><td>khop_only</td><td>+0.00084 ± 0.00063</td><td>4/5</td></tr>
+    <tr><td>Cora</td><td>0.2</td><td>gagb_ca_ce</td><td>gagb_shuffled</td><td>+0.00317 ± 0.00167</td><td>5/5</td></tr>
+
+    <tr><td>Cora</td><td>0.4</td><td>gagb</td><td>gb</td><td>-0.00232 ± 0.00285</td><td>1/5</td></tr>
+    <tr><td>Cora</td><td>0.4</td><td>gagb</td><td>khop_only</td><td>+0.00137 ± 0.00285</td><td>3/5</td></tr>
+    <tr><td>Cora</td><td>0.4</td><td>gagb</td><td>gagb_shuffled</td><td>+0.00084 ± 0.00428</td><td>2/5</td></tr>
+    <tr><td>Cora</td><td>0.4</td><td>gagb_ca_ce</td><td>gb</td><td>-0.00211 ± 0.00297</td><td>1/5</td></tr>
+    <tr><td>Cora</td><td>0.4</td><td>gagb_ca_ce</td><td>khop_only</td><td>+0.00158 ± 0.00364</td><td>3/5</td></tr>
+    <tr><td>Cora</td><td>0.4</td><td>gagb_ca_ce</td><td>gagb_shuffled</td><td>+0.00106 ± 0.00432</td><td>2/5</td></tr>
+  </table>
+
+  <h2>5. 判定</h2>
+  <table>
+    <tr><th>预设成功标准</th><th>是否满足</th><th>证据</th></tr>
+    <tr><td><code>gagb</code> 或 <code>gagb_weighted_ce</code> 在至少 3/4 个设置中 paired mean 超过普通 <code>gb</code></td><td class="ok">部分满足</td><td><code>gagb</code> 对 <code>gb</code> 在 CiteSeer 0.2、CiteSeer 0.4、Cora 0.2 为正，但 Cora 0.4 为负。<code>gagb_weighted_ce</code> 整体不强。</td></tr>
+    <tr><td><code>gagb</code> 打过 <code>khop_only</code> 和 <code>gagb_shuffled</code></td><td class="bad">不满足</td><td>CiteSeer 0.2/0.4 上输给 <code>khop_only</code>，CiteSeer 0.2 上也输给 <code>gagb_shuffled</code>。</td></tr>
+    <tr><td><code>noise_detection_auroc</code> 至少 3/4 设置优于普通 GB</td><td class="bad">不满足</td><td><code>gagb</code> 的 AUROC 四个设置都低于普通 <code>gb</code>。<code>gagb_ca_ce</code> 只在 Cora 0.2 和 Cora 0.4 超过 <code>gb</code>。</td></tr>
+    <tr><td><code>clean_damage_rate</code> 不高于 ordinary GB 超过 1 个百分点</td><td class="ok">满足</td><td>当前诊断中 clean damage rate 为 0.0。</td></tr>
+  </table>
+
+  <h2>6. 解释：哪些信号是真的，哪些不能过度解读</h2>
+  <h3>6.1 已被实验支持</h3>
+  <ul>
+    <li>Graph-aware / topology-aware 分组能显著降低 noisy-label entropy。例如 CiteSeer 0.2 中，<code>gb</code> 为 0.2047，<code>gagb</code> 为 0.0864，<code>khop_only</code> 为 0.0692。</li>
+    <li><code>gagb</code> 在 clean purity 上通常高于 ordinary <code>gb</code>；但 <code>khop_only</code> 往往更高。</li>
+    <li><code>gagb_ca_ce</code> 比 strict <code>gagb</code> 更稳一些，尤其在 Cora 0.2。</li>
+  </ul>
+
+  <h3>6.2 尚未被支持</h3>
+  <ul>
+    <li>不能说 graph-aware GB 已经优于 topology-only grouping。</li>
+    <li>不能说 graph-aware GB 已经带来稳定噪声检测能力，因为 AUROC 没有稳定超过 <code>gb</code>。</li>
+    <li>不能把当前 accuracy 小幅提升写成显著提升；多数提升接近或小于 std。</li>
+    <li>不能声称这是 paper-ready 主方法。</li>
+  </ul>
+
+  <h3>6.3 可能的机制解释</h3>
+  <ul>
+    <li>拓扑约束确实让球更纯，但更纯的球未必能更好纠正 noisy labels。</li>
+    <li>当前 soft-label 构造可能过于保守，导致 <code>noise_correction_rate=0.0</code>。</li>
+    <li><code>khop_only</code> 的强表现说明，在 Cora/CiteSeer 这类同配图上，拓扑邻近本身已经非常强；混合 embedding score 未必增加有效信息。</li>
+    <li><code>gagb_shuffled</code> 在部分设置上很强，提示当前收益可能混有分组大小、coverage 或训练随机性的影响，必须继续做控制实验。</li>
+  </ul>
+
+  <h2>7. 给 Deep Research / GPT 的下一步问题</h2>
+  <p>建议把下面这段作为后续研究提示词的一部分：</p>
+  <pre>我已经完成 Graph-aware Granular Ball v1 的最小验证。
+任务是 noisy-label robust node classification on attributed graphs。
+当前方法在 frozen GRACE embedding 上构球：
+score(i,c)=0.7*cos(h_i,h_c)+0.3*(1/hop_distance(i,c))，
+候选节点限制在 2-hop 内，不使用 noisy label 或 clean label 构球。
+
+实验结果：
+1. gagb/gagb_ca_ce 相对 ordinary gb 在 3/4 个 dataset-noise 设置上有小幅 accuracy 正向。
+2. 但 gagb 没有稳定打过 khop_only 和 gagb_shuffled。
+3. gagb 的 clean purity 更高、noisy-label entropy 更低，但 noise_detection_auroc 没有稳定超过 ordinary gb。
+4. noise_correction_rate 当前为 0，说明 soft-label target 可能太保守。
+
+请基于这些结果继续研究：
+- 这个方向是否应该继续？
+- 下一版应该优先改构球、soft-label target、reliability weight，还是改 evaluation diagnostics？
+- 如何区分 topology-only benefit 和 graph-aware GB-specific benefit？
+- 是否需要把 topology 权重做成 homophily-aware / confidence-aware？
+- 怎样设计一个更能产生 noise correction 的 q_B，而不是只降低 entropy？
+- 哪些实验控制必须加入，才能避免把 khop/topology smoothing 误写成粒球贡献？
+要求输出：研究判断、v2算法设计、消融实验、失败标准和论文 claim 边界。</pre>
+
+  <h2>8. 可追溯文件</h2>
+  <table>
+    <tr><th>文件</th><th>说明</th></tr>
+    <tr><td><code>src/noisy_label_gb_grace/balls/graph_aware_ball.py</code></td><td>Graph-aware GB 构球实现。</td></tr>
+    <tr><td><code>scripts/run_noisy_classifier.py</code></td><td>方法接入、分组选择、诊断计算。</td></tr>
+    <tr><td><code>reports/gagb_minival_20260601/gate_summary.csv</code></td><td>完整 summary 表。</td></tr>
+    <tr><td><code>reports/gagb_minival_20260601/gate_paired_deltas.csv</code></td><td>paired delta 表。</td></tr>
+    <tr><td><code>reports/2026-06-01_gagb_minival_result.md</code></td><td>简版实验记录。</td></tr>
+    <tr><td><code>logs/gate/20260601_130811</code></td><td>原始运行日志。</td></tr>
+  </table>
+</body>
+</html>

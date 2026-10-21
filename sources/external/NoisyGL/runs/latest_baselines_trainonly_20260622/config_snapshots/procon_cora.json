@@ -1,0 +1,42 @@
+{
+  "base": {
+    "dataset": {
+      "sparse": true
+    },
+    "model": {
+      "alpha": 0.5,
+      "candidate_limit": 512,
+      "clean_threshold": 0.5,
+      "dropout": 0.5,
+      "edge_drop": 0.2,
+      "exact_max_nodes": 5000,
+      "feature_drop": 0.2,
+      "lambda_supervised": 0.1,
+      "method": "procon",
+      "n_hidden": 64,
+      "n_layer": 2,
+      "peer_k": 10,
+      "prototype_momentum": 0.9,
+      "target_momentum": 0.99
+    },
+    "training": {
+      "criterion": "metric",
+      "lr": 0.005,
+      "n_epochs": 500,
+      "patience": 50,
+      "weight_decay": 0.0005
+    }
+  },
+  "dataset": "cora",
+  "method": "procon",
+  "selection": {
+    "config_id": "35c57c8fa0b65777",
+    "config_index": 9,
+    "overrides": {
+      "model.alpha": 0.25,
+      "model.lambda_supervised": 0.1,
+      "model.peer_k": 20
+    },
+    "valid": 0.8185185185185185
+  }
+}

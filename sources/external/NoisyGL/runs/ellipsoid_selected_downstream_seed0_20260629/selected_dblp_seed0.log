@@ -1,0 +1,44 @@
+﻿python.exe : C:\Users\Admin\Desktop\�������ں�\�������ں�\GRACE-master\.venv-rocm\Lib\site-packages\torch_geometric\nn\co
+nv\gcn_conv.py:274: UserWarning: Converting sparse tensor to CSR format for more efficient processing. Consider convert
+ing your sparse tensor to CSR format beforehand to avoid repeated conversion (got 'torch.sparse_coo')
+At line:2 char:1
++ & "C:\Users\Admin\Desktop\三论文融合\三论文融合\GRACE-master\.venv-rocm\Scripts ...
++ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (C:\Users\Admin\...ch.sparse_coo'):String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+  return spmm(adj_t, x, reduce=self.aggr)
+C:\Users\Admin\Desktop\�������ں�\�������ں�\GRACE-master\.venv-rocm\Lib\site-packages\torch_geometric\utils\_spmm.py:71:
+ UserWarning: Sparse CSR tensor support is in beta state. If you miss a functionality in the sparse tensor support, ple
+ase submit a feature request to https://github.com/pytorch/pytorch/issues. (Triggered internally at C:\b\pytorch\aten\s
+rc\ATen\SparseCsrTensorImpl.cpp:55.)
+  src = src.to_sparse_csr()
+C:\Users\Admin\Desktop\�������ں�\�������ں�\GRACE-master\.venv-rocm\Lib\site-packages\torch_geometric\nn\conv\gcn_conv.p
+y:274: UserWarning: Converting sparse tensor to CSR format for more efficient processing. Consider converting your spar
+se tensor to CSR format beforehand to avoid repeated conversion (got 'torch.sparse_coo')
+  return spmm(adj_t, x, reduce=self.aggr)
+STANDARD_RUN dataset=dblp method=frozengrace_gb_gcn_softdist_xh_ellipsoid seed=0
+----Data statistics------'
+                Name: dblp
+                #Nodes 17716
+                #Edges 52867
+                #Classes 4
+                #Ave_degree 5.97
+----Split statistics------'
+                #Train samples 3543 (20.0 % of nodes)
+                #Val samples 1771 (10.0 % of nodes)
+                #Test samples 12401 (70.0 % of nodes)
+RESULT dataset=dblp method=frozengrace_gb_gcn_softdist_xh_ellipsoid seed=0 test=0.8424
+STANDARD_RUN dataset=dblp method=frozengrace_gb_gcn_softdist_xh_ellipsoid_shuffled seed=0
+----Data statistics------'
+                Name: dblp
+                #Nodes 17716
+                #Edges 52867
+                #Classes 4
+                #Ave_degree 5.97
+----Split statistics------'
+                #Train samples 3543 (20.0 % of nodes)
+                #Val samples 1771 (10.0 % of nodes)
+                #Test samples 12401 (70.0 % of nodes)
+RESULT dataset=dblp method=frozengrace_gb_gcn_softdist_xh_ellipsoid_shuffled seed=0 test=0.8320
+WROTE runs\ellipsoid_selected_downstream_seed0_20260629\selected_dblp_seed0.csv

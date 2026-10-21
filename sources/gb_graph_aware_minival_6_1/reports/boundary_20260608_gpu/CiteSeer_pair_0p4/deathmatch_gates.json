@@ -1,0 +1,134 @@
+{
+  "config": {
+    "datasets": [
+      "Cora",
+      "CiteSeer"
+    ],
+    "noise_specs": [
+      "symmetric:0.2",
+      "symmetric:0.4",
+      "symmetric:0.6",
+      "pair:0.2",
+      "pair:0.4",
+      "pair:0.6"
+    ],
+    "seeds": [
+      0,
+      1,
+      2,
+      3,
+      4
+    ],
+    "split_seed": 0,
+    "split_mode": "ratio",
+    "train_ratio": 0.2,
+    "val_ratio": 0.1,
+    "warmup_epochs": 20,
+    "ramp_epochs": 20,
+    "classifier_epochs": 500,
+    "learning_rate": 0.01,
+    "weight_decay": 0.0005,
+    "patience": 50,
+    "gb_min_ball_size": 5,
+    "gagb_max_hops": 2,
+    "gagb_max_ball_size": 128,
+    "min_train_per_ball": 3,
+    "gpu_id": 0,
+    "out_dir": "reports\\boundary_20260608_gpu\\CiteSeer_pair_0p4",
+    "dataset": "CiteSeer",
+    "noise_type": "pair",
+    "noise_rate": 0.4
+  },
+  "gates": {
+    "gate_A_beats_coteaching": {
+      "passes": false,
+      "candidates": [
+        {
+          "method": "sel_topk",
+          "baseline": "coteaching",
+          "wins": 0,
+          "mean_delta": -0.022852230072021484,
+          "passes": false
+        },
+        {
+          "method": "sel_dcgb",
+          "baseline": "coteaching",
+          "wins": 0,
+          "mean_delta": -0.043900346755981444,
+          "passes": false
+        }
+      ]
+    },
+    "gate_B_beats_structure_controls": {
+      "passes": false,
+      "candidates": [
+        {
+          "method": "sel_topk",
+          "parts": [
+            {
+              "method": "sel_topk",
+              "baseline": "sel_noball",
+              "wins": 0,
+              "mean_delta": -0.024312698841094972,
+              "passes": false
+            },
+            {
+              "method": "sel_topk",
+              "baseline": "sel_shuffled",
+              "wins": 4,
+              "mean_delta": 0.02353954315185547,
+              "passes": true
+            },
+            {
+              "method": "sel_topk",
+              "baseline": "sel_random",
+              "wins": 3,
+              "mean_delta": 0.014175283908843993,
+              "passes": false
+            }
+          ],
+          "passes": false
+        },
+        {
+          "method": "sel_dcgb",
+          "parts": [
+            {
+              "method": "sel_dcgb",
+              "baseline": "sel_noball",
+              "wins": 0,
+              "mean_delta": -0.04536081552505493,
+              "passes": false
+            },
+            {
+              "method": "sel_dcgb",
+              "baseline": "sel_shuffled",
+              "wins": 3,
+              "mean_delta": 0.0024914264678955076,
+              "passes": false
+            },
+            {
+              "method": "sel_dcgb",
+              "baseline": "sel_random",
+              "wins": 3,
+              "mean_delta": -0.006872832775115967,
+              "passes": false
+            }
+          ],
+          "passes": false
+        }
+      ]
+    },
+    "gate_C_beats_ce": {
+      "passes": true,
+      "mean_delta": 0.036855685710906985,
+      "threshold": 0.015,
+      "best_structured_by_seed": {
+        "0": 0.6387457251548767,
+        "1": 0.6486254334449768,
+        "2": 0.6361684203147888,
+        "3": 0.599656343460083,
+        "4": 0.639175295829773
+      }
+    }
+  }
+}

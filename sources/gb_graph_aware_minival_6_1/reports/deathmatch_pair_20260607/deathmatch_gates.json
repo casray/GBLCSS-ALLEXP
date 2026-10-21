@@ -1,0 +1,122 @@
+{
+  "config": {
+    "dataset": "Cora",
+    "split_seed": 0,
+    "split_mode": "ratio",
+    "train_ratio": 0.2,
+    "val_ratio": 0.1,
+    "noise_type": "pair",
+    "noise_rate": 0.4,
+    "seeds": [
+      0,
+      1,
+      2,
+      3,
+      4
+    ],
+    "gb_min_ball_size": 5,
+    "gagb_max_hops": 2,
+    "gagb_max_ball_size": 128,
+    "min_train_per_ball": 3,
+    "warmup_epochs": 20,
+    "ramp_epochs": 20,
+    "classifier_epochs": 500,
+    "learning_rate": 0.01,
+    "weight_decay": 0.0005,
+    "patience": 50,
+    "gpu_id": null,
+    "out_dir": "C:\\Users\\Admin\\Desktop\\实验8去噪5.19-\\gb_graph_aware_minival_6_1\\reports\\deathmatch_pair_20260607"
+  },
+  "gates": {
+    "gate_A_beats_coteaching": {
+      "passes": true,
+      "candidates": [
+        {
+          "method": "sel_topk",
+          "baseline": "coteaching",
+          "wins": 5,
+          "mean_delta": 0.08574445247650146,
+          "passes": true
+        },
+        {
+          "method": "sel_dcgb",
+          "baseline": "coteaching",
+          "wins": 4,
+          "mean_delta": 0.06092925071716308,
+          "passes": true
+        }
+      ]
+    },
+    "gate_B_beats_structure_controls": {
+      "passes": true,
+      "candidates": [
+        {
+          "method": "sel_topk",
+          "parts": [
+            {
+              "method": "sel_topk",
+              "baseline": "sel_noball",
+              "wins": 5,
+              "mean_delta": 0.08648362755775452,
+              "passes": true
+            },
+            {
+              "method": "sel_topk",
+              "baseline": "sel_shuffled",
+              "wins": 5,
+              "mean_delta": 0.06525870561599731,
+              "passes": true
+            },
+            {
+              "method": "sel_topk",
+              "baseline": "sel_random",
+              "wins": 5,
+              "mean_delta": 0.043611401319503786,
+              "passes": true
+            }
+          ],
+          "passes": true
+        },
+        {
+          "method": "sel_dcgb",
+          "parts": [
+            {
+              "method": "sel_dcgb",
+              "baseline": "sel_noball",
+              "wins": 4,
+              "mean_delta": 0.06166842579841614,
+              "passes": true
+            },
+            {
+              "method": "sel_dcgb",
+              "baseline": "sel_shuffled",
+              "wins": 4,
+              "mean_delta": 0.04044350385665894,
+              "passes": true
+            },
+            {
+              "method": "sel_dcgb",
+              "baseline": "sel_random",
+              "wins": 3,
+              "mean_delta": 0.018796199560165407,
+              "passes": false
+            }
+          ],
+          "passes": false
+        }
+      ]
+    },
+    "gate_C_beats_ce": {
+      "passes": true,
+      "mean_delta": 0.021119320392608644,
+      "threshold": 0.015,
+      "best_structured_by_seed": {
+        "0": 0.5739176273345947,
+        "1": 0.6087645292282104,
+        "2": 0.6589229106903076,
+        "3": 0.6293559074401855,
+        "4": 0.5945090055465698
+      }
+    }
+  }
+}

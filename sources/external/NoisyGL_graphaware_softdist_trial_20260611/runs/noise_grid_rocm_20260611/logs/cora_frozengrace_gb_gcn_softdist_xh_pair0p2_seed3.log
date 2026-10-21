@@ -1,0 +1,423 @@
+C:\Users\Admin\Desktop\ÈýÂÛÎÄÈÚºÏ\ÈýÂÛÎÄÈÚºÏ\GRACE-master\.venv-rocm\Lib\site-packages\torch_geometric\nn\conv\gcn_conv.py:274: UserWarning: Converting sparse tensor to CSR format for more efficient processing. Consider converting your sparse tensor to CSR format beforehand to avoid repeated conversion (got 'torch.sparse_coo')
+  return spmm(adj_t, x, reduce=self.aggr)
+C:\Users\Admin\Desktop\ÈýÂÛÎÄÈÚºÏ\ÈýÂÛÎÄÈÚºÏ\GRACE-master\.venv-rocm\Lib\site-packages\torch_geometric\utils\_spmm.py:71: UserWarning: Sparse CSR tensor support is in beta state. If you miss a functionality in the sparse tensor support, please submit a feature request to https://github.com/pytorch/pytorch/issues. (Triggered internally at C:\b\pytorch\aten\src\ATen\SparseCsrTensorImpl.cpp:55.)
+  src = src.to_sparse_csr()
+Namespace(dataset='cora', method='frozengrace_gb_gcn_softdist_xh', noise_type='pair', noise_rate=0.2, device='cuda:0', seed=3, split_type='percent', train_percent=0.2, val_percent=0.1, test_percent=0.7)
+----Data statistics------'
+                Name: cora
+                #Nodes 2708
+                #Edges 5278
+                #Classes 7
+                #Ave_degree 3.90
+----Split statistics------'
+                #Train samples 541 (20.0 % of nodes)
+                #Val samples 270 (10.0 % of nodes)
+                #Test samples 1895 (70.0 % of nodes)
+Current device: cuda:0
+----label noise information:------
+Pair noise
+#Actual noise rate 0.20 
+Frozen-GRACE GB diagnostics: {'num_balls': 53, 'mean_ball_size': 51.09434127807617, 'max_ball_size': 112, 'singleton_ratio': 0.0, 'mean_radius': 0.46009451150894165, 'min_train_per_ball': 2, 'eligible_balls': 53, 'eligible_train_nodes': 541, 'alpha_positive_balls': 53, 'alpha_positive_train_nodes': 541, 'alpha_positive_train_ratio_by_ball': 1.0, 'alpha_positive_train_count': 541, 'alpha_positive_train_ratio': 1.0, 'mean_alpha_train': 0.6355514526367188, 'soft_shift_train_mass': 88.39742279052734, 'soft_pseudo_changed_train_count': 169, 'soft_pseudo_ncr': 0.6181818181818182, 'soft_pseudo_cdr': 0.18561484918793503, 'soft_clean_mass_delta': -51.3060302734375, 'noisy_train_purity_weighted': 0.6876155268022182, 'true_train_purity_weighted': 0.8077634011090573, 'true_all_purity_weighted': 0.7861890694239291, 'purity_eligible_train_total': 541, 'ball_mode': 'geometric', 'soft_alpha_baseline': 'multiclass', 'soft_target_mode': 'distribution', 'random_control': 0, 'use_xh_features': 1, 'skip_ball_targets': 0, 'xh_feature_dim': 1561, 'xh_embedding_dim': 128}
+[2026-06-10 18:13:33] [32mIntermediate result: 0.32592592592592595  (Index 0)[0m
+Epoch 00001 | Time(s) 1.2021 | Loss(train) 1.9565 | Acc(train) 0.1368 | Loss(val) 1.7996 | Acc(val) 0.3259 | *
+[2026-06-10 18:13:33] [32mIntermediate result: 0.37407407407407406  (Index 1)[0m
+Epoch 00002 | Time(s) 0.0110 | Loss(train) 1.7627 | Acc(train) 0.4750 | Loss(val) 1.6526 | Acc(val) 0.3741 | *
+[2026-06-10 18:13:33] [32mIntermediate result: 0.4222222222222222  (Index 2)[0m
+Epoch 00003 | Time(s) 0.0110 | Loss(train) 1.5802 | Acc(train) 0.5250 | Loss(val) 1.5124 | Acc(val) 0.4222 | *
+[2026-06-10 18:13:33] [32mIntermediate result: 0.5259259259259259  (Index 3)[0m
+Epoch 00004 | Time(s) 0.0100 | Loss(train) 1.4112 | Acc(train) 0.5915 | Loss(val) 1.3604 | Acc(val) 0.5259 | *
+[2026-06-10 18:13:33] [32mIntermediate result: 0.6222222222222222  (Index 4)[0m
+Epoch 00005 | Time(s) 0.0100 | Loss(train) 1.2688 | Acc(train) 0.7043 | Loss(val) 1.2468 | Acc(val) 0.6222 | *
+[2026-06-10 18:13:33] [32mIntermediate result: 0.6518518518518519  (Index 5)[0m
+Epoch 00006 | Time(s) 0.0100 | Loss(train) 1.1538 | Acc(train) 0.7837 | Loss(val) 1.1699 | Acc(val) 0.6519 | *
+[2026-06-10 18:13:33] [32mIntermediate result: 0.6370370370370371  (Index 6)[0m
+Epoch 00007 | Time(s) 0.0100 | Loss(train) 1.0772 | Acc(train) 0.8133 | Loss(val) 1.1149 | Acc(val) 0.6370 | 
+[2026-06-10 18:13:33] [32mIntermediate result: 0.6222222222222222  (Index 7)[0m
+Epoch 00008 | Time(s) 0.0090 | Loss(train) 1.0118 | Acc(train) 0.8373 | Loss(val) 1.0843 | Acc(val) 0.6222 | 
+[2026-06-10 18:13:33] [32mIntermediate result: 0.6185185185185185  (Index 8)[0m
+Epoch 00009 | Time(s) 0.0110 | Loss(train) 0.9836 | Acc(train) 0.8281 | Loss(val) 1.0604 | Acc(val) 0.6185 | 
+[2026-06-10 18:13:33] [32mIntermediate result: 0.6333333333333333  (Index 9)[0m
+Epoch 00010 | Time(s) 0.0100 | Loss(train) 0.9371 | Acc(train) 0.8336 | Loss(val) 1.0288 | Acc(val) 0.6333 | 
+[2026-06-10 18:13:33] [32mIntermediate result: 0.6370370370370371  (Index 10)[0m
+Epoch 00011 | Time(s) 0.0110 | Loss(train) 0.9142 | Acc(train) 0.8706 | Loss(val) 1.0009 | Acc(val) 0.6370 | 
+[2026-06-10 18:13:33] [32mIntermediate result: 0.6444444444444445  (Index 11)[0m
+Epoch 00012 | Time(s) 0.0100 | Loss(train) 0.9025 | Acc(train) 0.8577 | Loss(val) 0.9812 | Acc(val) 0.6444 | 
+[2026-06-10 18:13:33] [32mIntermediate result: 0.6407407407407407  (Index 12)[0m
+Epoch 00013 | Time(s) 0.0090 | Loss(train) 0.8880 | Acc(train) 0.8299 | Loss(val) 0.9666 | Acc(val) 0.6407 | 
+[2026-06-10 18:13:33] [32mIntermediate result: 0.6333333333333333  (Index 13)[0m
+Epoch 00014 | Time(s) 0.0100 | Loss(train) 0.8669 | Acc(train) 0.8521 | Loss(val) 0.9574 | Acc(val) 0.6333 | 
+[2026-06-10 18:13:33] [32mIntermediate result: 0.6333333333333333  (Index 14)[0m
+Epoch 00015 | Time(s) 0.0100 | Loss(train) 0.8557 | Acc(train) 0.8540 | Loss(val) 0.9500 | Acc(val) 0.6333 | 
+[2026-06-10 18:13:33] [32mIntermediate result: 0.6407407407407407  (Index 15)[0m
+Epoch 00016 | Time(s) 0.0090 | Loss(train) 0.8389 | Acc(train) 0.8706 | Loss(val) 0.9467 | Acc(val) 0.6407 | 
+[2026-06-10 18:13:33] [32mIntermediate result: 0.6370370370370371  (Index 16)[0m
+Epoch 00017 | Time(s) 0.0100 | Loss(train) 0.8365 | Acc(train) 0.8595 | Loss(val) 0.9504 | Acc(val) 0.6370 | 
+[2026-06-10 18:13:33] [32mIntermediate result: 0.6333333333333333  (Index 17)[0m
+Epoch 00018 | Time(s) 0.0100 | Loss(train) 0.8295 | Acc(train) 0.8688 | Loss(val) 0.9532 | Acc(val) 0.6333 | 
+[2026-06-10 18:13:33] [32mIntermediate result: 0.6407407407407407  (Index 18)[0m
+Epoch 00019 | Time(s) 0.0100 | Loss(train) 0.8155 | Acc(train) 0.8780 | Loss(val) 0.9509 | Acc(val) 0.6407 | 
+[2026-06-10 18:13:33] [32mIntermediate result: 0.6370370370370371  (Index 19)[0m
+Epoch 00020 | Time(s) 0.0100 | Loss(train) 0.7939 | Acc(train) 0.8928 | Loss(val) 0.9559 | Acc(val) 0.6370 | 
+[2026-06-10 18:13:33] [32mIntermediate result: 0.6370370370370371  (Index 20)[0m
+Epoch 00021 | Time(s) 0.0090 | Loss(train) 0.7918 | Acc(train) 0.9094 | Loss(val) 0.9649 | Acc(val) 0.6370 | 
+[2026-06-10 18:13:33] [32mIntermediate result: 0.6370370370370371  (Index 21)[0m
+Epoch 00022 | Time(s) 0.0090 | Loss(train) 0.7812 | Acc(train) 0.9113 | Loss(val) 0.9701 | Acc(val) 0.6370 | 
+[2026-06-10 18:13:33] [32mIntermediate result: 0.6407407407407407  (Index 22)[0m
+Epoch 00023 | Time(s) 0.0110 | Loss(train) 0.7883 | Acc(train) 0.8928 | Loss(val) 0.9717 | Acc(val) 0.6407 | 
+[2026-06-10 18:13:33] [32mIntermediate result: 0.6370370370370371  (Index 23)[0m
+Epoch 00024 | Time(s) 0.0107 | Loss(train) 0.7724 | Acc(train) 0.9113 | Loss(val) 0.9777 | Acc(val) 0.6370 | 
+[2026-06-10 18:13:33] [32mIntermediate result: 0.6444444444444445  (Index 24)[0m
+Epoch 00025 | Time(s) 0.0120 | Loss(train) 0.7639 | Acc(train) 0.9261 | Loss(val) 0.9858 | Acc(val) 0.6444 | 
+[2026-06-10 18:13:33] [32mIntermediate result: 0.6296296296296297  (Index 25)[0m
+Epoch 00026 | Time(s) 0.0110 | Loss(train) 0.7634 | Acc(train) 0.9057 | Loss(val) 0.9890 | Acc(val) 0.6296 | 
+[2026-06-10 18:13:33] [32mIntermediate result: 0.6259259259259259  (Index 26)[0m
+Epoch 00027 | Time(s) 0.0100 | Loss(train) 0.7578 | Acc(train) 0.9150 | Loss(val) 0.9913 | Acc(val) 0.6259 | 
+[2026-06-10 18:13:33] [32mIntermediate result: 0.6333333333333333  (Index 27)[0m
+Epoch 00028 | Time(s) 0.0110 | Loss(train) 0.7549 | Acc(train) 0.9168 | Loss(val) 0.9961 | Acc(val) 0.6333 | 
+[2026-06-10 18:13:33] [32mIntermediate result: 0.6333333333333333  (Index 28)[0m
+Epoch 00029 | Time(s) 0.0098 | Loss(train) 0.7538 | Acc(train) 0.9131 | Loss(val) 1.0015 | Acc(val) 0.6333 | 
+[2026-06-10 18:13:33] [32mIntermediate result: 0.6296296296296297  (Index 29)[0m
+Epoch 00030 | Time(s) 0.0101 | Loss(train) 0.7474 | Acc(train) 0.9094 | Loss(val) 1.0048 | Acc(val) 0.6296 | 
+[2026-06-10 18:13:33] [32mIntermediate result: 0.6259259259259259  (Index 30)[0m
+Epoch 00031 | Time(s) 0.0100 | Loss(train) 0.7436 | Acc(train) 0.9168 | Loss(val) 1.0075 | Acc(val) 0.6259 | 
+[2026-06-10 18:13:33] [32mIntermediate result: 0.6185185185185185  (Index 31)[0m
+Epoch 00032 | Time(s) 0.0099 | Loss(train) 0.7378 | Acc(train) 0.9002 | Loss(val) 1.0057 | Acc(val) 0.6185 | 
+[2026-06-10 18:13:33] [32mIntermediate result: 0.6222222222222222  (Index 32)[0m
+Epoch 00033 | Time(s) 0.0089 | Loss(train) 0.7387 | Acc(train) 0.9168 | Loss(val) 0.9975 | Acc(val) 0.6222 | 
+[2026-06-10 18:13:33] [32mIntermediate result: 0.6148148148148148  (Index 33)[0m
+Epoch 00034 | Time(s) 0.0100 | Loss(train) 0.7366 | Acc(train) 0.9131 | Loss(val) 0.9927 | Acc(val) 0.6148 | 
+[2026-06-10 18:13:33] [32mIntermediate result: 0.6111111111111112  (Index 34)[0m
+Epoch 00035 | Time(s) 0.0100 | Loss(train) 0.7230 | Acc(train) 0.9261 | Loss(val) 0.9935 | Acc(val) 0.6111 | 
+[2026-06-10 18:13:33] [32mIntermediate result: 0.6  (Index 35)[0m
+Epoch 00036 | Time(s) 0.0100 | Loss(train) 0.7273 | Acc(train) 0.9279 | Loss(val) 0.9967 | Acc(val) 0.6000 | 
+[2026-06-10 18:13:33] [32mIntermediate result: 0.6  (Index 36)[0m
+Epoch 00037 | Time(s) 0.0090 | Loss(train) 0.7321 | Acc(train) 0.9113 | Loss(val) 1.0007 | Acc(val) 0.6000 | 
+[2026-06-10 18:13:33] [32mIntermediate result: 0.6111111111111112  (Index 37)[0m
+Epoch 00038 | Time(s) 0.0090 | Loss(train) 0.7337 | Acc(train) 0.9335 | Loss(val) 1.0065 | Acc(val) 0.6111 | 
+[2026-06-10 18:13:33] [32mIntermediate result: 0.6  (Index 38)[0m
+Epoch 00039 | Time(s) 0.0100 | Loss(train) 0.7215 | Acc(train) 0.9427 | Loss(val) 1.0136 | Acc(val) 0.6000 | 
+[2026-06-10 18:13:33] [32mIntermediate result: 0.5962962962962963  (Index 39)[0m
+Epoch 00040 | Time(s) 0.0090 | Loss(train) 0.7233 | Acc(train) 0.9390 | Loss(val) 1.0169 | Acc(val) 0.5963 | 
+[2026-06-10 18:13:33] [32mIntermediate result: 0.5925925925925926  (Index 40)[0m
+Epoch 00041 | Time(s) 0.0090 | Loss(train) 0.7276 | Acc(train) 0.9279 | Loss(val) 1.0184 | Acc(val) 0.5926 | 
+[2026-06-10 18:13:33] [32mIntermediate result: 0.5888888888888889  (Index 41)[0m
+Epoch 00042 | Time(s) 0.0090 | Loss(train) 0.7207 | Acc(train) 0.9501 | Loss(val) 1.0183 | Acc(val) 0.5889 | 
+[2026-06-10 18:13:33] [32mIntermediate result: 0.5851851851851851  (Index 42)[0m
+Epoch 00043 | Time(s) 0.0100 | Loss(train) 0.7192 | Acc(train) 0.9316 | Loss(val) 1.0184 | Acc(val) 0.5852 | 
+[2026-06-10 18:13:33] [32mIntermediate result: 0.6  (Index 43)[0m
+Epoch 00044 | Time(s) 0.0090 | Loss(train) 0.7228 | Acc(train) 0.9316 | Loss(val) 1.0160 | Acc(val) 0.6000 | 
+[2026-06-10 18:13:33] [32mIntermediate result: 0.6  (Index 44)[0m
+Epoch 00045 | Time(s) 0.0090 | Loss(train) 0.7145 | Acc(train) 0.9335 | Loss(val) 1.0119 | Acc(val) 0.6000 | 
+[2026-06-10 18:13:33] [32mIntermediate result: 0.6037037037037037  (Index 45)[0m
+Epoch 00046 | Time(s) 0.0090 | Loss(train) 0.7223 | Acc(train) 0.9409 | Loss(val) 1.0151 | Acc(val) 0.6037 | 
+[2026-06-10 18:13:33] [32mIntermediate result: 0.5851851851851851  (Index 46)[0m
+Epoch 00047 | Time(s) 0.0090 | Loss(train) 0.7138 | Acc(train) 0.9390 | Loss(val) 1.0256 | Acc(val) 0.5852 | 
+[2026-06-10 18:13:33] [32mIntermediate result: 0.5962962962962963  (Index 47)[0m
+Epoch 00048 | Time(s) 0.0090 | Loss(train) 0.7149 | Acc(train) 0.9372 | Loss(val) 1.0340 | Acc(val) 0.5963 | 
+[2026-06-10 18:13:33] [32mIntermediate result: 0.5962962962962963  (Index 48)[0m
+Epoch 00049 | Time(s) 0.0090 | Loss(train) 0.7070 | Acc(train) 0.9427 | Loss(val) 1.0306 | Acc(val) 0.5963 | 
+[2026-06-10 18:13:33] [32mIntermediate result: 0.6  (Index 49)[0m
+Epoch 00050 | Time(s) 0.0090 | Loss(train) 0.7155 | Acc(train) 0.9279 | Loss(val) 1.0270 | Acc(val) 0.6000 | 
+[2026-06-10 18:13:33] [32mIntermediate result: 0.5962962962962963  (Index 50)[0m
+Epoch 00051 | Time(s) 0.0100 | Loss(train) 0.7079 | Acc(train) 0.9353 | Loss(val) 1.0238 | Acc(val) 0.5963 | 
+[2026-06-10 18:13:33] [32mIntermediate result: 0.6037037037037037  (Index 51)[0m
+Epoch 00052 | Time(s) 0.0100 | Loss(train) 0.7095 | Acc(train) 0.9298 | Loss(val) 1.0255 | Acc(val) 0.6037 | 
+[2026-06-10 18:13:33] [32mIntermediate result: 0.5962962962962963  (Index 52)[0m
+Epoch 00053 | Time(s) 0.0090 | Loss(train) 0.7025 | Acc(train) 0.9427 | Loss(val) 1.0309 | Acc(val) 0.5963 | 
+[2026-06-10 18:13:33] [32mIntermediate result: 0.5962962962962963  (Index 53)[0m
+Epoch 00054 | Time(s) 0.0100 | Loss(train) 0.7074 | Acc(train) 0.9390 | Loss(val) 1.0335 | Acc(val) 0.5963 | 
+[2026-06-10 18:13:33] [32mIntermediate result: 0.6037037037037037  (Index 54)[0m
+Epoch 00055 | Time(s) 0.0090 | Loss(train) 0.7082 | Acc(train) 0.9409 | Loss(val) 1.0334 | Acc(val) 0.6037 | 
+[2026-06-10 18:13:33] [32mIntermediate result: 0.6  (Index 55)[0m
+Epoch 00056 | Time(s) 0.0090 | Loss(train) 0.7060 | Acc(train) 0.9335 | Loss(val) 1.0354 | Acc(val) 0.6000 | 
+[2026-06-10 18:13:33] [32mIntermediate result: 0.6074074074074074  (Index 56)[0m
+Epoch 00057 | Time(s) 0.0100 | Loss(train) 0.7050 | Acc(train) 0.9316 | Loss(val) 1.0403 | Acc(val) 0.6074 | 
+[2026-06-10 18:13:33] [32mIntermediate result: 0.6074074074074074  (Index 57)[0m
+Epoch 00058 | Time(s) 0.0090 | Loss(train) 0.7039 | Acc(train) 0.9279 | Loss(val) 1.0474 | Acc(val) 0.6074 | 
+[2026-06-10 18:13:33] [32mIntermediate result: 0.6074074074074074  (Index 58)[0m
+Epoch 00059 | Time(s) 0.0090 | Loss(train) 0.7037 | Acc(train) 0.9390 | Loss(val) 1.0487 | Acc(val) 0.6074 | 
+[2026-06-10 18:13:33] [32mIntermediate result: 0.6037037037037037  (Index 59)[0m
+Epoch 00060 | Time(s) 0.0090 | Loss(train) 0.6991 | Acc(train) 0.9482 | Loss(val) 1.0482 | Acc(val) 0.6037 | 
+[2026-06-10 18:13:33] [32mIntermediate result: 0.5962962962962963  (Index 60)[0m
+Epoch 00061 | Time(s) 0.0100 | Loss(train) 0.7005 | Acc(train) 0.9372 | Loss(val) 1.0457 | Acc(val) 0.5963 | 
+[2026-06-10 18:13:33] [32mIntermediate result: 0.6074074074074074  (Index 61)[0m
+Epoch 00062 | Time(s) 0.0090 | Loss(train) 0.7014 | Acc(train) 0.9556 | Loss(val) 1.0367 | Acc(val) 0.6074 | 
+[2026-06-10 18:13:33] [32mIntermediate result: 0.6148148148148148  (Index 62)[0m
+Epoch 00063 | Time(s) 0.0096 | Loss(train) 0.6974 | Acc(train) 0.9427 | Loss(val) 1.0329 | Acc(val) 0.6148 | 
+[2026-06-10 18:13:33] [32mIntermediate result: 0.6074074074074074  (Index 63)[0m
+Epoch 00064 | Time(s) 0.0090 | Loss(train) 0.7017 | Acc(train) 0.9464 | Loss(val) 1.0433 | Acc(val) 0.6074 | 
+[2026-06-10 18:13:34] [32mIntermediate result: 0.6074074074074074  (Index 64)[0m
+Epoch 00065 | Time(s) 0.0096 | Loss(train) 0.7003 | Acc(train) 0.9501 | Loss(val) 1.0617 | Acc(val) 0.6074 | 
+[2026-06-10 18:13:34] [32mIntermediate result: 0.5925925925925926  (Index 65)[0m
+Epoch 00066 | Time(s) 0.0090 | Loss(train) 0.7003 | Acc(train) 0.9482 | Loss(val) 1.0630 | Acc(val) 0.5926 | 
+[2026-06-10 18:13:34] [32mIntermediate result: 0.5888888888888889  (Index 66)[0m
+Epoch 00067 | Time(s) 0.0090 | Loss(train) 0.6909 | Acc(train) 0.9519 | Loss(val) 1.0525 | Acc(val) 0.5889 | 
+[2026-06-10 18:13:34] [32mIntermediate result: 0.5962962962962963  (Index 67)[0m
+Epoch 00068 | Time(s) 0.0100 | Loss(train) 0.6962 | Acc(train) 0.9538 | Loss(val) 1.0413 | Acc(val) 0.5963 | 
+[2026-06-10 18:13:34] [32mIntermediate result: 0.6  (Index 68)[0m
+Epoch 00069 | Time(s) 0.0090 | Loss(train) 0.6996 | Acc(train) 0.9390 | Loss(val) 1.0451 | Acc(val) 0.6000 | 
+[2026-06-10 18:13:34] [32mIntermediate result: 0.6  (Index 69)[0m
+Epoch 00070 | Time(s) 0.0090 | Loss(train) 0.6970 | Acc(train) 0.9372 | Loss(val) 1.0560 | Acc(val) 0.6000 | 
+[2026-06-10 18:13:34] [32mIntermediate result: 0.5888888888888889  (Index 70)[0m
+Epoch 00071 | Time(s) 0.0100 | Loss(train) 0.6950 | Acc(train) 0.9298 | Loss(val) 1.0733 | Acc(val) 0.5889 | 
+[2026-06-10 18:13:34] [32mIntermediate result: 0.5962962962962963  (Index 71)[0m
+Epoch 00072 | Time(s) 0.0100 | Loss(train) 0.6982 | Acc(train) 0.9353 | Loss(val) 1.0768 | Acc(val) 0.5963 | 
+[2026-06-10 18:13:34] [32mIntermediate result: 0.6037037037037037  (Index 72)[0m
+Epoch 00073 | Time(s) 0.0090 | Loss(train) 0.6979 | Acc(train) 0.9409 | Loss(val) 1.0584 | Acc(val) 0.6037 | 
+[2026-06-10 18:13:34] [32mIntermediate result: 0.6074074074074074  (Index 73)[0m
+Epoch 00074 | Time(s) 0.0080 | Loss(train) 0.6939 | Acc(train) 0.9298 | Loss(val) 1.0487 | Acc(val) 0.6074 | 
+[2026-06-10 18:13:34] [32mIntermediate result: 0.6111111111111112  (Index 74)[0m
+Epoch 00075 | Time(s) 0.0080 | Loss(train) 0.6904 | Acc(train) 0.9464 | Loss(val) 1.0595 | Acc(val) 0.6111 | 
+[2026-06-10 18:13:34] [32mIntermediate result: 0.5962962962962963  (Index 75)[0m
+Epoch 00076 | Time(s) 0.0090 | Loss(train) 0.6952 | Acc(train) 0.9482 | Loss(val) 1.0646 | Acc(val) 0.5963 | 
+[2026-06-10 18:13:34] [32mIntermediate result: 0.5925925925925926  (Index 76)[0m
+Epoch 00077 | Time(s) 0.0100 | Loss(train) 0.6914 | Acc(train) 0.9556 | Loss(val) 1.0699 | Acc(val) 0.5926 | 
+[2026-06-10 18:13:34] [32mIntermediate result: 0.5962962962962963  (Index 77)[0m
+Epoch 00078 | Time(s) 0.0090 | Loss(train) 0.6918 | Acc(train) 0.9575 | Loss(val) 1.0599 | Acc(val) 0.5963 | 
+[2026-06-10 18:13:34] [32mIntermediate result: 0.5962962962962963  (Index 78)[0m
+Epoch 00079 | Time(s) 0.0090 | Loss(train) 0.6916 | Acc(train) 0.9464 | Loss(val) 1.0587 | Acc(val) 0.5963 | 
+[2026-06-10 18:13:34] [32mIntermediate result: 0.6074074074074074  (Index 79)[0m
+Epoch 00080 | Time(s) 0.0098 | Loss(train) 0.6915 | Acc(train) 0.9519 | Loss(val) 1.0634 | Acc(val) 0.6074 | 
+[2026-06-10 18:13:34] [32mIntermediate result: 0.5962962962962963  (Index 80)[0m
+Epoch 00081 | Time(s) 0.0090 | Loss(train) 0.6916 | Acc(train) 0.9538 | Loss(val) 1.0602 | Acc(val) 0.5963 | 
+[2026-06-10 18:13:34] [32mIntermediate result: 0.5925925925925926  (Index 81)[0m
+Epoch 00082 | Time(s) 0.0100 | Loss(train) 0.6886 | Acc(train) 0.9501 | Loss(val) 1.0641 | Acc(val) 0.5926 | 
+[2026-06-10 18:13:34] [32mIntermediate result: 0.5925925925925926  (Index 82)[0m
+Epoch 00083 | Time(s) 0.0090 | Loss(train) 0.6883 | Acc(train) 0.9372 | Loss(val) 1.0651 | Acc(val) 0.5926 | 
+[2026-06-10 18:13:34] [32mIntermediate result: 0.5962962962962963  (Index 83)[0m
+Epoch 00084 | Time(s) 0.0090 | Loss(train) 0.6906 | Acc(train) 0.9353 | Loss(val) 1.0699 | Acc(val) 0.5963 | 
+[2026-06-10 18:13:34] [32mIntermediate result: 0.6  (Index 84)[0m
+Epoch 00085 | Time(s) 0.0091 | Loss(train) 0.6887 | Acc(train) 0.9390 | Loss(val) 1.0660 | Acc(val) 0.6000 | 
+[2026-06-10 18:13:34] [32mIntermediate result: 0.6  (Index 85)[0m
+Epoch 00086 | Time(s) 0.0090 | Loss(train) 0.6861 | Acc(train) 0.9501 | Loss(val) 1.0555 | Acc(val) 0.6000 | 
+[2026-06-10 18:13:34] [32mIntermediate result: 0.6037037037037037  (Index 86)[0m
+Epoch 00087 | Time(s) 0.0090 | Loss(train) 0.6874 | Acc(train) 0.9556 | Loss(val) 1.0555 | Acc(val) 0.6037 | 
+[2026-06-10 18:13:34] [32mIntermediate result: 0.6  (Index 87)[0m
+Epoch 00088 | Time(s) 0.0090 | Loss(train) 0.6806 | Acc(train) 0.9593 | Loss(val) 1.0654 | Acc(val) 0.6000 | 
+[2026-06-10 18:13:34] [32mIntermediate result: 0.5962962962962963  (Index 88)[0m
+Epoch 00089 | Time(s) 0.0090 | Loss(train) 0.6815 | Acc(train) 0.9519 | Loss(val) 1.0732 | Acc(val) 0.5963 | 
+[2026-06-10 18:13:34] [32mIntermediate result: 0.6037037037037037  (Index 89)[0m
+Epoch 00090 | Time(s) 0.0100 | Loss(train) 0.6857 | Acc(train) 0.9575 | Loss(val) 1.0713 | Acc(val) 0.6037 | 
+[2026-06-10 18:13:34] [32mIntermediate result: 0.6074074074074074  (Index 90)[0m
+Epoch 00091 | Time(s) 0.0090 | Loss(train) 0.6848 | Acc(train) 0.9630 | Loss(val) 1.0592 | Acc(val) 0.6074 | 
+[2026-06-10 18:13:34] [32mIntermediate result: 0.6037037037037037  (Index 91)[0m
+Epoch 00092 | Time(s) 0.0090 | Loss(train) 0.6845 | Acc(train) 0.9482 | Loss(val) 1.0539 | Acc(val) 0.6037 | 
+[2026-06-10 18:13:34] [32mIntermediate result: 0.5962962962962963  (Index 92)[0m
+Epoch 00093 | Time(s) 0.0100 | Loss(train) 0.6831 | Acc(train) 0.9501 | Loss(val) 1.0633 | Acc(val) 0.5963 | 
+[2026-06-10 18:13:34] [32mIntermediate result: 0.5925925925925926  (Index 93)[0m
+Epoch 00094 | Time(s) 0.0100 | Loss(train) 0.6799 | Acc(train) 0.9612 | Loss(val) 1.0724 | Acc(val) 0.5926 | 
+[2026-06-10 18:13:34] [32mIntermediate result: 0.5962962962962963  (Index 94)[0m
+Epoch 00095 | Time(s) 0.0100 | Loss(train) 0.6809 | Acc(train) 0.9575 | Loss(val) 1.0768 | Acc(val) 0.5963 | 
+[2026-06-10 18:13:34] [32mIntermediate result: 0.6074074074074074  (Index 95)[0m
+Epoch 00096 | Time(s) 0.0090 | Loss(train) 0.6770 | Acc(train) 0.9445 | Loss(val) 1.0814 | Acc(val) 0.6074 | 
+[2026-06-10 18:13:34] [32mIntermediate result: 0.6148148148148148  (Index 96)[0m
+Epoch 00097 | Time(s) 0.0100 | Loss(train) 0.6833 | Acc(train) 0.9427 | Loss(val) 1.0800 | Acc(val) 0.6148 | 
+[2026-06-10 18:13:34] [32mIntermediate result: 0.6111111111111112  (Index 97)[0m
+Epoch 00098 | Time(s) 0.0090 | Loss(train) 0.6759 | Acc(train) 0.9556 | Loss(val) 1.0775 | Acc(val) 0.6111 | 
+[2026-06-10 18:13:34] [32mIntermediate result: 0.6037037037037037  (Index 98)[0m
+Epoch 00099 | Time(s) 0.0090 | Loss(train) 0.6775 | Acc(train) 0.9501 | Loss(val) 1.0723 | Acc(val) 0.6037 | 
+[2026-06-10 18:13:34] [32mIntermediate result: 0.6037037037037037  (Index 99)[0m
+Epoch 00100 | Time(s) 0.0100 | Loss(train) 0.6810 | Acc(train) 0.9501 | Loss(val) 1.0685 | Acc(val) 0.6037 | 
+[2026-06-10 18:13:34] [32mIntermediate result: 0.6074074074074074  (Index 100)[0m
+Epoch 00101 | Time(s) 0.0090 | Loss(train) 0.6819 | Acc(train) 0.9575 | Loss(val) 1.0745 | Acc(val) 0.6074 | 
+[2026-06-10 18:13:34] [32mIntermediate result: 0.6074074074074074  (Index 101)[0m
+Epoch 00102 | Time(s) 0.0100 | Loss(train) 0.6789 | Acc(train) 0.9593 | Loss(val) 1.0794 | Acc(val) 0.6074 | 
+[2026-06-10 18:13:34] [32mIntermediate result: 0.6037037037037037  (Index 102)[0m
+Epoch 00103 | Time(s) 0.0100 | Loss(train) 0.6779 | Acc(train) 0.9538 | Loss(val) 1.0869 | Acc(val) 0.6037 | 
+[2026-06-10 18:13:34] [32mIntermediate result: 0.6  (Index 103)[0m
+Epoch 00104 | Time(s) 0.0100 | Loss(train) 0.6734 | Acc(train) 0.9519 | Loss(val) 1.0858 | Acc(val) 0.6000 | 
+[2026-06-10 18:13:34] [32mIntermediate result: 0.6074074074074074  (Index 104)[0m
+Epoch 00105 | Time(s) 0.0090 | Loss(train) 0.6782 | Acc(train) 0.9575 | Loss(val) 1.0814 | Acc(val) 0.6074 | 
+[2026-06-10 18:13:34] [32mIntermediate result: 0.6074074074074074  (Index 105)[0m
+Epoch 00106 | Time(s) 0.0100 | Loss(train) 0.6802 | Acc(train) 0.9482 | Loss(val) 1.0844 | Acc(val) 0.6074 | 
+[2026-06-10 18:13:34] [32mIntermediate result: 0.6074074074074074  (Index 106)[0m
+Epoch 00107 | Time(s) 0.0090 | Loss(train) 0.6764 | Acc(train) 0.9593 | Loss(val) 1.0806 | Acc(val) 0.6074 | 
+[2026-06-10 18:13:34] [32mIntermediate result: 0.6037037037037037  (Index 107)[0m
+Epoch 00108 | Time(s) 0.0097 | Loss(train) 0.6764 | Acc(train) 0.9501 | Loss(val) 1.0767 | Acc(val) 0.6037 | 
+[2026-06-10 18:13:34] [32mIntermediate result: 0.6074074074074074  (Index 108)[0m
+Epoch 00109 | Time(s) 0.0080 | Loss(train) 0.6780 | Acc(train) 0.9519 | Loss(val) 1.0764 | Acc(val) 0.6074 | 
+[2026-06-10 18:13:34] [32mIntermediate result: 0.6037037037037037  (Index 109)[0m
+Epoch 00110 | Time(s) 0.0090 | Loss(train) 0.6733 | Acc(train) 0.9556 | Loss(val) 1.0798 | Acc(val) 0.6037 | 
+[2026-06-10 18:13:34] [32mIntermediate result: 0.6  (Index 110)[0m
+Epoch 00111 | Time(s) 0.0090 | Loss(train) 0.6768 | Acc(train) 0.9556 | Loss(val) 1.0885 | Acc(val) 0.6000 | 
+[2026-06-10 18:13:34] [32mIntermediate result: 0.6111111111111112  (Index 111)[0m
+Epoch 00112 | Time(s) 0.0090 | Loss(train) 0.6753 | Acc(train) 0.9612 | Loss(val) 1.0832 | Acc(val) 0.6111 | 
+[2026-06-10 18:13:34] [32mIntermediate result: 0.6148148148148148  (Index 112)[0m
+Epoch 00113 | Time(s) 0.0090 | Loss(train) 0.6734 | Acc(train) 0.9482 | Loss(val) 1.0770 | Acc(val) 0.6148 | 
+[2026-06-10 18:13:34] [32mIntermediate result: 0.6037037037037037  (Index 113)[0m
+Epoch 00114 | Time(s) 0.0100 | Loss(train) 0.6816 | Acc(train) 0.9519 | Loss(val) 1.0855 | Acc(val) 0.6037 | 
+[2026-06-10 18:13:34] [32mIntermediate result: 0.6074074074074074  (Index 114)[0m
+Epoch 00115 | Time(s) 0.0090 | Loss(train) 0.6759 | Acc(train) 0.9335 | Loss(val) 1.0900 | Acc(val) 0.6074 | 
+[2026-06-10 18:13:34] [32mIntermediate result: 0.5962962962962963  (Index 115)[0m
+Epoch 00116 | Time(s) 0.0100 | Loss(train) 0.6768 | Acc(train) 0.9482 | Loss(val) 1.0849 | Acc(val) 0.5963 | 
+[2026-06-10 18:13:34] [32mIntermediate result: 0.6074074074074074  (Index 116)[0m
+Epoch 00117 | Time(s) 0.0090 | Loss(train) 0.6765 | Acc(train) 0.9501 | Loss(val) 1.0869 | Acc(val) 0.6074 | 
+[2026-06-10 18:13:34] [32mIntermediate result: 0.6074074074074074  (Index 117)[0m
+Epoch 00118 | Time(s) 0.0085 | Loss(train) 0.6740 | Acc(train) 0.9630 | Loss(val) 1.0895 | Acc(val) 0.6074 | 
+[2026-06-10 18:13:34] [32mIntermediate result: 0.6  (Index 118)[0m
+Epoch 00119 | Time(s) 0.0100 | Loss(train) 0.6697 | Acc(train) 0.9649 | Loss(val) 1.0941 | Acc(val) 0.6000 | 
+[2026-06-10 18:13:34] [32mIntermediate result: 0.5925925925925926  (Index 119)[0m
+Epoch 00120 | Time(s) 0.0100 | Loss(train) 0.6726 | Acc(train) 0.9630 | Loss(val) 1.1011 | Acc(val) 0.5926 | 
+[2026-06-10 18:13:34] [32mIntermediate result: 0.5962962962962963  (Index 120)[0m
+Epoch 00121 | Time(s) 0.0090 | Loss(train) 0.6751 | Acc(train) 0.9538 | Loss(val) 1.0893 | Acc(val) 0.5963 | 
+[2026-06-10 18:13:34] [32mIntermediate result: 0.6111111111111112  (Index 121)[0m
+Epoch 00122 | Time(s) 0.0090 | Loss(train) 0.6720 | Acc(train) 0.9575 | Loss(val) 1.0750 | Acc(val) 0.6111 | 
+[2026-06-10 18:13:34] [32mIntermediate result: 0.6111111111111112  (Index 122)[0m
+Epoch 00123 | Time(s) 0.0100 | Loss(train) 0.6707 | Acc(train) 0.9649 | Loss(val) 1.0819 | Acc(val) 0.6111 | 
+[2026-06-10 18:13:34] [32mIntermediate result: 0.6  (Index 123)[0m
+Epoch 00124 | Time(s) 0.0090 | Loss(train) 0.6706 | Acc(train) 0.9427 | Loss(val) 1.0977 | Acc(val) 0.6000 | 
+[2026-06-10 18:13:34] [32mIntermediate result: 0.5925925925925926  (Index 124)[0m
+Epoch 00125 | Time(s) 0.0090 | Loss(train) 0.6711 | Acc(train) 0.9482 | Loss(val) 1.0975 | Acc(val) 0.5926 | 
+[2026-06-10 18:13:34] [32mIntermediate result: 0.6111111111111112  (Index 125)[0m
+Epoch 00126 | Time(s) 0.0090 | Loss(train) 0.6734 | Acc(train) 0.9593 | Loss(val) 1.0728 | Acc(val) 0.6111 | 
+[2026-06-10 18:13:34] [32mIntermediate result: 0.6148148148148148  (Index 126)[0m
+Epoch 00127 | Time(s) 0.0090 | Loss(train) 0.6734 | Acc(train) 0.9556 | Loss(val) 1.0754 | Acc(val) 0.6148 | 
+[2026-06-10 18:13:34] [32mIntermediate result: 0.6111111111111112  (Index 127)[0m
+Epoch 00128 | Time(s) 0.0090 | Loss(train) 0.6714 | Acc(train) 0.9612 | Loss(val) 1.0967 | Acc(val) 0.6111 | 
+[2026-06-10 18:13:34] [32mIntermediate result: 0.6037037037037037  (Index 128)[0m
+Epoch 00129 | Time(s) 0.0090 | Loss(train) 0.6676 | Acc(train) 0.9575 | Loss(val) 1.1107 | Acc(val) 0.6037 | 
+[2026-06-10 18:13:34] [32mIntermediate result: 0.6  (Index 129)[0m
+Epoch 00130 | Time(s) 0.0100 | Loss(train) 0.6760 | Acc(train) 0.9372 | Loss(val) 1.0896 | Acc(val) 0.6000 | 
+[2026-06-10 18:13:34] [32mIntermediate result: 0.6074074074074074  (Index 130)[0m
+Epoch 00131 | Time(s) 0.0090 | Loss(train) 0.6712 | Acc(train) 0.9501 | Loss(val) 1.0739 | Acc(val) 0.6074 | 
+[2026-06-10 18:13:34] [32mIntermediate result: 0.6037037037037037  (Index 131)[0m
+Epoch 00132 | Time(s) 0.0100 | Loss(train) 0.6783 | Acc(train) 0.9464 | Loss(val) 1.0896 | Acc(val) 0.6037 | 
+[2026-06-10 18:13:34] [32mIntermediate result: 0.5962962962962963  (Index 132)[0m
+Epoch 00133 | Time(s) 0.0090 | Loss(train) 0.6778 | Acc(train) 0.9445 | Loss(val) 1.1208 | Acc(val) 0.5963 | 
+[2026-06-10 18:13:34] [32mIntermediate result: 0.6037037037037037  (Index 133)[0m
+Epoch 00134 | Time(s) 0.0090 | Loss(train) 0.6731 | Acc(train) 0.9575 | Loss(val) 1.1133 | Acc(val) 0.6037 | 
+[2026-06-10 18:13:34] [32mIntermediate result: 0.6074074074074074  (Index 134)[0m
+Epoch 00135 | Time(s) 0.0096 | Loss(train) 0.6676 | Acc(train) 0.9575 | Loss(val) 1.1086 | Acc(val) 0.6074 | 
+[2026-06-10 18:13:34] [32mIntermediate result: 0.6  (Index 135)[0m
+Epoch 00136 | Time(s) 0.0100 | Loss(train) 0.6781 | Acc(train) 0.9630 | Loss(val) 1.1122 | Acc(val) 0.6000 | 
+[2026-06-10 18:13:34] [32mIntermediate result: 0.6148148148148148  (Index 136)[0m
+Epoch 00137 | Time(s) 0.0090 | Loss(train) 0.6699 | Acc(train) 0.9612 | Loss(val) 1.1162 | Acc(val) 0.6148 | 
+[2026-06-10 18:13:34] [32mIntermediate result: 0.6185185185185185  (Index 137)[0m
+Epoch 00138 | Time(s) 0.0090 | Loss(train) 0.6753 | Acc(train) 0.9575 | Loss(val) 1.1049 | Acc(val) 0.6185 | 
+[2026-06-10 18:13:34] [32mIntermediate result: 0.6037037037037037  (Index 138)[0m
+Epoch 00139 | Time(s) 0.0090 | Loss(train) 0.6771 | Acc(train) 0.9575 | Loss(val) 1.0945 | Acc(val) 0.6037 | 
+[2026-06-10 18:13:34] [32mIntermediate result: 0.6037037037037037  (Index 139)[0m
+Epoch 00140 | Time(s) 0.0096 | Loss(train) 0.6714 | Acc(train) 0.9612 | Loss(val) 1.1017 | Acc(val) 0.6037 | 
+[2026-06-10 18:13:34] [32mIntermediate result: 0.6074074074074074  (Index 140)[0m
+Epoch 00141 | Time(s) 0.0100 | Loss(train) 0.6764 | Acc(train) 0.9538 | Loss(val) 1.1073 | Acc(val) 0.6074 | 
+[2026-06-10 18:13:34] [32mIntermediate result: 0.6111111111111112  (Index 141)[0m
+Epoch 00142 | Time(s) 0.0090 | Loss(train) 0.6664 | Acc(train) 0.9667 | Loss(val) 1.1092 | Acc(val) 0.6111 | 
+[2026-06-10 18:13:34] [32mIntermediate result: 0.6037037037037037  (Index 142)[0m
+Epoch 00143 | Time(s) 0.0100 | Loss(train) 0.6705 | Acc(train) 0.9575 | Loss(val) 1.0931 | Acc(val) 0.6037 | 
+[2026-06-10 18:13:34] [32mIntermediate result: 0.6037037037037037  (Index 143)[0m
+Epoch 00144 | Time(s) 0.0090 | Loss(train) 0.6711 | Acc(train) 0.9556 | Loss(val) 1.0846 | Acc(val) 0.6037 | 
+[2026-06-10 18:13:34] [32mIntermediate result: 0.6148148148148148  (Index 144)[0m
+Epoch 00145 | Time(s) 0.0100 | Loss(train) 0.6675 | Acc(train) 0.9519 | Loss(val) 1.0941 | Acc(val) 0.6148 | 
+[2026-06-10 18:13:34] [32mIntermediate result: 0.5962962962962963  (Index 145)[0m
+Epoch 00146 | Time(s) 0.0090 | Loss(train) 0.6716 | Acc(train) 0.9501 | Loss(val) 1.1027 | Acc(val) 0.5963 | 
+[2026-06-10 18:13:34] [32mIntermediate result: 0.6148148148148148  (Index 146)[0m
+Epoch 00147 | Time(s) 0.0090 | Loss(train) 0.6704 | Acc(train) 0.9538 | Loss(val) 1.0921 | Acc(val) 0.6148 | 
+[2026-06-10 18:13:34] [32mIntermediate result: 0.6111111111111112  (Index 147)[0m
+Epoch 00148 | Time(s) 0.0100 | Loss(train) 0.6733 | Acc(train) 0.9501 | Loss(val) 1.0802 | Acc(val) 0.6111 | 
+[2026-06-10 18:13:34] [32mIntermediate result: 0.6185185185185185  (Index 148)[0m
+Epoch 00149 | Time(s) 0.0090 | Loss(train) 0.6700 | Acc(train) 0.9482 | Loss(val) 1.0841 | Acc(val) 0.6185 | 
+[2026-06-10 18:13:34] [32mIntermediate result: 0.6074074074074074  (Index 149)[0m
+Epoch 00150 | Time(s) 0.0100 | Loss(train) 0.6668 | Acc(train) 0.9575 | Loss(val) 1.1030 | Acc(val) 0.6074 | 
+[2026-06-10 18:13:34] [32mIntermediate result: 0.6111111111111112  (Index 150)[0m
+Epoch 00151 | Time(s) 0.0090 | Loss(train) 0.6647 | Acc(train) 0.9556 | Loss(val) 1.1175 | Acc(val) 0.6111 | 
+[2026-06-10 18:13:34] [32mIntermediate result: 0.6259259259259259  (Index 151)[0m
+Epoch 00152 | Time(s) 0.0090 | Loss(train) 0.6677 | Acc(train) 0.9538 | Loss(val) 1.1064 | Acc(val) 0.6259 | 
+[2026-06-10 18:13:34] [32mIntermediate result: 0.6222222222222222  (Index 152)[0m
+Epoch 00153 | Time(s) 0.0100 | Loss(train) 0.6679 | Acc(train) 0.9556 | Loss(val) 1.0985 | Acc(val) 0.6222 | 
+[2026-06-10 18:13:34] [32mIntermediate result: 0.6148148148148148  (Index 153)[0m
+Epoch 00154 | Time(s) 0.0090 | Loss(train) 0.6701 | Acc(train) 0.9409 | Loss(val) 1.1137 | Acc(val) 0.6148 | 
+[2026-06-10 18:13:34] [32mIntermediate result: 0.6037037037037037  (Index 154)[0m
+Epoch 00155 | Time(s) 0.0090 | Loss(train) 0.6699 | Acc(train) 0.9575 | Loss(val) 1.1254 | Acc(val) 0.6037 | 
+[2026-06-10 18:13:34] [32mIntermediate result: 0.6185185185185185  (Index 155)[0m
+Epoch 00156 | Time(s) 0.0090 | Loss(train) 0.6696 | Acc(train) 0.9593 | Loss(val) 1.1186 | Acc(val) 0.6185 | 
+[2026-06-10 18:13:34] [32mIntermediate result: 0.6185185185185185  (Index 156)[0m
+Epoch 00157 | Time(s) 0.0100 | Loss(train) 0.6665 | Acc(train) 0.9630 | Loss(val) 1.1032 | Acc(val) 0.6185 | 
+[2026-06-10 18:13:34] [32mIntermediate result: 0.6148148148148148  (Index 157)[0m
+Epoch 00158 | Time(s) 0.0090 | Loss(train) 0.6697 | Acc(train) 0.9538 | Loss(val) 1.1051 | Acc(val) 0.6148 | 
+[2026-06-10 18:13:34] [32mIntermediate result: 0.6  (Index 158)[0m
+Epoch 00159 | Time(s) 0.0090 | Loss(train) 0.6672 | Acc(train) 0.9464 | Loss(val) 1.1111 | Acc(val) 0.6000 | 
+[2026-06-10 18:13:34] [32mIntermediate result: 0.6037037037037037  (Index 159)[0m
+Epoch 00160 | Time(s) 0.0090 | Loss(train) 0.6751 | Acc(train) 0.9593 | Loss(val) 1.1131 | Acc(val) 0.6037 | 
+[2026-06-10 18:13:34] [32mIntermediate result: 0.5962962962962963  (Index 160)[0m
+Epoch 00161 | Time(s) 0.0097 | Loss(train) 0.6680 | Acc(train) 0.9612 | Loss(val) 1.1016 | Acc(val) 0.5963 | 
+[2026-06-10 18:13:34] [32mIntermediate result: 0.6074074074074074  (Index 161)[0m
+Epoch 00162 | Time(s) 0.0097 | Loss(train) 0.6677 | Acc(train) 0.9630 | Loss(val) 1.1024 | Acc(val) 0.6074 | 
+[2026-06-10 18:13:34] [32mIntermediate result: 0.6111111111111112  (Index 162)[0m
+Epoch 00163 | Time(s) 0.0100 | Loss(train) 0.6711 | Acc(train) 0.9556 | Loss(val) 1.1130 | Acc(val) 0.6111 | 
+[2026-06-10 18:13:34] [32mIntermediate result: 0.5925925925925926  (Index 163)[0m
+Epoch 00164 | Time(s) 0.0091 | Loss(train) 0.6676 | Acc(train) 0.9538 | Loss(val) 1.1154 | Acc(val) 0.5926 | 
+[2026-06-10 18:13:34] [32mIntermediate result: 0.5962962962962963  (Index 164)[0m
+Epoch 00165 | Time(s) 0.0090 | Loss(train) 0.6661 | Acc(train) 0.9667 | Loss(val) 1.1150 | Acc(val) 0.5963 | 
+[2026-06-10 18:13:34] [32mIntermediate result: 0.5925925925925926  (Index 165)[0m
+Epoch 00166 | Time(s) 0.0107 | Loss(train) 0.6679 | Acc(train) 0.9575 | Loss(val) 1.0931 | Acc(val) 0.5926 | 
+[2026-06-10 18:13:34] [32mIntermediate result: 0.6111111111111112  (Index 166)[0m
+Epoch 00167 | Time(s) 0.0090 | Loss(train) 0.6630 | Acc(train) 0.9519 | Loss(val) 1.0841 | Acc(val) 0.6111 | 
+[2026-06-10 18:13:34] [32mIntermediate result: 0.6074074074074074  (Index 167)[0m
+Epoch 00168 | Time(s) 0.0096 | Loss(train) 0.6706 | Acc(train) 0.9538 | Loss(val) 1.1005 | Acc(val) 0.6074 | 
+[2026-06-10 18:13:34] [32mIntermediate result: 0.5962962962962963  (Index 168)[0m
+Epoch 00169 | Time(s) 0.0096 | Loss(train) 0.6661 | Acc(train) 0.9593 | Loss(val) 1.1188 | Acc(val) 0.5963 | 
+[2026-06-10 18:13:35] [32mIntermediate result: 0.6148148148148148  (Index 169)[0m
+Epoch 00170 | Time(s) 0.0100 | Loss(train) 0.6707 | Acc(train) 0.9538 | Loss(val) 1.1203 | Acc(val) 0.6148 | 
+[2026-06-10 18:13:35] [32mIntermediate result: 0.6148148148148148  (Index 170)[0m
+Epoch 00171 | Time(s) 0.0100 | Loss(train) 0.6696 | Acc(train) 0.9649 | Loss(val) 1.1018 | Acc(val) 0.6148 | 
+[2026-06-10 18:13:35] [32mIntermediate result: 0.6074074074074074  (Index 171)[0m
+Epoch 00172 | Time(s) 0.0080 | Loss(train) 0.6688 | Acc(train) 0.9445 | Loss(val) 1.1014 | Acc(val) 0.6074 | 
+[2026-06-10 18:13:35] [32mIntermediate result: 0.6  (Index 172)[0m
+Epoch 00173 | Time(s) 0.0090 | Loss(train) 0.6632 | Acc(train) 0.9519 | Loss(val) 1.1220 | Acc(val) 0.6000 | 
+[2026-06-10 18:13:35] [32mIntermediate result: 0.6111111111111112  (Index 173)[0m
+Epoch 00174 | Time(s) 0.0090 | Loss(train) 0.6649 | Acc(train) 0.9667 | Loss(val) 1.1331 | Acc(val) 0.6111 | 
+[2026-06-10 18:13:35] [32mIntermediate result: 0.6111111111111112  (Index 174)[0m
+Epoch 00175 | Time(s) 0.0090 | Loss(train) 0.6675 | Acc(train) 0.9649 | Loss(val) 1.1101 | Acc(val) 0.6111 | 
+[2026-06-10 18:13:35] [32mIntermediate result: 0.6074074074074074  (Index 175)[0m
+Epoch 00176 | Time(s) 0.0090 | Loss(train) 0.6662 | Acc(train) 0.9630 | Loss(val) 1.0998 | Acc(val) 0.6074 | 
+[2026-06-10 18:13:35] [32mIntermediate result: 0.6037037037037037  (Index 176)[0m
+Epoch 00177 | Time(s) 0.0086 | Loss(train) 0.6679 | Acc(train) 0.9445 | Loss(val) 1.1188 | Acc(val) 0.6037 | 
+[2026-06-10 18:13:35] [32mIntermediate result: 0.5962962962962963  (Index 177)[0m
+Epoch 00178 | Time(s) 0.0096 | Loss(train) 0.6647 | Acc(train) 0.9649 | Loss(val) 1.1372 | Acc(val) 0.5963 | 
+[2026-06-10 18:13:35] [32mIntermediate result: 0.6037037037037037  (Index 178)[0m
+Epoch 00179 | Time(s) 0.0090 | Loss(train) 0.6677 | Acc(train) 0.9649 | Loss(val) 1.1207 | Acc(val) 0.6037 | 
+[2026-06-10 18:13:35] [32mIntermediate result: 0.6111111111111112  (Index 179)[0m
+Epoch 00180 | Time(s) 0.0090 | Loss(train) 0.6643 | Acc(train) 0.9612 | Loss(val) 1.0971 | Acc(val) 0.6111 | 
+[2026-06-10 18:13:35] [32mIntermediate result: 0.6  (Index 180)[0m
+Epoch 00181 | Time(s) 0.0090 | Loss(train) 0.6659 | Acc(train) 0.9501 | Loss(val) 1.0999 | Acc(val) 0.6000 | 
+[2026-06-10 18:13:35] [32mIntermediate result: 0.5925925925925926  (Index 181)[0m
+Epoch 00182 | Time(s) 0.0080 | Loss(train) 0.6638 | Acc(train) 0.9593 | Loss(val) 1.1262 | Acc(val) 0.5926 | 
+[2026-06-10 18:13:35] [32mIntermediate result: 0.5925925925925926  (Index 182)[0m
+Epoch 00183 | Time(s) 0.0090 | Loss(train) 0.6669 | Acc(train) 0.9409 | Loss(val) 1.1422 | Acc(val) 0.5926 | 
+[2026-06-10 18:13:35] [32mIntermediate result: 0.6037037037037037  (Index 183)[0m
+Epoch 00184 | Time(s) 0.0090 | Loss(train) 0.6674 | Acc(train) 0.9538 | Loss(val) 1.1276 | Acc(val) 0.6037 | 
+[2026-06-10 18:13:35] [32mIntermediate result: 0.6  (Index 184)[0m
+Epoch 00185 | Time(s) 0.0090 | Loss(train) 0.6615 | Acc(train) 0.9704 | Loss(val) 1.1087 | Acc(val) 0.6000 | 
+[2026-06-10 18:13:35] [32mIntermediate result: 0.6037037037037037  (Index 185)[0m
+Epoch 00186 | Time(s) 0.0090 | Loss(train) 0.6653 | Acc(train) 0.9612 | Loss(val) 1.1077 | Acc(val) 0.6037 | 
+[2026-06-10 18:13:35] [32mIntermediate result: 0.5925925925925926  (Index 186)[0m
+Epoch 00187 | Time(s) 0.0090 | Loss(train) 0.6642 | Acc(train) 0.9575 | Loss(val) 1.1277 | Acc(val) 0.5926 | 
+[2026-06-10 18:13:35] [32mIntermediate result: 0.6  (Index 187)[0m
+Epoch 00188 | Time(s) 0.0090 | Loss(train) 0.6649 | Acc(train) 0.9501 | Loss(val) 1.1395 | Acc(val) 0.6000 | 
+[2026-06-10 18:13:35] [32mIntermediate result: 0.6111111111111112  (Index 188)[0m
+Epoch 00189 | Time(s) 0.0090 | Loss(train) 0.6679 | Acc(train) 0.9482 | Loss(val) 1.1142 | Acc(val) 0.6111 | 
+[2026-06-10 18:13:35] [32mIntermediate result: 0.6148148148148148  (Index 189)[0m
+Epoch 00190 | Time(s) 0.0090 | Loss(train) 0.6622 | Acc(train) 0.9649 | Loss(val) 1.0965 | Acc(val) 0.6148 | 
+[2026-06-10 18:13:35] [32mIntermediate result: 0.6037037037037037  (Index 190)[0m
+Epoch 00191 | Time(s) 0.0100 | Loss(train) 0.6682 | Acc(train) 0.9482 | Loss(val) 1.0890 | Acc(val) 0.6037 | 
+[2026-06-10 18:13:35] [32mIntermediate result: 0.6111111111111112  (Index 191)[0m
+Epoch 00192 | Time(s) 0.0100 | Loss(train) 0.6654 | Acc(train) 0.9556 | Loss(val) 1.1014 | Acc(val) 0.6111 | 
+[2026-06-10 18:13:35] [32mIntermediate result: 0.5962962962962963  (Index 192)[0m
+Epoch 00193 | Time(s) 0.0100 | Loss(train) 0.6637 | Acc(train) 0.9538 | Loss(val) 1.1089 | Acc(val) 0.5963 | 
+[2026-06-10 18:13:35] [32mIntermediate result: 0.6037037037037037  (Index 193)[0m
+Epoch 00194 | Time(s) 0.0090 | Loss(train) 0.6615 | Acc(train) 0.9519 | Loss(val) 1.1029 | Acc(val) 0.6037 | 
+[2026-06-10 18:13:35] [32mIntermediate result: 0.6074074074074074  (Index 194)[0m
+Epoch 00195 | Time(s) 0.0090 | Loss(train) 0.6612 | Acc(train) 0.9630 | Loss(val) 1.1076 | Acc(val) 0.6074 | 
+[2026-06-10 18:13:35] [32mIntermediate result: 0.6074074074074074  (Index 195)[0m
+Epoch 00196 | Time(s) 0.0100 | Loss(train) 0.6616 | Acc(train) 0.9575 | Loss(val) 1.1115 | Acc(val) 0.6074 | 
+[2026-06-10 18:13:35] [32mIntermediate result: 0.5925925925925926  (Index 196)[0m
+Epoch 00197 | Time(s) 0.0100 | Loss(train) 0.6640 | Acc(train) 0.9630 | Loss(val) 1.1148 | Acc(val) 0.5926 | 
+[2026-06-10 18:13:35] [32mIntermediate result: 0.5962962962962963  (Index 197)[0m
+Epoch 00198 | Time(s) 0.0100 | Loss(train) 0.6603 | Acc(train) 0.9649 | Loss(val) 1.1264 | Acc(val) 0.5963 | 
+[2026-06-10 18:13:35] [32mIntermediate result: 0.6  (Index 198)[0m
+Epoch 00199 | Time(s) 0.0100 | Loss(train) 0.6614 | Acc(train) 0.9667 | Loss(val) 1.1157 | Acc(val) 0.6000 | 
+[2026-06-10 18:13:35] [32mIntermediate result: 0.6074074074074074  (Index 199)[0m
+Epoch 00200 | Time(s) 0.0090 | Loss(train) 0.6597 | Acc(train) 0.9501 | Loss(val) 1.1188 | Acc(val) 0.6074 | 
+Optimization Finished!
+Time(s): 5.7377
+Loss(test) 0.9110 | Acc(test) 0.8037

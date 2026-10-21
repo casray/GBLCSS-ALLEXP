@@ -1,0 +1,32 @@
+{
+  "tests_run": 13,
+  "exit_code": 0,
+  "dynamic_program_exhaustive_cost_cases": 2187,
+  "real_data_integration": {
+    "dataset": "corafull",
+    "seed": 0,
+    "noise": "uniform",
+    "status": "passed",
+    "components_checked": 36
+  },
+  "no_student_trained_in_smoke": true,
+  "final_unit_suite": {
+    "tests_run": 14,
+    "exit_code": 0,
+    "observed_output": "Ran 14 tests in 0.113s; OK"
+  },
+  "initial_startup_issue": {
+    "stage": "before freeze and before targets/training",
+    "root_cause": "set_seed imported from representation instead of data",
+    "minimal_fix": "use existing gblcss.data.set_seed",
+    "regression_test": "test_real_execution_entry_imports_project_seed_function",
+    "red_then_green": true
+  },
+  "final_validation": {
+    "record": "final_validation.json",
+    "status": "passed",
+    "tests_run": 14,
+    "formal_exit_code": 0,
+    "posthoc_exit_code": 0
+  }
+}

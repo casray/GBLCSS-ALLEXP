@@ -1,0 +1,115 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <title>实验边界、负结果与下一步问题清单</title>
+  <style>
+    body{font-family:Segoe UI,Microsoft YaHei,Arial,sans-serif;line-height:1.65;margin:0;background:#f6f7f9;color:#20242a}
+    main{max-width:1120px;margin:0 auto;padding:36px 24px 64px}
+    h1{font-size:30px;margin:0 0 8px}
+    h2{font-size:22px;margin-top:34px;border-left:5px solid #2f6fed;padding-left:10px}
+    h3{font-size:18px;margin-top:24px}
+    .card{background:#fff;border:1px solid #d8dde6;border-radius:8px;padding:18px 22px;margin:16px 0}
+    .stop{border-left:5px solid #b91c1c;background:#fef2f2}
+    .go{border-left:5px solid #15803d;background:#f0fdf4}
+    .warn{border-left:5px solid #d97706;background:#fff7ed}
+    code,pre{font-family:Consolas,Menlo,monospace}
+    code{background:#eef2f7;padding:2px 5px;border-radius:4px}
+    pre{white-space:pre-wrap;background:#111827;color:#f9fafb;padding:16px;border-radius:8px;overflow:auto}
+    table{border-collapse:collapse;width:100%;background:#fff;margin:12px 0}
+    th,td{border:1px solid #d8dde6;padding:8px 10px;text-align:left;vertical-align:top}
+    th{background:#eef2ff}
+  </style>
+</head>
+<body>
+<main>
+  <h1>实验边界、负结果与下一步问题清单</h1>
+  <p>这个文件专门防止 GPT 给出“复活已失败方向”或“把诊断当性能”的建议。</p>
+
+  <h2>1. 已被实验支持的结论</h2>
+  <div class="card go">
+    <ul>
+      <li>SoftDist [X‖H] 在 Cora/CiteSeer/Coauthor-CS 主协议下有受控粒球增量。</li>
+      <li>给强 baseline 同样的 H 后，SoftDist 不再是 SOTA；论文应主打简单性、低方差、适用域刻画。</li>
+      <li>粒球 LOO 是强离线噪声检测信号，但弱于 H-kNN / GCN 置信度。</li>
+      <li>椭球在部分数据集改善 offline target，但大多不能转成 downstream accuracy。</li>
+      <li>GEAF hard correction 有离线过滤信号，但只有 AmazonCom confidence=0.7 在 seed0 下游明显正。</li>
+      <li>标签率敏感性支持低/中标签率更有粒球增量；不能写“标签越多越好”。</li>
+    </ul>
+  </div>
+
+  <h2>2. 已被负结果削弱或禁止复活的方向</h2>
+  <table>
+    <tr><th>方向</th><th>为什么不能继续当主线</th></tr>
+    <tr><td>GRACE encoder noisy 微调</td><td>noisy CE 微调会破坏 frozen 表征，早期实验出现明显退化。</td></tr>
+    <tr><td>same-ball hard positive / hard negative filter</td><td>粒球粒度太粗，硬约束容易误伤；项目偏好 soft relation / confidence。</td></tr>
+    <tr><td>动态 alpha / 模型预测反馈</td><td>模型早期记忆噪声，自强化失败。</td></tr>
+    <tr><td>自适应纯度建球 E1</td><td>20% train 覆盖下票密度不足，标签信号驱动不了稳定粒度。</td></tr>
+    <tr><td>换 SSL 表征追求 probe</td><td>CCA-SSG / uniformity 提升 probe 不等于球可聚类，曾出现球塌缩。</td></tr>
+    <tr><td>大图 GBSelect / selection</td><td>下游被吸收或样本损失抵消，Amazon/PubMed/DBLP 边界明显。</td></tr>
+    <tr><td>噪声检测换题</td><td>s_ball_loo 强但被 s_knn/s_gcn_conf 压制，kNN+ball 集成没有稳定增益。</td></tr>
+    <tr><td>椭球 SoftDist 普适替代</td><td>Cora/CiteSeer 不稳定，Amazon/PubMed/DBLP downstream 失败或停止。</td></tr>
+    <tr><td>selected 椭球参数救 DBLP</td><td>DBLP 5-seed selected ellipsoid 仅 +0.19pp vs selected shuffled，3/5 seeds。</td></tr>
+    <tr><td>只看 offline clean-mass gate</td><td>clean mass 总量未归一化，大图 per-node gain 很小，不能预测 downstream。</td></tr>
+    <tr><td>GEAF hard correction 普适桥接</td><td>只有 AmazonCom seed0 明确正，其他数据集多被 GCN/SoftDist/shuffled 吸收。</td></tr>
+  </table>
+
+  <h2>3. 最重要的实验方法论</h2>
+  <ul>
+    <li><strong>seed0 会撒谎：</strong>DBLP selected ellipsoid seed0 real-vs-shuffled +1.04pp，5-seed 后 STOP。</li>
+    <li><strong>shuffled 是命门对照：</strong>没有 real &gt; shuffled，就不能 claim 真实几何贡献。</li>
+    <li><strong>offline 不是 downstream：</strong>clean mass / purity / NCR-CDR 只能预筛，不能当性能结论。</li>
+    <li><strong>H 同源吸收：</strong>构球用 H，下游也输入 H，粒球 target 很容易被 GCN[X‖H] 吸收。</li>
+    <li><strong>强 baseline 公平性：</strong>NRGNN 等必须给同样 H，否则比较会夸大 SoftDist。</li>
+  </ul>
+
+  <h2>4. 如果还做实验，最小候选是什么？</h2>
+  <div class="card warn">
+    当前首选不是继续开新方向，而是写论文。若必须补实验，只建议一个极小确认：
+  </div>
+  <table>
+    <tr><th>候选</th><th>为什么</th><th>成功标准</th><th>失败后怎么写</th></tr>
+    <tr>
+      <td>AmazonCom GEAF confidence=0.7 5-seed sanity</td>
+      <td>唯一 GEAF seed0 明确正：GEAF 0.8642 vs GCN 0.8564、SoftDist 0.8558、GEAF shuffled 0.8564。</td>
+      <td>5-seed 稳定超过 GCN[X‖H]、GEAF shuffled、current SoftDist；至少 4/5 seeds 正向。</td>
+      <td>若不稳，GEAF bridge 写成 offline-positive 但 downstream 不稳的负结果。</td>
+    </tr>
+    <tr>
+      <td>Coauthor-CS 默认椭球 5-seed</td>
+      <td>默认椭球 seed0 pass，但只是低优先级确认。</td>
+      <td>稳定超过 current SoftDist、ellipsoid shuffled、GCN[X‖H]。</td>
+      <td>若不稳，椭球 downstream 完全停止，只保留边界分析。</td>
+    </tr>
+  </table>
+
+  <h2>5. 我希望 GPT 重点思考的问题</h2>
+  <ol>
+    <li>SoftDist 论文的贡献是否应该从“性能方法”转成“简单方法 + 完整边界刻画”？</li>
+    <li>在已有负结果下，下一步是否还值得做 AmazonCom GEAF 5-seed，还是应该直接写论文？</li>
+    <li>如何把椭球/GEAF 的失败写得有科研价值，而不是显得方法乱试？</li>
+    <li>offline-to-downstream 断裂是否可以作为论文机制分析的一部分？怎么表述最安全？</li>
+    <li>是否需要在论文中主动暴露 NRGNN[X‖H] fairness 结果？如何避免削弱主贡献？</li>
+    <li>主表、机制表、边界表应该怎么组织，才能让审稿人认可“不是 SOTA，但有清楚贡献”？</li>
+  </ol>
+
+  <h2>6. 给 GPT 的约束提示</h2>
+  <pre>请不要建议：
+- 继续大规模调 max_balls/split_improvement。
+- 继续 GMM、椭球、GEAF 强 baseline，除非先满足 real-vs-shuffled 和 5-seed 稳定。
+- 把 noise detection 换成主任务。
+- 把 offline diagnostic 当作 downstream claim。
+- 忽略 NRGNN[X‖H] fairness 边界。
+
+请优先建议：
+- 哪些结果应写进论文主文，哪些放 appendix，哪些只作为内部负结果。
+- 如果只剩一个最小实验，是否值得做；如果不值得，如何收口写作。
+- 如何把“适用域边界刻画”包装成贡献，而不是失败集合。</pre>
+
+  <h2>7. 最安全的当前结论</h2>
+  <div class="card go">
+    SoftDist [X‖H] 的主线已经足够收口：它不是 SOTA，而是一个简单、可解释、非迭代的粒球软标签校正方法，在受控 H 变量下稳定提供粒球增量；更重要的是，项目系统刻画了它何时有效、何时被 H-kNN/GCN/强 baseline 吸收，以及为什么更复杂的椭球、GMM、GEAF 并不能普适替代主方法。
+  </div>
+</main>
+</body>
+</html>

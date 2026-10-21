@@ -1,0 +1,14 @@
+{
+  "datasets": ["roman", "corafull", "coauthorcs"],
+  "protocol_seeds": [0, 1, 2],
+  "conditions": {"clean": 0.0, "uniform": 0.4, "pair": 0.4},
+  "spaces": ["GRACE", "GREET"],
+  "rules": ["OLD64", "ADAPT64", "SQRT16", "KM_MATCH", "KNN_MATCH"],
+  "min_train_per_ball": 16,
+  "primary_rule": "SQRT16",
+  "training": {"hidden": 64, "layers": 2, "dropout": 0.5, "learning_rate": 0.01, "weight_decay": 0.0005, "epochs": 200},
+  "expected_target_protocols": 27,
+  "expected_targets_and_students": 297,
+  "scope": "one frozen SSL seed per space; three paired split/noise/partition/MLP seeds; exploratory, unequal pretraining budgets",
+  "stopping": "run all preregistered targets and students; no test-based rule selection or threshold search"
+}

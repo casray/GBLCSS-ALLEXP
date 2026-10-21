@@ -1,0 +1,309 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>NoisyGL Baseline Selection Diagnostic Review</title>
+  <style>
+    :root {
+      --bg: #f7f8fb;
+      --panel: #ffffff;
+      --text: #20242a;
+      --muted: #68707c;
+      --line: #d9dee7;
+      --head: #eef2f7;
+      --accent: #1769aa;
+      --good: #0a7d4f;
+      --warn: #9a5b00;
+      --bad: #a73535;
+    }
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--text);
+      font-family: "Segoe UI", "Microsoft YaHei", Arial, sans-serif;
+      line-height: 1.6;
+    }
+    main {
+      max-width: 1180px;
+      margin: 0 auto;
+      padding: 32px 20px 56px;
+    }
+    section {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 22px;
+      margin: 18px 0;
+    }
+    h1, h2, h3 {
+      line-height: 1.25;
+      margin: 0 0 14px;
+    }
+    h1 {
+      font-size: 30px;
+    }
+    h2 {
+      font-size: 22px;
+      border-bottom: 1px solid var(--line);
+      padding-bottom: 8px;
+    }
+    h3 {
+      font-size: 17px;
+      margin-top: 18px;
+    }
+    p {
+      margin: 8px 0 12px;
+    }
+    .meta, .note {
+      color: var(--muted);
+      font-size: 14px;
+    }
+    .callout {
+      border-left: 4px solid var(--accent);
+      background: #f1f6fb;
+      padding: 12px 14px;
+      margin: 14px 0;
+    }
+    .warn {
+      border-left-color: var(--warn);
+      background: #fff8ec;
+    }
+    .bad {
+      border-left-color: var(--bad);
+      background: #fff1f1;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 12px 0 18px;
+      font-size: 14px;
+    }
+    th, td {
+      border: 1px solid var(--line);
+      padding: 8px 9px;
+      text-align: left;
+      vertical-align: top;
+    }
+    th {
+      background: var(--head);
+      font-weight: 600;
+    }
+    td.num, th.num {
+      text-align: right;
+      white-space: nowrap;
+    }
+    code {
+      background: #eef2f7;
+      border-radius: 4px;
+      padding: 1px 4px;
+      font-family: Consolas, "Courier New", monospace;
+      font-size: 0.95em;
+    }
+    pre {
+      overflow-x: auto;
+      background: #151b23;
+      color: #e6edf3;
+      border-radius: 8px;
+      padding: 14px;
+    }
+    .tag {
+      display: inline-block;
+      border-radius: 999px;
+      padding: 2px 8px;
+      font-size: 12px;
+      border: 1px solid var(--line);
+      background: #f7f8fb;
+      margin-right: 6px;
+    }
+    .good-text { color: var(--good); font-weight: 600; }
+    .warn-text { color: var(--warn); font-weight: 600; }
+    .bad-text { color: var(--bad); font-weight: 600; }
+  </style>
+</head>
+<body>
+<main>
+  <header>
+    <h1>图标签噪声 Baseline 选择与跑通审查</h1>
+    <p class="meta">更新时间：2026-06-03；框架：NoisyGL；设备：AMD Radeon RX 7700 XT；运行环境：torch 2.9.1+rocm7.2.1，cuda:0</p>
+    <p>
+      <span class="tag">No GAGB</span>
+      <span class="tag">No granular-ball module</span>
+      <span class="tag">5 seeds: 3000-3004</span>
+      <span class="tag">uniform / pair, 0.2 / 0.4</span>
+    </p>
+  </header>
+
+  <section>
+    <h2>当前结论</h2>
+    <div class="callout">
+      Cora/CiteSeer 上保留 <code>GCN + RNCGLN</code> 作为第一版完整 baseline 组合。PubMed 上 <code>RNCGLN</code> 默认实现 OOM，不能作为当前硬件下的可运行 baseline。
+    </div>
+    <p>PubMed 已补充 <code>RTGNN</code> 和 <code>CRGNN</code> 四组合 5-seed。结果显示：</p>
+    <ul>
+      <li><span class="good-text">RTGNN</span> 在 PubMed uniform 0.4 上为 <code>0.6214 +/- 0.0514</code>，明显高于 GCN <code>0.5684 +/- 0.0489</code>。</li>
+      <li><span class="warn-text">CRGNN</span> 在 PubMed pair 0.4 上为 <code>0.5920 +/- 0.0594</code>，高于 GCN <code>0.5772 +/- 0.0757</code>，但 std 重叠较大。</li>
+      <li><span class="warn-text">PIGNN</span> 已完成 PubMed uniform 0.4 seed 3000 smoke test，test acc 为 <code>0.6600</code>；四组合 5-seed 暂缓，不能作为稳定结论。</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>PubMed 主结果表</h2>
+    <table>
+      <thead>
+        <tr>
+          <th>Dataset</th>
+          <th>Noise</th>
+          <th class="num">Rate</th>
+          <th class="num">GCN</th>
+          <th class="num">UnionNet</th>
+          <th class="num">Forward</th>
+          <th class="num">Backward</th>
+          <th class="num">RTGNN</th>
+          <th class="num">CRGNN</th>
+          <th>RNCGLN</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>PubMed</td>
+          <td>uniform</td>
+          <td class="num">0.2</td>
+          <td class="num">0.7036 +/- 0.0435</td>
+          <td class="num">0.7058 +/- 0.0492</td>
+          <td class="num">0.7042 +/- 0.0523</td>
+          <td class="num">0.7050 +/- 0.0533</td>
+          <td class="num">0.6890 +/- 0.0469</td>
+          <td class="num">0.6970 +/- 0.0315</td>
+          <td>OOM</td>
+        </tr>
+        <tr>
+          <td>PubMed</td>
+          <td>uniform</td>
+          <td class="num">0.4</td>
+          <td class="num">0.5684 +/- 0.0489</td>
+          <td class="num">0.5664 +/- 0.0430</td>
+          <td class="num">0.5734 +/- 0.0449</td>
+          <td class="num">0.5728 +/- 0.0449</td>
+          <td class="num good-text">0.6214 +/- 0.0514</td>
+          <td class="num">0.5648 +/- 0.0711</td>
+          <td>not run after OOM</td>
+        </tr>
+        <tr>
+          <td>PubMed</td>
+          <td>pair</td>
+          <td class="num">0.2</td>
+          <td class="num">0.7266 +/- 0.0224</td>
+          <td class="num">0.7350 +/- 0.0217</td>
+          <td class="num">0.7290 +/- 0.0333</td>
+          <td class="num">0.7298 +/- 0.0310</td>
+          <td class="num">0.7038 +/- 0.0619</td>
+          <td class="num">0.7264 +/- 0.0305</td>
+          <td>not run after OOM</td>
+        </tr>
+        <tr>
+          <td>PubMed</td>
+          <td>pair</td>
+          <td class="num">0.4</td>
+          <td class="num">0.5772 +/- 0.0757</td>
+          <td class="num">0.5706 +/- 0.0585</td>
+          <td class="num">0.5770 +/- 0.0555</td>
+          <td class="num">0.5762 +/- 0.0573</td>
+          <td class="num bad-text">0.5317 +/- 0.1176</td>
+          <td class="num warn-text">0.5920 +/- 0.0594</td>
+          <td>not run after OOM</td>
+        </tr>
+      </tbody>
+    </table>
+    <p class="note">RTGNN/CRGNN raw log: <code>runs/baseline_total_pubmed_rtgnn_crgnn_20260603/total_exp_pubmed_rtgnn_crgnn_uniform_pair_0.2_0.4_runs5_cuda0.log</code></p>
+  </section>
+
+  <section>
+    <h2>PubMed 候选审查</h2>
+    <table>
+      <thead>
+        <tr>
+          <th>Method</th>
+          <th>Evidence</th>
+          <th>Decision</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>RTGNN</td>
+          <td>5-seed completed. uniform 0.4 = 0.6214 +/- 0.0514.</td>
+          <td>作为 PubMed uniform 0.4 的强候选；pair 0.4 波动大且低于 GCN。</td>
+        </tr>
+        <tr>
+          <td>CRGNN</td>
+          <td>5-seed completed. pair 0.4 = 0.5920 +/- 0.0594.</td>
+          <td>作为 PubMed pair 0.4 的补充候选；不是全条件强 baseline。</td>
+        </tr>
+        <tr>
+          <td>PIGNN</td>
+          <td>Smoke test only. PubMed uniform 0.4 seed 3000 = 0.6600.</td>
+          <td>重点待补。四组合 5-seed 暂缓，当前不能写成稳定结论。</td>
+        </tr>
+        <tr>
+          <td>UnionNet / Forward / Backward</td>
+          <td>5-seed completed.</td>
+          <td>整体没有稳定强于 GCN，只保留为已筛查记录。</td>
+        </tr>
+        <tr>
+          <td>RNCGLN</td>
+          <td>PubMed default implementation OOM.</td>
+          <td>不作为 PubMed 可运行 baseline；OOM 原因单独记录。</td>
+        </tr>
+      </tbody>
+    </table>
+  </section>
+
+  <section>
+    <h2>Cora / CiteSeer 保留结果</h2>
+    <table>
+      <thead>
+        <tr>
+          <th>Dataset</th>
+          <th>Noise</th>
+          <th class="num">Rate</th>
+          <th class="num">GCN</th>
+          <th class="num">RNCGLN</th>
+          <th>Decision</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr><td>Cora</td><td>uniform</td><td class="num">0.2</td><td class="num">0.7620 +/- 0.0082</td><td class="num">0.7600 +/- 0.0161</td><td>RNCGLN 不占优</td></tr>
+        <tr><td>Cora</td><td>uniform</td><td class="num">0.4</td><td class="num">0.6920 +/- 0.0083</td><td class="num">0.7532 +/- 0.0185</td><td>RNCGLN 明显占优</td></tr>
+        <tr><td>Cora</td><td>pair</td><td class="num">0.2</td><td class="num">0.7318 +/- 0.0176</td><td class="num">0.7366 +/- 0.0348</td><td>小幅占优但 std 较大</td></tr>
+        <tr><td>Cora</td><td>pair</td><td class="num">0.4</td><td class="num">0.5610 +/- 0.0339</td><td class="num">0.6062 +/- 0.0729</td><td>占优但 std 较大</td></tr>
+        <tr><td>CiteSeer</td><td>uniform</td><td class="num">0.2</td><td class="num">0.6262 +/- 0.0342</td><td class="num">0.6734 +/- 0.0377</td><td>RNCGLN 占优</td></tr>
+        <tr><td>CiteSeer</td><td>uniform</td><td class="num">0.4</td><td class="num">0.5024 +/- 0.0630</td><td class="num">0.6020 +/- 0.1179</td><td>占优但 std 很大</td></tr>
+        <tr><td>CiteSeer</td><td>pair</td><td class="num">0.2</td><td class="num">0.6088 +/- 0.0249</td><td class="num">0.6636 +/- 0.0418</td><td>RNCGLN 占优</td></tr>
+        <tr><td>CiteSeer</td><td>pair</td><td class="num">0.4</td><td class="num">0.4216 +/- 0.0284</td><td class="num">0.4174 +/- 0.0506</td><td>RNCGLN 不占优</td></tr>
+      </tbody>
+    </table>
+  </section>
+
+  <section>
+    <h2>结论边界</h2>
+    <ul>
+      <li>支持：Cora/CiteSeer 可以继续用 <code>GCN + RNCGLN</code>；PubMed 必须加入更细分的候选解释。</li>
+      <li>支持：PubMed uniform 0.4 当前本地强候选是 <code>RTGNN</code>，不是 GCN。</li>
+      <li>弱支持：PubMed pair 0.4 上 <code>CRGNN</code> 略强于 GCN，但标准差重叠大。</li>
+      <li>不支持：说 PubMed 已有一个全条件稳定强 baseline。</li>
+      <li>待补：<code>PIGNN</code> 四组合 5-seed。PIGNN smoke test 强，但不能用单 seed 当论文结论。</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>原始记录</h2>
+    <ul>
+      <li>Combined CSV: <code>runs/baseline_all_three_datasets_summary_20260602.csv</code></li>
+      <li>RTGNN/CRGNN PubMed 5-seed: <code>runs/baseline_total_pubmed_rtgnn_crgnn_20260603/total_exp_pubmed_rtgnn_crgnn_uniform_pair_0.2_0.4_runs5_cuda0.log</code></li>
+      <li>PIGNN smoke test: <code>runs/baseline_pubmed_pignn_rtgnn_crgnn_smoke_20260603/pignn_pubmed_uniform0.4_seed3000_cuda0.log</code></li>
+      <li>Markdown source: <code>runs/baseline_selection_diagnostic_review_20260603.md</code></li>
+    </ul>
+  </section>
+</main>
+</body>
+</html>

@@ -1,0 +1,31 @@
+model:
+  method: lp_mlp_softdist_beta05
+  n_hidden: 64
+  n_layer: 2
+  act: F.relu
+  dropout: 0.5
+  norm_info: ~
+  input_layer: false
+  output_layer: false
+
+training:
+  lr: 1e-2
+  weight_decay: 5e-4
+  n_epochs: 200
+  patience: ~
+  criterion: metric
+
+dataset:
+  sparse: true
+
+gb:
+  soft_target_builder: lp
+  lp_steps: 2
+  alpha_baseline: multiclass
+  target_mode: distribution
+  target_beta: 0.5
+
+analysis:
+  flag: false
+  project: gnn-with-label-noise
+  save_graph: false

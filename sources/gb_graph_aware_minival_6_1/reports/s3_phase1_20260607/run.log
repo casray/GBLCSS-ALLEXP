@@ -1,0 +1,54 @@
+(R) s0 | sel_dcgb_emb           test=0.7788 sel_prec=0.8738 purity=0.8893 rel_auroc=0.8920
+(R) s0 | sel_gb                 test=0.8094 sel_prec=0.9046 purity=0.8985 rel_auroc=0.8155
+(R) s0 | sel_topk_matched       test=0.7930 sel_prec=0.9138 purity=nan rel_auroc=0.9046
+(R) s0 | sel_shuffled_matched   test=0.6705 sel_prec=0.6557 purity=0.4889 rel_auroc=0.4859
+(R) s0 | sel_random_matched     test=0.6774 sel_prec=0.7785 purity=0.5129 rel_auroc=0.5108
+(R) s0 | sel_noball             test=0.6642 sel_prec=0.6493 purity=nan rel_auroc=nan
+(R) s0 | sel_clean_oracle       test=0.8126 sel_prec=1.0000 purity=nan rel_auroc=nan
+(R) s1 | sel_dcgb_emb           test=0.8073 sel_prec=0.9138 purity=0.8930 rel_auroc=0.8529
+(R) s1 | sel_gb                 test=0.7899 sel_prec=0.8831 purity=0.8819 rel_auroc=0.7696
+(R) s1 | sel_topk_matched       test=0.8010 sel_prec=0.9200 purity=nan rel_auroc=0.9030
+(R) s1 | sel_shuffled_matched   test=0.7122 sel_prec=0.6250 purity=0.5203 rel_auroc=0.5025
+(R) s1 | sel_random_matched     test=0.7165 sel_prec=0.8000 purity=0.5000 rel_auroc=0.5195
+(R) s1 | sel_noball             test=0.6874 sel_prec=0.8123 purity=nan rel_auroc=nan
+(R) s1 | sel_clean_oracle       test=0.8105 sel_prec=1.0000 purity=nan rel_auroc=nan
+(R) s2 | sel_dcgb_emb           test=0.8115 sel_prec=0.9108 purity=0.8838 rel_auroc=0.8456
+(R) s2 | sel_gb                 test=0.8031 sel_prec=0.9108 purity=0.9041 rel_auroc=0.8102
+(R) s2 | sel_topk_matched       test=0.7988 sel_prec=0.9323 purity=nan rel_auroc=0.9144
+(R) s2 | sel_shuffled_matched   test=0.7307 sel_prec=0.8215 purity=0.5129 rel_auroc=0.5192
+(R) s2 | sel_random_matched     test=0.6990 sel_prec=0.7938 purity=0.5018 rel_auroc=0.4988
+(R) s2 | sel_noball             test=0.7371 sel_prec=0.6771 purity=nan rel_auroc=nan
+(R) s2 | sel_clean_oracle       test=0.8157 sel_prec=1.0000 purity=nan rel_auroc=nan
+(R) s3 | sel_dcgb_emb           test=0.7978 sel_prec=0.9169 purity=0.9004 rel_auroc=0.8201
+(R) s3 | sel_gb                 test=0.7239 sel_prec=0.6660 purity=0.8856 rel_auroc=0.8044
+(R) s3 | sel_topk_matched       test=0.7941 sel_prec=0.9292 purity=nan rel_auroc=0.9030
+(R) s3 | sel_shuffled_matched   test=0.7181 sel_prec=0.6513 purity=0.5055 rel_auroc=0.5919
+(R) s3 | sel_random_matched     test=0.7614 sel_prec=0.8185 purity=0.5295 rel_auroc=0.5305
+(R) s3 | sel_noball             test=0.7291 sel_prec=0.6660 purity=nan rel_auroc=nan
+(R) s3 | sel_clean_oracle       test=0.8099 sel_prec=1.0000 purity=nan rel_auroc=nan
+(R) s4 | sel_dcgb_emb           test=0.8057 sel_prec=0.9046 purity=0.8930 rel_auroc=0.8208
+(R) s4 | sel_gb                 test=0.7249 sel_prec=0.6365 purity=0.8967 rel_auroc=0.7673
+(R) s4 | sel_topk_matched       test=0.7978 sel_prec=0.9169 purity=nan rel_auroc=0.8859
+(R) s4 | sel_shuffled_matched   test=0.7239 sel_prec=0.6231 purity=0.5258 rel_auroc=0.5311
+(R) s4 | sel_random_matched     test=0.7254 sel_prec=0.6250 purity=0.4889 rel_auroc=0.5171
+(R) s4 | sel_noball             test=0.7233 sel_prec=0.6385 purity=nan rel_auroc=nan
+(R) s4 | sel_clean_oracle       test=0.8226 sel_prec=1.0000 purity=nan rel_auroc=nan
+
+=== per-seed test acc ===
+seed          ce     gb_soft  sel_clean_  sel_dcgb_e      sel_gb  sel_topk_m  sel_noball  sel_shuffl  sel_random
+  0       0.7878      0.7962      0.8126      0.7788      0.8094      0.7930      0.6642      0.6705      0.6774
+  1       0.7973      0.7962      0.8105      0.8073      0.7899      0.8010      0.6874      0.7122      0.7165
+  2       0.7925      0.7962      0.8157      0.8115      0.8031      0.7988      0.7371      0.7307      0.6990
+  3       0.8068      0.8073      0.8099      0.7978      0.7239      0.7941      0.7291      0.7181      0.7614
+  4       0.7830      0.7909      0.8226      0.8057      0.7249      0.7978      0.7233      0.7239      0.7254
+mean      0.7935      0.7974      0.8143      0.8002      0.7702      0.7969      0.7082      0.7111      0.7159
+
+=== PRE-REGISTERED PHENOMENA ===
+  A  sel_gb > sel_dcgb_emb : wins 1/5, mean delta -3.00pp  -> FAILS (need >=4/5 & >=1.00pp)
+  B  sel_gb > gb_soft      : wins 2/5, mean delta -2.71pp  -> FAILS (need >=4/5 & >=0.50pp)
+  C  sel_dcgb_emb > sel_shuffled_matched: wins 5/5, mean delta 8.91pp
+  C  sel_dcgb_emb > sel_random_matched  : wins 5/5, mean delta 8.43pp
+  C  sel_dcgb_emb > sel_noball          : wins 5/5, mean delta 9.20pp
+  C overall -> HOLDS (need >=4/5 each)
+
+saved C:\Users\Admin\Desktop\สตั้8ศฅิ๋5.19-\gb_graph_aware_minival_6_1\reports\s3_phase1_20260607\s3_phase1_rows.csv

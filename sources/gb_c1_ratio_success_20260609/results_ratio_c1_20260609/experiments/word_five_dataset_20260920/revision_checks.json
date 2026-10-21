@@ -1,0 +1,110 @@
+{
+  "paired_rows_verified": 450,
+  "summary_rows_verified": 90,
+  "outputs": {
+    "main": {
+      "file": "C:\\Users\\Admin\\Downloads\\GB-LCSS_five_dataset_experiments_revised_20260920_red.docx",
+      "unchanged_tables_verified": 8,
+      "display_equations_preserved": 1,
+      "media_preserved": 7,
+      "references_unchanged": true
+    },
+    "supplement": {
+      "file": "C:\\Users\\Admin\\Downloads\\GB-LCSS_supplementary_five_dataset_experiments_revised_20260920_red.docx",
+      "unchanged_tables_verified": 14,
+      "display_equations_preserved": 0,
+      "media_preserved": 7,
+      "references_unchanged": true
+    }
+  },
+  "changes": [
+    {
+      "old": "The event includes a tie for the most votes. Since Eq. (10) preserves the maximizing class set of pj,−v, the same bound applies to the local-consensus distribution qj,−v. The proof is given in Appendix H.1. For fixed class count, noise rate, and positive margin, the exponential term in the bound decreases as the number of independent votes increases. Enlarging a ball can also change its class composition, however, so more members do not necessarily yield better evidence. The bound describes local voting under symmetric noise, rather than the classification error of the trained MLP.",
+      "new": "The event includes a tie for the most votes. Equation (10) preserves the maximizing class set of pj,−v, so the same bound applies to qj,−v. With the class count, noise rate, and positive margin fixed, the exponential term decreases as more independent votes are available. The margin also matters: adding nodes from competing classes can weaken the evidence for the current node. Appendix H.1 gives the proof."
+    },
+    {
+      "old": "Equation (16) expresses the target error as a weighted average of the observed-label and local-consensus errors, minus a nonnegative term determined by their disagreement. The identity holds for the data-dependent weight and tie-handling rule of GB-LCSS without assuming a noise distribution. Soft targets can reduce error on corrupted labels while perturbing initially correct labels; their aggregate benefit depends on the balance between these effects. Appendix H.2 gives the derivation and a sufficient condition for lower conditional expected target error under symmetric noise. Section 4.3.1 and Appendix I.2 examine this balance empirically.",
+      "new": "Equation (16) relates soft-target error to the errors of the observed label and the local consensus, together with their disagreement. It applies directly to the consensus weight and tie-handling rule in Eqs. (9)–(12). Combining these sources can correct corrupted labels and can also perturb initially correct labels. The overall change in target error depends on the balance of these effects. Appendix H.2 derives the identity and a sufficient condition for lower conditional expected target error under symmetric noise. Section 4.3.1 and Appendix I.2 examine the two effects empirically."
+    },
+    {
+      "old": "A further analysis on Cora, CiteSeer, and CoraFull separates the reduction in error on corrupted labels from the increase on initially correct labels (Appendix I.2). Under uniform 0.4 noise, the reduction outweighed the increase in all 15 runs.",
+      "new": "Across the five datasets under uniform 0.4 noise, we also separate the reduction in error on corrupted labels from the increase on initially correct labels (Appendix I.2). The reduction exceeds the increase in all 25 dataset–seed runs."
+    },
+    {
+      "old": "The representation determines which nodes are grouped together and hence which labels contribute to each target. Table 7 compares GRACE with raw node attributes X and two-step propagated attributes A2X on Cora, CiteSeer, and CoraFull under uniform 0.4 noise. All three conditions, including the default GB-LCSS configuration, were rerun with five paired seeds using the setup in Appendix I.1. Propagation uses the original adjacency matrix without added self-loops or adjacency normalization, followed by L2 normalization of the node vectors as in Eq. (3). Ball counts are reported as ranges across seeds.",
+      "new": "The representation determines which nodes are grouped together and which labels contribute to each target. Table 7 compares GRACE, raw node attributes X, and two-step propagated attributes A2X on all five datasets under uniform 0.4 noise. Each condition was rerun with five paired seeds and the same splitting parameters (Appendix I.1). For A2X, the original adjacency matrix multiplies the attributes twice, with no added self-loops or adjacency normalization. The resulting node vectors are L2-normalized as in Eq. (3)."
+    },
+    {
+      "old": "Table 7. Classification accuracy and ball counts for different representations under uniform 0.4 noise (five paired seeds).",
+      "new": "Table 7. Classification accuracy (%) and ball counts for three representation spaces under uniform 0.4 noise. Accuracy is mean ± sample standard deviation over five paired seeds; ball counts give the range across seeds."
+    },
+    {
+      "old": "With the same splitting parameters, raw X and A2X both produced a single ball in all 15 runs. Each node therefore drew its consensus from all other training nodes rather than a local subset. The identical partitions produced identical soft targets and classification accuracy for each paired seed. Under the same splitting rule, GRACE produced multiple granular balls and higher classification accuracy on all three datasets.",
+      "new": "Raw X produced one ball on every dataset and seed. In this case, each training node obtains its consensus from the labels of all other training nodes in the graph. On Cora, CiteSeer, and CoraFull, A2X also produced one ball, giving the same targets and accuracy as raw X. On Coauthor-CS and Amazon-Photo, propagation enabled 50–59 and 64 balls, respectively, and improved accuracy over raw X. GRACE achieved the highest mean accuracy among the three representations on all five datasets, exceeding A2X by 1.47 and 1.38 percentage points on the latter two. Thus, simple propagation can support local grouping on some datasets, while the learned representation gave the most effective supervision in this comparison."
+    },
+    {
+      "old": "We next varied the GRACE pretraining seed, using three pretrained representations and three downstream seeds for each. The resulting partitions differed: their adjusted Rand index [74], a measure of agreement between partitions, ranged from 0.247 to 0.365. Classification accuracy, however, was relatively stable. After averaging over downstream seeds, its standard deviation across pretraining seeds was 0.13, 0.45, and 0.60 percentage points on Cora, CiteSeer, and CoraFull, respectively. GB-LCSS exceeded MLP+CE for every pretraining seed. Thus, the tested representations yielded different node assignments but similarly effective supervision under uniform 0.4 noise.",
+      "new": "We separately examined GRACE pretraining variability on Cora, CiteSeer, and CoraFull, using three pretrained representations and three downstream seeds for each. The resulting partitions differed: their adjusted Rand index [74], a measure of agreement between partitions, ranged from 0.247 to 0.365. Classification accuracy, however, was relatively stable. After averaging over downstream seeds, its standard deviation across pretraining seeds was 0.13, 0.45, and 0.60 percentage points on Cora, CiteSeer, and CoraFull, respectively. GB-LCSS exceeded MLP+CE for every pretraining seed. Thus, the tested representations yielded different node assignments but similarly effective supervision under uniform 0.4 noise."
+    },
+    {
+      "old": "We varied one parameter at a time on Cora, CiteSeer, and CoraFull under uniform 0.4 noise, keeping the pretrained representations fixed and using five paired seeds (Appendix I.1). CoraFull was sensitive to the ball budget: reducing Bmax from 64 to 32 lowered mean accuracy by 2.10 percentage points, whereas increasing it to 128 improved accuracy by 1.57 points. The higher budget improved every seed on CoraFull. By contrast, Cora still formed 52–53 balls with a budget of 128, leaving its targets unchanged. Increasing the majority-class weight β from 0.5 to 1 improved CiteSeer by 1.74 points, with little change on the other two datasets.",
+      "new": "We examine how the parameters affect the formation of local groups, the availability of label evidence, and its weight in the target. Table I.1 varies one parameter at a time on all five datasets under uniform 0.4 noise, using fixed pretrained representations and five paired seeds."
+    },
+    {
+      "old": "Requiring more votes can leave fewer nodes able to use local consensus. Raising smin from 2 to 10 reduced this coverage to 56.53% on Cora and 58.32% on CiteSeer, while accuracy fell by 7.27 and 5.22 points. The split threshold also mattered: δ=0.10 prevented all splits on the three datasets, whereas δ=0.01 produced the same targets as the default 0.05. Changes to the minimum ball size nmin had mixed effects across datasets. In these tests, the largest losses occurred when a setting prevented local groups from forming or substantially reduced the number of nodes receiving consensus supervision.",
+      "new": "The ball budget and splitting threshold determine how finely the nodes are grouped. On CoraFull, reducing Bmax from 64 to 32 lowered mean accuracy by 2.10 percentage points; increasing it to 128 raised accuracy by 1.57 points. The larger budget left Cora unchanged and slightly lowered accuracy on Coauthor-CS and Amazon-Photo. Raising δ from 0.05 to 0.10 prevented splitting on the first four datasets, with losses of 3.04–13.15 points. Amazon-Photo still formed 64 balls and changed by −0.18 points. Lowering δ to 0.01 changed accuracy by at most 0.04 points across the five datasets."
+    },
+    {
+      "old": "",
+      "new": "The voting threshold smin controls how many other labeled nodes are needed to use consensus. Raising it from 2 to 10 reduced the fraction of training nodes receiving a positive consensus weight to 56.53% on Cora and 58.32% on CiteSeer, accompanied by accuracy losses of 7.27 and 5.22 points. Coverage remained at least 89.96% on the other three datasets, where accuracy changed by at most 0.38 points. The value of a stricter voting threshold therefore depends on the available labels within each group."
+    },
+    {
+      "old": "",
+      "new": "Giving more weight to the most-voted class also had dataset-specific effects. Increasing β from 0.5 to 1 raised mean accuracy on four datasets, most noticeably on CiteSeer (+1.74 points), and lowered it by 0.14 points on CoraFull. Changes to nmin likewise had mixed effects. Several configurations improved on the common default, with different settings yielding the highest mean on different datasets. The clearest losses arose when local groups failed to form or too few nodes could use consensus."
+    },
+    {
+      "old": "These experiments use Cora, CiteSeer, and CoraFull with uniform 0.4 noise on training labels, a 20%/10%/70% split, clean validation labels, and seeds 0–4. Each dataset retains the frozen GRACE representation used in the main comparisons. Each parameter variant is paired with the default configuration using the same split, noise realization, and initialization seed. The target rule, MLP architecture, optimizer, 200-epoch budget, and validation-based checkpoint selection remain unchanged.",
+      "new": "The representation and parameter comparisons cover the five datasets in Table 2 under uniform 0.4 noise, with seeds 0–4 and the protocol in Section 4.1. Each dataset uses its archived GRACE representation. Variants share the same data split, noisy labels, and initialization seed with the default configuration, and retain the MLP architecture, optimizer, 200-epoch budget, and checkpoint-selection rule."
+    },
+    {
+      "old": "Targets were computed on the CPU for these reruns, whereas the main comparison used GPU target construction. The MLP was trained on an AMD Radeon RX 7700 XT using PyTorch 2.9.1+rocm7.2.1. The scikit-learn 1.8.0 implementation of 2-means used six CPU threads; PyTorch used four host threads. The default configuration was rerun alongside the controls and parameter variants. Its results in Table 7 and Table I.1 serve as the reference for these comparisons and differ slightly from those in the main comparison.",
+      "new": "For these paired reruns, targets were computed on the CPU and the MLP was trained on the AMD Radeon RX 7700 XT. The software and thread settings were PyTorch 2.9.1+rocm7.2.1 with four host threads and scikit-learn 1.8.0 with six threads for 2-means. Tables 7 and I.1 use the rerun default as their reference; its results differ slightly from the main comparisons, which used GPU target construction."
+    },
+    {
+      "old": "The default values are β=0.5, Bmax=64, nmin=32, δ=0.05, and smin=2. Each sensitivity row changes only the indicated parameter. The voting threshold smin applies after the current node is excluded. Setting β=0 removes the extra weight on the most-voted class but retains the empirical local distribution. Random grouping preserves the default ball sizes; raw X and A2X replace the representation used for grouping, as described in Section 4.3.3.",
+      "new": "The default parameters are listed in Section 4.1.4. Each sensitivity row changes only the indicated parameter. The threshold smin counts votes after excluding the current node. With β=0, the empirical class distribution still contributes to the target. Random grouping preserves the default ball sizes; raw X and A2X change the representation used for grouping (Section 4.3.3)."
+    },
+    {
+      "old": "Table I.1. Parameter sensitivity and controls under uniform 0.4 noise. Accuracy is mean ± sample standard deviation over five paired seeds.",
+      "new": "Table I.1. Parameter sensitivity and controls under uniform 0.4 noise. Accuracy (%) is mean ± sample standard deviation over five paired seeds. Bold denotes the highest mean in each column."
+    },
+    {
+      "old": "Configurations with identical target tensors for the same dataset and seed shared one training result. The 270 evaluated combinations therefore comprise 214 training runs and 56 reuses after exact target equality was verified.",
+      "new": ""
+    },
+    {
+      "old": "A larger ball budget helps only if it permits further splitting. Cora formed 52–53 balls with either budget, so increasing Bmax from 64 to 128 left its targets unchanged. CiteSeer formed 63–64 and 63–66 balls, respectively. CoraFull reached both budgets: using 128 balls improved accuracy on all five seeds, with a paired gain of 1.57 ± 0.54 percentage points, and lowered the mean target Brier score from 0.6321 to 0.6026. Finer groups were therefore beneficial on CoraFull in this comparison.",
+      "new": "The ball counts help explain the effect of the budget. Increasing Bmax to 128 left Cora at 52–53 balls and CiteSeer at 63–66, while the other three datasets reached 128. The finer partition improved CoraFull on all five seeds, with a paired gain of 1.57 ± 0.54 percentage points and a decrease in target Brier score from 0.6321 to 0.6026. Coauthor-CS and Amazon-Photo instead had small decreases in mean accuracy. Additional groups were therefore useful to different degrees across datasets."
+    },
+    {
+      "old": "The effects of majority-class weighting and minimum ball size differed across datasets. With β=1, CiteSeer improved on all five seeds, by 1.74 ± 0.53 points in paired differences, while the mean changes on Cora and CoraFull were +0.04 and −0.14 points. Reducing nmin to 1 changed accuracy by −1.65, +0.70, and −0.05 points on Cora, CiteSeer, and CoraFull, respectively. Neither change improved all three datasets.",
+      "new": "Reducing nmin from 32 to 1 changed mean accuracy by −1.65, +0.70, −0.05, −0.31, and −0.47 points on Cora, CiteSeer, CoraFull, Coauthor-CS, and Amazon-Photo, respectively. At smin=10, the fractions of training nodes receiving a positive consensus weight were 56.53%, 58.32%, 99.13%, 98.98%, and 89.96% in the same order. These counts connect the sensitivity results to how many nodes can receive supervision from their local group."
+    },
+    {
+      "old": "Raising the voting threshold leaves more nodes with their observed labels as targets. At smin=10, the fractions of training nodes with a positive consensus weight were 56.53%, 58.32%, and 99.13% on Cora, CiteSeer, and CoraFull, respectively. Accuracy changed by −7.27, −5.22, and −0.10 points. The larger losses on Cora and CiteSeer accompanied the lower coverage of consensus supervision. A stricter split threshold, δ=0.10, prevented splitting on every seed and produced the same single-ball targets as raw X and A2X. In contrast, δ=0.01 gave the same targets as the default δ=0.05 in all 15 runs.",
+      "new": ""
+    },
+    {
+      "old": "Equation (H.5) separates the change in target error into two parts: the reduction on corrupted labels and the increase on initially correct labels. Table I.2 reports both for the default configuration. For each seed, each part is summed over the corresponding nodes and divided by the total number of training nodes, so their difference gives the net reduction in Brier score. The table averages these quantities over five seeds. Clean training labels are used only to evaluate target error and the local class counts examined below.",
+      "new": "Equation (H.5) separates the change in target error into the reduction on corrupted labels and the increase on initially correct labels. For each seed, both components are divided by the total number of training nodes; their difference is the net reduction in Brier score. Table I.2 reports their means over five seeds for the default configuration. Clean training labels provide the reference for this diagnostic."
+    },
+    {
+      "old": "In all 15 runs, the reduction on corrupted labels outweighed the increase on correct labels. The targets therefore had lower aggregate error even though some initially correct annotations were perturbed. Random grouping also lowered Brier scores, but its classification accuracy was much lower than that of GB-LCSS (Table I.1). This comparison shows why lower target error alone does not explain the benefit of grouping related nodes.",
+      "new": "The reduction on corrupted labels exceeded the increase on initially correct labels in all 25 dataset–seed runs. Mean net reductions ranged from 0.1690 on CoraFull to 0.4877 on Coauthor-CS. Random grouping also lowered Brier scores, yet yielded much lower classification accuracy (Table I.1). Target quality and downstream accuracy therefore provide complementary views of the supervision."
+    },
+    {
+      "old": "We also examined the local-class condition in Proposition 1. Using clean labels for this diagnostic, we counted training nodes whose true class had more votes than any other class among the other training nodes in their ball. Averaged over seeds, these fractions were 75.64%, 65.02%, and 36.13% on Cora, CiteSeer, and CoraFull, respectively. They describe where the proposition's positive-margin assumption holds. Table I.2 measures a different quantity: the net change in soft-target error across all training nodes.",
+      "new": "For Proposition 1, we also counted training nodes whose true class was more frequent than every competing class among the other training nodes in their ball, using clean labels. The proportions averaged 75.64%, 65.02%, 36.13%, 88.94%, and 84.76% on Cora, CiteSeer, CoraFull, Coauthor-CS, and Amazon-Photo, respectively. The proposition applies to these positive-margin nodes. The Brier decomposition in Table I.2 includes all training nodes."
+    }
+  ]
+}

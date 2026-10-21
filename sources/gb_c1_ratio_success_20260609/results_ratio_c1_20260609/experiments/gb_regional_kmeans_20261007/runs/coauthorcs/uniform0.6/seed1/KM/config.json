@@ -1,0 +1,62 @@
+{
+  "dataset": "coauthorcs",
+  "noise_rate": 0.6,
+  "student_seed": 1,
+  "arm": "KM",
+  "settings": {
+    "strength": 1.0,
+    "shuffle_seed": 137,
+    "hidden": 64,
+    "layers": 2,
+    "batch_norm": true,
+    "dropout": 0.5,
+    "lr": 0.01,
+    "weight_decay": 0.0005,
+    "epochs": 200,
+    "temperature": 1,
+    "seed": null,
+    "scope": "all nodes",
+    "selection": "first strict improvement of clean validation accuracy",
+    "student_seeds": [
+      0,
+      1,
+      2
+    ],
+    "teacher_split_noise_seed": 0,
+    "trace_every": 10,
+    "snapshot_epochs": [
+      20,
+      50,
+      100,
+      200
+    ],
+    "regional_reduction": "fixed dense membership matrix multiplication",
+    "grouping": "kmeans",
+    "kmeans": {
+      "init": "k-means++",
+      "n_init": 10,
+      "random_state": 0,
+      "max_iter": 300,
+      "tol": 0.0001,
+      "algorithm": "lloyd"
+    },
+    "clustering_threads": 4
+  },
+  "protocol": {
+    "split_hash": "4359996e286641e985e7eef157b3e4b6edd106e5c7764e02c9b57e15b1108a1b",
+    "noise_hash": "045c48172d1a98bfac68feac8d5c925d90ffdeec6b24c44f2ee6408a9ee6d5f2",
+    "seed": 0,
+    "modified_train_count": 2205,
+    "modified_val_count": 0,
+    "modified_test_count": 0,
+    "features": "raw main-experiment attributes",
+    "data_file": "C:\\Users\\Admin\\Desktop\\实验8去噪5.19-\\external\\NoisyGL\\data\\CS\\processed\\data.pt",
+    "num_nodes": 18333,
+    "num_classes": 15
+  },
+  "initial_state_hash": "b6b79bd2f9dc5f4360ab748f8fea80b95025c1c01109a725eaaeabcde422ade9",
+  "initial_rng_hash": "719eee4f90f76230da4dfdecb77c98516d732ed976029b0a04136c33f3719a94",
+  "input_cache": "C:\\Users\\Admin\\Desktop\\实验8去噪5.19-\\gb_c1_ratio_success_20260609\\results_ratio_c1_20260609\\experiments\\gb_regional_distillation_seed0_20261007\\cache\\coauthorcs\\uniform0.6\\regional.pt",
+  "assignment_hash": "830beef43644a0aa6a5e37e7a58886f8efafe87c1d9d489926f6c0f67282f426",
+  "teacher_source": "C:\\Users\\Admin\\Desktop\\实验8去噪5.19-\\gb_c1_ratio_success_20260609\\results_ratio_c1_20260609\\experiments\\robust_graph_seed0_20261006\\runs\\coauthorcs\\uniform0.6\\erase"
+}

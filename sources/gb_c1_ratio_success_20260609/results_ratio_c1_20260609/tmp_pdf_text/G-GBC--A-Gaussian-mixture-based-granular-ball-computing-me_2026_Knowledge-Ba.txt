@@ -1,0 +1,1271 @@
+                                            Knowledge-Based Systems 341 (2026) 115754
+                                             Contents lists available at ScienceDirect
+
+                                      Knowledge-Based Systems
+
+                                   journal homepage: www.elsevier.com/locate/knosys
+
+G-GBC: A Gaussian mixture-based granular ball computing method for
+robust CNN classiÔ¨Åcation under noisy labels
+
+Junxiao Yang a,b, Qiang Liu a,b,‚àó, Xuemei Cao c,‚àó, Fei Li a,b, Xin Yang c
+
+a School of ArtiÔ¨Åcial Intelligence, Chengdu University of Information Technology, Chengdu, 610225, China
+b Advanced Cryptography and System Security Key Laboratory of Sichuan Province(CUIT Shuangliu Industrial College), Chengdu, 610225, China
+c School of Computing and ArtiÔ¨Åcial Intelligence, Southwestern University of Finance and Economics, Chengdu, 611130, China
+
+article info                       abstract
+
+Keywords:                          In actual scenarios, both manual and automated annotation methods are susceptible to generating mislabeled
+Granular-ball computing            data. Existing noise-handling techniques primarily focus on penalizing or eliminating noisy labels; however, they
+Training process interpretability  often face challenges in maintaining interpretability and eÔ¨Äectively addressing the complexities of label noise. To
+Label noise                        address these issues, we propose a novel framework that leverages the robustness and interpretability of granular-
+Gaussian mixture model             ball computing (GBC) to improve noise resistance and classiÔ¨Åcation performance. The Gaussian mixture-based
+                                   GBC (G-GBC) method integrates CNN models as a feature extractor and employs a Gaussian mixture model to
+                                   adaptively generate granular-ball (GB). By incorporating the purity and weight of GBs into the classiÔ¨Åcation
+                                   process, the model dynamically adjusts the granularity of GBs, enabling it to extract essential features while
+                                   reducing the adverse eÔ¨Äects of noise. Experimental results on multiple datasets demonstrate that the proposed
+                                   approach signiÔ¨Åcantly enhances classiÔ¨Åcation accuracy and model robustness under noisy conditions. Further-
+                                   more, the GB framework improves the interpretability of the training process, oÔ¨Äering a novel perspective for
+                                   image classiÔ¨Åcation tasks in the presence of label noise.
+
+1. Introduction                                                             fers when applied to new data. Existing regularization methods, such as
+                                                                            data augmentation and early stopping [6], partially mitigate the impact
+    In deep learning applications, the issue of noisy labels has emerged    of noise. However, their eÔ¨Äectiveness depends on noise intensity and
+as a notable challenge, limiting both model robustness and generaliza-      data distribution complexity, making them insuÔ¨Écient in high-noise or
+tion performance. Noisy labels are prevalent in real-world datasets, re-    complex data environments [7].
+sulting from various factors such as human annotation errors, random
+interference during data collection, and background complexity [1]. In          Deep CNNs possess an inherent capacity to Ô¨Åt both clean and noisy
+medical prediction problems, for example, diagnostic labels often suÔ¨Äer     data, which means that they are likely to memorize incorrect labels in
+from inter- and intra-expert disagreement or are automatically extracted    the presence of label noise, leading to overÔ¨Åtting and reduced general-
+from clinical text, which leads to label uncertainty and can substan-       ization performance [8]. This phenomenon becomes more pronounced
+tially deteriorate the performance and fairness of deep learning models     in deeper models, as they tend to exhibit higher expressive power and
+used for decision support [2]. Similar challenges arise in large-scale in-  thus adapt more readily to noise. In addition, label noise disrupts the
+formation systems that rely on crowdsourcing, where labels provided         hierarchical feature extraction process of CNNs, particularly in early
+by non-expert annotators remain noisy even after aggregation; recent        layers, which can propagate errors to subsequent layers, compounding
+work shows that explicit label-noise modelling and correction are cru-      the negative eÔ¨Äects [9]. To address the issue of noisy labels, numer-
+cial to maintain data quality and downstream model accuracy in such         ous classical and reÔ¨Åned strategies have been developed in recent years.
+settings [3,4]. These label inaccuracies disrupt the learning process, of-  For instance, loss-based noisy sample detection methods use sample loss
+ten causing models to memorize erroneous information during train-          to distinguish noisy data [10]; adversarial training methods introduce
+ing and leading to overÔ¨Åtting [5]. Consequently, model classiÔ¨Åcation        adversarial samples to enhance model robustness [11]; and robust loss
+accuracy decreases, and generalization performance signiÔ¨Åcantly suf-        functions [12,13] are widely adopted to reduce sensitivity to outlier la-
+                                                                            bels. Although these methods are eÔ¨Äective in handling certain levels
+
+  ‚àó Corresponding authors.
+     E-mail addresses: 3241903005@stu.cuit.edu.cn (J. Yang), liuliu408@163.com, lwq@cuit.edu.cn (Q. Liu), caoxuemei.qpz@gmail.com (X. Cao), lifei@cuit.edu.cn
+
+(F. Li), yangxin@swufe.edu.cn (X. Yang).
+
+https://doi.org/10.1016/j.knosys.2026.115754
+Received 9 December 2024; Received in revised form 2 March 2026; Accepted 7 March 2026
+Available online 14 March 2026
+0950-7051/¬© 2026 Elsevier B.V. All rights are reserved, including those for text and data mining, AI training, and similar technologies.
+J. Yang et al.                                                                 Knowledge-Based Systems 341 (2026) 115754
+
+of noise, they often require manual adjustment or rely on prior assump-        improve the robustness of GBC-based methods in noisy environments.
+tions about noise distribution. This dependency limits their eÔ¨Äectiveness      G-GBC enhances multi-granularity processing by incorporating proba-
+when facing complex noise distributions or high-noise environments,            bilistic soft assignments from GMM, which allow for dynamic purity-
+limiting their applicability in large-scale datasets or extreme noise sce-     weighted adjustments and better preservation of data structures in noisy
+narios.                                                                        settings. By dynamically adjusting GB granularity and leveraging purity-
+                                                                               weighted assignments, the proposed approach mitigates the impact of
+    Despite the progress made, notable research gaps remain. First, many       label noise while preserving critical data structures. The integration of
+approaches rely on assumptions or estimations about noise distribution         this method into CNNs not only improves performance on high-noise
+to set appropriate parameters, which can be particularly challenging in        datasets but also provides enhanced interpretability through visualizing
+real-world datasets where noise arises from complex and unpredictable          the evolution of GB structures during training. These contributions pro-
+sources [14]. For instance, some methods assume a Ô¨Åxed proportion              vide a practical approach to improving robustness and interpretability
+of noisy labels or require an estimate of noise rates, which may not           in deep learning models. The main contributions of this paper are as
+hold in varied or dynamic environments [15]. These assumptions limit           follows:
+the generalizability of such methods in diverse datasets with heteroge-
+neous noise types and levels [16]. Second, most existing methods are            1. We present a novel method to address the challenges associated
+computationally intensive, hindering their scalability to large datasets,            with noisy labels. The proposed method leverages the adaptive clus-
+particularly within the high-dimensional feature spaces of deep learn-               tering capability of GBs to mitigate the adverse eÔ¨Äects of misla-
+ing. For example, methods such as label smoothing or sample reweight-                beled data. By dynamically adjusting the GB formation process and
+ing often require additional computational resources for each epoch,                 incorporating noise-tolerant mechanisms, the proposed method ef-
+hindering their application in real-time or resource-constrained settings            fectively reduces the impact of label noise, enhancing classiÔ¨Åcation
+[17,18]. As the size and complexity of deep learning applications con-               accuracy and robustness in high-noise environments.
+tinue to grow, the demand for methods that can maintain both accuracy
+and computational eÔ¨Éciency becomes increasingly critical. Lastly, ex-           2. The proposed adaptive Gaussian mixture-based GBC (G-GBC)
+isting methods primarily focus on adjusting loss functions or prescreen-             method uses a Gaussian mixture model (GMM) with Mahalanobis
+ing samples without adaptively balancing noise and useful information                distance optimization to accurately capture data distributions. By
+from a multi-granular perspective [19]. Noise-robust learning strategies             dynamically adjusting the granularity and weight of GBs, the pro-
+are often designed almost exclusively with predictive performance in                 posed method eÔ¨Äectively mitigates the impact of label noise. This
+mind and oÔ¨Äer limited interpretability regarding how models behave                   design enhances the noise resilience of the representation, improv-
+under conÔ¨Çicting or corrupted labels. However, in high-impact or reg-                ing clustering performance and feature extraction accuracy on high-
+ulated applications, interpretability is a key requirement for deploying             noise datasets.
+noise-robust models, since stakeholders need to understand and scruti-
+nize model behaviour under noisy supervision in order to establish trust        3. The G-GBC method integrates into a CNN framework, enhancing
+and ensure responsible use.                                                          both robustness and interpretability. This integration leverages the
+                                                                                     noise-resilient properties of GBs alongside the powerful feature ex-
+    Against this background, granular-ball computing (GBC) introduces                traction capabilities of CNNs, considerably improving performance
+an innovative multi-granularity processing mechanism that is promising               on noisy datasets. Furthermore, the dynamic visualization of GB
+for both robustness and interpretability [20]. Its theoretical foundation            evolution elucidates the model‚Äôs adaptive mechanisms, enhancing
+can be traced to information granulation theories such as fuzzy sets and             transparency and interpretability during the training process.
+rough sets [21], which structure data hierarchically for graded informa-
+tion processing. However, these theories are generally applied to simpler      2. Related work
+structures. GBC employs granular-ball (GB) of varying granularity to
+achieve multilevel data segmentation, enabling the model to make clas-         2.1. Granular-ball computing
+siÔ¨Åcation decisions across multiple granularity levels [22]. Unlike tradi-
+tional methods, GBC dynamically adjusts the granularity size, adaptively           A previous study [25] highlighted that human cognition prioritizes
+extracting information at diÔ¨Äerent levels based on data distribution.          the recognition of ‚Äúbroad‚Äù contour information in images, introducing
+This multilayered processing capability allows the model to disregard          the concept of ‚Äúglobal precedence.‚Äù This perspective diÔ¨Äers from most
+noise at coarser granularity levels while capturing valuable informa-          AI algorithms that rely on Ô¨Åne-grained data points. Building on the abil-
+tion at Ô¨Åner levels, thereby achieving robust and stable performance on        ity of granular computing to partition data and knowledge spaces, Wang
+noisy datasets [23]. However, existing GBC-based methods, such as the          [26] proposed multi-granular cognitive computing, while Xia et al. [20]
+Granular-Ball Support Vector Machine (GBSVM) [24], primarily focus             introduced the idea of using hyperspheres to represent ‚Äúgrains,‚Äù lead-
+on enhancing the eÔ¨Éciency of traditional classiÔ¨Åers by replacing Ô¨Åne-          ing to the development of GBC. Further advances, such as the GBSVM
+grained samples with GBs. Unfortunately, these methods often rely on           [24], demonstrated that GBC can enhance eÔ¨Éciency and robustness by
+rigid clustering techniques, such as the K-means method. This reliance         replacing the Ô¨Ånest-grained samples with GBs.
+limits their ability to handle multimodal or irregularly shaped data dis-
+tributions, as the K-means method assumes spherical clusters and equal             GBC extends this concept by adapting data representation into multi-
+variances, leading to suboptimal granularity adaptation in complex,            granularity GBs, which serve as multi-scale, adaptive units that enclose
+high-dimensional, noisy environments. Furthermore, these methods are           portions of the sample space. Unlike traditional Ô¨Åne-grained methods
+typically designed for shallow machine learning paradigms and lack             that rely on individual data points or small clusters, GBC leverages
+seamless integration with deep learning architectures, such as CNNs,           larger, coarser GBs to capture the essential structure of the data while
+resulting in limited Ô¨Çexibility for noise probabilistic modeling and in-       Ô¨Åltering out noise. This allows for more eÔ¨Écient data processing and
+suÔ¨Écient empirical gains in classiÔ¨Åcation accuracy under severe label          enhanced robustness, as GBC can focus on signiÔ¨Åcant patterns at vari-
+noise.                                                                         ous levels granularity, rather than being disrupted by minute variations
+                                                                               in noisy datasets [27].
+    To address these limitations and Ô¨Åll the identiÔ¨Åed research gaps,
+this study introduces Gaussian Mixture-Based granular-ball computing               Fig. 1 illustrates how GBC clusters data points into initial GBs using
+(G-GBC) method that integrates GBC with Gaussian Mixture Models                the K-means clustering method. Fig. 1(a) shows the original data point
+(GMM) optimized by Mahalanobis distance. This provides a new ap-               distribution, where points are scattered with varying densities and some
+proach that leverages the robustness of granular balls and the soft as-        label noise. Fig. 1(b) depicts the initial GBs created by GBC, where data
+signment mechanism of GMM from a multi-granularity perspective to              points with similar characteristics are enclosed within larger balls, ef-
+                                                                               fectively grouping points based on broader patterns rather than on iso-
+
+                                                                            2
+J. Yang et al.                                                                                                     Knowledge-Based Systems 341 (2026) 115754
+
+                                                                Fig. 1. Original granular-ball generation method.
+
+lated Ô¨Åne-grained features. This approach inherently reduces sensitivity                         granular classiÔ¨Åers using multi-granularity levels to enhance classiÔ¨Åca-
+                                                                                                 tion performance, while Slowin¬¥ ski [30] combined granular computing
+to noise by disregarding minor variations within each ball while captur-                         with fuzzy logic for more Ô¨Çexible data processing. Similarly, Chen et al.
+                                                                                                 [31] proposed a dynamic rough-set-based approach that further demon-
+ing the core structure of the data.                                                              strated the adaptability of GB computing in complex systems. Qian et
+                                                                                                 al. [32] presented a novel granular ball computing-based fuzzy rough
+    Given a dataset Ì†µÌ∞∑ = {(Ì†µÌ±•Ì†µÌ±ñ, Ì†µÌ±¶Ì†µÌ±ñ) ‚à£ Ì†µÌ±ñ = 1, 2, ‚Ä¶ , Ì†µÌ±õ}, where (Ì†µÌ±•Ì†µÌ±ñ, Ì†µÌ±¶Ì†µÌ±ñ) denotes          set approach for feature selection in label distribution learning. Building
+the Ì†µÌ±ñth instance with Ì†µÌ±•Ì†µÌ±ñ ‚àà ‚ÑùÌ†µÌ±ë as the Ì†µÌ±ë-dimensional feature vector and                       on these foundations, our study aims to extend the GBC framework to
+Ì†µÌ±¶Ì†µÌ±ñ as the corresponding label and Ì†µÌ±õ is the total number of instances                          develop robust deep CNN models capable of handling label noise more
+in Ì†µÌ∞∑, each GB is deÔ¨Åned by its center Ì†µÌ±êÌ†µÌ±ó ‚àà ‚ÑùÌ†µÌ±ë and radius Ì†µÌ±üÌ†µÌ±ó > 0. A GB                      eÔ¨Äectively.
+
+represents a coarse-grained, hyperspherical region in the feature space,                         2.2. Learning with noisy labels
+formally denoted as Ì†µÌ±îÌ†µÌ±èÌ†µÌ±ó = {Ì†µÌ±• ‚àà ‚ÑùÌ†µÌ±ë ‚à£ ‚ÄñÌ†µÌ±• ‚àí Ì†µÌ±êÌ†µÌ±ó ‚Äñ2 ‚â§ Ì†µÌ±üÌ†µÌ±ó }, where ‚Äñ ‚ãÖ ‚Äñ2 is the
+Euclidean norm. The subset of data points encapsulated by the Ì†µÌ±óth GB                                The handling of noisy labels has garnered substantial attention in
+                                                                                                 recent years, with researchers proposing various eÔ¨Äective strategies to
+is Ì†µÌ∞∑Ì†µÌ±ó = {(Ì†µÌ±•Ì†µÌ±ñ, Ì†µÌ±¶Ì†µÌ±ñ) ‚àà Ì†µÌ∞∑ ‚à£ ‚ÄñÌ†µÌ±•Ì†µÌ±ñ ‚àí Ì†µÌ±êÌ†µÌ±ó ‚Äñ2 ‚â§ Ì†µÌ±üÌ†µÌ±ó }, where Ì†µÌ∞∑Ì†µÌ±ó ‚äÜ Ì†µÌ∞∑. The center and ra-     mitigate the disruptive eÔ¨Äects of noise on deep learning models, thereby
+                                                                                                 enhancing model robustness and accuracy. Based on the characteris-
+dius are deÔ¨Åned as follows:                                                                      tics of these approaches, we classify them into two main categories:
+                                                                                                 methods focused on label reÔ¨Ånement and robust optimization, which
+Ì†µÌ±êÌ†µÌ±ó  =    1        ‚àë           Ì†µÌ±•,                                 (1)                          directly address noisy labels through correction, robust loss designs, or
+         |Ì†µÌ∞∑Ì†µÌ±ó |                                                                                 meta-learning techniques; and methods centered on training strategies
+                  (Ì†µÌ±•,Ì†µÌ±¶)‚ààÌ†µÌ∞∑Ì†µÌ±ó                                                                   and regularization, which leverage training dynamics and regularization
+                                                                                                 techniques to prevent overÔ¨Åtting to noise.
+Ì†µÌ±üÌ†µÌ±ó  =    1        ‚àë                                               (2)
+         |Ì†µÌ∞∑Ì†µÌ±ó |           ‚ÄñÌ†µÌ±• ‚àí Ì†µÌ±êÌ†µÌ±ó ‚Äñ2,                                                        2.2.1. Label reÔ¨Ånement and robust optimization methods
+                                                                                                     These methods focus on improving label quality and optimizing the
+                  (Ì†µÌ±•,Ì†µÌ±¶)‚ààÌ†µÌ∞∑Ì†µÌ±ó
+                                                                                                 learning process to minimize the impact of noise. Lee et al. [33] pro-
+where |Ì†µÌ∞∑Ì†µÌ±ó | denotes the number of points in Ì†µÌ∞∑Ì†µÌ±ó . GBC emphasizes adap-                        posed CleanNet, a transfer learning framework for scalable image clas-
+tive generation methods to form these balls eÔ¨Éciently and robustly, of-                          siÔ¨Åer training under label noise, enabling eÔ¨Écient correction through
+ten starting from the entire dataset as a coarse initial ball and iteratively                    prototype-based veriÔ¨Åcation. Huang et al. [34] introduced contrastive
+splitting based on quality metrics until a desired granularity is achieved.                      label correction, which enhances noisy label learning by leveraging con-
+                                                                                                 trastive learning to reÔ¨Åne labels based on feature similarities. Tu et al.
+    The quality of a GB is measured by its purity, which reÔ¨Çects the label                       [35] presented a decoupled meta label puriÔ¨Åer, separating label puriÔ¨Å-
+consistency within the ball:                                                                     cation from model training to eÔ¨Äectively learn from noisy labels while
+                                                                                                 avoiding interference. Liu and Guo [36] introduced peer loss functions,
+         ||{(Ì†µÌ±•, Ì†µÌ±¶) ‚àà Ì†µÌ∞∑Ì†µÌ±ó ‚à£ Ì†µÌ±¶ = Ì†µÌ±ôÌ†µÌ±ó }||                                                      enabling eÔ¨Äective learning from noisy labels without requiring prior
+                                                                                                 knowledge of noise rates by comparing predictions across samples. Wei
+Ì†µÌ±ùÌ†µÌ±ó = |              |Ì†µÌ∞∑Ì†µÌ±ó |                    |,                 (3)                          et al. [37] proposed co-regularization within a joint training framework,
+                                                                                                 which inherently provides robustness through agreement-based losses.
+where Ì†µÌ±ôÌ†µÌ±ó is the most frequent label within Ì†µÌ∞∑Ì†µÌ±ó , determined as:
+
+Ì†µÌ±ôÌ†µÌ±ó  =  arg max |{(Ì†µÌ±•, Ì†µÌ±¶)          ‚àà  Ì†µÌ∞∑Ì†µÌ±ó  ‚à£  Ì†µÌ±¶  =  Ì†µÌ±ô}||,      (4)
+          Ì†µÌ±ô‚ààÌ†µÌ∞øÌ†µÌ±ó  |                                      |
+                   |
+
+and Ì†µÌ∞øÌ†µÌ±ó is the set of unique labels in Ì†µÌ∞∑Ì†µÌ±ó . Purity thresholds guide ball re-
+Ô¨Ånement, with low-purity balls split to improve robustness against noise
+and outliers, as the majority voting within balls mitigates the impact of
+anomalous samples. Since the label of a GB is determined by the ma-
+jority of its samples, this method provides robustness against outliers
+[28].
+
+    GBC has shown its versatility in applications such as clustering,
+classiÔ¨Åcation, and rough set theory. Al-Hmouz et al. [29] introduced
+
+                                                                                              3
+J. Yang et al.                                                                                                                                        Knowledge-Based Systems 341 (2026) 115754
+
+2.2.2. Training strategies and regularization methods                              where erroneous points can rigidly inÔ¨Çuence cluster boundaries. By con-
+    These methods stabilize the training process and exploit dynamics              trast, GMM is a probabilistic density model that better accommodates
+                                                                                   multimodal distributions and clusters of varying shapes. When deal-
+to avoid memorizing noisy labels. Tanaka et al. [38] proposed a joint              ing with noisy data and high-dimensional datasets, GMM demonstrates
+optimization framework for learning with noisy labels, combining la-               greater Ô¨Çexibility and robustness [48].
+bel correction with regularization to improve robustness. Liu et al. [39]
+proposed early-learning regularization, which prevents the memoriza-                   Taking K-means as an example, the objective of K-means is to par-
+tion of noisy labels by intervening in the initial training phases. Li et al.      tition the data points into Ì†µÌ∞æ clusters, minimizing the sum of Euclidean
+[40] introduced DivideMix, which treats noisy label learning as semi-              distances from each data point to its respective cluster center. SpeciÔ¨Å-
+supervised by dividing data into clean and noisy sets for adapted train-           cally, K-means optimizes the objective function:
+ing. Bai et al. [41] investigated and improved early stopping strategies
+for learning with noisy labels, optimizing termination points to maxi-                         Ì†µÌ∞æ
+mize robustness.
+                                                                                        ‚àë                ‚àë         ‚ÄñÌ†µÌ±•     Ì†µÌºáÌ†µÌ±ñ     2  ,
+                                                                                   Ì†µÌ∞Ω =
+                                                                                                                        ‚àí         ‚Äñ                                                             (5)
+
+                                                                                            Ì†µÌ±ñ=1 (Ì†µÌ±•,Ì†µÌ±¶)‚ààÌ†µÌ∞∂Ì†µÌ±ñ
+
+2.2.3. Granular ball computing methods for noisy label learning                    where Ì†µÌ∞Ω represents the total intra-cluster variance. In this formula, Ì†µÌ∞æ is
+    GBC has emerged as a promising paradigm for addressing noisy la-
+                                                                                   the number of clusters, predeÔ¨Åned by the user, and Ì†µÌ∞∂Ì†µÌ±ñ denotes the set of
+bels, leveraging its inherent robustness, scalability, and adaptive granu-         data points assigned to the Ì†µÌ±ñth cluster (Ì†µÌ∞∂Ì†µÌ±ñ ‚äÜ Ì†µÌ∞∑, where Ì†µÌ∞∑ is the dataset).
+larity to mitigate the eÔ¨Äects of noise in classiÔ¨Åcation tasks. Xia et al. [42]     Each data point (Ì†µÌ±•, Ì†µÌ±¶) ‚àà Ì†µÌ∞∑ is represented as a feature vector with its
+proposed GB sampling (GBS), which adaptively covers the data space
+with hyperballs to reduce data size while Ô¨Åltering noisy labels, achiev-           label, and Ì†µÌºáÌ†µÌ±ñ is the centroid (mean) of the Ì†µÌ±ñth cluster, computed as Ì†µÌºáÌ†µÌ±ñ =
+ing higher accuracy than random sampling in noisy and imbalanced                    1
+classiÔ¨Åcation. Qian et al. [43] introduced a granularity tuning approach           |Ì†µÌ∞∂Ì†µÌ±ñ |  ‚àë                Ì†µÌ±•,   with    |Ì†µÌ∞∂Ì†µÌ±ñ|         being  the  number   of  data  points  in  the  cluster.
+for generalized GBs, incorporating weight factors and de-overlapping to
+remove heterogeneous overlaps, thereby enhancing classiÔ¨Åcation per-                            (Ì†µÌ±•,Ì†µÌ±¶)‚ààÌ†µÌ∞∂Ì†µÌ±ñ
+formance on diverse datasets. Dai et al. [44] developed a GBC module
+for CNNs that splits features into GB samples by sharing single labels,            The term ‚ÄñÌ†µÌ±• ‚àí Ì†µÌºáÌ†µÌ±ñ‚Äñ2 represents the squared Euclidean distance between
+modifying gradients, and using experience replay to improve robustness
+without requiring additional data cleaning.                                        the data point Ì†µÌ±• and the cluster centroid Ì†µÌºáÌ†µÌ±ñ, serving as a measure of
+
+3. Base model and deÔ¨Ånition                                                        similarity within the cluster.
+
+    Clustering is a fundamental step in GB generation as it determines                      K-means assumes that each cluster is spherical and that clusters are of
+how data points are grouped to form compact and meaningful repre-
+sentations. EÔ¨Äective clustering methods can directly impact the qual-              similar size. These assumptions often result in suboptimal performance
+ity of GBs, inÔ¨Çuencing the model‚Äôs ability to handle complex and noisy
+datasets. Given the variety of clustering algorithms available, selecting          when the data is non-spherical or has varying cluster scales. Addition-
+a suitable approach becomes critical, especially when considering the
+trade-oÔ¨Ä between computational eÔ¨Éciency and the ability to capture                 ally, K-means does not account for the covariance structure of the data,
+intricate data distributions.
+                                                                                   which limits its eÔ¨Äectiveness when handling datasets with signiÔ¨Åcant
+    This section compares K-means and GMM for GB generation, high-
+lighting their strengths and limitations in handling complex and noisy             distributional variation.
+datasets.
+                                                                                            In contrast, the GMM is a probabilistic density model well-suited for
+3.1. Clustering using K-means
+                                                                                   multimodal data distributions and capable of Ô¨Çexibly representing clus-
+
+                                                                                   ters with varying shapes. By utilizing means and covariance matrices
+
+                                                                                   to deÔ¨Åne the shape of each cluster, GMM eÔ¨Äectively captures diverse
+
+                                                                                   data characteristics, demonstrating enhanced adaptability and robust-
+
+                                                                                   ness, particularly in high-dimensional and noisy datasets.
+
+                                                                                            As illustrated in Fig. 2, GMM is better suited for data with multimodal
+
+                                                                                   distributions and clusters of varying shapes. It oÔ¨Äers greater adaptability
+
+                                                                                   and robustness, especially when handling high-dimensional and noisy
+
+                                                                                   datasets.
+
+                                                                                   3.2. Clustering using GMM
+
+                                                                                       GMM is a commonly used clustering method suitable for multimodal
+                                                                                   data distributions. Suppose a dataset Ì†µÌ∞∑ = {Ì†µÌ±•1, Ì†µÌ±•2, ‚Ä¶ , Ì†µÌ±•Ì†µÌ±õ} can be repre-
+                                                                                   sented by Ì†µÌ∞æ Gaussian components; the GMM model is deÔ¨Åned as:
+
+    In GB generation, selecting an appropriate clustering method is cru-                           Ì†µÌ∞æ
+cial. Hard clustering methods, such as K-means, DBSCAN, and spectral
+clustering, assign data points deterministically to clusters, which can                            ‚àë
+limit their eÔ¨Äectiveness in complex, noisy environments. These meth-               Ì†µÌ±ù(Ì†µÌ±•) = Ì†µÌºãÌ†µÌ±òÓà∫ (Ì†µÌ±•|Ì†µÌºáÌ†µÌ±ò, Œ£Ì†µÌ±ò),
+ods are widely used for data partitioning owing to their eÔ¨Éciency and                                                                                                                           (6)
+simplicity in certain scenarios. However, they share common limitations
+when handling nonspherical, multimodal, or noisy data distributions.                               Ì†µÌ±ò=1
+The traditional K-means clustering method is widely used for various
+data partitioning tasks because of its eÔ¨Éciency and simplicity. How-               where           Ì†µÌºãÌ†µÌ±ò  is  the   weight            of   the  Ì†µÌ±òth  Gaussian  component,  with  ‚àëÌ†µÌ∞æ      Ì†µÌºãÌ†µÌ±ò  =  1;
+ever, the K-means clustering method has certain limitations when han-
+dling complex datasets, particularly in cases involving nonspherical and                                                                                                            Ì†µÌ±ò=1
+multimodal data distributions [45]. Similarly, DBSCAN, a density-based
+method, relies on parameters such as minPts and eps to deÔ¨Åne clus-                 Ì†µÌºáÌ†µÌ±ò and Œ£Ì†µÌ±ò are the mean vector and covariance matrix of the Ì†µÌ±òth Gaussian
+ter density, which can lead to instability in high-dimensional or sparse
+batch data, often classifying points as noise or failing to form clusters          component, respectively.
+in small batches [46]. Spectral clustering, which constructs a similarity
+graph and performs eigenvalue decomposition, incurs high computa-                  1. Expectation step (E-step). The E-step aims to estimate the probabil-
+tional complexity and is better suited for large, well-structured datasets         ity of each data point Ì†µÌ±•Ì†µÌ±ñ ‚àà Ì†µÌ∞∑ belonging to each Gaussian component
+than for dynamic per-batch processing in noisy, high-dimensional fea-              Ì†µÌ±ò ‚àà {1, ‚Ä¶ , Ì†µÌ∞æ}, enabling a ‚Äúsoft‚Äù assignment of data points to clusters.
+tures [47]. Furthermore, these hard clustering approaches lack prob-               In this step, the posterior probability Ì†µÌªæÌ†µÌ±ñÌ†µÌ±ò of each data point Ì†µÌ±•Ì†µÌ±ñ belong-
+abilistic uncertainty modeling, making them sensitive to label noise,              ing to the Ì†µÌ±òth component is computed. This probability represents the
+
+                                                                                   likelihood that a given data point is assigned to each Gaussian compo-
+                                                                                   nent, taking into account the mixing coeÔ¨Écient Ì†µÌºãÌ†µÌ±ò of the Ì†µÌ±òth Gaussian
+                                                                                   component, which reÔ¨Çects the weight of that component in the mixture
+                                                                                   model. Additionally, Óà∫ (Ì†µÌ±•Ì†µÌ±ñ|Ì†µÌºáÌ†µÌ±ò, Œ£Ì†µÌ±ò) is the probability density function of
+                                                                                   the Ì†µÌ±òth Gaussian, where Ì†µÌºáÌ†µÌ±ò is the mean and Œ£Ì†µÌ±ò is the covariance matrix
+                                                                                   of the component. The formula for Ì†µÌªæÌ†µÌ±ñÌ†µÌ±ò is given by:
+
+                                                                                   Ì†µÌªæÌ†µÌ±ñÌ†µÌ±ò   =      Ì†µÌºãÌ†µÌ±òÓà∫ (Ì†µÌ±•Ì†µÌ±ñ|Ì†µÌºáÌ†µÌ±ò, Œ£Ì†µÌ±ò) .                                                                     (7)
+                                                                                               ‚àëÌ†µÌ∞æ
+                                                                                                             Ì†µÌºãÌ†µÌ±ó  Óà∫  (Ì†µÌ±•Ì†µÌ±ñ|Ì†µÌºáÌ†µÌ±ó  ,  Œ£Ì†µÌ±ó  )
+                                                                                                  Ì†µÌ±ó=1
+
+                                                                                4
+J. Yang et al.                                                                                                                 Knowledge-Based Systems 341 (2026) 115754
+
+                                                                Fig. 2. Comparison of K-means and GMM Clustering Results.
+
+2. Maximization step (M-step). The M-step updates the parameters of                   (Eqs. (7)‚Äì(10)) for probabilistic partitioning. GBs are formed from the
+
+each Gaussian component Ì†µÌ±ò ‚àà {1, ‚Ä¶ , Ì†µÌ∞æ} to maximize the likelihood of                Ô¨Åtted components for centers Ì†µÌ±êÌ†µÌ±ó = Ì†µÌºáÌ†µÌ±ó and covariances Œ£Ì†µÌ±ó , capturing ellip-
+                                                                                      soidal extents through Mahalanobis distances Ì†µÌ±ëMah = (Ì†µÌ±•Ì†µÌ±ñ ‚àí Ì†µÌ±êÌ†µÌ±ó )Ì†µÌ±á Œ£Ì†µ‚àíÌ±ó 1(Ì†µÌ±•Ì†µÌ±ñ ‚àí
+the observed data Ì†µÌ∞∑, reÔ¨Åning the cluster shapes and distributions. In this
+                                                                                      Ì†µÌ±êÌ†µÌ±ó ) to weight noisy granules with low purity (Ì†µÌ±ùÌ†µÌ±ó < Ì†µÌºÉ), preventing er-
+step, the parameters, mean Ì†µÌºáÌ†µÌ±ò, covariance Œ£Ì†µÌ±ò, and mixing coeÔ¨Écient Ì†µÌºãÌ†µÌ±ò            ror propagation. Diagonal regularization (reg=10‚àí6) ensures covariance
+are recalculated based on the posterior probabilities Ì†µÌªæÌ†µÌ±ñÌ†µÌ±ò obtained in the
+E-step. The new values for Ì†µÌºáÌ†µÌ±ò, Œ£Ì†µÌ±ò, and Ì†µÌºãÌ†µÌ±ò are computed as follows:               stability. Downstream, features augment via purity-weighted aggrega-
+
+    The mean Ì†µÌºáÌ†µÌ±ò is updated by averaging the data points weighted by                 tion of GB scores, de-emphasizing noisy granules through distance-based
+the posterior probabilities Ì†µÌªæÌ†µÌ±ñÌ†µÌ±ò, the covariance Œ£Ì†µÌ±ò is updated by taking
+                                                                                      similarities.
+the weighted outer product of the data points‚Äô deviations from the mean,
+                                                                                      The theoretical rationale for this fusion resides in its statistical prop-
+
+and the mixing coeÔ¨Écient Ì†µÌºãÌ†µÌ±ò is updated as the average posterior prob-               erties under label noise. Consider a symmetric noise model wherein each
+ability across all data points. These updates are expressed as:
+                                                                                      true label Ì†µÌ±¶Ì†µ‚àóÌ±ñ Ô¨Çips to an incorrect Ì†µÌ±¶Ì†µÌ±ñ with probability Ì†µÌºñ corresponding to
+
+         ‚àëÌ†µÌ±õ      Ì†µÌªæÌ†µÌ±ñÌ†µÌ±ò  Ì†µÌ±•Ì†µÌ±ñ                                                        the dataset noise ratio Ì†µÌ±ü. For hard purity Ì†µÌ±ùÌ†µÌ±ó , the expected value simpli-
+
+Ì†µÌºáÌ†µÌ±ò  =     Ì†µÌ±ñ=1                ,                                (8)                  Ô¨Åes to Ì†µÌ∞∏[Ì†µÌ±ùÌ†µÌ±ó ] = (1 ‚àí Ì†µÌºñ) ‚ãÖ Ì†µÌ±ùÌ†µ‚àóÌ±ó + Ì†µÌºñ ‚ãÖ (1 ‚àí Ì†µÌ±ùÌ†µ‚àóÌ±ó )‚àï(Ì†µÌ∞∂ ‚àí 1), where Ì†µÌ±ù‚àóÌ†µÌ±ó denotes the true
+                                                                 (9)
+         ‚àëÌ†µÌ±õ      Ì†µÌªæÌ†µÌ±ñÌ†µÌ±ò                                        (10)                               Ì†µÌ∞∂                                                                   Ì†µÌ±â Ì†µÌ±éÌ†µÌ±ü[Ì†µÌ±ùÌ†µÌ±ó ]  ‚âà  Ì†µÌ±ùÌ†µÌ±ó (1‚àíÌ†µÌ±ùÌ†µÌ±ó )
+                                                                                                                                                                                             |Ì†µÌ∞∑Ì†µÌ±ó |
+            Ì†µÌ±ñ=1                                                                      purity  and      is  the  number     of  classes; its          variance                                              ex-
+
+Œ£Ì†µÌ±ò   =  ‚àëÌ†µÌ±õ      Ì†µÌªæÌ†µÌ±ñÌ†µÌ±ò  (Ì†µÌ±•Ì†µÌ±ñ    ‚àí  Ì†µÌºáÌ†µÌ±ò)(Ì†µÌ±•Ì†µÌ±ñ  ‚àí Ì†µÌºáÌ†µÌ±ò)Ì†µÌ±á  ,
+
+            Ì†µÌ±ñ=1                                                                      acerbates errors in small or noisy Ì†µÌ∞∑Ì†µÌ±ó . In our purity-weighted approach,
+
+                             ‚àëÌ†µÌ±õ      Ì†µÌªæÌ†µÌ±ñÌ†µÌ±ò                                          the Mahalanobis distances during Ô¨Åtting align weights with true distri-
+
+                                Ì†µÌ±ñ=1
+
+Ì†µÌºãÌ†µÌ±ò  =  ‚àëÌ†µÌ±õ      Ì†µÌªæÌ†µÌ±ñÌ†µÌ±ò  .                                                           butions, yielding an empirical robust purity expectation:
+
+            Ì†µÌ±ñ=1
+
+         Ì†µÌ±õ
+
+    Through iterative execution of the E-step and M-step, the GMM con-                Ì†µÌ∞∏[Ì†µÌ±ùÌ†µpÌ±ó urity-weighted] ‚âà Ì†µÌ±ù‚àóÌ†µÌ±ó + (1 ‚àí Ì†µÌºñ) ‚ãÖ Bias(Ì†µÌ±ëMah, Ì†µÌ±ùÌ†µ‚àóÌ±ó ),                                   (11)
+verges, yielding the Ô¨Ånal parameters of each Gaussian component: the
+mean Ì†µÌºáÌ†µÌ±ò, covariance Œ£Ì†µÌ±ò, and mixing coeÔ¨Écient Ì†µÌºãÌ†µÌ±ò, which deÔ¨Åne the                 where Bias(‚ãÖ) ‚Üí 0 as the GMM accurately captures the true covariance
+centers, shapes, and weights of the clusters.                                         Œ£Ì†µÌ±ó via iterative reÔ¨Ånement. The variance is further diminished through
+                                                                                      distance weighting, bounded as:
+
+3.3. Adaptive granularity adjustment                                                                                   ‚àë Ì†µÌ±§2Ì†µÌ±ñÌ†µÌ±ó ‚ãÖ Ì†µÌ±ùÌ†µÌ±ó (1 ‚àí Ì†µÌ±ùÌ†µÌ±ó )
+                                                                                                                            (‚àë Ì†µÌ±§Ì†µÌ±ñÌ†µÌ±ó )2
+                                                                                      Ì†µÌ±â Ì†µÌ±éÌ†µÌ±ü[Ì†µÌ±ùpÌ†µÌ±ó urity-weighted] ‚â§                                < Ì†µÌ±â Ì†µÌ±éÌ†µÌ±ü[Ì†µÌ±ùÌ†µÌ±ó ],                     (12)
+
+    To achieve adaptive granularity in GB generation while enhancing                  since 0 ‚â§ Ì†µÌ±§Ì†µÌ±ñÌ†µÌ±ó ‚â§ 1 implies Ì†µÌ±§Ì†µ2Ì±ñÌ†µÌ±ó ‚â§ Ì†µÌ±§Ì†µÌ±ñÌ†µÌ±ó for each Ì†µÌ±ñ, Ì†µÌ±ó, yielding a strict vari-
+robustness against label noise, our method integrates the GMM‚Äôs EM                    ance reduction via weighted aggregation: Ì†µÌ±â Ì†µÌ±éÌ†µÌ±ü[Ì†µÌ±ùpÌ†µÌ±ó urity-weighted] < Ì†µÌ±â Ì†µÌ±éÌ†µÌ±ü[Ì†µÌ±ùÌ†µÌ±ó ].
+algorithm with purity-based weighting of GBs. This integration lever-                 Thus, purity-weighted adjustment stabilizes purity against majority er-
+ages the Ô¨Åtted GMM parameters to guide dynamic per-batch purity ad-                   rors. Even if erroneous labels dominate Ì†µÌ∞∑Ì†µÌ±ó , the Mahalanobis term as-
+justment, enabling robust purity assessment via model predictions as                  signs low weights to outliers (as Ì†µÌ±§Ì†µÌ±ñÌ†µÌ±ó ‚àù exp(‚àíÌ†µÌ±ëMah‚àï2)).
+pseudo-labels. In practice, this is realized through a direct Ô¨Åt process:
+GMM on batch features followed by per-cluster purity weighting, ensur-                    Intuitively, this distance-based mechanism mitigates the inÔ¨Çuence of
+ing that noisy granules are de-emphasized adaptively.
+                                                                                      noise via probabilistic weighting. In contrast to hard assignment, where
+    As deÔ¨Åned in Section 2.1, the purity Ì†µÌ±ùÌ†µÌ±ó (Eq. (3)) of a Ì†µÌ±îÌ†µÌ±èÌ†µÌ±ó with center
+Ì†µÌ±êÌ†µÌ±ó (Eq. (1)) and radius Ì†µÌ±üÌ†µÌ±ó (Eq. (2)), where the majority label Ì†µÌ±ôÌ†µÌ±ó (Eq. (4))     noisy points exert full inÔ¨Çuence and thereby sharply amplify purity vari-
+and Ì†µÌ∞∑Ì†µÌ±ó is the encapsulated subset. Here, hard purity refers to the ma-
+jority vote in Eq. (3), true purity Ì†µÌ±ùÌ†µ‚àóÌ±ó to the ideal purity in the absence          ance, distance weighting permits outliers to contribute only partially,
+of noise, and purity-weighted adjustment to the variant reÔ¨Åned below.
+In noisy settings, hard majority voting underlying Ì†µÌ±ùÌ†µÌ±ó risks ampliÔ¨Åca-               dispersing their disruptive eÔ¨Äects across clusters.
+tion when erroneous labels dominate Ì†µÌ∞∑Ì†µÌ±ó . To mitigate this, our approach
+computes weights via purity derived from pseudo-labels Ì†µÌ∞ã, yielding a                 3.3.2. Purity Ô¨Åltering
+robust weighting. In noisy settings, purity Ì†µÌ±ùÌ†µÌ±ó is computed using model                  The Ô¨Åltering process applies direct GMM Ô¨Åtting to batch features,
+predictions as pseudo-labels Ì†µÌ∞ã to avoid propagating erroneous ones.
+                                                                                      assessing per-cluster purity Ì†µÌ±ùÌ†µÌ±ó ; low-purity clusters (Ì†µÌ±ùÌ†µÌ±ó < Ì†µÌºÉ) receive Ô¨Åxed
+3.3.1. GMM-GB fusion                                                                  low weights in fusion, without recursive splitting. This ensures Ô¨Ånal
+    The fusion embeds GMM parameters into GB weighting by ap-                         weights de-emphasize noisy GBs for aggregation, Ô¨Åltering reliable con-
+                                                                                      tributions. For outliers with erroneous labels, the Mahalanobis term
+plying the EM algorithm directly to the batch, leveraging E-M steps                   yields low weights, minimizing their impact in weight formation and
+                                                                                      bounding the bias to Ì†µÌ±Ç(1‚àï|Ì†µÌ∞∑Ì†µÌ±ó |).
+
+                                                                                   5
+J. Yang et al.                                                                                                                            Knowledge-Based Systems 341 (2026) 115754
+
+Fig. 3. The framework demonstrates a multi-step pipeline for image classiÔ¨Åcation, integrating feature extraction, per-batch GB generation, weight assignment, and
+classiÔ¨Åcation. Step 1 extracts features from images using convolutional layers, adaptive pooling, and Ô¨Çattening, yielding compact feature vectors. Step 2 involves
+generating GBs by applying GMM clustering to the current batch‚Äôs feature space. Step 3 assigns weights to each GB by calculating purity scores and incorporating
+Mahalanobis distances to GB centers, scaling weights based on label purity and proximity. Step 4 performs weighted classiÔ¨Åcation using these weights to update
+feature representations and compute prediction logits via a softmax function.
+
+4. Method                                                                     4.1. Feature extraction
+
+    Traditional GB classiÔ¨Åers rely on purity judgments and k-means clus-          The core task of the feature extractor is to process input image data
+tering, using purity thresholds to determine whether to split or stop         through a deep convolutional network, producing a high-dimensional
+clustering. While eÔ¨Äective in handling simple structures, GB classiÔ¨Åers       feature vector suitable for downstream clustering tasks. Using CNN mod-
+face challenges when dealing with datasets containing a large number          els as the backbone feature extractor, the input data Ô¨Årst undergoes sev-
+of categories, as their interpretability and clustering power diminish        eral convolutional, normalization, and activation operations, allowing
+in complex feature spaces. Conversely, deep learning models optimize          the model to capture multi-scale and multi-level representations across
+parameters through loss functions to achieve high accuracy; however,          diÔ¨Äerent spatial hierarchies.
+they often lack transparency, making it diÔ¨Écult to interpret their learn-
+ing process. To address these limitations, we propose G-GBC model that            At the Ô¨Ånal stage of feature extraction, global average pooling is
+combines the interpretability of GB classiÔ¨Åers with the feature extrac-       employed to condense spatial information into a Ô¨Åxed-length vector.
+tion power of deep learning. We present a detailed description of the         Global average pooling computes the mean value of each spatial location
+proposed approach, including the overall framework and the four key           across the feature map Ì†µÌ±ã ‚àà ‚ÑùÌ†µÌ∞ª√óÌ†µÌ±ä √óÌ†µÌ±ë to yield a compressed representa-
+modules.                                                                      tion Ì†µÌ∞ü ‚àà ‚ÑùÌ†µÌ±ë . Mathematically, for channel Ì†µÌ±ò, the global average pooling
+                                                                              operation is deÔ¨Åned as:
+    The G-GBC framework integrates GBC into the CNN training pipeline
+in an end-to-end manner, with dynamic per-batch adaptation to evolv-                    1    Ì†µÌ∞ª Ì†µÌ±ä
+ing model representations. In each forward pass (per training batch),                 Ì†µÌ∞ª Ì†µÌ±ä
+features are extracted from the current batch using the model‚Äôs feature       Ì†µÌ±ìÌ†µÌ±ò =         ‚àë‚àë                                                                        (13)
+extractor. These batch features serve as input to the adaptive GB genera-                            Ì†µÌ±ãÌ†µÌ±ñÌ†µÌ±ó Ì†µÌ±ò .
+tion process, which Ô¨Åts GMM-based granular balls directly on the batch
+feature space. The resulting GB parameters (centers, covariances, and                        Ì†µÌ±ñ=1 Ì†µÌ±ó=1
+purities) are computed on-the-Ô¨Çy and used immediately for Mahalanobis
+similarities and weighted fusions within the same batch, enabling ef-             For a batch of Ì†µÌ∞µ samples, the features form Ì†µÌ∞Ö = [Ì†µÌ∞ü1, ‚Ä¶ , Ì†µÌ∞üÌ†µÌ∞µ]‚ä§ ‚àà ‚ÑùÌ†µÌ∞µ√óÌ†µÌ±ë ,
+Ô¨Åcient noise-robust classiÔ¨Åcation with real-time reÔ¨Ånement. This per-         directly input to the GMM stage. This design ensures input-size invari-
+batch reÔ¨Åtting ensures that GBs dynamically adapt as the feature ex-          ance and seamless GB integration, enhancing clustering precision with
+tractor improves with training, capturing higher-quality, noise-resilient     multi-scale representations for noise-robust classiÔ¨Åcation.
+representations at each step. This integration, as shown in Fig. 3, eÔ¨Äec-
+tively combines deep learning for feature extraction and GB models for        4.2. Granular-ball generation
+classiÔ¨Åcation.
+                                                                              Building upon the GMM formulation in Section 3.2, where the mix-
+
+                                                                              ture    density  Ì†µÌ±ù(Ì†µÌ∞ü) =  ‚àëÌ†µÌ∞æ      Ì†µÌºãÌ†µÌ±ò  Óà∫  (Ì†µÌ∞ü  |Ì†µÌºáÌ†µÌ±ò  ,  Œ£Ì†µÌ±ò  )  (Eq.  (6))  enables  probabilistic
+
+                                                                                                            Ì†µÌ±ò=1
+
+                                                                              clustering via posterior responsibilities Ì†µÌªæÌ†µÌ±ñÌ†µÌ±ò (Eq. (7)), our GB genera-
+
+                                                                              tion leverages these parameters to manage uncertainty in noisy feature
+
+                                                                           6
+J. Yang et al.                                                                                                                                   Knowledge-Based Systems 341 (2026) 115754
+
+spaces. This approach iteratively reÔ¨Ånes cluster parameters, including                         4.3. Weight assignment
+means Ì†µÌºáÌ†µÌ±ò, covariances Œ£Ì†µÌ±ò, and weights Ì†µÌºãÌ†µÌ±ò updated via Eqs. (8)‚Äì(10),
+through EM. It thereby promotes adaptive granularity that isolates noise                             While GMM-based clustering in the GB generation layer provides
+while preserving structural integrity, as elaborated in the purity-guided
+fusion of Section 3.3. Purity Ì†µÌ±ùÌ†µÌ±ó (Eq. (3)) is computed using pseudo-labels                   an eÔ¨Äective initial partitioning of the feature space, it is insuÔ¨Écient to
+Ì†µÌ∞ã derived from an independent prediction head‚Äôs argmax predictions
+(under no-gradient), avoiding propagation of noisy ground-truth labels.                        fully capture the complexity of real-world datasets, especially those with
+
+    The generation pipeline applies a direct GMM Ô¨Åt to the batch fea-                          noisy or overlapping class distributions. Over-reliance on GMM can lead
+ture set {Ì†µÌ∞üÌ†µÌ±ñ}Ì†µÌ†µÌ±ñ=Ì∞µ 1 using Ì†µÌ∞æ components, yielding cluster assignments Ì†µÌ∞ô via
+hard predict. Each cluster is then assessed for purity Ì†µÌ±ùÌ†µÌ±ó ; low-purity clus-                 to simplistic or imprecise GBs that fail to represent the underlying data
+ters receive reduced weights in fusion, without recursive splitting. Ter-
+minal clusters yield GB parameters: center Ì†µÌ±êÌ†µÌ±ó = Ì†µÌºáÌ†µÌ±ó and covariance Ì†µÌ∫∫Ì†µÌ±ó .                   structure. To address this, the weight assignment layer combines purity
+This batch-level strategy, detailed in Algorithm 1, ensures ellipsoidal
+GBs that adapt to local batch geometry, with diagonal regularization                           and the Mahalanobis distance to determine the eÔ¨Äective contribution of
+(reg ‚ãÖ Ì†µÌ∞º, reg = 10‚àí6) mitigating singularity in Ì†µÌ∫∫Ì†µÌ±ó .
+                                                                                               each GB for individual samples, guiding the model‚Äôs classiÔ¨Åcation de-
+Algorithm 1 GB Formation with GMM-GB Fusion (Per-Batch).
+ 1: Input: Batch features Ì†µÌ∞Ö ‚àà ‚ÑùÌ†µÌ∞µ√óÌ†µÌ±ë , pseudo-labels Ì†µÌ∞ã ‚àà {0, ‚Ä¶ , Ì†µÌ∞∂ ‚àí 1}Ì†µÌ∞µ,                  cisions. In this implementation, similarity is computed as the negative
+
+     components Ì†µÌ∞æ, purity threshold Ì†µÌºÉ                                                        Mahalanobis distance scaled by per-ball purity weights, with scores ag-
+ 2: Output: GB parameters {Ì†µÌ∞úÌ†µÌ±ò, Ì†µÌ∫∫Ì†µÌ±ò, Ì†µÌ±ùÌ†µÌ±ò}Ì†µÌ†µÌ±òÌ∞æ=1 (centers, covariances, puri-
+                                                                                               gregated via scalar mean pooling for residual fusion into the feature
+     ties)
+ 3: Fit GMM: Apply GaussianMixture on Ì†µÌ∞Ö to get means Ì†µÌΩÅ, covariances                          representation. This approach balances the internal consistency of class
+
+     Ì†µÌ∫∫, assignments Ì†µÌ∞ô = predict(Ì†µÌ∞Ö);                                                         distributions within each GB with a measure of spatial dispersion rela-
+ 4: For each cluster Ì†µÌ±ò = 1 to Ì†µÌ∞æ:
+ 5: Extract mask Ì†µÌ∞åÌ†µÌ±ò ‚Üê {Ì†µÌ±ñ ‚à£ Ì†µÌ∞ô[Ì†µÌ±ñ] = Ì†µÌ±ò};                                                    tive to the ball center, ensuring dynamic adjustments based on the actual
+ 6: if |Ì†µÌ∞åÌ†µÌ±ò| = 0 then;
+ 7: Ì†µÌ±ùÌ†µÌ±ò ‚Üê 0.1; continue;                                                                      data distribution and improving robustness.
+ 8: end if
+ 9: Compute Ì†µÌ±ùÌ†µÌ±ò ‚Üê majority purity of Ì†µÌ∞ã[Ì†µÌ∞åÌ†µÌ±ò] (Eq. (3));                                            The primary factor inÔ¨Çuencing a GB‚Äôs weight is its purity, which
+10: Set Ì†µÌ±ùÌ†µÌ±ò ‚Üê Ì†µÌ±ùÌ†µÌ±ò if Ì†µÌ±ùÌ†µÌ±ò ‚â• Ì†µÌºÉ else 0.1;
+11: Ì†µÌ∞úÌ†µÌ±ò ‚Üê Ì†µÌΩÅÌ†µÌ±ò, Ì†µÌ∫∫Ì†µÌ±ò ‚Üê Ì†µÌ∫∫Ì†µÌ±ò                                                                   measures the proportion of samples belonging to the dominant
+12: Return: Set of GBs {Ì†µÌ∞úÌ†µÌ±ò, Ì†µÌ∫∫Ì†µÌ±ò, Ì†µÌ±ùÌ†µÌ±ò}Ì†µÌ†µÌ±òÌ∞æ=1
+                                                                                               class:
+    To verify the logical rigor of this generation process, consider its
+alignment with the theoretical bounds derived in Section 3.3. Under                            Ì†µÌ±ÉÌ†µÌ±ò  =  Ì†µÌ±õÌ†µmÌ±ò ax ,                               (14)
+symmetric label noise, the per-batch GMM Ô¨Åt approximates the true pu-                                   |Ì†µÌ∞∑Ì†µÌ±ò|
+rity Ì†µÌ±ùÌ†µ‚àóÌ±ó with reduced bias and strictly lower variance, where the expecta-
+tion simpliÔ¨Åes to Ì†µÌ∞∏[Ì†µÌ±ùpÌ†µÌ±ó urity-weighted] ‚âà Ì†µÌ±ùÌ†µ‚àóÌ±ó (Eq. (11)) as EM iterations reÔ¨Åne           where Ì†µÌ±õmÌ†µÌ±ò ax represents the number of samples from the most frequent
+the covariance Œ£Ì†µÌ±ó , and Ì†µÌ±â Ì†µÌ±éÌ†µÌ±ü[Ì†µÌ±ùpÌ†µÌ±ó urity-weighted] < Ì†µÌ±â Ì†µÌ±éÌ†µÌ±ü[Ì†µÌ±ùÌ†µÌ±ó ] via distance-based     class in Ì†µÌ∞∑Ì†µÌ±ò (as deÔ¨Åned in Eq. (3)), and |Ì†µÌ∞∑Ì†µÌ±ò| denotes the total number
+weighting, as shown in Eqs. (11)‚Äì(12). This variance reduction arises
+because the Mahalanobis distances minimize uncertainty during param-                           of samples in the Ì†µÌ±òth GB. Higher purity indicates stronger internal con-
+eter estimation. The conditional entropy of the assignments satisÔ¨Åes
+0 ‚â§ Ì†µÌ∞ª(Ì†µÌ∞ô|Ì†µÌ∞üÌ†µÌ±ñ) ‚â§ log Ì†µÌ∞æ. The entropy of assignments Ì†µÌ∞ª(Ì†µÌ∞ô) is non-negative                    sistency, making the GB more reliable for classiÔ¨Åcation. For low-purity
+and no less than the zero entropy of hard assignments, guaranteed by
+the concavity of entropy; EM drives it toward zero via likelihood max-                         clusters (Ì†µÌ±ÉÌ†µÌ±ò < Ì†µÌºÉ), a Ô¨Åxed baseline weight of 0.1 is assigned to maintain
+imization, thereby lowering the uncertainty in purity estimation under                         stability without discarding contributions entirely.
+noise.
+                                                                                                     However, purity alone does not account for the spatial distribution of
+    In Fig. 4, label noise points, marked as red stars, are predominantly
+situated at the data distribution‚Äôs periphery, serving as outliers that di-                    samples within the GB. This is addressed using the squared Mahalanobis
+verge from clean clusters. Principal Component Analysis (PCA) [49]
+projects the high-dimensional features and GB covariances into a two-                          distance Ì†µÌ±ëÌ†µÌ±Ä (Ì†µÌ∞üÌ†µÌ±ñ, Ì†µÌ±êÌ†µÌ±ò), which incorporates the covariance Œ£Ì†µÌ±ò of the GB and
+dimensional space by capturing principal axes of maximum variance,                             enhances numerical stability in high-dimensional settings:
+thereby retaining key structural details for eÔ¨Äective visualization of el-
+lipses and points. The granular balls adjust dynamically per batch, with                       Ì†µÌ±ëÌ†µÌ±Ä,Ì†µÌ±ñÌ†µÌ±ò = (Ì†µÌ∞üÌ†µÌ±ñ ‚àí Ì†µÌ±êÌ†µÌ±ò)Ì†µÌ±á Œ£Ì†µ‚àíÌ±ò 1(Ì†µÌ∞üÌ†µÌ±ñ ‚àí Ì†µÌ±êÌ†µÌ±ò).  (15)
+size and shape controlled by the covariance matrix Œ£ from the GMM,
+which approximates the batch‚Äôs probabilistic distribution. In initial iter-                        In high-dimensional settings with limited samples per GB, covari-
+ations, expansive granular balls incorporate noisy points to span wider                        ance estimation can lead to singularity or ill-conditioning. To mitigate
+patterns, showcasing Œ£‚Äôs adaptive capacity. Subsequent iterations reÔ¨Åne                        these instabilities, we apply diagonal loading regularization to the co-
+boundaries to minimize noise impact, isolating outliers and enclosing                          variance matrix, deÔ¨Åned as Œ£‚Ä≤Ì†µÌ±ó = Œ£Ì†µÌ±ó + Ì†µÌºÜÌ†µÌ∞º, where Œ£Ì†µÌ±ó is the covariance
+clean clusters. This mechanism harnesses the GMM‚Äôs framework to bol-                           matrix of the jth GB, Ì†µÌºÜ is a small regularization intensity, and Ì†µÌ∞º is the
+ster model robustness in noisy label scenarios through iterative opti-                         d-dimensional identity matrix. This technique, rooted in shrinkage es-
+mization.                                                                                      timation theory, reduces estimation variance while preserving the el-
+                                                                                               lipsoidal structure of the data distribution. Theoretically, under the as-
+                                                                                               sumption of sub-Gaussian data distributions common in feature spaces,
+                                                                                               this regularization ensures the condition number of Œ£‚Ä≤Ì†µÌ±ó is bounded by
+                                                                                               Ì†µÌºÖ(Œ£‚Ä≤Ì†µÌ±ó ) ‚â§ (Ì†µÌºÜmax(Œ£Ì†µÌ±ó ) + Ì†µÌºÜ)‚àïÌ†µÌºÜ, providing asymptotic consistency and mini-
+                                                                                               mizing mean squared error in covariance estimation. Furthermore, in
+                                                                                               noisy label scenarios, this approach aligns with robust covariance esti-
+                                                                                               mation bounds, achieving Ì†µÌ±Ç(‚àöÌ†µÌ±ë‚àïÌ†µÌ±õÌ†µÌ±ó ) error rates under Ô¨Ånite samples. As
+                                                                                               illustrated in Fig. 5, the regularized squared Mahalanobis distance out-
+                                                                                               performs the Euclidean distance in capturing covariance-adapted sepa-
+                                                                                               rations.
+
+                                                                                                   Mahalanobis distance provides a more accurate measure of sample
+                                                                                               dispersion. Compact GBs yield smaller distances, while larger distances
+                                                                                               indicate greater dispersion, reducing conÔ¨Ådence in the GB‚Äôs contribution
+                                                                                               to classiÔ¨Åcation. To compute the aÔ¨Énity of a sample Ì†µÌ∞üÌ†µÌ±ñ to the Ì†µÌ±òth GB
+                                                                                               (with center Ì†µÌ±êÌ†µÌ±ò), we deÔ¨Åne the per-sample score as the negative squared
+                                                                                               distance scaled by the GB purity, followed by batch normalization across
+                                                                                               components:
+
+                                                                                               Ì†µÌ±†Ì†µÌ±ñÌ†µÌ±ò = ‚àíÌ†µÌ±ÉÌ†µÌ±ò ‚ãÖ Ì†µÌ±ëÌ†µÌ±Ä,Ì†µÌ±ñÌ†µÌ±ò,                       (16)
+
+                                                                                               where Ì†µÌ±†Ì†µÌ±ñÌ†µÌ±ò are normalized via BatchNorm1d over the Ì†µÌ∞æ components for
+                                                                                               each sample before aggregation. This yields scores in ‚ÑùÌ†µÌ∞µ√óÌ†µÌ∞æ that favor
+
+                                                                                               high-purity, low-dispersion assignments.
+                                                                                                   These per-sample scores Ì†µÌ±†Ì†µÌ±ñÌ†µÌ±ò are normalized via batch normaliza-
+
+                                                                                               tion and aggregated by computing the scalar mean across GBs for
+
+                                                                                            7
+J. Yang et al.                                                                                             Knowledge-Based Systems 341 (2026) 115754
+
+Fig. 4. Visualization of label noise points and the iterative evolution of GBs in a single batch from the CIFAR-10 dataset after the warm up epoch, during noise
+Ô¨Åltering using a GMM-based approach. Noise points are represented by red stars, while points from diÔ¨Äerent classes are indicated by dots of diÔ¨Äerent colors. PCA is
+applied to reduce the dimensionality of the features and the covariances of the granular balls for visualization. The subÔ¨Ågures illustrate the process: (a) 1st iteration,
+(b) 3rd iteration, (c) 7th iteration, and (d) last iteration. Through successive iterations, the GBs reÔ¨Åne their boundaries and weight assignments to eÔ¨Äectively capture
+clean data clusters and isolate noise points, demonstrating the model‚Äôs ability to leverage the GMM‚Äôs probabilistic framework for enhanced robustness and accuracy
+in noisy environments.
+
+each sample, fused residually into the original features with a learn-         4.4.1. Feature aggregation
+able scaling factor Ì†µÌªº. By combining purity and Mahalanobis distance
+in this manner, the weight assignment layer eÔ¨Äectively balances the                In the model, the relationship between samples and GBs is estab-
+contribution of GBs, accounting for both class composition and spatial         lished through weighted distances. Squared Mahalanobis distances Ì†µÌ±ëÌ†µÌ±ñÌ†µÌ±ò
+structure.                                                                     (Eq. (15)) are scaled by per-GB purities Ì†µÌ±ÉÌ†µÌ±ò (Eq. (14)) to yield per-sample
+                                                                               scores Ì†µÌ±†Ì†µÌ±ñÌ†µÌ±ò (Eq. (16)). The GB-enhanced scalar is obtained as the mean of
+4.4. Granular-ball classiÔ¨Åcation                                               these scores across GBs:
+
+    After computing scores for each GB in the weight assignment layer,                  1   Ì†µÌ∞æ
+the model aggregates these scores to generate a consolidated scalar re-                 Ì†µÌ∞æ
+Ô¨Ånement for each sample. In this design, the aggregation employs mean          Ì†µÌ±îÌ†µÌ±ñ  =      ‚àë              (17)
+pooling followed by a scalar residual fusion to preserve the original fea-                      Ì†µÌ±†Ì†µÌ±ñÌ†µÌ±ò ,
+ture information while enhancing it with GB-based reÔ¨Ånements. This
+fused representation serves as the input to the Ô¨Ånal classiÔ¨Åcation layer,                   Ì†µÌ±ò=1
+enabling the model to utilize GB information for accurate and robust
+predictions.                                                                   where Ì†µÌ∞æ is the total number of GBs. The aggregated feature Ì†µÃÉÌ∞üÌ†µÌ±ñ is then
+                                                                               formed via residual fusion with the original feature Ì†µÌ∞üÌ†µÌ±ñ, broadcasting the
+                                                                               scalar Ì†µÌ±îÌ†µÌ±ñ along the feature dimension:
+
+                                                                               Ì†µÃÉÌ∞üÌ†µÌ±ñ = Ì†µÌ∞üÌ†µÌ±ñ + Ì†µÌªº ‚ãÖ Ì†µÌ±îÌ†µÌ±ñ,   (18)
+
+                                                                               where Ì†µÌªº is a learnable parameter that dynamically balances the contri-
+                                                                               butions of the raw features and the GB aggregation. This process ensures
+
+                                                                            8
+J. Yang et al.                                                                      Knowledge-Based Systems 341 (2026) 115754
+
+Fig. 5. Comparison of Mahalanobis and Euclidean distances, highlighting Mahalanobis‚Äôs superior adaptability to covariance structures and its eÔ¨Äectiveness in GMM-
+based clustering.
+
+that each GB contributes to the Ô¨Ånal feature representation based on its                This structure allows the model to leverage contributions from all
+relevance to Ì†µÌ∞üÌ†µÌ±ñ.                                                                  GBs while prioritizing the most relevant ones, as determined by their
+                                                                                    scores. The speciÔ¨Åcs of this algorithm are detailed in Algorithm 2. Fur-
+    During training, the parameters Ì†µÌ±êÌ†µÌ±ò, Œ£Ì†µÌ±ò, and Ì†µÌ±ÉÌ†µÌ±ò are iteratively updated     thermore, the interpretability of the model is enhanced by analyzing the
+based on feedback from misclassiÔ¨Åcations. By dynamically adjusting the              scores Ì†µÌ±†Ì†µÌ±ñÌ†µÌ±ò and purities Ì†µÌ±ÉÌ†µÌ±ò, which reveal the contributions of each GB to
+Mahalanobis distances and scores, the model reÔ¨Ånes the GB structure to              the Ô¨Ånal prediction. For noisy or ambiguous samples, the aggregated
+better align with the data distribution. The residual connection further            features may exhibit dispersed associations across GBs, reÔ¨Çecting the
+enhances gradient Ô¨Çow, promoting stable training convergence.                       model‚Äôs robustness and its ability to handle such challenges.
+
+4.4.2. ClassiÔ¨Åcation process                                                        5. Experimental results and analysis
+    The aggregated features Ì†µÃÉÌ∞üÌ†µÌ±ñ serve as the input to the Ô¨Ånal classiÔ¨Åcation
+                                                                                    5.1. Dataset introduction
+layer. In this layer, the logits for each class are computed using a fully
+                                                                                        The CIFAR-10 [50] and CIFAR-100 [51] datasets, with 10 and 100
+connected network:                                                                  classes respectively, are standard benchmarks for image classiÔ¨Åcation,
+                                                                                    consisting of 50,000 training and 10,000 test images. Both CIFAR-10N
+logitÌ†µÌ±ê = Ì†µÃÉÌ∞üÌ†µÌ±ñ ‚ãÖ Ì†µÌ∞∞Ì†µÌ±ê + Ì†µÌ±èÌ†µÌ±ê ,                      (19)                           [52], which incorporates real-world noisy labels annotated by humans,
+                                                                                    and ANIMAL-10N [53], which focuses on 10 challenging animal classes
+where Ì†µÌ∞∞Ì†µÌ±ê and Ì†µÌ±èÌ†µÌ±ê are the weight vector and bias for class Ì†µÌ±ê, respectively.      with an 8% noise rate, serve as valuable benchmarks for assessing model
+These logits are then passed through a softmax activation to produce a              performance under real-world label noise. The Clothing1M [54] dataset
+                                                                                    comprises over 1 million clothing images across 14 categories, collected
+probability distribution:                                                           from online shopping websites with inherently noisy labels, oÔ¨Äering
+                                                                                    a large-scale real-world testbed for robust learning. The STL-10 [55]
+Ì†µÌ±É (Ì†µÌ±¶    =  Ì†µÌ±ê  ‚à£  Ì†µÌ±•Ì†µÌ±ñ) =     Ì†µÌ±ílogitÌ†µÌ±ê         ,  (20)                           dataset, with 5000 labeled training, 8000 test, and 100,000 unlabeled
+
+                             ‚àëÌ†µÌ∞∂       Ì†µÌ±ílogitÌ†µÌ±ó
+
+                                Ì†µÌ±ó=1
+
+where Ì†µÌ∞∂ is the total number of classes.
+    The predicted class Ì†µÃÇÌ±¶Ì†µÌ±ñ for sample Ì†µÌ±•Ì†µÌ±ñ is then determined as the class
+
+with the highest probability:
+
+Ì†µÃÇÌ±¶Ì†µÌ±ñ  =  arg    max   Ì†µÌ±É  (Ì†µÌ±¶  =  Ì†µÌ±ê  ‚à£  Ì†µÌ±•Ì†µÌ±ñ).     (21)
+
+                   Ì†µÌ±ê
+
+                                                                                 9
+J. Yang et al.                                                                                                               Knowledge-Based Systems 341 (2026) 115754
+
+Algorithm 2 G-GBC Training Procedure.                                                            Table 1
+                                                                                                 Comparisons of Model Performances under DiÔ¨Äerent Noise Levels. This table
+Require: Dataset Ì†µÌ∞∑ = {(Ì†µÌ±•Ì†µÌ±ñ, Ì†µÌ±¶Ì†µÌ±ñ)}Ì†µÌ†µÌ±ñ=Ì±Å 1, components Ì†µÌ∞æ, purity threshold Ì†µÌºÉ,                 presents the test accuracies of various models, including pre-trained ResNet18
+     enable epoch Ì†µÌ∞∏                                                                             (RN18) and pre-trained ResNet34 (RN34), with and without the GB layer. The
+                                                                                                 experiments were conducted on three datasets: CIFAR-10, STL-10, and Fashion-
+Ensure: Trained CNN model with integrated GBs                                                    MNIST, under diÔ¨Äerent noise levels Ì†µÌ±ü ‚àà {0%, 10%, 20%, 30%, 40%}. The best re-
+                                                                                                 sults are in bold.
+1: Initialization: Initialize CNN feature extractor, prediction head
+
+     pred_fc(‚ãÖ), Ô¨Ånal classiÔ¨Åer fc(‚ãÖ), learnable fusion Ì†µÌªº, optimizer;
+
+2: for epoch = 1 to num_epochs do                                                                Dataset        Noise Level RN18 RN18 (G-GBC) RN34 RN34 (G-GBC)
+
+3: for each batch Ì†µÌ∞µ = (Ì†µÌ±•, Ì†µÌ±¶) ‚àà Ì†µÌ∞∑ do                                                                                              96.40%
+                                                                                                                                     94.05%
+4:              Extract raw features Ì†µÌ∞Ö = {Ì†µÌ∞üÌ†µÌ±ñ}Ì†µÌ±ñ‚ààÌ†µÌ∞µ via CNN extractor;                                        0%   96.02%  95.98%  93.27%  96.28%
+                                                                                                                10%  92.73%  93.78%  91.31%  94.46%
+5:              if epoch ‚â• Ì†µÌ∞∏ then                   ‚ä≥ Enable GB integration                     CIFAR-10       20%  91.60%  92.47%  90.14%  94.04%
+                                                                                                                30%  90.17%  90.72%          92.34%
+6:              Compute pseudo-labels Ì†µÌ∞ã = arg maxÌ†µÌ±ê pred_fc(Ì†µÌ∞Ö) (no-grad);                                     40%  87.66%  89.28%          91.41%
+
+7:              Fit GMM on (Ì†µÌ∞Ö, Ì†µÌ∞ã): {Ì†µÌ±êÌ†µÌ±ò, Œ£Ì†µÌ±ò}Ì†µÌ†µÌ±òÌ∞æ=1; compute purities {Ì†µÌ±ÉÌ†µÌ±ò} via
+
+     cluster-wise max-ratio on Ì†µÌ∞ã (Eqs. (6)‚Äì(10), Algorithm 1);                                                 0%   90.50%  90.34%  93.03%  93.19%
+                                                                                                                10%  88.38%  88.56%  91.35%  92.26%
+8:              Compute squared Mahalanobis distances Ì†µÌ±ëÌ†µÌ±Ä,Ì†µÌ±ñÌ†µÌ±ò = (Ì†µÌ∞üÌ†µÌ±ñ ‚àí                                       20%  87.10%  87.88%  89.35%  92.38%
+                                                                                                                30%  85.12%  87.01%  87.91%  90.31%
+     Ì†µÌ±êÌ†µÌ±ò)Ì†µÌ±á Œ£‚àíÌ†µÌ±ò 1(Ì†µÌ∞üÌ†µÌ±ñ ‚àí Ì†µÌ±êÌ†µÌ±ò) for Ì†µÌ±ñ ‚àà Ì†µÌ∞µ, Ì†µÌ±ò = 1 ‚Ä¶ Ì†µÌ∞æ (Eq. (15));                            STL-10         40%  82.92%  83.92%  85.76%  88.69%
+
+9:              Compute weighted scores Ì†µÌ±†Ì†µÌ±ñÌ†µÌ±ò = ‚àíÌ†µÌ±ÉÌ†µÌ±ò ‚ãÖ Ì†µÌ±ëÌ†µÌ±Ä,Ì†µÌ±ñÌ†µÌ±ò (Eq. (16));
+
+10:             Aggregate  per-sample  scalar  Ì†µÌ±îÌ†µÌ±ñ  =  1   ‚àëÌ†µÌ∞æ        Ì†µÌ±†Ì†µÌ±ñÌ†µÌ±ò  (Eq.  (17));
+                                                        Ì†µÌ∞æ
+                                                               Ì†µÌ±ò=1                                             0%   95.44%  95.32%  95.57%  95.49%
+                                                                                                                10%  94.79%  94.39%  95.44%  95.43%
+11:             Residual fusion: Ì†µÃÉÌ∞üÌ†µÌ±ñ = Ì†µÌ∞üÌ†µÌ±ñ + Ì†µÌªºÌ†µÌ±îÌ†µÌ±ñ (Eq. (18));                                              20%  94.34%  94.19%  94.90%  94.95%
+                                                                                                                30%  93.60%  93.56%  94.04%  94.12%
+12:             Ì†µÃÉÌ∞Ö = {Ì†µÃÉÌ∞üÌ†µÌ±ñ}Ì†µÌ±ñ‚ààÌ†µÌ∞µ ;                                                             Fashion-MNIST  40%  93.23%  93.21%  93.58%  93.66%
+
+13:             else
+
+14:             Ì†µÃÉÌ∞Ö = Ì†µÌ∞Ö;
+
+15:             end if
+
+16:             Compute logits via Ô¨Ånal classiÔ¨Åer: {logitÌ†µÌ±ñ,Ì†µÌ±ê }Ì†µÌ†µÌ±ñ‚ààÌ∞∂ Ì†µÌ∞µ,Ì†µÌ±ê=1 = fc(Ì†µÃÉÌ∞Ö)
+
+     (Eq. (19));                                                                                 bels from online sources, we employ ImageNet-pretrained ResNet-50
+                                                                                                 (PRN50) to gauge robustness.
+17:             Compute loss Óà∏ = CE({logitÌ†µÌ±ñ,Ì†µÌ±ê }, Ì†µÌ±¶); backpropagate and update
+                                                                                                     To probe extreme regimes, we integrate G-GBC with DivideMix [40]
+     parameters;                                                                                 under symmetric noise on CIFAR-10 and CIFAR-100 (Table 9), apply-
+                                                                                                 ing uniform label Ô¨Çips at rates Ì†µÌ±ü ‚àà {20%, 50%, 80%, 90%} to highlight the
+18: end for                                                                                      hybrid‚Äôs gains in high-noise settings.
+
+19: Evaluate on validation set                                                                   5.3. Baseline methods
+
+20: end for
+
+21: return Trained model with GB integration
+
+images across 10 classes, oÔ¨Äers a semi-supervised setting for complex                                We compare against established robust learning methods for noisy
+tasks. Similarly, Fashion-MNIST [56], containing 70,000 grayscale im-                            labels, including CE, which trains DNNs directly using cross-entropy on
+ages across 10 clothing categories, serves as a lightweight yet challeng-                        noisy data; Bootstrap [59], which stabilizes learning by weighting pre-
+ing alternative to MNIST. These datasets collectively enable comprehen-                          dictions with label consistency; Forward Ì†µÃÇÌ±á [60], which corrects predic-
+sive evaluation of classiÔ¨Åcation models under diverse noise and com-                             tions via an estimated label transition matrix; Joint-Optim [38], which
+plexity conditions.                                                                              proposed a joint optimization framework for learning with noisy labels;
+                                                                                                 Mixup [74], which trains a neural network on convex combinations of
+5.2. Noise generation                                                                            pairs of examples and their labels to improve generalization beyond em-
+                                                                                                 pirical risk minimization; GCE [61], which combines MAE and CE for
+    To evaluate under controlled synthetic noise, we primarily apply                             a symmetric, robust loss; SL [62], which pairs CE with reverse cross-
+symmetric noise to various datasets and architectures, where each la-                            entropy for symmetric noise; Co-teaching+ [65], which selects small-
+bel is Ô¨Çipped to any other class with equal probability. For CIFAR-                              loss samples for cross-network training to Ô¨Ålter noise and uses disagree-
+10, STL-10, and Fashion-MNIST, we use pre-trained ResNet-18 and                                  ment to enhance generalization against label corruption; T-Revision
+ResNet-34 [57] models with noise rates Ì†µÌ±ü ‚àà {0%, 10%, 20%, 30%, 40%},                            [72], which estimates transition matrices without anchor points to re-
+as summarized in Table 1. Extending to CIFAR-10 and CIFAR-100,                                   vise labels; P-correction [70], which probabilistically corrects labels as
+we test ResNet-34 (RN34) under higher symmetric noise rates (symm)                               learnable parameters during training; Meta-Learning [71], which simu-
+Ì†µÌ±ü ‚àà {20%, 40%, 60%, 80%} (Table 2) and PreAct ResNet-18 (PRN18) un-                             lates noisy gradients via meta-learning for rapid adaptation; LossMod-
+der the same rates (Table 3), enabling cross-architecture comparisons.                           elling [69], which Ô¨Åts GMMs to loss distributions for unsupervised noise
+                                                                                                 rate estimation and correction; JoCoR [37], which jointly trains twin
+    For more challenging synthetic corruptions, we introduce instance-                           networks with co-regularization to agree on clean samples while down-
+dependent label noise (IDN) [58] on CIFAR-10 and CIFAR-100 (Ta-                                  weighting noise; PeerLoss [36], which aggregates losses across peer
+ble 4), where mislabeling probability varies by instance features, simu-                         models without noise rate assumptions; ParT [67], which models part-
+lating heterogeneous real-world errors from ambiguous samples. Addi-                             dependent noise to approximate instance-dependent noise for better
+tionally, asymmetric noise (asym) at 40% rate is applied to CIFAR-10                             transition matrix estimation; ELR+ [39], which regularizes via early
+(Table 5), featuring class-conditional Ô¨Çips to mimic structured labeling                         predictions to prevent noisy label memorization; LIMIT [63], which uses
+biases, which introduce directional corruptions and test non-uniform                             an auxiliary network to predict gradients in the Ô¨Ånal layers of a clas-
+noise handling.                                                                                  siÔ¨Åer without accessing labels, thereby reducing the memorization of
+                                                                                                 label-noise and enhancing generalization; DivideMix [40], which parti-
+    For real-world noisy datasets, no synthetic noise is added, allow-                           tions data into clean/noisy sets via GMMs and applies semi-supervised
+ing direct assessment of inherent label errors. On CIFAR-10N (Table 6),                          learning; VolMinNet [73], which minimizes prediction simplex volume
+models are evaluated across predeÔ¨Åned scenarios: Clean, Aggregate,                               for sparse, conÔ¨Ådent outputs under noise; SLN [64], which injects Gaus-
+four Random subsets (1‚Äì4), and Worst-case. The ANIMAL-10N dataset                                sian noise into labels for robustness; TMDNN [66], which uses DNNs to
+(Table 7) uses its Ô¨Åxed 8% noise rate for multi-class animal classiÔ¨Åca-                          directly estimate instance-dependent noise transitions; PES [41], which
+tion. For the large-scale Clothing1M dataset (Table 8), comprising over
+1 million images across 14 clothing categories with ‚àº38.5% noisy la-
+
+                                                                                             10
+J. Yang et al.                                                                                                                Knowledge-Based Systems 341 (2026) 115754
+
+                           Table 2
+                           Test Accuracy (%) on CIFAR-10 and CIFAR-100 with various levels of label noise injected to the training
+                           set. We compare with previous works under the same backbone RN34.The best results are in bold.
+
+                                   Dataset                     CIFAR-10 (symm)                       CIFAR-100 (symm)
+
+                                   Models (ResNet34)           20% 40% 60% 80% 20% 40% 60% 80%
+
+                                   CE(RN34)                    86.98  81.88     74.14         53.82  58.72  48.20      37.41  18.10
+                                   ERM + Early Stopping(RN34)  85.57  81.82     76.43         60.99  63.70  48.60      37.86  17.28
+                                   Bootstrap(RN34) [59]        86.23  82.23     75.12         54.12  58.27  47.66      34.68  21.64
+                                   Forward Ì†µÃÇÌ±á (RN34) [60]     87.99  83.25     74.96         54.64  39.19  31.05      19.12  8.99
+                                   GCE(RN34) [61]              89.93  87.13     82.54         64.07  66.81  61.77      53.16  29.16
+                                   SL(RN34) [62]               89.83  87.13     82.81         68.12  70.38  64.53      54.82  25.91
+                                   G-GBC(RN34)                 91.76  89.70     85.01         72.44  69.33  63.58      55.19  32.77
+
+                                   Table 3
+                                   Test Accuracy (%) of DiÔ¨Äerent Methods on CIFAR-10 and CIFAR-100 with Various Noise Levels.
+                                   We compare with previous works under the same backbone PRN18. The best results are in bold.
+
+                                   Model (PRN18)               CIFAR-10 (symm)                       CIFAR-100 (symm)
+
+                                   Noise Level                 20% 40% 60% 80% 20% 40% 60% 80%
+
+                                   CE(PRN18)                   88.51  82.73     76.26  59.25         60.57  52.48      43.20  22.96
+                                   Forward Ì†µÃÇÌ±á (PRN18) [60]    88.87  83.28     75.15  58.58         58.72  50.10      39.35  17.15
+                                   LIMIT(PRN18) [63]           89.63  85.39     78.05  58.71         58.02  57.64      37.05  20.01
+                                   SLN(PRN18) [64]             88.77  87.03     80.57  63.99         55.35  51.39      35.53  11.96
+                                   GBC [44]                    91.87  88.56     ‚Äì      ‚Äì             63.66  59.22      ‚Äì      ‚Äì
+                                   G-GBC(PRN18)                91.91  89.21     84.26  74.65         64.09  63.58      55.06  32.77
+
+                Table 4
+                Comparison with baseline methods on CIFAR-10 and CIFAR-100 datasets in Instance-Dependent Label-Noise (IDN). We compare with previous
+                works under the same backbone RN34. The best results are in bold.
+
+                                   CIFAR-10                                                   CIFAR-100
+
+                Method             IDN-10% IDN-20% IDN-30% IDN-40% IDN-50% IDN-10% IDN-20% IDN-30% IDN-40% IDN-50%
+
+                CE (baseline)      88.86          86.93      82.42    76.68     58.93         66.55         63.94      61.97         58.70  56.63
+                GCE [61]           90.82          88.89      82.90    74.18     58.93         69.18         68.35      66.35         62.09  56.68
+                Forward Ì†µÃÇÌ±á [60]   91.71          89.62      86.93    80.29     65.91         67.81         67.23      65.42         62.18  58.61
+                Co-teaching+ [65]  91.47          89.78      85.72    81.00     61.46         68.67         68.30      65.77         61.75  57.94
+                JoCoR [37]         91.42          89.30      85.54    80.87     64.11         68.48         67.87      65.73         61.64  57.75
+                PeerLoss [36]      90.89          89.21      85.70    78.51     59.08         65.64         63.83      61.64         58.30  55.41
+                TMDNN [66]         90.45          88.14      84.55    79.71     63.33         68.42         66.62      64.72         59.38  55.68
+                ParT [67]          90.32          89.33      85.33    80.59     64.58         67.33         65.33      64.56         59.73  56.80
+                MEIDTM [68]        92.17          91.38      87.68    82.63     72.17         68.19         67.21      66.06         62.34  57.69
+                G-GBC (Ours)       92.51          91.68      87.94    82.97     73.51         72.54         69.16      67.93         64.02  60.09
+
+                Table 5
+                Comparison with baseline methods in test accuracy (%) on CIFAR-10 with 40% asymmetric noise. The best results are in bold.
+
+                CIFAR-10 (40% asym)
+
+                        Cross-Entropy F-correction [60] M-correction [69] P-correction [70] Joint-Optim [38] Meta-Learning [71] G-GBC
+
+                Best 85.0                   87.2               87.4             88.5                 88.9              89.2                 89.4
+                                                               86.3                                                                         89.0
+                Last 72.3                   83.1                                88.1                 88.4              88.6
+
+                                   Table 6
+                                   The results presented are the Test Accuracy (%) on CIFAR-10N under diÔ¨Äerent noise scenarios
+                                   using RN34. The comparison involves six methods, with the best-performing results highlighted
+                                   in bold.
+
+                                   Dataset                     CIFAR-10N
+
+                                   Model (ResNet34)            Clean Aggregate Random 1 Random 2 Random 3 Worst
+
+                                   CE (RN34)                   92.92  87.77            85.02         86.46  85.16             77.69
+                                   Forward Ì†µÃÇÌ±á (RN34) [60]     93.02  88.24            86.88         86.14  87.04             79.79
+                                   Co-teaching+(RN34) [65]     92.41  90.61            89.70         89.47  89.54             83.26
+                                   T-Revision(RN34) [72]       93.35  88.52            88.33         87.71  87.79             80.48
+                                   VolMinNet(RN34) [73]        92.14  89.70            88.30         88.27  88.19             80.53
+                                   G-GBC(RN34)                 94.01  91.13            90.13         89.96  89.56             83.63
+
+                                   Table 7
+                                   Test Accuracy (%) results on ANIMAL-10N, a real-world noisy dataset. All methods use a
+                                   PRN18 architecture. The best results are in bold.
+
+                                            ANIMAL-10N                Forward Ì†µÃÇÌ±á [60] GCE [61] SLN [64] SL [62] G-GBC
+                                            Model (PRN18) CE
+
+                                            Accuracy (%) 83.18 83.67                   84.42         83.17  83.92      84.92
+
+                                                                                11
+J. Yang et al.                                                                                                        Knowledge-Based Systems 341 (2026) 115754
+
+                Table 8
+                Test Accuracy (%) results on Clothing1M, a real-world noisy dataset. All methods use a ResNet-50 architecture
+                which is pre-trained on ImageNet. The best results are in bold.
+
+                Clothing1M     CE     Forward Ì†µÃÇÌ±á [60]  GCE [61]                  VolMinNet [73]     JoCoR [37]  SL [62]  G-GBC
+                Model (PRN50)  68.94  69.84             69.75                     69.82              70.30       71.02    72.04
+                Accuracy (%)
+
+reÔ¨Ånes early stopping based on memorization analysis for eÔ¨Écient ro-              Table 9
+bustness; MEIDTM [68], which employs meta-learning and manifold                   Test Accuracy (%) of DiÔ¨Äerent Methods on CIFAR-10 and CIFAR-100 under
+regularization for instance-speciÔ¨Åc noise matrices; and GBC [44], which           Various Noise Levels. We compare our method with representative works using
+clusters samples into granular balls for coarse-grained noise-robust la-          the same backbone PRN18. The best results are in bold.
+beling.
+                                                                                  Model (PRN18)      CIFAR-10 (symm)             CIFAR-100 (symm)
+5.4. Parameter setting
+                                                                                  Noise Level        20% 50% 80% 90% 20% 50% 80% 90%
+    PyTorch was used to implement the proposed method, and all experi-
+ments were conducted on a single 16 GB NVIDIA RTX 4060 Ti GPU. Data               Co-teaching+ [65]  89.5  85.7  67.4     47.9   65.6  51.8  27.9  13.7
+preprocessing followed standard practices for each dataset: images were           Mixup [74]         95.6  87.1  71.6     52.2   67.8  57.3  30.8  14.6
+randomly cropped to 32 √ó 32 pixels with 4-pixel padding, augmented                M-correction [69]  94.0  92.0  86.8     69.1   73.9  66.1  48.2  24.3
+with random horizontal Ô¨Çipping, converted to tensors, and normalized              PES [41]           95.9  95.1  93.1     ‚Äì      77.4  74.3  61.6  ‚Äì
+using the per-channel mean and standard deviation. A batch size of 64             ELR+ [39]          95.8  94.8  93.3     78.7   77.6  73.6  60.8  33.4
+was used for both training and evaluation.                                        DivideMix [40]     96.1  94.4  93.2     78.0   77.3  74.6  60.2  31.5
+                                                                                  DivideMix+G-GBC    96.4  94.8  93.4     81.3   77.5  74.8  61.6  33.0
+    The model architecture incorporated a GB layer with dataset-speciÔ¨Åc
+conÔ¨Ågurations for the initial number of GBs Ì†µÌ∞æ and purity threshold Ì†µÌºè.           strong gains at higher levels on both datasets. Extending to IDN in Ta-
+For CIFAR-10, STL-10, Fashion-MNIST, Animal-10N, and CIFAR-10N,                   ble 4, G-GBC maintains superiority over baselines on CIFAR-10 and
+we set Ì†µÌ∞æ = 10 and Ì†µÌºÉ = 0.9. For CIFAR-100, we set Ì†µÌ∞æ = 30 and Ì†µÌºÉ = 0.9. For      CIFAR-100 at 10%‚Äì50% noise. Similarly, under 40% asymmetric noise
+Clothing1M, we set Ì†µÌ∞æ = 20 and Ì†µÌºÉ = 0.8 to accommodate its higher noise           on CIFAR-10 (Table 5), G-GBC achieves the best best-epoch and last-
+levels and larger scale. In all cases, the GB layer dynamically adapted           epoch accuracies using PRN18, underscoring its versatility across noise
+during training to enhance noise robustness. The original DivideMix hy-           types.
+perparameters were strictly adhered to for the DivideMix+G-GBC base-
+line without any modiÔ¨Åcations.                                                        Building on these controlled settings, we next examine G-GBC‚Äôs gen-
+                                                                                  eralization to real-world noisy datasets, where label errors arise from
+    Training was conducted using the cross-entropy loss and the SGD               practical sources. We benchmark against representative noise-handling
+optimizer with a momentum of 0.9 and a weight decay of 5e-4. A custom             methods tailored to these datasets to ensure fair and comprehensive
+learning rate scheduler with a warm-up phase followed by decay was                comparison. On CIFAR-10N (Table 6), using the PRN18 architecture, G-
+used. For CIFAR-10, STL-10, Fashion-MNIST, Animal-10N, and CIFAR-                 GBC delivers competitive accuracies across clean, symmetric, asymmet-
+10N, the model was trained over 100 epochs with an initial learning rate          ric, and worst-case noise scenarios, often superior to baselines. For the
+of 0.001. The Ô¨Årst 40 epochs served as the warm-up phase, during which            ANIMAL-10N dataset (Table 7), also employing PRN18, G-GBC achieves
+the learning rate linearly increased from 0 to 0.04. During this phase,           the highest test accuracy among the evaluated methods, aÔ¨Érming its
+the GB layer was disabled to allow the backbone network to learn stable           eÔ¨Écacy on multi-class animal recognition with inherent label ambigui-
+representations before activating granular computing. After the warm-             ties. On the large-scale Clothing1M dataset (Table 8), using ImageNet-
+up phase, the learning rate was set to 0.001 and was maintained constant          pretrained ResNet-50, G-GBC secures the top accuracy, demonstrating
+throughout epochs 41-60. This rate was then reduced by a factor of 10 to          eÔ¨Äective noise Ô¨Åltration in high-dimensional clothing classiÔ¨Åcation amid
+0.0001 for epochs 61-100. For Clothing1M, training spanned 50 epochs              real-world annotation errors.
+with an initial learning rate of 0.01 and a 10-epoch warm-up phase,
+during which the learning rate linearly increased from 0 to 0.01. The                 To further extend G-GBC‚Äôs applicability in extreme regimes, we in-
+GB layer was disabled during the warm-up phase. The learning rate was             tegrate it with DivideMix, a semi-supervised approach that dynamically
+then held constant until epoch 30, after which it was reduced by a factor         partitions noisy data via loss-based thresholding to isolate clean sub-
+of 10 to 0.001 for the remaining epochs.                                          sets. While DivideMix excels in moderate noise by leveraging these sub-
+                                                                                  sets for robust training, it struggles at high noise levels due to resid-
+5.5. Evaluation of noise-handling techniques                                      ual contamination in selected clean samples, hindering convergence. By
+                                                                                  stacking G-GBC atop DivideMix‚Äôs clean subsets, our hybrid method re-
+    The experimental results in Table 1 demonstrate that models incor-            Ô¨Ånes purity through granular boundary correction without disrupting
+porating the GB layer consistently outperform their counterparts with-            the underlying dynamics, yielding modest gains in low-to-mid noise but
+out it across all noise levels and datasets. For CIFAR-10, STL-10, and            substantial robustness at extremes. As shown in Table 9, DivideMix+G-
+Fashion-MNIST, ResNet34 with the G-GBC method (RN34 (G-GBC)) and                  GBC outperforms the vanilla DivideMix and other baselines on CIFAR-
+ResNet18 with the GB layer (RN18 (G-GBC)) achieves the highest test               10 and CIFAR-100 under symmetric noise settings from 20% to 90%,
+accuracy in almost all cases, particularly under high noise levels, high-         with the largest improvements observed at 90% noise. This enhanced
+lighting the robustness of the GB layer.                                          performance is further illustrated in Fig. 6, which depicts the training
+                                                                                  curves for CIFAR-10 at 90% symmetric noise, where DivideMix+G-GBC
+    To systematically evaluate G-GBC‚Äôs handling of synthetic label noise,         achieves a maximum test accuracy of 81.29% and demonstrates more
+we Ô¨Årst assess its performance on CIFAR-10 and CIFAR-100 under di-                stable convergence compared to DivideMix alone, validating this syner-
+verse noise categories and ratios, using ResNet34 and Pre-activation              gistic enhancement for practical deployment.
+ResNet-18 (PRN18) backbones for comprehensive comparison. For sym-
+metric noise, as shown in Tables 2 and 3, G-GBC consistently outper-              5.6. Ablation study and parameter sensitivity analysis
+forms baselines across noise rates from 20% to 80%, with particularly
+                                                                                      Fig. 7 and Table 10 jointly evaluate the performance of the proposed
+                                                                                  method on the CIFAR-10 dataset under 40% label noise conditions, em-
+
+                                                                              12
+J. Yang et al.                                                                     Knowledge-Based Systems 341 (2026) 115754
+
+Fig. 6. Test accuracy curves for DivideMix and its enhanced variant with GranularBall-based cleaning on CIFAR-10 under 90% symmetric label noise. The G-GBC
+integration yields superior performance, with a maximum accuracy of 81.29% compared to 78.01% for baseline DivideMix, highlighting improved semi-supervised
+reÔ¨Ånement and robustness to high-noise regimes.
+
+Fig. 7. Parameter analysis of the proposed method on CIFAR-10 with 40% la-         phasizing the interaction between the initial number of gbs and the pu-
+bel noise, showing the relationship between the initial number of gbs, purity      rity threshold. The results demonstrate relatively stable accuracy across
+threshold, and classiÔ¨Åcation accuracy.                                             the tested parameter settings, with speciÔ¨Åc combinations yielding peak
+                                                                                   performance. Notably, as illustrated in the 3D visualization, higher pu-
+Table 10                                                                           rity thresholds (e.g., 0.8 and 0.9) generally result in improved robust-
+Accuracy analysis of CIFAR-10 with 40% noise under varying initial                 ness, while an increase in the number of gbs enhances feature granular-
+gb counts and purity thresholds.                                                   ity and performance up to a saturation point. Table 10 further quantiÔ¨Åes
+                                                                                   these trends, showing that the accuracy marginally Ô¨Çuctuates within a
+Dataset         CIFAR-10 (40% symm)                                                narrow range of 88.14% to 89.08%, highlighting the robustness of the
+                                                                                   proposed method to parameter variations. These Ô¨Åndings aÔ¨Érm the sig-
+Purity Threshold 10 GBs 20 GBs 30 GBs 40 GBs 50 GBs                                niÔ¨Åcance of optimizing both parameters to balance noise resistance and
+                                                                                   classiÔ¨Åcation accuracy in noisy environments.
+0.6             88.47 88.54 89.08 88.60 88.82
+                                                                                       To assess the contributions of key components in the proposed
+0.7             88.77 89.04 88.85 88.72 88.59                                      method, an ablation study was performed on the CIFAR-10 and CIFAR-
+                                                                                   100 datasets with symmetric label noise. Table 11 illustrates the impact
+0.8             88.89 88.21 88.43 88.43 88.84                                      of integrating GMM and weighting mechanisms, underscoring their roles
+                                                                                   in bolstering robustness and classiÔ¨Åcation eÔ¨Écacy across varying noise
+0.9             88.52 88.69 88.91 88.73 88.79                                      levels.
+
+1.0             88.60 88.14 88.59 88.59 88.53                                          Moreover, to evaluate practical eÔ¨Éciency, we conducted a compre-
+                                                                                   hensive analysis of computational overhead (Table 12). This assessment
+                                                                                   measures parameters, peak memory usage during forward Fwd. This as-
+                                                                                   sessment measured the following parameters: peak memory usage dur-
+                                                                                   ing forward passes (Fwd.Peak), which indicates the maximum mem-
+                                                                                   ory consumed during the inference phase; peak memory usage during
+                                                                                   backward passes (Bwd.Peak), which captures the peak memory used
+                                                                                   during gradient computation; and the time costs for training per batch
+                                                                                   and evaluation on a standard GPU setup. The training time per batch
+                                                                                   was reported because the GB layer generates balls dynamically for each
+                                                                                   batch during training, making this metric particularly reÔ¨Çective of the
+                                                                                   method‚Äôs incremental overhead. The results indicate that G-GBC in-
+                                                                                   curred a modest increase in parameters and memory usage, whereas
+                                                                                   time costs increased slightly primarily because of iterative GMM Ô¨Åtting
+                                                                                   and distance calculations in the GB layer. These overheads arise from
+                                                                                   enhanced noise-handling capabilities, which require dynamic cluster-
+
+                                                                               13
+J. Yang et al.                                                                                                  Knowledge-Based Systems 341 (2026) 115754
+
+                Table 11
+                Ablation study: Accuracy (%) on CIFAR-10 and CIFAR-100 datasets under symmetric
+                label noise.
+
+                          Components        CIFAR-10                                     CIFAR-100
+
+                Model     GMM Weight 20% sym 40% sym 20% sym 40% sym
+
+                Baseline                    89.99                                 87.02  65.53      58.51
+                                            91.45                                 88.68  68.68      63.44
+                GMM       ‚úì                 91.93                                 89.21  69.33      63.58
+
+                GMM + weight ‚úì  ‚úì
+
+                Table 12
+                Computational Overhead Comparison between Baseline and G-GBC.
+
+                                Memory (MB)                                       Time Cost (s)
+
+                Method Parameters Fwd.Peak Bwd.Peak Training (per batch)                            Evaluation
+
+                Baseline 11,171,274 139.57  392.25                                0.008             1.098
+                G-GBC 11,176,425 475.22     475.23                                0.027             1.100
+
+Fig. 8. Iterative visualization of the GB generation process in the feature space. Columns correspond to the 1st, 2nd, 3rd, and Ô¨Ånal iterations of the granulation
+procedure. For each iteration, three complementary views are shown. Left: a 2D PCA projection of sample features, where red markers indicate GB centers and
+light-colored points denote individual samples. Middle: the corresponding GB partition with ellipsoidal boundaries in the same PCA space, where color intensity
+reÔ¨Çects the contribution of samples within each GB. Right: the label composition of each GB, reporting the counts of CIFAR-10 class labels contained in the ball,
+with the hatched segment indicating the estimated noisy-label portion. Together, these panels illustrate how GB centers and boundaries evolve over iterations and
+how the label purity of each GB changes as the granulation process converges.
+
+ing but remain manageable compared with more complex dual-network                 color-coded based on their predicted labels, aiding in the exploration of
+methods, such as co-teaching. G-GBC demonstrated superior robustness              the spatial relationship between GBs and noise across the feature space.
+and accuracy over the baseline with acceptable eÔ¨Éciency trade-oÔ¨Äs,                Fig. 8(a1)‚Äì(a4) show the Ô¨Årst, second, third, and Ô¨Ånal iterations, re-
+making it advantageous for noisy label scenarios where performance                spectively, illustrating the dynamic adjustments of GB centers and the
+gains justify the minimal additional resources.                                   interactions between noise and these centers over time.
+
+5.7. Visualization and noise Ô¨Åltering                                                 Fig. 8(b1)‚Äì(b4) provide insights into the centers, weights, and cov-
+                                                                                  erage of GBs during each iteration. The blue dashed ellipses delineate
+5.7.1. Noise Ô¨Åltering                                                             the boundaries of the GBs, and the red stars represent noise points. The
+    Fig. 8 presents a detailed visual analysis of the iterative process in-       weight values near the GB centers reÔ¨Çect their purity, indicating the
+                                                                                  model‚Äôs sensitivity to data quality at each stage. As the iterations pro-
+volved in GB generation using PCA to project high-dimensional data                ceed, the varying sizes and shapes of the GBs indicate how the model
+into a two-dimensional space. This transformation facilitates an intu-            adapts to the underlying data distribution, including the inÔ¨Çuence of
+itive examination of the spatial distribution of data points, GB centers,         noise. These adaptations are manifested through the changes in ellipses
+and noise points. In the visualizations, the red crosses denote the GB cen-       and weight magnitudes, illustrating the model‚Äôs iterative reÔ¨Ånement
+ters, and the red stars represent the detected noise points. Data points are      process.
+
+                                                                              14
+J. Yang et al.                                                                      Knowledge-Based Systems 341 (2026) 115754
+
+Fig. 9. LIME stability variance on CIFAR-10 and CIFAR-100 under 40% symmetric noise. The curves report the mean stability variance as a function of the number
+of perturbed samples Ì†µÌ±õÌ†µÌ±†Ì†µÌ±éÌ†µÌ±öÌ†µÌ±ùÌ†µÌ±ôÌ†µÌ±í, and the error bars denote the standard deviation computed over the evaluated test images. Lower values indicate more stable local
+explanations.
+
+    Fig. 8(c1)‚Äì(c4) present stacked bar charts that summarize the label                 For reproducibility, we provide the LIME conÔ¨Åguration used in our
+and noise composition within each GB at diÔ¨Äerent stages. Each colored               experiments. We use the image version of LIME with a prediction func-
+segment in the bars corresponds to the sample count with a speciÔ¨Åc la-              tion that queries the corresponding trained model. Each input image in
+bel, and the top red segments represent the noise content. These visual-            the 1,000-sample evaluation subset is Ô¨Årst de-normalized to the [0,1]
+izations reveal a trend of increasing label concentration within GBs and a          range and then partitioned into a set of image regions using LIME‚Äôs de-
+concurrent reduction in noise proportion as the iterations progress. This           fault segmentation routine. We generate perturbed samples by randomly
+trend underscores the model‚Äôs capacity to improve data purity through               masking a subset of these regions and replacing the masked pixels with
+successive iterations, reinforcing the eÔ¨Äectiveness of the GB generation            a Ô¨Åxed value of 0. LIME Ô¨Åts a local linear surrogate model for the top
+process.                                                                            predicted class and produces an importance weight for each region. For
+                                                                                    a given number of perturbed samples, we compute the variance of the
+    Fig. 8 oÔ¨Äers a comprehensive and multi-faceted visualization of the             region importance weights as the stability score for each image, and we
+GB generation process across iterations. The PCA-based projections il-              then report the mean and standard deviation of this score across the
+lustrate the evolving spatial relationships between GB centers and noise            1000 images for both the baseline and G-GBC models.
+points, while the second set of visualizations captures the model‚Äôs ad-
+justments in GB size, shape, and weight in response to data distribution                To evaluate interpretability, we load the best-performing baseline
+and noise. The stacked bar charts further demonstrate the model‚Äôs abil-             and G-GBC models trained under 40% symmetric noise on CIFAR-10
+ity to concentrate labels and minimize noise, providing strong evidence             and CIFAR-100. For each dataset, we randomly sample 1000 test im-
+of the robustness and eÔ¨Éciency of the GB generation approach.                       ages to form an evaluation subset and vary the number of perturbed
+                                                                                    samples used by LIME. Fig. 9 plots the mean LIME stability variance
+5.7.2. Visualization                                                                as a function of Ì†µÌ±õÌ†µÌ±†Ì†µÌ±éÌ†µÌ±öÌ†µÌ±ùÌ†µÌ±ôÌ†µÌ±í, with error bars denoting the standard devia-
+LIME Experiments. The Local Interpretable Model-agnostic Explana-                   tion computed over the evaluated images, while Table 13 reports the
+tions (LIME) [75] metric evaluates model interpretability by approxi-               corresponding numerical values. Across both datasets and all Ì†µÌ±õÌ†µÌ±†Ì†µÌ±éÌ†µÌ±öÌ†µÌ±ùÌ†µÌ±ôÌ†µÌ±í set-
+mating complex predictions locally through simpler surrogate models                 tings, G-GBC consistently achieves lower mean stability variance and
+Ô¨Åtted to perturbed samples around a speciÔ¨Åc instance. Perturbed sam-                reduced dispersion compared with the baseline, indicating more stable
+ples are generated by introducing controlled variations to the input fea-           local explanations and supporting improved interpretability.
+tures, enabling the surrogate model to capture local decision boundaries
+and highlight inÔ¨Çuential factors in the prediction process. Lower values            TCAV experiments. Testing with Concept Activation Vectors
+of this metric indicate enhanced model interpretability, as they reÔ¨Çect             (TCAV) [76] is a post-hoc interpretability method that quantiÔ¨Åes
+greater consistency and reliability in the explanations across repeated             how sensitive a model‚Äôs prediction is to a human-interpretable
+perturbations, signifying that the model‚Äôs behavior is more transparent             concept. A concept is represented by a Concept Activation Vector
+and stable under local approximations.                                              (CAV), obtained by training a linear classiÔ¨Åer to separate target-layer
+                                                                                    activations from concept examples versus random counterexamples;
+    In this study, our objective in the interpretability analysis is to assess      the CAV direction therefore serves as a concept axis in the network‚Äôs
+the local stability and transparency of predictions made by the baseline            representation space. For a given class, TCAV computes the directional
+and G-GBC models under noisy labels. We therefore adopt a post-hoc                  derivative of the class logit with respect to the layer representation
+and locality-focused evaluation protocol, in which explanations are gen-            along the CAV direction, and the TCAV score is deÔ¨Åned as the fraction
+erated around each test instance and their stability is quantiÔ¨Åed under             of inputs for which this derivative is positive, meaning that moving the
+controlled perturbations of the input. We select LIME because its lo-               representation toward the concept increases the class logit.
+cal surrogate formulation directly matches this objective and provides
+instance-wise importance scores that can be aggregated into the stabil-                 We design a shared concept discovery and TCAV evaluation pipeline
+ity metric deÔ¨Åned above. Moreover, LIME is model-agnostic and can be                on the layer4 feature maps of a PreAct-ResNet18 baseline trained on
+applied to both CNN-based architectures without modifying their struc-              CIFAR-10 with 40% symmetric label noise, and we evaluate both the
+ture or training procedure, which makes it well suited to analysing our             baseline and our proposed G-GBC using the same discovered concept
+baseline and G-GBC models in a consistent and comparable way.                       sets for a fair comparison. As a probe dataset with richer semantic di-
+
+                                                                                15
+J. Yang et al.                                                                                             Knowledge-Based Systems 341 (2026) 115754
+
+                Table 13
+                LIME stability variance comparison between baseline and G-GBC models on CIFAR-10 and
+                CIFAR-100 datasets with 40% symmetric noise. The best-performing models from testing were
+                used for LIME interpretability evaluation. Here, Ì†µÌ±õÌ†µÌ±†Ì†µÌ±éÌ†µÌ±öÌ†µÌ±ùÌ†µÌ±ôÌ†µÌ±í denotes the number of perturbed sam-
+                ples generated for each instance in LIME to Ô¨Åt the local surrogate model.
+
+                Ì†µÌ±õÌ†µÌ±†Ì†µÌ±éÌ†µÌ±öÌ†µÌ±ùÌ†µÌ±ôÌ†µÌ±í CIFAR-10                                         CIFAR-100
+
+                      Mean                       Std                            Mean               Std
+
+                      baseline G-GBC baseline G-GBC baseline G-GBC baseline G-GBC
+
+                100   0.2630             0.2230  0.5606  0.4760                 0.8707     0.6071  2.2175  1.5432
+                200   0.2846             0.2374  0.6067  0.4982                 0.9411     0.6541  2.3812  1.6487
+                300   0.2921             0.2568  0.6224  0.5476                 0.9692     0.6656  2.4545  1.6760
+                500   0.2981             0.2578  0.6357  0.5464                 0.9891     0.6712  2.505   1.6848
+                1000  0.3030             0.2577  0.6458  0.5391                 1.0055     0.6935  2.5469  1.7347
+                2000  0.3054             0.2424  0.6509  0.5107                 1.0133     0.6943  2.5682  1.7374
+
+Fig. 10. Representative CIFAR-100 class labels and probe examples for the ten shared concepts discovered via NMF from the baseline model‚Äôs layer4 features.
+
+versity, we use the CIFAR-100 test set and randomly sample 5000 probe               Fig. 11 reports the TCAV scores of each latent factor across CIFAR-10
+images. We extract global-average-pooled layer4 features, apply per-            classes and compares G-GBC with the baseline under the same shared
+dimension min‚Äìmax scaling to ensure non-negativity, and then run Non-           concepts. Focusing on latent factor 2, G-GBC assigns strong inÔ¨Çuence
+negative Matrix Factorization (NMF) [77] with Ì†µÌ∞æ=10 to obtain ten latent        to airplane with a TCAV score of 1.00, ship with 0.97, and bird with
+factors, each treated as a shared concept. For each factor, we select the       0.78. This correspondence is consistent with intuition because airplanes,
+top-100 most strongly activated probe samples as the positive concept           ships, and birds frequently appear against blue backgrounds, and the
+set; negative sets are formed by random counterexamples sampled from            probe examples in factor 2 are dominated by dolphins and whales that
+the remaining probe pool, and we repeat this over multiple negative sets        occur in ocean scenes. In contrast, the baseline model yields a substan-
+to assess stability. For each model, we compute class-wise TCAV scores          tially lower TCAV score for airplane at 0.15 under the same factor, while
+on the CIFAR-10 test set and aggregate results across negative sets.            remaining high for ship at 0.95, suggesting that it leverages this shared
+                                                                                contextual concept less consistently across visually plausible classes.
+    Fig. 10 summarizes the ten discovered latent factors by showing rep-        Turning to latent factor 0, G-GBC produces high TCAV scores for an-
+resentative probe examples and the dominant CIFAR-100 class labels in           imal categories such as deer at 1.00, bird at 0.87, and horse at 0.75,
+each group. For instance, factor 0 is dominated by animal-related labels        which aligns with the animal-dominated probe composition of factor
+such as leopard, kangaroo, spider, mouse, and cattle, suggesting that this      0 shown in Fig. 10. The baseline, however, exhibits comparatively el-
+factor captures appearance cues common to terrestrial animals. Factor           evated sensitivity for a non-animal category such as airplane at 0.80
+2 groups dolphin, whale, turtle, and ray, indicating an aquatic-related         within the same factor and assigns a very low score to horse at 0.05, in-
+visual context and texture pattern. We use these qualitative label and ex-      dicating weaker disentanglement and greater concept leakage across un-
+ample summaries only to name and interpret the factors; importantly,            related categories. Overall, these factor-level comparisons show that G-
+the concept sets themselves are deÔ¨Åned operationally by the NMF acti-           GBC yields stronger and more semantically coherent alignment between
+vations rather than by manual labeling.
+
+                                                                            16
+J. Yang et al.                                                                  Knowledge-Based Systems 341 (2026) 115754
+
+Fig. 11. TCAV scores of the discovered latent factors across CIFAR-10 classes, comparing the baseline model and our proposed G-GBC under the same shared
+concepts.
+
+concepts and classes than the baseline, supporting improved concept-            over, integrating the GB layer with other strategies, such as attention
+based interpretability under label noise.                                       mechanisms or advanced regularization techniques, could create a more
+                                                                                comprehensive noise-resilient framework for deep learning. These ef-
+6. Conclusion                                                                   forts would broaden the utility of GB-based models, making them more
+                                                                                eÔ¨Äective for large-scale, noise-prone environments.
+    The experimental results demonstrate that integrating the GB layer
+into models such as RN34 and RN18 signiÔ¨Åcantly enhances robustness              CRediT authorship contribution statement
+to noise, particularly in high-noise scenarios. Across various datasets,
+G-GBC models consistently outperformed their baseline counterparts                  Junxiao Yang: Writing ‚Äì review & editing, Writing ‚Äì original draft,
+as noise increased, conÔ¨Årming the eÔ¨Äectiveness of this approach. The            Visualization, Software, Methodology, Conceptualization; Qiang Liu:
+detailed visualization analysis using PCA further reveals how the GB            Writing ‚Äì review & editing, Supervision, Methodology, Funding acqui-
+centers and noise points adjust over multiple iterations, reÔ¨Çecting the         sition; Xuemei Cao: Writing ‚Äì review & editing; Fei Li: Methodology;
+model‚Äôs ability to adapt to noisy conditions and optimize data purity.          Xin Yang: Validation, Supervision.
+In the second set of visualizations, the weight and size variations of
+GBs illustrate the dynamic nature of the GB generation process, and the         Data availability
+stacked bar charts conÔ¨Årm the model‚Äôs ongoing reÔ¨Ånement in noise Ô¨Ål-
+tering.                                                                             Data will be made available on request.
+
+    Beyond algorithmic robustness, the proposed G-GBC framework also            Declaration of competing interest
+has implications for information systems and management. By providing
+more reliable predictions under noisy labels and stability-based signals            The authors declare that they have no known competing Ô¨Ånancial
+that reÔ¨Çect the conÔ¨Ådence and consistency of model decisions, G-GBC             interests or personal relationships that could have appeared to inÔ¨Çuence
+can support the design of intelligent and human-in-the-loop labeling            the work reported in this paper.
+systems, where uncertain or unstable instances are selectively routed
+to human annotators. The noise-Ô¨Åltering eÔ¨Äect of the GB layer can fur-          Acknowledgment
+ther inform data quality management and data governance, for exam-
+ple by guiding the prioritization of samples for re-labeling or cleaning            This work is supported by the National Natural Science Founda-
+and by helping to design noise-resilient annotation workÔ¨Çows. In or-            tion of China (grant number 62476228); the Chengdu University of
+ganizational settings, such a noise-robust and interpretable framework          Information Technology 2023 Science and Technology Innovation Ca-
+can facilitate organizational learning and knowledge management, as             pability Improvement Plan (grant number KYTD202347); the Chengdu
+it enables information systems to incorporate imperfect feedback while          University of Information Technology Research Fund (grant number
+maintaining stable decision support and providing explanations that can         KYTZ2023042).
+be inspected and reÔ¨Åned by domain experts.
+                                                                                References
+    Although this study demonstrates the potential of the GB layer, fur-
+ther exploration is needed to fully realize its capabilities. The datasets       [1] B. Frenay, M. Verleysen, ClassiÔ¨Åcation in the presence of label noise: a survey, IEEE
+used in this study, although suÔ¨Écient for initial evaluation, leave room               Trans. Neural Netw. Learn. Syst. 25 (5) (2014) 845-869.
+to investigate the GB layer‚Äôs performance on larger and more complex
+datasets that better reÔ¨Çect the challenges of real-world applications. In        [2] J. Shi, K. Zhang, C. Guo, Y. Yang, Y. Xu, J. Wu, A survey of label-noise deep learning
+addition, as the GB layer introduces computational overhead, optimiz-                  for medical image analysis, Med. Image Anal. 95 (2024) 103166.
+ing its eÔ¨Éciency could further enhance its applicability to large-scale
+problems.                                                                        [3] S. Ibrahim, P.A. Traganitis, X. Fu, G.B. Giannakis, Learning from crowdsourced noisy
+                                                                                       labels: a signal processing perspective, IEEE Signal Process. Mag. 42 (3) (2025)
+    Future research should focus on evaluating the GB layer on diverse                 84‚Äì106.
+datasets with varying types of noise, including asymmetric and real-
+world noise. Enhancing the computational eÔ¨Éciency of the GB layer                [4] J. Zhang, X. Jiang, N. Tian, M. Wu, Label noise correction for crowdsourcing using
+while preserving its robustness remains an important direction. More-                  dynamic resampling, Eng. Appl. Artif. Intell. 133 (2024) 108439.
+
+                                                                                 [5] X. Cao, H. Gu, X. Yang, B. Wei, H. Liang, X. Wang, T. Li, ErrorEraser: Unlearning
+                                                                                       data bias for improved continual learning, in: Proceedings of the 31st ACM SIGKDD
+                                                                                       Conference on Knowledge Discovery and Data Mining V.2 (2025) 119‚Äì130.
+
+                                                                            17
+J. Yang et al.                                                                                      Knowledge-Based Systems 341 (2026) 115754
+
+ [6] C. Zhang, S. Bengio, M. Hardt, B. Recht, O. Vinyals, Understanding deep learning               [40] J. Li, R. Socher, S.C.H. Hoi, Dividemix: learning with noisy labels as semi-supervised
+       (still) requires rethinking generalization, Commun. ACM 64 (3) (2021) 107-115.                      learning, in: International Conference on Learning Representations, 2020.
+
+ [7] R. Hu, H. Zheng, S. Ye, L. Qing, H. Chen, A lightweight framework for robust object            [41] Y. Bai, E. Yang, B. Han, Y. Yang, J. Li, Y. Mao, G. Niu, T. Liu, Understanding and
+       detection in adverse weather based on dual-teacher feature alignment, Neurocom-                     improving early stopping for learning with noisy labels, in: Advances in Neural In-
+       puting (2026) 132726.                                                                               formation Processing Systems, 34, 2021, pp. 24392‚Äì24403.
+
+ [8] H. Song, M. Kim, D. Park, Y. Shin, J.-G. Lee, Learning from noisy labels with deep             [42] S. Xia, S. Zheng, G. Wang, X. Gao, B. Wang, Granular ball sampling for noisy label
+       neural networks: a survey, IEEE Trans. Neural Netw. Lear.n Syst. 34 (11) (2023)                     classiÔ¨Åcation or imbalanced classiÔ¨Åcation, IEEE Trans. Neural Netw. Learn. Syst. 34
+       8135-8153.                                                                                          (4) (2023) 2144‚Äì2155.
+
+ [9] Q. Liu, X. He, M. Zhang, Q. Teng, B. Li, L. Qing, Feature separation and double causal         [43] W. Qian, W. Ruan, Y. Li, J. Huang, A framework of granular-ball generation for
+       comparison loss for visible and infrared person re-identiÔ¨Åcation, Knowl. Based Syst.                classiÔ¨Åcation via granularity tuning, Appl. Intell. 54 (2024) 1‚Äì18.
+       239 (2022) 108042.
+                                                                                                    [44] D. Dai, H. Zhu, S. Xia, G. Wang, Granular-ball representation learning for deep CNN
+[10] J. Li, C. Xiong, S.C.H. Hoi, Learning from noisy data with robust representation                      on learning with label noise, in: International Conference on Neural Information
+       learning, in: 2021 IEEE/CVF International Conference on Computer Vision (ICCV),                     Processing, Springer, 2024, pp. 44‚Äì58.
+       IEEE, 2021, p. 9465-9474.
+                                                                                                    [45] A.M. Ikotun, A.E. Ezugwu, L. Abualigah, B. Abuhaija, J. Heming, K-Means clustering
+[11] J. Liu, C.P. Lau, H. Souri, S. Feizi, R. Chellappa, Mutual adversarial training: learning             algorithms: a comprehensive review, variants analysis, and advances in the era of
+       together is better than going alone, IEEE Trans. Inf. Forensics Secur. 17 (2022) 2364-              big data, Inf. Sci. 622 (2023) 178-210.
+       2377.
+                                                                                                    [46] M. Ester, H.-P. Kriegel, J. Sander, X. Xu, et al., A density-based algorithm for discov-
+[12] A. Fan, J. Ma, X. Jiang, H. Ling, EÔ¨Écient deterministic search with robust loss func-                 ering clusters in large spatial databases with noise, in: kdd, 96, 1996, pp. 226‚Äì231.
+       tions for geometric model Ô¨Åtting, IEEE Trans. Pattern Anal. Mach. Intell. (2021)
+       1‚Äì1.                                                                                         [47] U. Von Luxburg, A tutorial on spectral clustering, Stat. Comput. 17 (4) (2007)
+                                                                                                           395‚Äì416.
+[13] P. D‚ÄôUrso, J.M. Leski, Fuzzy clustering of fuzzy data based on robust loss functions
+       and ordered weighted averaging, Fuzzy Sets Syst. 389 (2020) 1-28.                            [48] E. Bigdeli, M. Mohammadi, B. Raahemi, S. Matwin, Incremental anomaly detection
+                                                                                                           using two-layer cluster-based structure, Inf. Sci. 429 (2018) 315‚Äì331.
+[14] G. Algan, I. Ulusoy, Image classiÔ¨Åcation with deep learning in the presence of noisy
+       labels: a survey, Knowl. Based Syst. 215 (2021) 106771‚Äì106771.                               [49] H. Abdi, L.J. Williams, Principal component analysis, Wiley Interdiscip. Rev. Com-
+                                                                                                           put. Stat. 2 (4) (2010) 433‚Äì459.
+[15] M.-K. Xie, S.-J. Huang, Partial multi-label learning with noisy label identiÔ¨Åcation,
+       Proc. AAAI Conf. Artif. Intell. 34 (04) (2020) 6454-6461.                                    [50] A. Krizhevsky, G. Hinton, et al., Convolutional deep belief networks on cifar-10,
+                                                                                                           Unpublished Manuscript 40 (7) (2010) 1‚Äì9.
+[16] D. Hendrycks, M. Mazeika, D. Wilson, K. Gimpel, Using trusted data to train deep
+       networks on labels corrupted by severe noise, Adv. Neural Inf. Process. Syst. 31             [51] F. Wang, M. Jiang, C. Qian, S. Yang, C. Li, H. Zhang, X. Wang, X. Tang, Residual
+       (2018) 10477‚Äì10486.                                                                                 attention network for image classiÔ¨Åcation, in: Proceedings of the IEEE Conference
+                                                                                                           on Computer Vision and Pattern Recognition, 2017, pp. 3156‚Äì3164.
+[17] R. M√ºller, S. Kornblith, G.E. Hinton, When does label smoothing help?, Adv. Neural
+       Inf. Process. Syst. 32 (2019).                                                               [52] J. Wei, Z. Zhu, H. Cheng, T. Liu, G. Niu, Y. Liu, Learning with noisy labels re-
+                                                                                                           visited: a study using real-world human annotations, Comput. Res. Repository
+[18] C. Wang, Y. Zhou, Q. Wen, Y. Wang, Improving load forecasting performance via                         abs/2110.12088 (2022).
+       sample reweighting, IEEE Trans. Smart Grid 14 (4) (2023) 3317-3320.
+                                                                                                    [53] H. Song, M. Kim, J.-G. Lee, SelÔ¨Åe: refurbishing unclean samples for robust
+[19] J. Han, P. Luo, X. Wang, Deep self-learning from noisy labels, in: 2019 IEEE/CVF                      deep learning, in: International Conference on Machine Learning, 97, 2019, pp.
+       International Conference on Computer Vision (ICCV), IEEE, 2019, p. 5137-5146.                       5907‚Äì5915.
+
+[20] S. Xia, X. Dai, G. Wang, X. Gao, E. Giem, An eÔ¨Écient and adaptive granular-Ball                [54] T. Xiao, T. Xia, Y. Yang, C. Huang, X. Wang, Learning from massive noisy labeled
+       generation method in classiÔ¨Åcation problem, IEEE Trans. Neural Netw. Learn. Syst.                   data for image classiÔ¨Åcation, in: Proceedings of the IEEE Conference on Computer
+       35 (4) (2024) 5319-5331.                                                                            Vision and Pattern Recognition, 2015, pp. 2691‚Äì2699.
+
+[21] X. Cao, X. Yang, S. Xia, G. Wang, T. Li, Open continual feature selection via granular-        [55] A. Coates, A.Y. Ng, H. Lee, An analysis of single-layer networks in unsupervised
+       Ball knowledge transfer, IEEE Trans. Knowl. Data Eng. (2024) 1‚Äì14.                                  feature learning, Proc. 14th Int. Conf. Artif. Intell. Stat., 15 (2011), pp. 215‚Äì223.
+
+[22] W. Pedrycz, Granular computing: an introduction, Physica-Verlag HD, 2000.                      [56] H. Xiao, K. Rasul, R. Vollgraf, Fashion-mnist: a novel image dataset for benchmark-
+[23] J.T. Yao, A.V. Vasilakos, W. Pedrycz, Granular computing: perspectives and chal-                      ing machine learning algorithms, Comput. Res. Repository abs/1708.07747 (2017).
+
+       lenges, IEEE Trans. Cybern. 43 (6) (2013) 1977-1989.                                         [57] K. He, X. Zhang, S. Ren, J. Sun, Deep residual learning for image recognition, Proc.
+[24] S. Xia, X. Lian, G. Wang, X. Gao, J. Chen, X. Peng, GBSVM: an eÔ¨Écient and robust                      IEEE Conf. Comput. Vis. Pattern Recogn. (2016) 770‚Äì778.
+
+       support vector machine framework via granular-Ball computing, IEEE Trans. Neural             [58] A. Berthon, B. Han, G. Niu, T. Liu, M. Sugiyama, ConÔ¨Ådence scores make instance-
+       Netw. Learn. Syst. 36 (2024) 1-15.                                                                  dependent label-noise learning possible, in: International Conference on Machine
+[25] L. Chen, Topological structure in visual perception, Science 218 (4573) (1982) 699-                   Learning, PMLR, 2021, pp. 825‚Äì836.
+       700.
+[26] G. Wang, DGCC: Data-driven granular cognitive computing, Granular Comput. 2 (4)                [59] S. Reed, H. Lee, D. Anguelov, C. Szegedy, D. Erhan, A. Rabinovich, Training deep
+       (2017) 343-355.                                                                                     neural networks on noisy labels with bootstrapping, arXiv:1412.6596 (2014).
+[27] L.A. Zadeh, Toward a theory of fuzzy information granulation and its centrality in
+       human reasoning and fuzzy logic, Fuzzy Sets Syst. 90 (2) (1997) 111-127.                     [60] G. Patrini, A. Rozza, A.K. Menon, R. Nock, L. Qu, Making deep neural networks
+[28] Q. Xie, Q. Zhang, S. Xia, F. Zhao, C. Wu, G. Wang, W. Ding, GBG++: a fast and                         robust to label noise: a loss correction approach, in: 2017 IEEE Conference on Com-
+       stable granular ball generation method for classiÔ¨Åcation, IEEE Trans. Emerging Top.                 puter Vision and Pattern Recognition (CVPR), IEEE, 2017, p. 2233-2241.
+       Comput. Intel. 8 (2) (2024) 2022-2036.
+[29] R. Al-Hmouz, W. Pedrycz, A. Balamash, A. Morfeq, From data to granular data and                [61] Z. Zhang, M. Sabuncu, Generalized cross entropy loss for training deep neural net-
+       granular classiÔ¨Åers, in: 2014 IEEE International Conference on Fuzzy Systems (FUZZ-                 works with noisy labels, Adv. Neural Inf. Process. Syst. 31 (2018) 8792‚Äì8802.
+       IEEE), 2014, pp. 432‚Äì438.
+[30] R. Slowin¬¥ ski, Fuzzy sets in decision analysis, operations research and statistics, 1,        [62] Y. Wang, X. Ma, Z. Chen, Y. Luo, J. Yi, J. Bailey, Symmetric cross entropy for robust
+       2012.                                                                                               learning with noisy labels, in: 2019 IEEE/CVF International Conference on Computer
+[31] H. Chen, T. Li, D. Ruan, J. Lin, C. Hu, A rough-set-based incremental approach for                    Vision (ICCV), 2019, p. 322-330.
+       updating approximations under dynamic maintenance environments, IEEE Trans.
+       Knowl. Data Eng. 25 (2) (2013) 274-284.                                                      [63] H. Harutyunyan, K. Reing, G. Ver Steeg, A. Galstyan, Improving generalization by
+[32] W. Qian, F. Xu, J. Huang, J. Qian, A novel granular ball computing-based fuzzy                        controlling label-noise information in neural network weights, in: International Con-
+       rough set for feature selection in label distribution learning, Knowl. Based Syst. 278              ference on Machine Learning, PMLR, 2020, pp. 4071‚Äì4081.
+       (2023) 110898.
+[33] K.-H. Lee, X. He, L. Zhang, L. Yang, CleanNet: transfer learning for scalable image            [64] P. Chen, G. Chen, J. Ye, j. zhao, P.-A. Heng, Noise against noise: stochastic label
+       classiÔ¨Åer training with label noise, in: Proceedings of the IEEE Conference on Com-                 noise helps combat inherent label noise, in: International Conference on Learning
+       puter Vision and Pattern Recognition, 2018, pp. 5447‚Äì5456.                                          Representations, 2021.
+[34] B. Huang, Y. Lin, C. Xu, Contrastive label correction for noisy label learning, Inf.
+       Sci. 611 (2022) 173‚Äì184.                                                                     [65] X. Yu, B. Han, J. Yao, G. Niu, I. Tsang, M. Sugiyama, How does disagreement help
+[35] Y. Tu, B. Zhang, Y. Li, L. Liu, J. Li, Y. Wang, C. Wang, C.R. Zhao, Learning from                     generalization against label corruption?, in: International Conference on Machine
+       noisy labels with decoupled meta label puriÔ¨Åer, in: Proceedings of the IEEE/CVF                     Learning, 97, 2019, pp. 7164‚Äì7173.
+       Conference on Computer Vision and Pattern Recognition, 2023, pp. 19934‚Äì19943.
+[36] Y. Liu, H. Guo, Peer loss functions: learning from noisy labels without knowing noise          [66] S. Yang, E. Yang, B. Han, Y. Liu, M. Xu, G. Niu, T. Liu, Estimating instance-dependent
+       rates, in: International Conference on Machine Learning,2020, pp. 6226‚Äì6236.                        label-noise transition matrix using dnns, arXiv:2105.13001 1 (2) (2021) 7.
+[37] H. Wei, L. Feng, X. Chen, B. An, Combating noisy labels by agreement: a joint train-
+       ing method with co-regularization, in: Proceedings of the IEEE/CVF Conference on             [67] X. Xia, T. Liu, B. Han, N. Wang, M. Gong, H. Liu, G. Niu, D. Tao, M. Sugiyama,
+       Computer Vision and Pattern Recognition, 2020, pp. 13726‚Äì13735.                                     Part-dependent label noise: towards instance-dependent label noise, Adv. Neural
+[38] D. Tanaka, D. Ikami, T. Yamasaki, K. Aizawa, Joint optimization framework for                         Inf. Process. Syst. 33 (2020) 7597‚Äì7610.
+       learning with noisy labels, in: Proceedings of the IEEE Conference on Computer
+       Vision and Pattern Recognition, 2018, pp. 5552‚Äì5560.                                         [68] D. Cheng, T. Liu, Y. Ning, N. Wang, B. Han, G. Niu, X. Gao, M. Sugiyama, Instance-
+[39] S. Liu, J. Niles-Weed, N. Razavian, C. Fernandez-Granda, Early-learning regular-                      dependent label-noise learning with manifold-regularized transition matrix estima-
+       ization prevents memorization of noisy labels, in: Advances in Neural Information                   tion, in: Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern
+       Processing Systems, 33, 2020, pp. 20331‚Äì20342.                                                      Recognition, 2022, pp. 16630‚Äì16639.
+
+                                                                                                    [69] E. Arazo, D. Ortego, P. Albert, N. O‚ÄôConnor, K. Mcguinness, Unsupervised label noise
+                                                                                                           modeling and loss correction, in: Proceedings of the 36th International Conference
+                                                                                                           on Machine Learning, 97, Proceedings of Machine Learning Research, 2019, pp.
+                                                                                                           312‚Äì321.
+
+                                                                                                    [70] K. Yi, J. Wu, Probabilistic end-to-end noise correction for learning with noisy la-
+                                                                                                           bels, in: Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern
+                                                                                                           Recognition, 2019, pp. 7017‚Äì7025.
+
+                                                                                                    [71] J. Li, Y. Wong, Q. Zhao, M.S. Kankanhalli, Learning to learn from noisy labeled
+                                                                                                           data, in: Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern
+                                                                                                           Recognition, 2019, pp. 5051‚Äì5059.
+
+                                                                                                18
+J. Yang et al.                                                                                      Knowledge-Based Systems 341 (2026) 115754
+
+[72] X. Xia, T. Liu, N. Wang, B. Han, C. Gong, G. Niu, M. Sugiyama, Are anchor points re-           [76] B. Kim, M. Wattenberg, J. Gilmer, C. Cai, J. Wexler, F. Viegas, R. sayres, Inter-
+       ally indispensable in label-noise learning?, Adv. Neural Inf. Process. Syst. 32 (2019).             pretability beyond feature attribution: quantitative testing with concept activation
+                                                                                                           vectors (TCAV), in: Proceedings of the 35th International Conference on Machine
+[73] X. Li, T. Liu, B. Han, G. Niu, M. Sugiyama, Provably end-to-end label-noise learning                  Learning (ICML), 80, 2018, pp. 2668‚Äì2677.
+       without anchor points, in: International Conference on Machine Learning, 2021, pp.
+       6403‚Äì6413.                                                                                   [77] C. Ding, T. Li, M.I. Jordan, Convex and semi-nonnegative matrix factorizations, IEEE
+                                                                                                           Trans. Pattern Anal. Mach. Intell. 32 (1) (2010) 45‚Äì55.
+[74] H. Zhang, M. Ciss‚Äôe, Y.N. Dauphin, D. Lopez-Paz, Mixup: beyond empirical risk min-
+       imization, in: International Conference on Learning Representations, 2018.
+
+[75] M.T. Ribeiro, S. Singh, C. Guestrin, ‚Äú Why should i trust you?‚Äù explaining the pre-
+       dictions of any classiÔ¨Åer, in: Proceedings of the 22nd ACM SIGKDD International
+       Conference on Knowledge Discovery and Data Mining, 2016, pp. 1135‚Äì1144.
+
+                                                                                                19
+

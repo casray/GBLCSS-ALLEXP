@@ -1,0 +1,633 @@
+% !TeX program = xelatex
+\RequirePackage{fix-cm}
+\documentclass[10pt,letterpaper,nopreprintline]{elsarticle}
+\usepackage[letterpaper,left=17mm,right=17mm,top=28mm,bottom=28mm]{geometry}
+\usepackage[OT1]{fontenc}
+\renewcommand{\rmdefault}{cmr}
+\renewcommand{\sfdefault}{cmss}
+\renewcommand{\ttdefault}{cmtt}
+\usepackage{setspace}
+\setstretch{1.15}
+\usepackage{amsmath,amssymb,amsthm}
+\theoremstyle{plain}
+\newtheorem{definition}{Definition}
+\newtheorem{proposition}{Proposition}
+\usepackage{graphicx}
+\usepackage{booktabs,array,longtable}
+\usepackage{enumitem}
+\usepackage{placeins}
+\usepackage{needspace}
+\usepackage[font=small,labelfont=bf,labelsep=period]{caption}
+\usepackage[ruled,linesnumbered,longend]{algorithm2e}
+\usepackage{xurl}
+\usepackage{xcolor}
+\definecolor{linkblue}{HTML}{1597D0}
+\usepackage[colorlinks=true,linkcolor=linkblue,citecolor=linkblue,
+    urlcolor=linkblue,filecolor=linkblue,anchorcolor=linkblue,
+    breaklinks=true,bookmarksnumbered=true,unicode]{hyperref}
+\AtBeginDocument{\hypersetup{linkcolor=linkblue,
+    citecolor=linkblue,urlcolor=linkblue,filecolor=linkblue,
+    anchorcolor=linkblue,menucolor=linkblue}}
+\biboptions{numbers,sort&compress}
+\setcounter{secnumdepth}{3}
+\setlength{\emergencystretch}{2em}
+\setlength{\LTpre}{9pt}
+\setlength{\LTpost}{9pt}
+\setlength{\LTcapwidth}{\textwidth}
+\newlength{\TableWidth}
+\setlist{itemsep=3pt,topsep=5pt,parsep=0pt,leftmargin=*}
+\SetAlgoNoLine
+\SetAlgoLongEnd
+\SetKwFor{ForEach}{for each}{do}{end for}
+\SetAlgoCaptionSeparator{.}
+\DontPrintSemicolon
+\SetAlgorithmName{Algorithm}{Algorithm}{List of Algorithms}
+\SetKwInput{KwIn}{Input}
+\SetKwInput{KwOut}{Output}
+\SetKw{KwBreak}{break}
+\SetKw{KwRet}{return}
+\SetAlFnt{\small}
+\SetAlCapFnt{\small\bfseries}
+\SetAlCapNameFnt{\small\normalfont}
+\SetNlSty{textnormal}{}{\hspace{0.45em}}
+\setlength{\textfloatsep}{12pt plus 2pt minus 2pt}
+\setlength{\floatsep}{12pt plus 2pt minus 2pt}
+\setlength{\intextsep}{12pt plus 2pt minus 2pt}
+\setcounter{topnumber}{4}
+\setcounter{bottomnumber}{2}
+\setcounter{totalnumber}{5}
+\makeatletter
+\setlength{\@fptop}{0pt}
+\setlength{\@fpsep}{12pt plus 2pt minus 2pt}
+\setlength{\@fpbot}{0pt plus 1fil}
+\makeatother
+\raggedbottom
+\renewcommand{\topfraction}{0.9}
+\renewcommand{\bottomfraction}{0.85}
+\renewcommand{\textfraction}{0.08}
+\renewcommand{\floatpagefraction}{0.7}
+\hyphenation{Coauthor CiteSeer CoraFull GB-LCSS Graph-MLP}
+
+
+\widowpenalty=10000
+\clubpenalty=10000
+\hypersetup{pdfauthor={Silei Cao, Kun Wang, Jingyu Zhu, Tianxing Wang, Bing Huang},pdftitle={Granular ball local consensus for graph-free node classification under label noise}}
+
+\begin{document}
+\SetAlgoNoLine
+\begin{frontmatter}
+\title{Granular ball local consensus for graph-free node classification under label noise}
+\author[a]{Silei Cao}
+\ead{mp2509053@stu.nau.edu.cn}
+\author[a]{Kun Wang}
+\ead{kun_wang@nau.edu.cn}
+\author[b]{Jingyu Zhu}
+\ead{jingyuzhu77@gmail.com}
+\author[c]{Tianxing Wang\corref{cor1}}
+\ead{wangtianxing@nau.edu.cn}
+\author[a]{Bing Huang}
+\ead{huangbing@nau.edu.cn}
+\address[a]{School of Computer Science, Nanjing Audit University, Nanjing 211815, PR China}
+\address[b]{School of Statistics and Data Science, Nanjing Audit University, Nanjing 211815, PR China}
+\address[c]{School of Business, Nanjing Audit University, Nanjing 211815, PR China}
+\cortext[cor1]{Corresponding author.}
+\begin{abstract}
+Graph-free node classification enables prediction from node attributes when graph relations are unavailable or costly to access at deployment. However, existing noise-robust graph methods generally retain graph-dependent inference, while graph-free methods have largely been studied with clean training labels. To address this gap, we propose Granular Ball Local-Consensus Soft Supervision (GB-LCSS) for transductive node classification with noisy labels and graph-free inference. GB-LCSS learns node representations through label-free graph contrastive learning, freezes them, and recursively groups nodes into granular balls. For each training node, the observed labels of the other training nodes in its ball form a local consensus. A weight determined by their agreement blends this consensus with the node's observed label to produce a soft target for a multilayer perceptron (MLP). This decouples region construction from noisy-label aggregation and uses local evidence to reduce the influence of isolated annotation errors. Across five datasets and five noise settings, GB-LCSS achieves or ties for the highest five-seed mean accuracy in 24 of 25 settings among seven noisy-label baselines using the same deployed MLP architecture. Its targets also have lower mean Brier scores than the observed one-hot labels in all 25 settings, while the deployed classifier requires only node attributes.
+\end{abstract}
+\begin{keyword}
+label noise \sep node classification \sep graph-free inference \sep graph contrastive learning \sep granular ball computing \sep soft labels
+\end{keyword}
+\end{frontmatter}
+
+\FloatBarrier
+
+\section{Introduction}\label{sec:1}
+
+Node classification is a fundamental task in graph learning, where node attributes and relationships jointly support prediction. Graph neural networks (GNNs) combine these sources of information by aggregating representations from neighboring nodes \cite{ref1,ref2}. Their dependence on graph structure, however, creates practical difficulties at deployment. Predictions require access to the relevant neighborhoods, while retrieving and aggregating multi-hop neighbor information adds computational cost. In applications with missing relations, privacy restrictions, or low-latency requirements, this access may be unavailable or impractical. These constraints have motivated graph-free node classification, in which graph structure is used during training and the deployed classifier receives only node attributes. Graph-MLP \cite{ref3} and GLNN \cite{ref4} demonstrated this approach, and later work such as SimMLP \cite{ref41} and FF-G2M \cite{ref45} refined which structural knowledge is transferred to the MLP and how. These methods have been developed and evaluated with clean training labels.
+
+Noisy training labels pose an additional problem. Labels obtained through manual annotation, automated rules, or multiple sources may contain errors, and deep models can fit corrupted annotations \cite{ref5}. On graphs, message passing may propagate the influence of mislabeled nodes to their neighbors \cite{ref6}. Noise-robust graph methods use topology to augment supervision \cite{ref7}, to regulate training with noisy labels \cite{ref8}, or to select reliable samples \cite{ref9}. These methods retain graph access at inference. Graph-free classifiers face a related challenge: errors in the labels used to train an MLP or its teacher can carry into the deployed model. We study how the training graph can improve noisy-label supervision for a classifier that uses only node attributes at inference.
+
+One way to address this challenge is to combine an observed label with evidence from nearby training nodes. When their labels provide consistent evidence for the underlying class, aggregating them can reduce the influence of isolated annotation errors. Neighborhood-based methods for noisy-label learning have exploited related forms of local consistency \cite{ref10,ref11}. For graph data, a graph contrastive representation learned from node attributes and connectivity without class labels provides a basis for identifying such local groups \cite{ref12}. The groups can then supply label evidence while their membership is determined independently of the observed labels.
+
+Granular ball computing provides a regional representation for this purpose. It groups samples into coarse-grained units summarized by their centers and radii \cite{ref13,ref14}. Subsequent studies have investigated granular ball sampling for noisy or imbalanced classification \cite{ref15} and refined adaptive ball generation \cite{ref16}. Depending on the task, ball construction can be guided by label purity or geometric criteria. Geometry-based construction is suitable here because it allows local groups to be formed before the training labels are aggregated. In our construction, each node belongs to exactly one group, and the regional class statistics can be reused across its members' targets. A dispersion criterion adapts the number of groups within a fixed budget, with a minimum size required for each accepted child group.
+
+Building on this idea, we propose Granular Ball Local-Consensus Soft Supervision (GB-LCSS) for transductive node classification with noisy labels and graph-free inference. As shown in Fig.~\ref{fig:1}, GB-LCSS first learns node representations through label-free graph contrastive learning and freezes them. It then recursively applies 2-means to the node representations in the frozen space, assigning each node to exactly one granular ball. For each training node, the labels of the other training nodes in its ball provide a local consensus, and a weight determined by the agreement among these labels blends the consensus with the node's observed label to form a soft target. These targets train an MLP that receives only node attributes at inference.
+
+\begin{figure}[!htbp]
+\centering
+\includegraphics[width=\linewidth]{figures/fig1.pdf}
+\caption{Overview of GB-LCSS. Stage 1 learns a label-free representation, and Stage 2 constructs granular balls in that representation space. Stage 3 enlarges a representative ball to show how a local-consensus target is formed. Stage 4 trains the deployed MLP with the resulting soft targets. Hollow nodes do not vote. Ball outlines are schematic, and each node belongs to exactly one ball.}\label{fig:1}
+\end{figure}
+
+The main contributions are summarized as follows:
+
+\begin{enumerate}[label=(\arabic*)]
+\item We introduce GB-LCSS for noisy-label node classification with graph-free inference. It organizes nodes into granular balls in a frozen, label-free graph representation, separating regional grouping from noisy-label aggregation.
+\item We construct node-specific soft targets by combining each observed label with the consensus of other training nodes in its ball. Under independent symmetric label noise, we analyze how the number of votes and the underlying class distribution affect the reliability of local voting. We also derive an exact decomposition of the soft target's squared error.
+\item We evaluate GB-LCSS on five datasets and five noise settings against noisy-label and graph-assisted baselines. Controlled comparisons examine grouping, representation learning, target construction, and parameter sensitivity, while a graph-teacher extension evaluates the same targets for distillation.
+\end{enumerate}
+
+The remainder of this paper is organized as follows. \hyperref[sec:2]{Section~\ref*{sec:2}} reviews related work, and \hyperref[sec:3]{Section~\ref*{sec:3}} presents GB-LCSS, analyzes local-consensus supervision, and introduces the graph-teacher extension. \hyperref[sec:4]{Section~\ref*{sec:4}} describes the experimental setup, comparative results, ablations, extensions, and discussion. \hyperref[sec:5]{Section~\ref*{sec:5}} concludes the paper.
+
+\section{Related work}\label{sec:2}
+
+\subsection{Learning with noisy labels}\label{sec:2.1}
+
+Methods for learning with noisy labels aim to reduce the influence of corrupted annotations through sample selection, target refinement, or robust optimization. Sample selection exploits the tendency of deep networks to learn clean patterns before memorizing noise. Co-teaching \cite{ref17}, for example, exchanged small-loss samples between two networks, while JoCoR \cite{ref18} also encouraged prediction agreement. DivideMix \cite{ref19} treated clean and noisy samples within a semi-supervised framework. Beyond loss-based selection, FINE \cite{ref20} assessed class-wise feature directions, and CT \cite{ref21} tracked prediction confidence. Knockoffs-SPR \cite{ref22} used penalized regression and knockoff filters to select clean samples while controlling false selections under its theoretical assumptions. Label agreement among nearest neighbors in a feature space has also been used directly: Deep k-NN \cite{ref11} filtered samples whose labels disagree with those of their neighbors, and neighbor-consistency regularization \cite{ref10} encouraged each prediction to match those of its neighbors.
+
+Other methods address label noise by modifying the training loss. SCE \cite{ref23} combined cross-entropy with reverse cross-entropy, while ELR \cite{ref24} regularized training to limit noise memorization. ANL \cite{ref25} used active negative loss functions, and LogitClip \cite{ref26} constrained logit norms. These strategies address annotation noise without explicitly modeling graph relations between samples.
+
+\subsection{Noise-robust learning on graphs}\label{sec:2.2}
+
+Graph structure can provide additional evidence for assessing label reliability, while message passing may also spread the influence of supervision errors \cite{ref6}. UnionNET \cite{ref27} used neighborhood-based label estimates for reweighting and correction, NRGNN \cite{ref7} augmented supervision through structural information and pseudo-labeling, and RTGNN \cite{ref8} coordinated two networks to regulate noisy supervision.
+
+Label reliability can also be assessed through graph topology and model behavior. TSS \cite{ref9} used topological sample selection, while TFR \cite{ref28} reconstructed topological features. ProCon \cite{ref29} used peer-informed label consistency, and GD\textsuperscript{2} \cite{ref30} identified unreliable supervision through prediction discrepancies between two views. GNN-CFGD \cite{ref31} combined coarse- and fine-grained sample division to address label noise and sparsity.
+
+Beyond assessing label reliability, several methods have constructed additional supervision. DND-NET \cite{ref32} used neighborhood uncertainty to reweight pseudo-label supervision, whereas RNCGLN \cite{ref33} combined graph contrastive learning with pseudo graphs and pseudo labels to address graph and label noise. Prototype-Guided Supervision \cite{ref34} formed class-level prototypes by aggregating representations of nodes with the same observed label. BO-NNC \cite{ref35} and SAMTD \cite{ref36} improved supervision through multiple graph teachers.
+
+Other methods address label noise by modifying graph structure, neighborhood aggregation, or the training objective. GTA \cite{ref37} adapted graph topology, MILAB \cite{ref38} combined information bottleneck-guided aggregation with adversarial consistency, and HALF \cite{ref39} fused low- and high-pass losses according to local homophily to identify reliable labels. NoisyGL \cite{ref6} established a unified evaluation framework for learning with noisy labels on graphs.
+
+\subsection{Graph-free node classification}\label{sec:2.3}
+
+Methods for graph-free node classification exploit graph information during training while avoiding online message passing at inference. Graph-MLP \cite{ref3} incorporated adjacency through a neighborhood-contrastive objective, whereas GLNN \cite{ref4} distilled predictions from a GNN teacher into an MLP. Both methods deploy an MLP that receives only node attributes. GSDN \cite{ref40} used neighborhood self-distillation, SimMLP \cite{ref41} aligned GNN and MLP representations without supervision, and ES-MLP \cite{ref42} incorporated edge splitting into contrastive training. Tian et al. \cite{ref43} analyzed the effectiveness, robustness, and efficiency of graph-trained MLPs, while SA-MLP \cite{ref44} investigated structure-aware distillation. These methods differ in how graph information guides training and whether precomputed structural features are retained at inference.
+
+Subsequent distillation methods differ in the teacher information they transfer. FF-G2M \cite{ref45} separated low- and high-frequency knowledge, KRD \cite{ref46} assessed knowledge reliability through the stability of prediction entropy under noise perturbations, and VQGraph \cite{ref47} encoded local structures as discrete tokens. PGKD \cite{ref48} used class prototypes to guide structural knowledge distillation from GNNs to MLPs, whereas TINED \cite{ref49} combined teacher parameter injection with Dirichlet-energy distillation. AdaGMLP \cite{ref50}, ProGMLP \cite{ref51}, and SALE-MLP \cite{ref52} investigated adaptive transfer, accuracy--cost trade-offs, and structure-aware latent representations, respectively. Yu et al. \cite{ref53} theoretically analyzed how label alignment in distillation allows an MLP to learn a GNN teacher's implicit graph bias.
+
+A related line of work uses graph structure to construct soft training targets. PosteL \cite{ref54} constructed posterior soft labels from neighborhood labels and graph-wide label statistics. ALS \cite{ref55} used neighborhood label distributions and adaptively updated smoothed targets during graph training, while SALS \cite{ref56} incorporated structural information into the target label distribution. These methods define the neighborhood of a node by graph adjacency and smooth its label toward the labels found there. GB-LCSS also modifies the training targets, but defines regions by proximity in a frozen, label-free representation and excludes each node's own label from the consensus that adjusts it.
+
+\subsection{Graph contrastive representation learning}\label{sec:2.4}
+
+Self-supervised graph learning constructs training signals from node attributes and graph connectivity \cite{ref57}. Graph contrastive learning constructs different views of a graph by perturbing its structure or attributes. A common node-level objective brings representations of the same node across views closer together while distinguishing them from those of other nodes. The resulting node vectors provide a basis for comparing nodes without using their observed class labels.
+
+GRACE \cite{ref12} implements this approach through random edge dropping and feature masking, with a shared graph encoder processing the two views. Because its objective does not use class labels, the representation can be computed and frozen before any training label is used. GB-LCSS adopts GRACE for this purpose; the observed training labels enter only afterwards, when soft targets are constructed within the resulting groups.
+
+\subsection{Granular ball computing}\label{sec:2.5}
+
+Granular ball computing represents samples using coarse-grained hyperspherical regions, which GBkNN used to classify queries \cite{ref13}. Granular ball sampling extended this representation to sample selection for noisy or imbalanced classification \cite{ref15}. MGNR \cite{ref58} used granular ball representations to construct multi-granularity neighborhood relationships for classification and clustering. For noisy-label learning, MgCNL \cite{ref59} used multi-granularity balls for sample separation, while ball-intra fusion \cite{ref60} combined information within granular regions. VPGB \cite{ref61} studied attribute reduction and classification with noisy labels, and GEAF \cite{ref62} filtered label noise through adaptive granular-ellipsoid partitioning.
+
+Granular representations have also been incorporated into deep learning. GBRAIN \cite{ref63}, G-GBC \cite{ref64}, and BNO-GB \cite{ref65} applied granular regions to robust text classification, CNN classification, and open intent classification, respectively. On graphs, supervised granular ball coarsening \cite{ref66} and GBGC \cite{ref67} used granular regions to construct coarsened graphs, while MGGR \cite{ref68} explored multi-granularity graph refinement for graph classification.
+
+In supervised granular ball classifiers and sampling methods, label purity can guide ball generation \cite{ref13,ref15,ref16}. Geometric splitting criteria that use no labels have also been developed for clustering \cite{ref14}. GB-LCSS applies a geometric criterion in a frozen graph representation and uses the resulting groups to define which training nodes contribute to each other's soft targets.
+
+These studies provide several ways to use graph structure for learning with noisy labels and for graph-free inference. GB-LCSS brings the two problems together through target construction: it forms groups in a label-free graph representation and aggregates the observed labels of other training nodes within each group to supervise an attribute-only MLP.
+
+\FloatBarrier
+
+\section{Method}\label{sec:3}
+
+\subsection{Problem setting}\label{sec:3.1}
+
+Consider a transductive attributed graph \(\mathcal{G} = \left( \mathcal{V},\mathcal{E},X \right)\), where \(\mathcal{V} = \{ v_{1},\ldots,v_{N}\}\) is the node set and \(\mathcal{E}\) is the edge set. Let \(A \in \{ 0,1\}^{N \times N}\) denote the adjacency matrix, and let \(X = \left\lbrack x_{1},\ldots,x_{N} \right\rbrack^{\top} \in \mathbb{R}^{N \times d}\) denote the node-attribute matrix. Each node belongs to one of \(C\) classes, and \(\mathcal{V}_{L} \subset \mathcal{V}\) denotes the set of labeled training nodes. For each \(v \in \mathcal{V}_{L}\), the observed label \({\widetilde{y}}_{v}\) may be corrupted by an unknown noise process. GB-LCSS does not require prior knowledge of the noise type, noise rate, or label-transition matrix.
+
+\Needspace{64pt}
+
+We consider a fixed-graph transductive setting. During training, the complete \(X\) and \(A\), including the attributes and topology of test nodes, are available for label-free representation learning and target construction, while test labels remain hidden. After training, only the classifier is retained. Let \(f_{\theta}\) denote the deployed MLP with parameters \(\theta\). For a target node \(v\), its predictive class distribution is defined as
+
+\begin{equation}\label{eq:1}
+p_{\theta}( \cdot \mid x_{v}) = \operatorname{softmax}\left( f_{\theta}(x_{v}) \right).
+\end{equation}
+
+Here, \(x_{v}\) is the attribute vector of node \(v\) and is the only node-specific input to the classifier at inference. The adjacency matrix \(A\), neighboring nodes, the frozen representation, and the graph encoder are not used by the deployed classifier.
+
+Table~\ref{tab:notation} summarizes the main notation.
+
+\input{tables/notation.tex}
+
+\subsection{Label-free representation learning and granular ball construction}\label{sec:3.2}
+
+\subsubsection{Label-free representation learning}\label{sec:3.2.1}
+
+GB-LCSS first builds a representation space that reflects node attributes and graph connectivity without using observed labels. We instantiate this representation-learning component with GRACE \cite{ref12}. Given \(X\) and \(A\), the component forms two stochastic graph views through edge dropping and feature masking and trains the encoder by aligning the representations of the same node across the two views. After pretraining, the encoder is frozen. We denote the encoder output before the GRACE projection head by the node-representation matrix \(H\):
+
+\begin{equation}\label{eq:2}
+H = g_{\psi}(X,A) \in \mathbb{R}^{N \times d_{h}}.
+\end{equation}
+
+Here, \(g_{\psi}\) denotes the pretrained graph encoder with frozen parameters \(\psi\), \(d_{h}\) is the representation dimension, and the \(v\)-th row \(h_{v}\) is the representation of node \(v\).
+
+\Needspace{64pt}
+
+Before distance-based partitioning, we L2-normalize each node representation. Using \(\varepsilon = 10^{- 12}\) as a numerical safeguard, the normalized representation \({\bar{h}}_{v}\) is defined as
+
+\begin{equation}\label{eq:3}
+{\bar{h}}_{v} = \frac{h_{v}}{\max(\left\| h_{v} \right\|_{2},\varepsilon)}.
+\end{equation}
+
+The normalized representations are collected in \(\bar{H} = \left\lbrack {\bar{h}}_{1},\ldots,{\bar{h}}_{N} \right\rbrack^{\top}\), which is fixed during granular ball construction. \hyperref[sec:4.3.3]{Section~\ref*{sec:4.3.3}} examines alternative representation sources and variation across GRACE pretraining seeds.
+
+\subsubsection{Granular ball construction}\label{sec:3.2.2}
+
+This stage groups nodes in the frozen representation \(\bar H\) for subsequent label aggregation. We initialize the granular ball collection as \(\mathcal B=\{\mathcal V\}\), so all nodes initially belong to one ball.
+
+\Needspace{64pt}
+\begin{definition}
+For a node set \(B\) with normalized representations \(\{\bar h_v:v\in B\}\), its center \(\mu_B\) and mean radius \(D(B)\) are defined as
+\begin{equation}\label{eq:4}
+\mu_{B} = \frac{1}{|B|}\sum_{v \in B}{\bar{h}}_{v},\quad\quad D(B) = \frac{1}{|B|}\sum_{v \in B}\left\| {\bar{h}}_{v} - \mu_{B} \right\|_{2}.
+\end{equation}
+\end{definition}
+
+The mean radius is the average distance of the nodes from their center; a smaller value indicates a more compact group. It is used below to decide whether a split improves compactness.
+
+\Needspace{64pt}
+
+Let \(n_{\min}\) denote the minimum number of nodes allowed in each child ball. A current ball is eligible for splitting only when \(|B|\geq 2n_{\min}\). Eligible balls are examined in descending order of \(D(B)\), so more dispersed balls are considered first. For each candidate ball \(B\), 2-means produces two child balls \(B^{(1)}\) and \(B^{(2)}\).
+
+\begin{definition}
+The size-weighted post-split dispersion of \(B\) is
+\begin{equation}\label{eq:5}
+D_{\mathrm{split}}(B) = \frac{|B^{(1)}|D(B^{(1)}) + |B^{(2)}|D(B^{(2)})}{|B|}.
+\end{equation}
+Let \(\delta \in (0,1)\) denote the minimum relative reduction in dispersion required for accepting a split. The split is accepted only when both child balls contain at least \(n_{\min}\) nodes and
+\begin{equation}\label{eq:6}
+D_{\mathrm{split}}(B) \leq (1 - \delta)D(B).
+\end{equation}
+\end{definition}
+
+Weighting by the sizes of the child balls makes \(D_{\mathrm{split}}(B)\) comparable with \(D(B)\). We accept the first candidate split that satisfies Eq.~\eqref{eq:6} together with the minimum-size condition, update the ball collection, and reorder the remaining candidates.
+
+Splitting stops when no valid candidate remains or when the number of balls reaches the prescribed positive integer budget \(B_{\max}\). The resulting partition \(\mathcal{B} = \{ B_{j}\}_{j = 1}^{K}\), with \(K \leq B_{\max}\), assigns every node to exactly one granular ball. \hyperref[sec:4.1.4]{Section~\ref*{sec:4.1.4}} gives the experimental values of the partition parameters, and Algorithm~\ref{alg:1} summarizes the procedure.
+
+\input{algorithms/algorithm1.tex}
+
+\subsection{Local-consensus supervision and MLP training}\label{sec:3.3}
+
+The partition defines which training nodes supply local evidence for each target. GB-LCSS first summarizes the observed labels of these nodes as a class distribution, then combines the resulting consensus with the current node's label. The resulting soft targets supervise the MLP.
+
+\subsubsection{Within-ball label consensus}\label{sec:3.3.1}
+
+\begin{definition}
+For a granular ball \(B_{j}\), let \(T_{j} = B_{j} \cap \mathcal{V}_{L}\) denote its training nodes. For each \(v \in T_{j}\), the voting set is
+\begin{equation}\label{eq:7}
+T_{j, - v} = T_{j}\backslash\{ v\}.
+\end{equation}
+Let \(s_{\min}\) be a positive integer specifying the minimum number of remaining votes required to use local consensus. When \(\left| T_{j, - v} \right| \geq s_{\min}\), the empirical class distribution \(p_{j, - v}\) is
+\begin{equation}\label{eq:8}
+p_{j, - v,c} = \frac{1}{|T_{j, - v}|}\sum_{u \in T_{j, - v}}{\mathbb{I}({\widetilde{y}}_{u} = c)},\quad\quad c = 1,\ldots,C.
+\end{equation}
+\end{definition}
+
+Here, \(\mathbb I(\widetilde y_u=c)\) equals 1 if node \(u\) has observed label \(c\) and 0 otherwise, so Eq.~\eqref{eq:8} is the fraction of the other training nodes in the ball that carry label \(c\). Excluding the current node prevents its observed label from reinforcing the consensus used to adjust it. In the implementation, class counts are accumulated once per ball, and the current node's vote is subtracted to obtain the counts used for its target.
+
+\Needspace{64pt}
+
+\begin{definition}
+Given \(p_{j, - v}\), the largest class proportion \(r_{j, - v}\) and the set \(M_{j, - v}\) of classes attaining it are
+\begin{equation}\label{eq:9}
+r_{j, - v} = \max_{c}p_{j, - v,c},\quad\quad M_{j, - v} = \{ c:p_{j, - v,c} = r_{j, - v}\}.
+\end{equation}
+If \(M_{j, - v}\) contains a single class, we denote it by \(m_{j, - v}\). Let \(\beta \in \lbrack 0,1\rbrack\) control the sharpening of a unique most-voted class. The local-consensus distribution \(q_{j, - v}\) is
+\begin{equation}\label{eq:10}
+q_{j, - v} = \begin{cases}
+(1 - \beta)p_{j, - v} + \beta e_{m_{j, - v}}, & |M_{j, - v}| = 1, \\
+p_{j, - v}, & |M_{j, - v}| > 1.
+\end{cases}
+\end{equation}
+\end{definition}
+
+Here, \(e_{c}\) denotes the one-hot vector for class \(c\). A unique most-voted class is emphasized according to \(\beta\), whereas a tied distribution is retained without selecting one tied class. Because the current node is removed separately for each target, training nodes in the same ball can have different \(p_{j, - v}\) and \(q_{j, - v}\).
+
+\subsubsection{Consensus-weighted soft targets}\label{sec:3.3.2}
+
+The contribution of \(q_{j, - v}\) to the final target is controlled by a weight computed from the vote proportions before sharpening.
+
+\begin{definition}
+The consensus weight \(\alpha_{j, - v}\) normalizes the largest vote proportion \(r_{j, - v}\) relative to the uniform class probability \(1/C\):
+\begin{equation}\label{eq:11}
+\alpha_{j, - v} = \max\left( 0,\frac{r_{j, - v} - 1/C}{1 - 1/C} \right).
+\end{equation}
+\end{definition}
+
+The weight \(\alpha_{j, - v} \in \lbrack 0,1\rbrack\) increases with the largest class proportion among the remaining votes. A uniform vote distribution gives \(\alpha_{j, - v} = 0\), while complete agreement gives \(\alpha_{j, - v} = 1\).
+
+\Needspace{64pt}
+
+\begin{definition}
+The training target \(t_{v}\) for \(v \in T_{j}\) is
+\begin{equation}\label{eq:12}
+t_{v} = \begin{cases}
+(1 - \alpha_{j, - v})e_{{\widetilde{y}}_{v}} + \alpha_{j, - v}q_{j, - v}, & |T_{j, - v}| \geq s_{\min}, \\
+e_{{\widetilde{y}}_{v}}, & |T_{j, - v}| < s_{\min}.
+\end{cases}
+\end{equation}
+\end{definition}
+
+When at least \(s_{\min}\) other training nodes are available in the ball, \(t_{v}\) combines the observed label with the local-consensus distribution, and a more concentrated vote gives greater weight to \(q_{j, - v}\). Otherwise the target retains the observed one-hot label.
+
+Equations~\eqref{eq:7}--\eqref{eq:12} use only the observed labels of training nodes. Validation and test labels are not used in target construction. Algorithm~\ref{alg:2} summarizes the target construction.
+
+\input{algorithms/algorithm2.tex}
+
+\subsubsection{MLP training}\label{sec:3.3.3}
+
+The node-specific targets in Eq.~\eqref{eq:12} supervise the two-layer MLP \(f_{\theta}\). Its hidden linear layer is followed by ReLU, batch normalization, and dropout, and its output layer produces class logits. We define the GB-LCSS training loss \(\mathcal{L}_{\mathrm{LCSS}}\) as the soft cross-entropy over \(\mathcal{V}_{L}\):
+
+\begin{equation}\label{eq:13}
+\mathcal{L}_{\mathrm{LCSS}} = - \frac{1}{|\mathcal{V}_{L}|}\sum_{v \in \mathcal{V}_{L}}{\sum_{c = 1}^{C}t_{vc}}\log p_{\theta}(c \mid x_{v}).
+\end{equation}
+
+Here, \(t_{vc}\) is the probability assigned to class \(c\) by the target \(t_{v}\), and \(p_{\theta}\left( c \mid x_{v} \right)\) is the MLP prediction defined in Eq.~\eqref{eq:1}.
+
+After training, only \(f_{\theta}\) is retained for inference on node attributes.
+
+\subsection{Analysis of local-consensus supervision}\label{sec:3.4}
+
+We analyze the reliability of local voting and how combining that vote with an observed label changes the target error. For the voting analysis, the partition, the training-node set, and their clean labels are fixed; randomness comes from independent symmetric label corruption. Each label is retained with probability \(1-\eta\) and otherwise replaced by a uniformly chosen incorrect class.
+
+Consider a training node \(v\) in ball \(B_j\) with clean label \(y_v\) and \(s_v=|T_{j,-v}|\geq s_{\min}\) voting nodes. The proportion of voting nodes whose clean label is \(c\), and the margin by which the true class of \(v\) leads every other class among these clean labels, are
+\begin{equation}\label{eq:14}
+p^{\mathrm{clean}}_{v,c}=\frac{1}{s_v}\sum_{u\in T_{j,-v}}\mathbb{I}(y_u=c),
+\qquad
+\Delta_v=p^{\mathrm{clean}}_{v,y_v}-\max_{c\ne y_v}p^{\mathrm{clean}}_{v,c}.
+\end{equation}
+
+A positive margin means that the true class of \(v\) has more clean votes than each competing class; its share can be below one half.
+
+\begin{proposition}\label{prop:local_vote}
+Suppose that \(C\geq2\), \(\Delta_v>0\), and each voting label is independently flipped with probability \(\eta\) to a uniformly chosen incorrect class. If \(0\leq\eta<(C-1)/C\), let \(\gamma=1-C\eta/(C-1)>0\). Then
+\begin{equation}\label{eq:15}
+\Pr\!\left(\max_{c\ne y_v}p_{j,-v,c}\geq p_{j,-v,y_v}\right)
+\leq \min\!\left\{1,(C-1)\exp\!\left(-\frac{s_v\gamma^2\Delta_v^2}{2}\right)\right\}.
+\end{equation}
+\end{proposition}
+
+The probability on the left includes ties with a competing class. Symmetric corruption reduces the expected margin over the closest competitor from \(\Delta_v\) to \(\gamma\Delta_v\). Hoeffding's inequality gives the exponential term, and \(C-1\) accounts for the competing classes. At a fixed positive margin and noise rate, increasing the number of votes tightens the bound. Enlarging a group can also change its class composition and reduce the margin, so both quantities matter for voting reliability. Sharpening in Eq.~\eqref{eq:10} preserves the most-voted classes, and the same bound applies to \(q_{j,-v}\). Appendix~H.1 gives the proof.
+
+\Needspace{100pt}
+We now turn to the error of the target itself. Write \(z=e_{\widetilde y_v}\) for the observed one-hot label, \(q=q_{j,-v}\) for the local-consensus distribution, \(\alpha=\alpha_{j,-v}\) for the consensus weight, and \(L_v(r)=\lVert r-e_{y_v}\rVert_2^2\) for the squared error of a target vector \(r\) with respect to the clean label. The target \(t_v=(1-\alpha)z+\alpha q\) satisfies the exact identity
+\begin{equation}\label{eq:16}
+\begin{aligned}
+L_v(t_v)={}&(1-\alpha)L_v(z)+\alpha L_v(q)\\
+&-\alpha(1-\alpha)\lVert z-q\rVert_2^2.
+\end{aligned}
+\end{equation}
+
+The identity expresses the blended target's error as the weighted errors of its two sources minus a nonnegative term determined by their disagreement. It applies to the consensus and weight computed from each realized set of labels. Across the training set, the change in Brier score combines error reduction on corrupted labels with any error introduced on correct labels. Appendix~H.2 derives these two components and a sufficient condition for lower expected target error under symmetric noise. Section~\ref{sec:4.3.1} reports the net reduction, and Appendix~I.2 measures the two components separately.
+
+
+\subsection{Graph-teacher distillation extension}\label{sec:3.5}
+
+GB-LCSS as described above supervises the MLP only on the labeled training nodes \(\mathcal{V}_{L}\). When a graph teacher may be trained, the same targets can be used to train it, and its predictions then provide distillation targets for every node. This extension asks whether improved targets for the teacher translate into a better deployed MLP; the MLP itself is unchanged and still receives only node attributes.
+
+\Needspace{64pt}
+
+For each \(v \in \mathcal{V}_{L}\), we define the teacher target \(t_{v}^{T}\) using the target defined in Eq.~\eqref{eq:12}:
+
+\begin{equation}\label{eq:17}
+t_{v}^{T} = t_{v},\qquad v \in \mathcal{V}_{L}.
+\end{equation}
+
+\Needspace{64pt}
+
+Let \(g_{\phi}\) denote a two-layer GCN teacher with parameters \(\phi\), and let \(Z^{T} \in \mathbb{R}^{N \times C}\) denote its class-logit matrix. Given the original node attributes \(X\) and adjacency matrix \(A\), the teacher output is
+
+\begin{equation}\label{eq:18}
+Z^{T} = g_{\phi}(X,A).
+\end{equation}
+
+\Needspace{64pt}
+
+Let \(Z_{v}^{T}\) denote the row of \(Z^{T}\) corresponding to node \(v\). We define the teacher loss \(\mathcal{L}_{T}\) over the labeled training nodes as
+
+\begin{equation}\label{eq:19}
+\mathcal{L}_{T} = - \frac{1}{|\mathcal{V}_{L}|}\sum_{v \in \mathcal{V}_{L}}{\sum_{c = 1}^{C}t_{vc}^{T}}\log\operatorname{softmax}\left( Z_{v}^{T} \right)_{c}.
+\end{equation}
+
+The loss in Eq.~\eqref{eq:19} trains the graph teacher to match the GB-LCSS target probabilities on \(\mathcal{V}_{L}\). The normalized representation \(\bar{H}\) is used to construct the granular ball partition from which these targets are derived; the teacher itself receives \(X\) and \(A\) as inputs.
+
+\Needspace{64pt}
+
+After checkpoint selection, the teacher is frozen. Let \(\tau > 0\) denote the distillation temperature. For every \(v \in \mathcal{V}\), we define the temperature-scaled teacher prediction \(\pi_{v}\) as
+
+\begin{equation}\label{eq:20}
+\pi_{v} = \operatorname{softmax}\left( \frac{Z_{v}^{T}}{\tau} \right).
+\end{equation}
+
+Unlike \(t_{v}\), which is constructed only for labeled training nodes, \(\pi_{v}\) is available for every node in \(\mathcal{V}\).
+
+\Needspace{64pt}
+
+The MLP student \(f_{\theta}\) is trained on all \(N\) nodes using \(\pi_{v}\) as its sole distillation target. We define the student distillation loss \(\mathcal{L}_{\mathrm{KD}}\) as
+
+\begin{equation}\label{eq:21}
+\mathcal{L}_{\mathrm{KD}} = - \frac{\tau^{2}}{N}\sum_{v \in \mathcal{V}}{\sum_{c = 1}^{C}\pi_{vc}}\log\operatorname{softmax}\left( \frac{f_{\theta}(x_{v})}{\tau} \right)_{c}.
+\end{equation}
+
+After distillation, only the MLP student is retained for inference on node attributes.
+
+\subsection{Computational costs}\label{sec:3.6}
+
+Relative to direct MLP training, GB-LCSS adds three training-time stages: graph contrastive pretraining, granular ball partitioning, and soft-target construction. The cost of pretraining is that of the chosen encoder and schedule and is measured in \hyperref[sec:4.4.2]{Section~\ref*{sec:4.4.2}}; the representation is computed once per dataset and reused. The remaining stages are analyzed below, followed by the cost of the deployed classifier.
+
+\Needspace{64pt}
+
+Partitioning is dominated by the 2-means calls. Running 2-means for \(I\) iterations on a node subset \(S\), with a fixed number of initializations, costs \(\mathcal{O}(I|S|d_{h})\). The candidate balls examined in one pass of Algorithm~\ref{alg:1} are disjoint, so their combined size is at most \(N\), and each pass ends when one split is accepted. Since at most \(B_{\max}-1\) splits can be accepted, the total cost of all 2-means calls is bounded by
+
+\begin{equation}\label{eq:22}
+\mathcal{O}(IB_{\max}Nd_{h}).
+\end{equation}
+
+For fixed \(I\) and \(B_{\max}\), this bound is linear in the number of nodes and in the representation dimension. Sorting the candidates by dispersion in each pass adds at most \(\mathcal{O}(B_{\max}^{2}\log B_{\max})\) operations in total. The frozen representation \(\bar{H}\) occupies \(\mathcal{O}(Nd_{h})\) space, and the node assignments, ball centers, and per-ball class counts occupy \(\mathcal{O}(N + B_{\max}(d_{h} + C))\) space. Given the per-ball class counts, computing targets for the labeled nodes takes \(\mathcal{O}(|\mathcal{V}_{L}|C)\) time. The implementation initializes and stores a dense \(N \times C\) target matrix, adding \(\mathcal{O}(NC)\) time and space.
+
+\Needspace{64pt}
+
+The classifier is the same two-layer MLP as in the baselines. Let \(F\) denote its hidden width and \(T_{S}\) the number of training epochs. The loss in Eq.~\eqref{eq:13} involves only the training nodes; the full-batch implementation evaluates all \(N\) nodes in each epoch, at a cost of \(\mathcal{O}(T_{S}N(dF + FC))\). At inference, the cost for one node is
+
+\begin{equation}\label{eq:23}
+\mathcal{O}(dF + FC).
+\end{equation}
+
+and the parameters occupy \(\mathcal{O}(dF + FC)\) space. Inference reads only the attributes of the query node, so its cost does not depend on the number of edges \(|\mathcal{E}|\). The graph-dependent representation and target-construction overhead is confined to training and preparation; it does not increase the deployed MLP's inference cost.
+
+The distillation extension adds the training of a GCN teacher and a distillation pass over all \(N\) nodes. Its deployed MLP has the same architecture and the same inference cost as above.
+
+\FloatBarrier
+
+\section{Experiments}\label{sec:4}
+
+\subsection{Experimental setup}\label{sec:4.1}
+
+\subsubsection{Datasets}\label{sec:4.1.1}
+
+The main experiments use five public datasets: the citation graphs Cora and CiteSeer \cite{ref69}, the 70-class citation graph CoraFull, the co-authorship graph Coauthor-CS, and the co-purchase graph Amazon-Photo \cite{ref70}. Table~\ref{tab:1} summarizes their statistics; edges are counted as unique undirected pairs after self-loop removal, training-node counts refer to the 20\% split, and edge homophily is the proportion of edges joining nodes of the same class. Six additional datasets are evaluated under uniform 0.4 noise (Appendix~G). Appendices A--I are provided as Supplementary Material.
+
+\input{tables/table_1.tex}
+
+\subsubsection{Data splits and label noise}\label{sec:4.1.2}
+
+All comparisons use a fixed-graph transductive protocol. Complete node attributes and adjacency, including those of test nodes, are available as unlabeled context during representation learning and partitioning. For each seed from 0 to 4, we use the NoisyGL percentage-split routine to randomly sample training, validation, and test nodes from the full node set at ratios of 20\%, 10\%, and 70\%. Methods share the same split and noisy training labels for each dataset and seed. Noise is injected into training labels only. Clean validation labels are used for checkpoint selection, and test labels are used for final evaluation. Appendix~F gives the exact subset sizes and sampling procedure, and Appendix~C examines corrupted validation labels.
+
+Uniform noise uses \(P_{ii} = 1 - \rho\) and \(P_{ij} = \rho/(C - 1)\), with \(\rho \in \{ 0.2,0.4,0.6\}\). Pair noise uses \(\rho = 0.4\) and changes class \(i\) to \(((i - 2)\bmod C) + 1\) with probability \(\rho\), leaving it unchanged with probability \(1 - \rho\). Instance-dependent noise follows the NoisyGL generator with a configured mean flip rate of 0.4 and \(\text{norm\_std} = 0.1\).
+
+\subsubsection{Compared methods}\label{sec:4.1.3}
+
+The first comparison group comprises seven noisy-label baselines: MLP+CE, Small-loss, Co-teaching, JoCoR, SCE, ELR, and LogitClip. They use the same deployed two-layer MLP and the same labeled training nodes as GB-LCSS, so the comparison matches the classifier architecture and the label budget while the training-time resources differ: GB-LCSS reads the graph during training, and Small-loss, Co-teaching, and JoCoR are given the true noise rate to set their forget-rate schedules, which GB-LCSS does not require. Small-loss selects samples by per-sample cross-entropy. Co-teaching and JoCoR train two independently initialized MLPs but evaluate one network without ensembling.
+
+The second group includes PosteL \cite{ref54}, ALS \cite{ref55}, SALS \cite{ref56}, Graph-MLP \cite{ref3}, and GSDN \cite{ref40}, which use graph information during training and receive only node attributes at inference in our protocol. PosteL uses the official target-construction code with iterative pseudo-labeling disabled. Graph-MLP is adapted to the common MLP, while ALS, SALS, and GSDN use mechanism adaptations under the common protocol. Appendix~F identifies the retained components and parameter sources for each method.
+
+The third group compares graph-to-MLP transfer methods: a GCN(X)+CE response-distillation baseline based on GLNN \cite{ref4}, FF-G2M \cite{ref45}, KRD \cite{ref46}, VQGraph \cite{ref47}, and a GCN teacher trained on GB-LCSS targets (\hyperref[sec:3.5]{Section~\ref*{sec:3.5}}). FF-G2M is reimplemented with the common backbones and its low- and high-frequency objectives. The KRD and VQGraph mechanism adaptations retain reliability-based knowledge selection and soft-codebook distillation, respectively. For each seed, the teacher and student of every route are retrained with a common MLP configuration.
+
+\subsubsection{Implementation details}\label{sec:4.1.4}
+
+Datasets are loaded through the NoisyGL interface to PyTorch Geometric. Graph contrastive pretraining uses row-normalized attributes, whereas downstream models use the attributes supplied by NoisyGL. Graph-convolutional models use the supplied adjacency, with normalization and self-loops handled within their graph-convolution layers.
+
+The noisy-label baselines and GB-LCSS use a two-layer MLP with hidden width 64 and dropout 0.5. We train for 200 epochs using Adam with a learning rate of 0.01 and weight decay \(5 \times 10^{- 4}\), and select the checkpoint with the highest validation accuracy. Teacher checkpoints use the same selection criterion.
+
+GB-LCSS uses \(B_{\max} = 64\), \(n_{\min} = 32\), \(\delta = 0.05\), \(s_{\min} = 2\), and \(\beta = 0.5\) as the default settings. Recursive 2-means uses Euclidean distance, k-means++ initialization \cite{ref71}, and 10 initializations per candidate split, with randomization controlled by the downstream seed. The graph encoder uses the fixed GRACE configurations listed in Appendix~F and is frozen after pretraining. The distillation extension uses temperature \(\tau = 1\). Complete parameters and their sources appear in Appendix~F.
+
+
+
+\subsubsection{Evaluation protocol}\label{sec:4.1.5}
+
+Test-node classification accuracy is reported in percent as mean \ensuremath{\pm} sample standard deviation over five paired seeds. Bold marks the highest mean within each dataset and noise setting; in Table~\ref{tab:3}, underlining marks the second-highest mean. Each dataset uses one fixed pretrained representation \(H\); the seeds vary the split, the noise realization, the downstream initialization, and the 2-means initialization, so the reported variability is conditional on the fixed representation. \hyperref[sec:4.3.3]{Section~\ref*{sec:4.3.3}} separately examines variation across GRACE pretraining seeds.
+
+Same-seed accuracy differences are assessed with two-sided paired t-tests and 95\% confidence intervals. Holm correction \cite{ref72} is applied separately to each family of 25 tests against random size-matched grouping, MLP+CE, and JoCoR. Appendix~B reports the paired comparisons, confidence intervals, and Holm-adjusted p-values.
+
+\subsection{Comparative results}\label{sec:4.2}
+
+\subsubsection{Comparison with noisy-label baselines}\label{sec:4.2.1}
+
+\input{tables/table_2.tex}
+
+GB-LCSS attains the highest mean accuracy on all five datasets under uniform 0.4, exceeding the strongest baseline by 1.33--5.54 percentage points without being given the noise rate (Table~\ref{tab:2}). Across all five noise settings, it achieves or ties for the highest mean in 24 of 25 settings, with average gains of 7.74 points over MLP+CE and 3.46 points over JoCoR, the strongest baseline on average across the 25 settings (Fig.~\ref{fig:2}). The exception is Coauthor-CS under uniform 0.2, where JoCoR is higher by 0.27 points. Appendix~A gives the complete accuracy results, and Appendix~B reports the paired statistical comparisons.
+
+\begin{figure}[!htb]
+\centering
+\includegraphics[width=\linewidth]{figures/fig2.pdf}
+\caption{Accuracy gain of GB-LCSS over the strongest noisy-label baseline with the same deployed MLP. Each cell is the five-seed mean accuracy of GB-LCSS minus the highest mean among the seven baselines under the same dataset and noise setting, in percentage points. Blue and red denote positive and negative gains, respectively.}\label{fig:2}
+\end{figure}
+
+Fig.~\ref{fig:3} shows accuracy as a function of the uniform noise rate. Between rates 0.2 and 0.6, GB-LCSS loses less accuracy than MLP+CE and JoCoR on four of the five datasets.
+
+\begin{figure}[!htb]
+\centering
+\includegraphics[width=\linewidth]{figures/fig3.pdf}
+\caption{Test accuracy under uniform label noise. Lines show the means over five paired seeds, and shaded regions show sample standard deviations. Panels use different y-axis scales. Random size-matched grouping randomizes node membership while preserving the number and size distribution of granular balls.}\label{fig:3}
+\end{figure}
+
+Appendix~G reports six additional datasets under uniform 0.4 noise. GB-LCSS exceeds random size-matched grouping on all six and the strongest noisy-label baseline on three; CiteSeerFull is further evaluated across all five noise settings in an exploratory follow-up.
+
+\subsubsection{Comparison with other graph-based MLP training methods}\label{sec:4.2.2}
+
+Table~\ref{tab:3} compares methods that use graph information to construct soft targets or to shape the representation of the MLP; all receive only node attributes at inference.
+
+\input{tables/table_3.tex}
+
+Averaged across the 25 settings, GB-LCSS exceeds PosteL, ALS, and SALS by 5.69, 7.71, and 4.69 percentage points, and the difference is positive in 24, 25, and 24 of the 25 settings (Appendix~E). These methods smooth each label toward the labels of its graph neighbors, whereas GB-LCSS pools labels within regions of a learned representation and leaves out the node's own label.
+
+Graph-MLP and GSDN use the graph to shape the representation of the MLP and leave the labels unchanged. Under uniform 0.4, GB-LCSS has the higher mean on CoraFull, Coauthor-CS, and Amazon-Photo, by 0.34, 1.76, and 5.07 points over Graph-MLP, and Graph-MLP has the higher mean on Cora and CiteSeer, by 5.74 and 1.99 points; GB-LCSS exceeds GSDN on all five datasets. These methods illustrate two distinct uses of graph information during training: shaping the learned representation and refining the supervision targets.
+
+\subsection{Ablation and mechanism analysis}\label{sec:4.3}
+
+\subsubsection{Effect of local-consensus targets}\label{sec:4.3.1}
+
+We first test whether the gain comes from which nodes share a ball. Random size-matched grouping shuffles the node membership while preserving the ball sizes and leaves the target rule unchanged. Uniform and prior smoothing replace the local consensus with a uniform class distribution or with the class frequencies of the observed training labels, and test whether softening the targets alone provides the same benefit. A further variant includes the current node's label in the vote under the same tie-handling rule. Table~\ref{tab:4} reports these comparisons under uniform 0.4.
+
+\input{tables/table_4.tex}
+
+Randomizing the membership while preserving the ball sizes lowers accuracy in all 25 settings, by 8.69 percentage points on average, to approximately the level of MLP+CE. Uniform and class-prior smoothing recover little of this gain. These controls indicate that the benefit depends primarily on which nodes contribute to the local consensus, rather than on target softening alone. Excluding the current node's vote raises mean accuracy on all five datasets under uniform 0.4 and, averaged over the five noise settings, on every dataset. With clean training labels, accuracy differs from MLP+CE by between \ensuremath{-}1.75 and +2.00 points (Appendix~D), since the targets then change only in balls whose training nodes belong to several classes.
+
+\Needspace{64pt}
+
+We then assess the training targets themselves, independently of the classifier. Fig.~\ref{fig:4} uses the multiclass Brier score \cite{ref73} to measure their squared probability error against the clean training labels, which are used for evaluation only. For a target matrix \(Y^{\mathrm{tar}}\), the score is
+
+\[
+\operatorname{BS}(Y^{\mathrm{tar}}) = \frac{1}{|\mathcal{V}_{L}|}\sum_{v \in \mathcal{V}_{L}}{\sum_{c = 1}^{C}\left( Y_{vc}^{\mathrm{tar}} - \mathbf{1}\lbrack y_{v} = c\rbrack \right)^{2}},
+\]
+
+where \(Y_{vc}^{\mathrm{tar}}\) is the target probability of class \(c\) for node \(v\) and \(y_{v}\) is the clean label of training node \(v\). All 25 points, each averaged over five seeds, lie below the equality line: the GB-LCSS targets reduce the score by 0.06--0.51 relative to the observed one-hot targets, with the largest reductions on Coauthor-CS and Amazon-Photo.
+
+\begin{figure}[!htb]
+\centering
+\includegraphics[width=\linewidth]{figures/fig4.pdf}
+\caption{Brier score of the GB-LCSS targets and of the observed one-hot targets against the clean training labels. (a) The horizontal and vertical axes show the multiclass Brier scores of the observed one-hot targets and the GB-LCSS targets, respectively. Each marker is the five-seed mean for one dataset--noise setting; colors identify datasets, and circles, squares, and triangles denote uniform, pair, and instance-dependent noise. The dashed line denotes equality. (b) Each cell is the observed-target score minus the GB-LCSS-target score; positive values indicate lower squared probabilistic error for the soft targets.}\label{fig:4}
+\end{figure}
+
+Following Eq.~\eqref{eq:16}, Appendix~I.2 separates this reduction into the decrease of error on corrupted labels and the increase on initially correct labels under uniform 0.4 noise; the decrease exceeds the increase in all 25 dataset--seed runs, and by a factor of 6.7--18.1 in the five-seed means.
+
+\subsubsection{Sensitivity to the grouping rule}\label{sec:4.3.2}
+
+This experiment tests whether local-consensus supervision depends on the specific partitioning procedure. We keep the frozen representation and Eqs.~\eqref{eq:7}--\eqref{eq:12} unchanged and replace the granular ball partition with kNN neighborhoods or a k-means partition. For each seed, kNN excludes the query node and matches its neighborhood size to the mean number of training votes per ball; k-means uses the same number of groups as the granular ball partition and likewise excludes the current node's own vote. Table~\ref{tab:5} reports the comparison under uniform 0.4, with differences defined as alternative-grouping accuracy minus granular ball accuracy, in percentage points.
+
+\input{tables/table_5.tex}
+
+The three grouping rules give mean accuracies within one percentage point of one another on four of the five datasets, and all three exceed random size-matched grouping (Table~\ref{tab:5}). On CoraFull, kNN exceeds granular ball grouping by 3.11 points. These results show that local-consensus targets can also be constructed with other grouping rules. Granular balls provide a shared regional organization: each node has a unique group assignment, and the group's class statistics are reused across its training-node targets. The dispersion criterion determines the number of regions within the budget and enforces a minimum child-group size. \hyperref[sec:4.4.2]{Section~\ref*{sec:4.4.2}} compares the construction time and storage of the three rules.
+
+\subsubsection{Effect of the representation space}\label{sec:4.3.3}
+
+The representation determines which nodes are grouped together and hence which labels contribute to each target. Table~\ref{tab:6} compares GRACE, raw node attributes \(X\), and two-step propagated attributes \(A^2X\) on the five datasets under uniform 0.4 noise, each with five paired seeds and the same splitting parameters (Appendix~I.1). Ball counts give the range across these seeds. For \(A^2X\), the attributes are multiplied twice by the original adjacency matrix, without added self-loops or normalization, and the resulting vectors are L2-normalized as in Eq.~\eqref{eq:3}.
+
+\input{tables/table_6.tex}
+
+With raw \(X\), no split satisfies Eq.~\eqref{eq:6} in any of the 25 dataset--seed runs, so all nodes remain in one ball and each node draws its consensus from all other training nodes. \(A^2X\) behaves the same way on Cora, CiteSeer, and CoraFull. It produces 50--59 and 64 balls on Coauthor-CS and Amazon-Photo, where its accuracy exceeds that of raw \(X\). GRACE yields a multi-ball partition on every dataset and the highest mean accuracy of the three representations, exceeding \(A^2X\) by 1.47 points on Coauthor-CS and 1.38 points on Amazon-Photo. Under the fixed splitting criterion, GRACE consistently produces local regions that support effective target construction.
+
+A separate experiment varies the GRACE pretraining seed on Cora, CiteSeer, and CoraFull, with three pretrained representations and three downstream seeds each. Partitions obtained from different pretraining seeds differ substantially, with adjusted Rand index \cite{ref74} between 0.247 and 0.365. After averaging over downstream seeds, the standard deviations of accuracy across pretraining seeds are 0.13, 0.45, and 0.60 percentage points, and GB-LCSS exceeds MLP+CE for every pretraining seed. Thus, changes in node assignments across these pretrained representations have a relatively small effect on downstream accuracy.
+
+\subsubsection{Sensitivity to construction and target parameters}\label{sec:4.3.4}
+
+The parameter study examines how the partition and the amount of voting support affect accuracy. Appendix~I.1 varies one parameter at a time on the five datasets under uniform 0.4 noise, using fixed representations and five paired seeds. The largest losses occur when a higher splitting threshold leaves all nodes in one ball, or when a higher voting threshold sharply reduces the number of nodes receiving consensus supervision. The remaining tested settings stay within three percentage points of the default. A larger ball budget improves CoraFull, and stronger sharpening improves four datasets, so the shared default is not the best setting for every dataset. The defaults were fixed on Cora and CiteSeer before the other datasets were evaluated; Appendix~I.1 gives the complete results and voting-coverage measurements.
+
+
+\subsection{Graph-teacher extension and computational cost}\label{sec:4.4}
+
+\subsubsection{Graph-teacher distillation}\label{sec:4.4.1}
+
+The preceding experiments supervise the training nodes directly, without a graph teacher. We next evaluate the use of the same targets for graph-to-MLP distillation (\hyperref[sec:3.5]{Section~\ref*{sec:3.5}}). Table~\ref{tab:7} compares direct MLP training with five distillation routes on the five datasets under uniform 0.4 and 0.6. The first row trains the MLP on the labeled nodes only; the remaining rows use teacher predictions with method-specific objectives and node selection. All routes deploy the same two-layer MLP receiving only node attributes. The GCN teacher trained on GB-LCSS targets differs from the GCN(X)+CE baseline only in using the soft target of Eq.~\eqref{eq:17} in place of the observed one-hot label; the other routes are described in \hyperref[sec:4.1.3]{Section~\ref*{sec:4.1.3}} and Appendix~F.
+
+\begin{table}[!htb]
+\centering
+\caption{Direct MLP training and graph-to-MLP distillation under uniform noise.}\label{tab:7}
+{\small\textbf{(a) Uniform 0.4}}\par\smallskip
+
+\input{tables/table_7a.tex}
+
+\par\medskip{\small\textbf{(b) Uniform 0.6}}\par\smallskip
+
+\input{tables/table_7b.tex}
+
+\end{table}
+
+Training the GCN teacher with GB-LCSS targets instead of the observed labels raises the distilled student's mean accuracy in nine of ten settings, showing that target refinement can improve the supervision transferred through a graph teacher. This student has the highest mean among the five distillation routes in eight of ten settings; on CoraFull and Amazon-Photo under uniform 0.4, GCN(X)+CE and VQGraph are higher by 1.45 and 0.14 points. The distilled student exceeds direct MLP training in all ten settings, by 3.12--23.86 points under uniform 0.4 and 5.21--29.48 points under uniform 0.6; this difference reflects the additional resources of the extension, a graph teacher and distillation targets for all nodes, with the deployed MLP unchanged.
+
+\subsubsection{Computational cost}\label{sec:4.4.2}
+
+GB-LCSS deploys the same MLP as MLP+CE, so its additional cost is confined to representation learning and target construction. Timing and GPU-memory measurements were obtained on an AMD Radeon RX 7700 XT workstation running Windows 10 (build 19045), with Python 3.12.10, PyTorch 2.9.1+rocm7.2.1, and PyTorch Geometric 2.7.0. GRACE pretraining takes 0.07, 0.13, and 74.48 minutes on Cora, CiteSeer, and CoraFull, with peak allocated GPU memory of 0.40, 0.67, and 12.73 GiB. Times are averaged over three pretraining seeds. Memory values are the largest peaks across these runs, measured using \texttt{torch.cuda.max\_memory\_allocated()}. Each frozen representation is computed once per dataset and reused across all noise settings and downstream seeds.
+
+Fig.~\ref{fig:5} compares the construction time and storage of the three grouping rules. The granular ball partition stores one class-count vector per ball, whereas exact kNN stores one neighbor list per training node; on CoraFull, Coauthor-CS, and Amazon-Photo the stored structure of the partition is smaller than that of exact kNN, by the largest margin on the two largest graphs, and its construction time is the shortest of the three rules on three of the five datasets (seed-0 measurements).
+
+\begin{figure}[!htb]
+\centering
+\includegraphics[width=\linewidth]{figures/fig5.pdf}
+\caption{Construction cost of granular ball, exact-kNN, and k-means grouping. (a) End-to-end construction time. (b) Stored grouping structure. Both are seed-0 measurements.}\label{fig:5}
+\end{figure}
+
+\subsection{Discussion}\label{sec:4.5}
+
+GB-LCSS improves supervision by combining each observed label with evidence from related training nodes. The label-free representation determines which nodes contribute to this evidence, and excluding the current node's vote keeps its annotation out of its own consensus estimate. When the other labels provide consistent evidence for the underlying class, their consensus can offset an isolated error. The advantage over random size-matched grouping and generic label smoothing supports the importance of choosing these contributing nodes (Table~\ref{tab:4}). The target-quality analysis adds direct evidence: the soft targets have lower mean Brier scores in all 25 settings, and the error reduction on corrupted labels exceeds the error introduced on correct labels in the decomposition reported in Appendix~I.2.
+
+The usefulness of local evidence depends on both its class composition and the number of available votes. Proposition~\ref{prop:local_vote} relates these quantities to voting reliability under independent symmetric noise. Agreement alone is insufficient when the local labels favor an incorrect class, since the consensus can then move the target away from the true class. The representation and parameter studies show lower accuracy when local groups fail to form or voting support becomes sparse. With clean training labels, the refinement improves one dataset and lowers accuracy on four, with all changes within 2.00 percentage points (Appendix~D). On the additional noisy-label datasets, it exceeds random grouping throughout but the strongest baseline on three of six datasets (Appendix~G). Together, these results indicate that the benefit varies with the quality of local label evidence across datasets and supervision conditions.
+
+GB-LCSS, Graph-MLP, and GLNN share an attribute-only deployment interface but use the training graph differently. Graph-MLP incorporates a neighborhood-contrastive objective, and GLNN transfers predictions from a GNN teacher. GB-LCSS uses a label-free graph representation to identify related training nodes, then combines their observed labels into soft supervision. Table~\ref{tab:3} shows dataset-dependent advantages among methods sharing this attribute-only inference interface. The teacher extension further shows that local-consensus targets can complement distillation: replacing the observed labels with GB-LCSS targets for the same GCN teacher improves the student's mean accuracy in nine of ten settings. Thus, the same target-refinement mechanism can support both direct MLP training and graph-to-MLP transfer while retaining attribute-only deployment.
+
+Granular balls provide a practical organization for this supervision. Each node is assigned to exactly one group, and the regional statistics are shared across its training-node targets. Geometric splitting determines the number of groups within a fixed budget and enforces a minimum child-group size. Alternative grouping rules also support local-consensus targets: their mean accuracies are within one percentage point on four datasets, while kNN performs better on CoraFull (Table~\ref{tab:5}). Granular ball grouping requires less stored structure than exact kNN on the three larger graphs and has the shortest construction time on three datasets (Fig.~\ref{fig:5}). Its value is the combination of competitive accuracy, reusable regional statistics, and controlled grouping cost.
+
+\section{Conclusion}\label{sec:5}
+
+We presented GB-LCSS for learning from noisy training labels when the deployed classifier receives only node attributes. The method organizes nodes into granular balls in a frozen, label-free graph representation and combines each observed label with the consensus of other training nodes in its ball. The resulting soft targets use the training graph to improve supervision while preserving graph-free inference. Our analysis relates local-vote reliability to the available votes and their clean-class margin under symmetric noise, and decomposes the squared error of the soft target.
+
+Across five datasets and five noise settings, GB-LCSS achieves or ties for the highest five-seed mean accuracy in 24 of 25 settings among seven noisy-label baselines using the same deployed MLP architecture. Its soft targets have lower mean Brier scores than the observed one-hot labels in all 25 settings. Controlled comparisons support representation-based regional supervision, with granular balls providing a compact way to share label statistics. The graph-teacher extension further shows that the same targets can improve the supervision transferred to an MLP through distillation.
+
+The present evaluation focuses on synthetic label noise in a fixed-graph transductive setting, with clean validation labels used for model selection. Future work will examine whether local consensus remains effective with real annotation errors, develop model-selection procedures for settings with limited reliable validation labels, and extend region construction to newly arriving nodes.
+
+\FloatBarrier
+
+\section*{Acknowledgements}
+
+This work was supported by the Yangtze River Delta Social Assistance Public Service Platform (B801065001FY050) and the National Natural Science Foundation of China (Nos. 62276136, 62206129, and 62375133).
+
+\setlength{\bibsep}{0.5pt plus 0.2pt minus 0.2pt}
+\bibliographystyle{gblcss-numeric}
+
+\bibliography{references}
+
+\end{document}

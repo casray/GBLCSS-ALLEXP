@@ -1,0 +1,1518 @@
+Beyond Fixed Features: Architecture-Dependent Sensitivity to Node Representations under Heterophily
+Report GitHub Issue
+×
+Title:
+Content selection saved. Describe the issue below:
+Description:
+Submit without GitHub
+Submit in GitHub
+arXiv is now an independent nonprofit!
+Learn more
+×
+Back to arXiv
+Why HTML?
+Report Issue
+Back to Abstract
+Download PDF
+Abstract
+1 Introduction
+2 Related Work
+3 Rationale and Hypothesis
+4 Methodology
+4.1 Experimental Design
+4.2 Experimental Setup
+4.3 Dataset Engineering Pipeline
+4.4 Heterophilic Datasets
+4.5 Homophilic Datasets
+5 Results and Discussion
+6 Limitations
+7 Conclusion
+References
+A GenAI Usage Statement
+B Dataset Characteristics and Homophily
+C Relation to HeTGB
+D Model Architectures
+E Analytical Perspective on Architecture-Representation Interaction
+F Statistical Comparisons.
+G Architectural Ranking Stability and Interaction Analysis
+H Capacity and Structural Control Experiments
+I Additional Limitations and Implementation Notes
+J Interpreting Feature Sensitivity for Naive GAT
+K Per Class Analysis
+L Hyperparameter Configurations
+License: CC BY 4.0
+arXiv:2609.33764v1 [cs.LG] 27 Sep 2026
+Beyond Fixed Features: Architecture-Dependent Sensitivity to Node Representations under Heterophily
+Priyanath Maji
+Affiliation: Georgia Institute of Technology
+Email: pmaji3@gatech.edu
+Sidharth Gaur
+Affiliation: Georgia Institute of Technology
+Email: sgaur38@gatech.edu
+Rajavinoth Paul Durai
+Affiliation: Georgia Institute of Technology
+Email: rdurai6@gatech.edu
+Abstract
+Graph Neural Networks (GNNs) perform well on homophilic graphs but struggle in heterophilic settings, where connected nodes often carry dissimilar labels. Existing evaluations typically compare architectures under a fixed node-feature representation, leaving unclear whether conclusions about heterophily robustness remain stable as the input representation changes. We address this question by constructing parallel feature variants of two large-scale heterophilic benchmarks, Roman-Empire and Amazon-Ratings, pairing each graph with representations ranging from static fastText vectors to contextual Transformer embeddings and evaluating seven GNN architectures across these representations. We find that the effect of representation varies across architectures: on Roman-Empire, the contextual gain ranges from 2.38 percentage points for GCN-sep to 13.67 points for GAT, with H2GCN gaining 8.77 points. On Amazon-Ratings, where node text is limited to short product titles, GAT improves by 6.78 points from fastText to MPNet, while GCN-sep changes by only 0.20 points. These results show that architectural performance is conditional on node representation: the same representation change can produce different magnitudes of performance gain across architectures, so architecture and representation cannot be treated as independent evaluation factors. A rank-correlation analysis on these two benchmarks further shows that the relative ordering of architectures remains highly stable across representations, isolating differential sensitivity, rather than ranking instability, as the primary effect.
+|
+1 Introduction
+Graph Neural Networks (GNNs) have become a standard paradigm for graph representation learning, with applications spanning social network analysis, recommendation systems, and molecular property prediction. At their core, GNNs use a spatial message-passing framework in which node representations are updated by aggregating information from local neighborhoods. This mechanism is highly effective on homophilic graphs, where connected nodes tend to exhibit similar labels, but becomes more challenging in heterophilic settings such as fraud detection and web networks, where adjacency does not imply class similarity. When neighboring nodes carry dissimilar information, neighborhood aggregation can mix useful node-specific signal with information that is less relevant to the prediction task. This has motivated a broad range of architectural approaches for heterophilic graphs, including ego-neighbor separation in H2GCN [1], initial residual and identity mappings in GCNII [2], and adaptive aggregation mechanisms such as GPRGNN [3], FSGNN [4], and GloGNN [5]. Platonov et al. [6] further demonstrated that reliable evaluation of heterophilic GNNs depends strongly on benchmark quality and introduced Roman-Empire and Amazon-Ratings as larger and more reliable alternatives to several widely used small-scale benchmarks. While this work has substantially advanced our understanding of architectural behavior under heterophily, most architecture comparisons still evaluate models using a single, fixed node-feature representation. This leaves an important question open: does the relative behavior of GNN architectures depend on the representation provided at their input?
+This question is important because node features contain information that graph propagation cannot necessarily recover. A fixed feature representation can therefore become an implicit part of an architecture comparison, even when the stated goal is to compare architectures themselves. For example, in Roman-Empire, node labels correspond to syntactic roles in a dependency graph. The predictive information associated with a word can therefore depend on its surrounding sentence and its relation to other words, rather than solely on its lexical identity. A static embedding assigns the same representation to repeated occurrences of a word, whereas a contextual Transformer representation can encode occurrence-specific information from the surrounding context. We therefore expect contextualized representations to provide greater task-relevant information than static lexical representations on Roman-Empire. On Amazon-Ratings, where nodes consist primarily of short product titles, contextualization may provide a smaller and qualitatively different benefit by capturing semantic relationships between differently worded titles.
+More broadly, we ask whether improvements in node representation affect all GNN architectures similarly or whether their benefits depend on the architecture that processes them. One possibility is that stronger representations compensate for architectural limitations, causing performance differences between architectures to shrink as the input representation becomes more informative. Another is that representation and architecture contribute complementary information, such that improving the representation produces different gains for different architectures. Distinguishing these possibilities requires varying the representation while holding the underlying graph fixed rather than comparing architectures across independently chosen feature settings.
+We study this question on Roman-Empire (22,600 nodes) and Amazon-Ratings (24,492 nodes), whose adjusted homophily values are −0.055-0.055 and 0.1410.141, respectively. For each graph, we construct multiple node-feature representations ranging from static fastText [7] vectors to contextual Transformer embeddings, including BERT-base-uncased [8], RoBERTa [9], Sentence-BERT (SBERT) [10], and MPNet [11], while keeping the graph structure unchanged. We evaluate seven GNN architectures and an MLP control across all representation-architecture combinations using a 10-fold cross-validation protocol. The MLP provides a feature-only reference, allowing us to assess performance obtainable from the node representation without graph propagation. We also include GCN-sep and GAT-sep as architecture variants motivated by established heterophily approaches, without treating the separation mechanism itself as a novel contribution.
+Our fastText setting reproduces the published architecture ordering reported by Platonov et al. [6], providing a consistency check on our benchmark reconstruction. More importantly, varying the node representation reveals systematic differences that are not visible in a single-feature evaluation. Contextualized representations improve the performance of the strongest architectures on both benchmarks: moving from static to contextual embeddings improves GAT-sep by 4.24 percentage points on Roman-Empire and GraphSAGE [12] by 1.46 points on Amazon-Ratings for the same architecture. The magnitude of the improvement, however, varies across architectures, indicating that the effect of changing the node representation is architecture-dependent rather than uniform. These findings show that node representation and architectural design cannot be cleanly evaluated as independent factors: conclusions about which architecture performs best under heterophily can depend on the feature representation supplied to the model. Evaluations that hold node features fixed may therefore overlook an important source of variation in GNN performance.
+2 Related Work
+Heterophily and Message Passing.
+Standard GNNs such as GCN [13] and GAT [14] derive node representations from local neighborhood information, an approach that becomes less effective when neighboring nodes exhibit weak or negative label correlation. This has motivated architectural approaches specifically designed for heterophilic graphs. H2GCN [1] separates ego-node and neighborhood representations and incorporates multi-hop information, while GCNII [2] uses initial residual connections and identity mapping to improve information preservation in deeper networks. Other approaches, including GPR-GNN, FSGNN, and GloGNN, use adaptive or learned aggregation mechanisms to address limitations of conventional message passing. These studies establish that architectural design is an important component of GNN performance under heterophily. In our experiments, we include several established architectures, including separation-based variants, as part of a broader comparison across feature representations; we do not claim the underlying architectural mechanisms as new.
+Benchmark Reliability.
+Platonov et al. [6] examined the reliability of commonly used heterophily benchmarks and showed that small datasets and high variance can produce unstable or misleading architectural comparisons. They introduced Roman-Empire and Amazon-Ratings as larger benchmarks with substantially more reliable evaluation properties and proposed adjusted homophily as a measure of label agreement relative to a degree-weighted null model. We build on these benchmarks and reconstruct the datasets from their primary sources. Unlike prior architecture comparisons that typically use a fixed feature representation for each benchmark, our evaluation varies the node representation while keeping the underlying graph unchanged. Adjusted homophily is used here to characterize the benchmark graphs rather than as a direct measure of neighborhood informativeness.
+Node Representations in Graph Learning.
+Node features are a fundamental component of graph learning, but their role is often treated as fixed when evaluating GNN architectures. In text-attributed graphs, representations can range from static lexical embeddings, which assign a context-independent representation to each token, to contextualized Transformer embeddings, which incorporate information from the surrounding sequence. The resulting representations differ in the type and amount of information they encode, but they need not form a universal quality ordering. We therefore avoid treating embedding families themselves as a fixed ranking of feature quality. Instead, we evaluate their task-relevant informativeness empirically using an MLP control and then examine how the same representations perform across different GNN architectures. This allows us to study whether improvements in the information available at the node level translate uniformly across architectures or interact with the way each architecture uses graph structure.
+3 Rationale and Hypothesis
+Our first hypothesis concerns the information encoded by the node representation. We hypothesize that contextualized embeddings provide greater task-relevant information than static lexical embeddings when prediction depends on contextual information. This distinction is particularly relevant to Roman-Empire, where node labels represent syntactic roles in a dependency graph. The same lexical item can occur in different syntactic roles depending on its surrounding sentence and its structural relation to other words. A static embedding cannot distinguish these occurrences, whereas a contextual representation can encode information specific to each occurrence. We therefore expect contextualized Transformer embeddings to improve task performance relative to fastText on Roman-Empire. We expect the effect to be smaller on Amazon-Ratings, where node text consists primarily of short product titles and contextual information is less directly tied to syntactic role.
+Our second hypothesis concerns the relationship between node representation and architecture. Existing GNN evaluations generally compare architectures while holding the node representation fixed, which leaves open whether architectural differences persist when the available feature information changes. A natural hypothesis is that more informative representations should compensate for weaker architectures, reducing performance differences as feature representations improve. An alternative hypothesis is that representation improvements and architectural design provide complementary benefits, such that the gain from a stronger representation depends on the architecture receiving it.
+We therefore test whether changing the node representation produces approximately uniform performance gains across architectures or architecture-dependent gains. Evidence for uniform gains would suggest that representation quality primarily shifts performance independently of architecture. In contrast, architecture-dependent gains would indicate that the interaction between node features and graph processing is an important component of GNN evaluation. Our experimental design isolates this question by keeping the graph structure and evaluation protocol fixed while crossing multiple node representations with multiple established GNN architectures.
+4 Methodology
+4.1 Experimental Design
+To study how node representations and architectural design jointly affect GNN performance, we structure our investigation as a cross-product ablation study spanning two experimental factors. The first is architectural inductive bias: we evaluate seven GNN architectures spanning naive additive aggregation (GCN, GAT), explicit ego-neighbor separation (GCN-sep, GAT-sep), concatenative and multi-hop aggregation (GraphSAGE, H2GCN), and depth-stabilized residual propagation (GCNII). We additionally include a non-graph MLP baseline to provide a feature-only reference and quantify performance achievable without graph propagation. The second is node feature representation: we vary the input node representations from static, context-free embeddings (fastText) to contextual Transformer embeddings (BERT, RoBERTa, SBERT, MPNet), and additionally construct a corpus-specific embedding with no external semantic pretraining to provide a deliberately weak feature condition. By fixing the graph structure and evaluating every architecture against every feature representation, we can examine whether changes in representation produce uniform or architecture-dependent performance changes. We conduct this study primarily on Roman-Empire and Amazon-Ratings, two large-scale heterophilic benchmarks with substantially different graph statistics and adjusted homophily values. To test whether our findings generalize, we additionally evaluate a subset of architectures on small-scale heterophilic benchmarks (WebKB: Cornell, Texas, Wisconsin) and homophilic citation network controls (Cora, PubMed).
+4.2 Experimental Setup
+Evaluation Metrics. We measure performance primarily using the Macro-averaged F1-score, with Classification Accuracy and Balanced Accuracy reported alongside it to provide a multidimensional view of model stability. The selection of Macro F1 as our primary benchmark metric is a critical design choice necessitated by severe class imbalances within both datasets. While the class distribution of the Amazon-Ratings dataset is partially managed, its largest class remains roughly eight and a half times more populous than its smallest (Rating 1 with 9,010 samples vs. Rating 4 with 1,061 samples). Similarly, the Roman-Empire dataset exhibits a natural linguistic distribution where the most frequent category (pobj) is nearly ten times more prevalent than the rarest (relcl). Macro F1 ensures that reported performance reflects a model’s true capability to correctly classify all categories, including sparse or rare classes, rather than being artificially inflated by high-frequency classifications. For all calculations, Macro F1 is computed with zero-division cases scored as zero to avoid inflating performance on folds with incomplete class coverage.
+Model Implementation and Block Protocols. Rather than enforcing a single universal layer protocol, we implement each architecture’s normalization and combination strategy according to its native design specifications. Naive GCN and GCN-sep utilize BatchNorm following each convolution layer; GAT, GraphSAGE, GAT-sep employ LayerNorm. In contrast, H2GCN and GCNII use no explicit normalization layers, relying instead on multi-hop concatenation and initial-residual identity mapping respectively to stabilize training. For the naive GCN and GAT baselines, we add a residual connection from the previous layer’s output once tensor dimensions align (occurring from the second layer onward). The evaluated architectures span several established architectural strategies for heterophily, including explicit ego-neighbor separation, multi-hop aggregation, and residual propagation.
+Dataset Partitioning and Hyperparameter Selection.
+All configurations are evaluated using a fixed set of ten predefined cross-validation splits, with performance reported as the mean and standard deviation across folds. For each architecture-representation combination, hyperparameters are selected using the training and validation partitions of Split 1, and the selected configuration is then fixed for evaluation across the ten predefined splits.
+Optimization, Training, and Tuning Ranges.
+Models are trained using standard cross-entropy loss and the AdamW optimizer. We employ a fixed learning rate selected from architecture-specific candidate sets rather than an adaptive schedule, which we empirically found yielded more consistent convergence in these heterophilic settings. Search ranges are customized per model family: GCN, GCN-sep, and GraphSAGE are searched over hidden dimensions d∈{64,128,256}d\in\{64,128,256\}, dropout p∈{0.1,0.2,0.5}p\in\{0.1,0.2,0.5\}, weight decay between 1×10−41\times 10^{-4} and 1×10−31\times 10^{-3}, and depths of 2 to 5 layers (2 to 3 for GraphSAGE). GAT and GAT-sep are searched over 1, 2, 3 or 5 layers with 8 attention heads and d∈{64,128}d\in\{64,128\}. H2GCN is fixed at 2 neighborhood hops with d∈{128,256}d\in\{128,256\} and p∈{0.2,0.5}p\in\{0.2,0.5\}. Detailed hyperparameter specifications, including exact layer counts and hidden dimensions for all models, are provided in Appendix L.
+Regularization and Model Checkpointing. Hyperparameter grid searches are conducted over up to 400 training epochs with an early stopping patience of 20 epochs. Final reported results are obtained by retraining the selected configuration over up to 600 epochs with a patience of 50 epochs. To prevent overfitting, particularly when pairing high-capacity Transformer embeddings with comparatively sparse graph topologies, we enforce strict model checkpointing based on validation-set performance. We monitor validation Macro F1 at every epoch and save the model state only when a new performance peak is achieved, automatically restoring these optimal weights for final test-set inference once training concludes. All experiments enforce deterministic execution through fixed seeds and backend constraints, executed on a mix of NVIDIA H200 and V100 GPUs based on availability. Selected architectural and optimization hyperparameters are reported explicitly in the appendix tables.
+4.3 Dataset Engineering Pipeline
+A primary objective of this study is to analyze the impact of node-feature representations in both homophilic and heterophilic settings. While standard libraries provide static versions of common benchmarks, they typically lack the raw text data necessary to generate new semantic embeddings. We therefore constructed a custom processing pipeline for our primary heterophilic datasets, Amazon Ratings and Roman Empire, while relying on standard PyTorch Geometric distributions for the WebKB and citation-network baselines. We designed a standardized .npz schema to store edge indices, labels, and feature matrices in a compressed format, decoupling the graph structure from the feature generation process so that a single graph reconstruction can be paired with any number of independently generated embedding sets. We implemented a GAResearchDataset loader class that automates retrieval and processing of these serialized objects, allowing any model built to the PyTorch Geometric interface to switch between static fastText and contextual Transformer features without architectural modification. To support reproducibility, we release our processed datasets and complete preprocessing pipeline to public repositories.11
+1
+https://github.com/priyanathmaji/graphdatasets22
+2
+https://github.com/priyanathmaji/neighborsGNN
+Table 1: Structural and homophily statistics of the evaluated graph benchmarks.
+|
+| Heterophilic Datasets
+| Homophilic
+|
+| Roman
+| Texas
+| Corn.
+| Wisc.
+| Amazon
+| PubMed
+| Cora
+| Nodes
+| 22,600
+| 183
+| 183
+| 251
+| 24,492
+| 19,717
+| 2,708
+| Edges
+| 32,684
+| 279
+| 277
+| 450
+| 93,050
+| 44,324
+| 5,278
+| Avg. Deg.
+| 2.89
+| 3.05
+| 3.03
+| 3.59
+| 7.60
+| 4.50
+| 3.90
+| Features
+| 256-768
+| 1,703
+| 1,703
+| 1,703
+| 384-768
+| 500
+| 1,433
+| Classes
+| 18
+| 5
+| 5
+| 5
+| 5
+| 3
+| 7
+| Edge Hom.
+| 0.043
+| 0.061
+| 0.123
+| 0.178
+| 0.380
+| 0.802
+| 0.810
+| Adj. Hom.
+| -0.055
+| -0.294
+| -0.220
+| -0.173
+| 0.141
+| 0.686
+| 0.771
+4.4 Heterophilic Datasets
+Roman Empire.
+This dataset is reconstructed from the Roman Empire article on English Wikipedia. We obtain the raw text for the 2022.03.01 English Wikipedia dump from Kaggle33
+3
+https://www.kaggle.com/datasets/nbroad/wiki-20220301-en and extract the Roman Empire article. Each node in the graph corresponds to one non-unique word, and two words are connected by an edge if they are adjacent in the text or connected in the sentence’s dependency tree. The label of each node is its syntactic role, following the same process used by Platonov et al.[6]: we use spaCy[15] to obtain dependency roles, select the 17 most frequent roles as unique classes, and group all remaining roles into an eighteenth class. Because we reconstruct this graph independently rather than using the officially released file, we validate the fidelity of our reconstruction against the original paper’s reported statistics: our graph contains 22,600 nodes and 32,684 edges, closely matching the 22,662 nodes and 32,927 edges reported by Platonov et al., with adjusted homophily of −0.055-0.055 against their reported −0.05-0.05.
+For node features, we compute embeddings using fastText[7], BERT-base-uncased[8], and RoBERTa[9]. Additionally, we train a custom, domain-adaptive Transformer exclusively on the Roman Empire corpus, intended as a deliberately weak feature condition rather than a competitive embedding: a lightweight Transformer encoder with two layers, eight attention heads, and a hidden dimension of 256, trained as a masked language model for 20 epochs using the Adam optimizer with a learning rate of 1×10−41\times 10^{-4}, weight decay of 0.010.01, a linear learning rate schedule, and a dropout rate of 0.40.4 to limit overfitting on the limited corpus size.
+Amazon Ratings.
+This dataset is reconstructed from the Amazon product co-purchasing network metadata released by SNAP[16], the same source cited by Platonov et al. Nodes are products, including books, music CDs, DVDs, and VHS tapes, and edges connect products that are frequently co-purchased. We reduce the graph to its five-core, requiring every retained node to have at least five neighbors, and retain the largest connected component. The task is to predict a product’s average rating, which we discretize into five classes, with all ratings below 3.0 grouped into a single class. The SNAP metadata provides product title, sales rank, co-purchase links, category path, and review data, but no dedicated product description field; we accordingly use product titles as our text source, the primary free-text field available in this source. We compute node features using fastText[7] and two SBERT variants[10], all-MiniLM-L6-v2 and all-mpnet-base-v2.
+WebKB.
+WebKB44
+4
+https://www.cs.cmu.edu/afs/cs.cmu.edu/project/theo-11/www/wwkb/ is a webpage dataset collected from computer science departments at several universities by Carnegie Mellon University. We use three of its constituent datasets, Cornell, Texas, and Wisconsin, in which nodes represent web pages and edges represent hyperlinks between them. Node features are bag-of-words representations of page content, and the task is to classify each page into one of five categories: student, project, course, staff, or faculty. We use the standard PyTorch Geometric loader for these datasets directly, including its native ten-fold splits.
+4.5 Homophilic Datasets
+Citation Networks. Cora and PubMed are standard citation network benchmarks[17]. In these networks, nodes represent papers and edges denote citations between them. Node features are bag-of-words representations of paper content, and the task is to predict each paper’s research field. We use the standard PyTorch Geometric loaders for these datasets, constructing our own ten-fold splits as described above.
+5 Results and Discussion
+Performance on Large-Scale Heterophily.
+The architecture ranking on the two large-scale heterophily benchmarks is largely stable across pretrained node-feature representations (Section G). On Roman-Empire, GAT-sep achieves the highest Macro F1 with the pretrained contextual representations, reaching 87.76 with BERT and 87.00 with RoBERTa. With fastText, however, GAT-sep and GCN-sep are essentially tied at 83.52 and 83.41, respectively, while under the custom representation GCN-sep is strongest at 67.39 and GAT-sep reaches 58.81. GraphSAGE and H2GCN also remain competitive, reaching 84.88 and 84.10 with BERT.
+A similar pattern of architecture-dependent sensitivity appears on Amazon-Ratings, although the absolute differences are smaller. GraphSAGE is strongest with fastText and SBERT, at 48.88 and 50.34, respectively, whereas GAT-sep is nominally strongest with MPNet at 49.65, narrowly exceeding GraphSAGE at 49.58. This 0.07-point difference is small relative to fold-to-fold variance. It corresponds to two nominal reversal instances in Section G (fastText-vs-MPNet, Holm-adjusted p=0.18p=0.18; MPNet-vs-SBERT, Holm-adjusted p=1.0p=1.0), neither of which is statistically significant; we therefore do not treat it as evidence that the best-performing architecture changes with representation, and instead report it only as a nominal observation.
+Table 2: Macro F1 (%) on the Roman-Empire benchmark across node-feature representations. Values are mean ±\pm standard deviation across 10 cross-validation folds. Bold indicates the highest Macro F1 within each feature space and the largest contextual gain among GNN architectures. Best contextual gain is computed as the best Macro F1 among BERT and RoBERTa minus the fastText result; gain values should be interpreted together with the corresponding absolute performance and variance.
+| Model
+| Custom
+| fastText
+| BERT
+| RoBERTa
+| Best Contextual Gain
+| GCN
+| 52.16±1.0052.16\pm 1.00
+| 65.07±0.8065.07\pm 0.80
+| 64.34±0.8864.34\pm 0.88
+| 68.62±1.9668.62\pm 1.96
+| +3.55+3.55
+| GCN-sep
+| 67.39 ±\pm 0.91
+| 83.41±0.6683.41\pm 0.66
+| 85.79±0.6585.79\pm 0.65
+| 85.68±0.4885.68\pm 0.48
+| +2.38+2.38
+| GAT
+| 28.00±1.2228.00\pm 1.22
+| 38.96±1.2338.96\pm 1.23
+| 48.69±2.6748.69\pm 2.67
+| 52.63±3.4052.63\pm 3.40
+| +13.67
+| GAT-sep
+| 58.81±1.0058.81\pm 1.00
+| 83.52 ±\pm 1.22
+| 87.76 ±\pm 0.60
+| 87.00 ±\pm 0.57
+| +4.24+4.24
+| GraphSAGE
+| 58.42±0.9158.42\pm 0.91
+| 78.06±1.0278.06\pm 1.02
+| 84.88±0.8884.88\pm 0.88
+| 84.43±0.6484.43\pm 0.64
+| +6.82+6.82
+| H2GCN
+| 58.77±0.6658.77\pm 0.66
+| 75.33±0.6575.33\pm 0.65
+| 84.10±0.7884.10\pm 0.78
+| 83.99±0.5383.99\pm 0.53
+| +8.77+8.77
+| GCNII
+| 52.48±0.7952.48\pm 0.79
+| 70.97±0.8570.97\pm 0.85
+| 77.79±1.0877.79\pm 1.08
+| 79.35±0.5879.35\pm 0.58
+| +8.38+8.38
+| MLP (control)
+| 44.30±0.7044.30\pm 0.70
+| 53.44±0.5953.44\pm 0.59
+| 76.33±0.7876.33\pm 0.78
+| 76.43±0.6576.43\pm 0.65
+| +22.99+22.99
+Table 3: Macro F1 (%) on the Amazon-Ratings benchmark across node-feature representations. Values are mean ±\pm standard deviation across 10 cross-validation folds. Bold indicates the highest Macro F1 within each feature space and the largest contextual gain. Best contextual gain is computed as the best Macro F1 among SBERT and MPNet minus the fastText result.
+| Model
+| fastText
+| SBERT
+| MPNet
+| Best Contextual Gain
+| GCN
+| 44.17±0.9444.17\pm 0.94
+| 44.89±0.8244.89\pm 0.82
+| 45.25±0.7345.25\pm 0.73
+| +1.08+1.08
+| GCN-sep
+| 48.14±1.1748.14\pm 1.17
+| 48.24±0.5648.24\pm 0.56
+| 48.34±0.6048.34\pm 0.60
+| +0.20+0.20
+| GAT
+| 35.15±8.4735.15\pm 8.47
+| 40.86±1.2740.86\pm 1.27
+| 41.93±0.3941.93\pm 0.39
+| +6.78
+| GAT-sep
+| 45.75±1.6845.75\pm 1.68
+| 49.09±1.0549.09\pm 1.05
+| 49.65 ±\pm 1.25
+| +3.90+3.90
+| GraphSAGE
+| 48.88 ±\pm 0.81
+| 50.34 ±\pm 0.80
+| 49.58±1.0349.58\pm 1.03
+| +1.46+1.46
+| H2GCN
+| 45.69±0.7345.69\pm 0.73
+| 47.83±0.8247.83\pm 0.82
+| 47.50±1.1147.50\pm 1.11
+| +2.14+2.14
+| GCNII
+| 36.70±1.8636.70\pm 1.86
+| 39.34±2.0539.34\pm 2.05
+| 41.28±2.4541.28\pm 2.45
+| +4.58+4.58
+| MLP (control)
+| 41.31±0.8741.31\pm 0.87
+| 44.21±0.7844.21\pm 0.78
+| 44.59±1.0244.59\pm 1.02
+| +3.28+3.28
+Table 4: Macro F1 (%) on small-scale WebKB heterophily benchmarks and homophilic citation-network controls, using each dataset’s native node features.
+| Model
+| Heterophilic
+| Homophilic
+| Corn.
+| Texas
+| Wisc.
+| Cora
+| Pubm.
+| GCN
+| 31.71 ±\pm 10.99
+| 28.46 ±\pm 7.44
+| 32.09 ±\pm 9.33
+| 85.90 ±\pm 1.88
+| 87.60 ±\pm 0.71
+| GCN-sep
+| 41.60 ±\pm 8.79
+| 50.11 ±\pm 7.78
+| 49.90 ±\pm 8.90
+| 86.08 ±\pm 1.26
+| 88.76 ±\pm 0.40
+| GAT
+| 31.77 ±\pm 5.58
+| 25.26 ±\pm 5.99
+| 34.06 ±\pm 10.34
+| 86.94 ±\pm 1.39
+| 87.20 ±\pm 0.42
+| GAT-sep
+| 53.04 ±\pm 8.34
+| 43.75 ±\pm 8.54
+| 51.91 ±\pm 7.32
+| 86.93 ±\pm 1.44
+| 88.91 ±\pm 0.40
+| GraphSAGE
+| 50.72 ±\pm 6.20
+| 52.56 ±\pm 9.19
+| 54.65 ±\pm 7.16
+| 87.35 ±\pm 1.28
+| 87.80 ±\pm 0.46
+| H2GCN
+| 56.49 ±\pm 10.27
+| 62.88 ±\pm 8.52
+| 61.95 ±\pm 9.17
+| 88.52 ±\pm 1.34
+| 88.89 ±\pm 0.58
+| GCNII
+| 32.19 ±\pm 7.63
+| 25.77 ±\pm 4.88
+| 39.05 ±\pm 9.40
+| 88.03 ±\pm 1.33
+| 88.42 ±\pm 0.37
+| MLP (control)
+| 53.15 ±\pm 6.84
+| 56.66 ±\pm 8.69
+| 60.94 ±\pm 6.66
+| 73.43 ±\pm 1.98
+| 87.42 ±\pm 0.59
+Feature Representation Effects Are Architecture-Dependent.
+The magnitude of the change across feature representations also varies substantially by architecture. On Roman-Empire, the difference between fastText and the better-performing contextual representation ranges from 2.38 percentage points for GCN-sep to 13.67 points for GAT. H2GCN and GCNII show intermediate gains of 8.77 and 8.38 points, respectively. On Amazon-Ratings, the corresponding range is smaller, from 0.20 points for GCN-sep to 6.78 points for GAT. These differences show that changing the node representation does not act as a uniform performance shift across architectures. Not all contextual representations improve every architecture: for example, GCN decreases by 0.73 pp from fastText to BERT, but improves by 3.55 pp with RoBERTa.
+The MLP control provides an additional feature-only reference. On Roman-Empire, its Macro F1 increases from 53.44 with fastText to 76.33 with BERT and 76.43 with RoBERTa; on Amazon-Ratings, it increases from 41.31 with fastText to 44.21 with SBERT and 44.59 with MPNet. Thus, part of the observed performance variation is attributable to differences in the information available in the node representations themselves. At the same time, the substantially different responses of the GNN architectures indicate that the same representation change does not translate into the same downstream gain.
+Finally, the deliberately weak custom representation provides a stress test of this dependence. On Roman-Empire, GAT-sep falls from 87.76 with BERT to 58.81 with the custom representation, while GCN-sep falls from 85.79 to 67.39. Even architectures that perform strongly with pretrained representations therefore remain sensitive to the information supplied at the node level.
+Behavior on Small-Scale and Legacy Benchmarks.
+On the small WebKB benchmarks (Cornell, Texas, and Wisconsin), which we include as robustness checks rather than primary evidence given their documented reliability concerns, H2GCN is the strongest GNN across all three datasets, reaching 56.49, 62.88, and 61.95 Macro F1, respectively. GraphSAGE and the separation-based variants remain competitive, although performance varies substantially across datasets, with relatively large standard deviations reflecting the instability of these small benchmarks. In contrast, on the homophilic benchmarks Cora and PubMed, the GNN architectures are much more closely clustered, and the MLP baseline remains below most GNNs, indicating that graph structure continues to provide useful predictive information in these settings. Supplementary paired comparisons of the separation variants across benchmarks are reported in Table 5.
+Hypothesis Evaluation.
+The results provide support for our hypothesis that the usefulness of a node-feature representation depends on the information required by the task. On Roman-Empire, contextualized Transformer representations substantially improve performance over static fastText for several architectures, consistent with the role of contextual information in predicting syntactic relations. The effect is smaller and less uniform on Amazon-Ratings, where node text consists primarily of short product titles. The MLP results further show that the representations themselves differ in task-relevant informativeness, with contextual representations improving feature-only performance on both benchmarks.
+Our second hypothesis concerned whether the effect of changing the node representation would vary across architectures. The cross-product evaluation provides clear evidence for this hypothesis. On Roman-Empire, the contextual gain relative to fastText ranges from 2.38 to 13.67 percentage points across GNN architectures, while on Amazon-Ratings it ranges from 0.20 to 6.78 points. Thus, replacing the input representation does not produce a uniform shift in performance: the magnitude of the change depends on the architecture processing the representation. The results therefore do not support treating node representation as an independent background variable when comparing GNN architectures.
+We also considered the possibility that stronger representations might simply compensate for architectural differences. The results provide a more nuanced view. Better representations can substantially improve individual architectures, but they do not produce a consistent convergence of architecture performance: the size of the gap between architectures does not shrink uniformly as representations improve. As shown in Section G, the identity of the best-performing architecture is statistically stable across representations on both benchmarks; what varies substantially is how much each architecture benefits from a given representation change. This indicates that node-feature representation and architectural design are not interchangeable factors; rather, their effects on predictive performance depend on their combination, even when the resulting ranking of architectures is preserved.
+Finally, the deliberately weak custom representation provides a stress test of this relationship. Even architectures that achieve high Macro F1 with pretrained contextual representations experience substantial degradation when those representations are replaced by a corpus-specific embedding trained without external semantic pretraining. This result reinforces that architectural design cannot compensate completely for limitations in the information supplied at the node level.
+6 Limitations
+Several limitations qualify our findings. First, our primary analysis is based on two large-scale heterophilic benchmarks, Roman-Empire and Amazon-Ratings. Although these datasets allow us to systematically cross node-feature representations with GNN architectures, two benchmarks are insufficient to establish a general theory of when particular representations will benefit particular architectures. The additional WebKB and citation-network experiments provide useful robustness checks, but their substantially different scale and feature construction make them complementary rather than direct replications of the primary analysis. Second, the embedding families evaluated in this study differ along multiple dimensions, including contextualization, pretraining data, training objectives, and representation dimensionality. We therefore do not interpret fastText, BERT, RoBERTa, SBERT, and MPNet as points on a universal feature-quality scale. Instead, we treat them as alternative node representations and use the MLP control to provide a feature-only reference for task-relevant informativeness. A more controlled study could vary representation properties independently or manipulate feature informativeness directly through controlled corruption or synthetic feature construction. Third, on Amazon-Ratings, node features are derived from product titles rather than full review or description text, reflecting the text available in the underlying SNAP source. The relatively modest differences across representations on this benchmark may therefore depend partly on the limited amount and type of textual information available at each node. Evaluating richer product text or non-textual attributes could help determine whether the observed representation effects generalize beyond short titles. Fourth, the corpus-specific custom Transformer on Roman-Empire is intentionally trained without external semantic pretraining and serves as a deliberately weak feature condition. Its purpose is to stress the dependence of GNN performance on the information available in the node representation, rather than to represent a typical alternative embedding model. Its results should therefore not be interpreted as evidence that pretrained Transformer embeddings universally outperform independently trained representations. Finally, our experiments use independently tuned configurations for each architecture and feature representation. This reflects the practical goal of comparing achievable performance, but means that observed differences can reflect interactions between representation, architecture, and their selected optimization configurations. Although we include targeted capacity and structural controls for GCN/GAT on Roman-Empire, these controls do not fully match all parameters and computational factors across architectures. More comprehensive parameter- and compute-matched studies could provide a more restrictive test of architectural effects.
+7 Conclusion
+We conducted a cross-product evaluation of GNN architectures and node-feature representations on large-scale heterophilic graph benchmarks, complemented by experiments on smaller heterophilic and homophilic datasets. By varying the node representation while keeping the underlying graph structure fixed, we examine a dimension of GNN evaluation that is typically held constant in architecture comparisons.
+Our results show that the effect of a node representation is architecture-dependent. Contextualized representations substantially improve several architectures on Roman-Empire and produce smaller, more heterogeneous gains on Amazon-Ratings. A rank-correlation and multiple-comparison-corrected interaction analysis (Section G) shows that the relative ranking of architectures is, largely stable across representations; it is the magnitude of each architecture’s sensitivity to representation that varies substantially, ranging from 2.38 to 13.67 percentage points on Roman-Empire and from 0.20 to 6.78 points on Amazon-Ratings. The MLP control further shows that the representations themselves differ in task-relevant information. Strong representations therefore do not simply produce a uniform improvement across models, nor do they make architectural design irrelevant, even though they do not typically reorder which architecture is best.
+These findings suggest that conclusions about GNN architecture should be interpreted jointly with the node representations supplied to the model. Evaluating each architecture with a single fixed feature representation can obscure the magnitude of representation-dependent gains, even when it does not obscure which architecture performs best. More broadly, our results motivate evaluation protocols that treat node representation as an experimental factor rather than a fixed background condition when studying GNN performance under heterophily.
+Future Directions.
+Future work should extend this analysis across a broader range of graph domains, including non-textual networks, to determine whether architecture-dependent representation effects generalize beyond language-attributed graphs. A second direction is to develop more controlled measures of feature informativeness, for example through systematic feature corruption, dimensionality-controlled representations, or task-specific probing, which would help distinguish the effects of contextualization, pretraining, representation size, and semantic content. Finally, larger factorial studies combining more architectures, representation families, and graph regimes could quantify architecture and representation interactions more systematically and identify conditions under which particular architectures are especially sensitive to changes in their input features.
+Broad Impact Statement.
+This work highlights the importance of jointly considering model architecture and node representation when evaluating graph learning systems, particularly for text-attributed heterophilic networks. Our experiments use pretrained language-model representations, which can increase computational and memory requirements and may inherit biases from their training data. These considerations are relevant when transferring the observed findings to resource-constrained or human-centered applications. We do not directly evaluate downstream decision-making systems, and therefore make no claims about application-specific performance, fairness, or safety.
+References
+[1]
+J. Zhu, Y. Yan, L. Zhao, M. Heimann, L. Akoglu, and D. Koutra (2020)
+Beyond Homophily in Graph Neural Networks: Current Limitations and Effective Designs.
+In Proceedings of the 34th International Conference on Neural Information Processing Systems,
+Cited by: Appendix D,
+§1,
+§2.
+[2]
+M. Chen, Z. Wei, Z. Huang, B. Ding, and Y. Li (2020)
+Simple and Deep Graph Convolutional Networks.
+In Proceedings of the International Conference on Machine Learning (ICML),
+Cited by: §1,
+§2.
+[3]
+E. Chien, J. Peng, P. Li, and O. Milenkovic (2021)
+Adaptive Universal Generalized PageRank Graph Neural Network.
+In Proceedings of the International Conference on Learning Representations (ICLR),
+Cited by: §1.
+[4]
+S. K. Maurya, X. Liu, and T. Murata (2022)
+Simplifying approach to node classification in Graph Neural Networks.
+Journal of Computational Science.
+Cited by: §1.
+[5]
+X. Li, R. Zhu, Y. Cheng, C. Shan, S. Luo, D. Li, and W. Qian (2022)
+Finding Global Homophily in Graph Neural Networks When Meeting Heterophily.
+In Proceedings of the International Conference on Machine Learning (ICML),
+Cited by: §1.
+[6]
+O. Platonov, D. Kuznedelev, M. Diskin, A. Babenko, and L. Prokhorenkova (2023)
+A critical look at the evaluation of GNNs under heterophily: Are we really making progress?.
+In International Conference on Learning Representations,
+Cited by: Appendix B,
+Appendix C,
+Appendix D,
+§1,
+§1,
+§2,
+§4.4.
+[7]
+E. Grave, P. Bojanowski, P. Gupta, A. Joulin, and T. Mikolov (2018)
+Learning Word Vectors for 157 Languages.
+In Proceedings of the International Conference on Language Resources and Evaluation (LREC),
+Cited by: §1,
+§4.4,
+§4.4.
+[8]
+J. Devlin, M. Chang, K. Lee, and K. Toutanova (2019)
+BERT: Pre-training of Deep Bidirectional Transformers for Language Understanding.
+In Proceedings of the Conference of the North American Chapter of the Association for Computational Linguistics: Human Language Technologies (NAACL-HLT),
+Cited by: §1,
+§4.4.
+[9]
+Y. Liu, M. Ott, N. Goyal, J. Du, M. Joshi, D. Chen, O. Levy, M. Lewis, L. Zettlemoyer, and V. Stoyanov (2019)
+RoBERTa: A Robustly Optimized BERT Pretraining Approach.
+arXiv preprint arXiv:1907.11692.
+Cited by: §1,
+§4.4.
+[10]
+N. Reimers and I. Gurevych (2019)
+Sentence-BERT: Sentence Embeddings using Siamese BERT-Networks.
+In Proceedings of the 2019 Conference on Empirical Methods in Natural Language Processing and the 9th International Joint Conference on Natural Language Processing (EMNLP-IJCNLP),
+Cited by: §1,
+§4.4.
+[11]
+K. Song, X. Tan, T. Qin, J. Lu, and T. Liu (2020)
+MPNet: Masked and Permuted Pre-training for Language Understanding.
+In Proceedings of the 34th International Conference on Neural Information Processing Systems,
+Cited by: §1.
+[12]
+W. Hamilton, Z. Ying, and J. Leskovec (2017)
+Inductive Representation Learning on Large Graphs.
+In Advances in Neural Information Processing Systems,
+Cited by: §1.
+[13]
+T. N. Kipf and M. Welling (2017)
+Semi-Supervised Classification with Graph Convolutional Networks.
+In ICLR,
+Cited by: §2.
+[14]
+P. Veličković, G. Cucurull, A. Casanova, A. Romero, P. Liò, and Y. Bengio (2018)
+Graph Attention Networks.
+In International Conference on Learning Representations,
+Cited by: §2.
+[15]
+M. Honnibal, I. Montani, S. Van Landeghem, and A. Boyd (2020)
+spaCy: Industrial-strength Natural Language Processing in Python.
+Note: Zenodo
+Cited by: §4.4.
+[16]
+J. Leskovec and A. Krevl (2014)
+SNAP Datasets: Stanford Large Network Dataset Collection.
+Note: http://snap.stanford.edu/data
+Cited by: §4.4.
+[17]
+P. Sen, G. Namata, M. Bilgic, L. Getoor, B. Gallagher, and T. Eliassi-Rad (2008)
+Collective Classification in Network Data.
+AI Magazine.
+Cited by: §4.5.
+[18]
+S. Li, Y. Wu, C. Shi, and Y. Fang (2025)
+HeTGB: A Comprehensive Benchmark for Heterophilic Text-Attributed Graphs.
+arXiv preprint arXiv:2503.04822.
+Cited by: Appendix C.
+Acknowledgements
+This research was supported in part through research cyberinfrastructure resources and services provided by the Partnership for an Advanced Computing Environment (PACE) at the Georgia Institute of Technology, Atlanta, Georgia, USA. RRID:SCR_027619.
+Appendix A GenAI Usage Statement
+All data analysis, experimental design configurations, quantitative results, and final manuscript conclusions were synthesized and finalized entirely by the authors.
+Large Language Models (LLMs) were utilized strictly as supplementary tools for: (1) computational script debugging, functional syntax optimization, and programmatic visualization generation, (2) targeted conceptual clarification regarding machine learning architectures, and (3) grammatical correction and stylistic refinement of the report to conform to formal academic writing conventions.
+Appendix B Dataset Characteristics and Homophily
+To evaluate our hypotheses, we use a diverse suite of benchmarks. Table 1 summarizes their structural statistics. To characterize label agreement across edges, we compute edge homophily he​d​g​eh_{edge} and adjusted homophily ha​d​jh_{adj} following the definitions in Platonov et al. [6]. Edge homophily represents the fraction of edges that connect nodes with identical labels:
+|
+| he​d​g​e=|{(u,v)∈E:yu=yv}||E|h_{edge}=\frac{|\{(u,v)\in E:y_{u}=y_{v}\}|}{|E|}
+|
+where yuy_{u} is the label of node uu and EE is the set of edges.
+While edge homophily provides a direct measure of same-label connectivity, its value depends on the number of classes and their size distribution. We therefore calculate adjusted homophily relative to the expected same-label connectivity under a degree-weighted null model:
+|
+| ha​d​j=he​d​g​e−∑k=1C(Dk2​|E|)21−∑k=1C(Dk2​|E|)2h_{adj}=\frac{h_{edge}-\sum_{k=1}^{C}\left(\frac{D_{k}}{2|E|}\right)^{2}}{1-\sum_{k=1}^{C}\left(\frac{D_{k}}{2|E|}\right)^{2}}
+|
+where DkD_{k} denotes the sum of the degrees of all nodes belonging to class kk. The resulting value lies between −1-1 and 11. Positive values indicate greater same-label connectivity than expected under the null model, while negative values indicate less same-label connectivity than expected. We use adjusted homophily here as a descriptive characterization of graph structure rather than as a direct measure of the informativeness or reliability of neighborhood features.
+Appendix C Relation to HeTGB
+A concurrent benchmark, HeTGB [18], evaluates GNN, PLM-based, and co-training methods on five heterophilic text-attributed graphs and reports that features derived from a large language model do not uniformly improve every GNN architecture. This observation is broadly consistent with our own findings and, we believe, mutually reinforcing rather than redundant: two independently constructed studies arriving at a related qualitative pattern strengthens confidence that architecture-dependent sensitivity to node representation is a real phenomenon rather than an artifact of one experimental pipeline. Our contribution is a separation of two effects that a qualitative observation of representation-dependent performance conflates: whether a representation change alters the relative ranking of architectures, and how strongly individual architectures respond in magnitude to that change. Three aspects of our design support this distinction. First, we vary representation along a graded ladder of three to four points per graph (Custom, fastText, BERT, and RoBERTa on Roman-Empire; fastText, SBERT, and MPNet on Amazon-Ratings), which lets us report architecture-specific sensitivity as a continuous range and test whether architecture rankings themselves are stable using rank-correlation statistics and Holm-corrected significance testing (Section G), rather than relying on a qualitative description. Second, we pair naive and ego-neighbor-separated variants of the same base architecture (GCN/GCN-sep, GAT/GAT-sep) with depth-, width-, and parameter-matched capacity controls, isolating the contribution of a specific architectural mechanism under controlled capacity. Third, we additionally derive a first-order analytical account (Section E), intentionally local and schematic rather than a general theorem, of why propagation operators that depend on the node representation, such as GAT’s learned attention, carry an additional perturbation term that propagation operators depending only on the graph, such as GCN’s fixed adjacency weighting, do not.
+We additionally note a construction-level difference on the one dataset the two studies share. Following Platonov et al. [6], our Amazon-Ratings node text is restricted to product titles, whereas the construction used in HeTGB differs in its node-text fields.
+We additionally observe that in every naive/separation architecture pair we test, the separated variant shows lower representation-sensitivity than its naive counterpart (e.g., GAT 13.67pp vs. GAT-sep 4.24pp on Roman-Empire; GAT 6.78pp vs. GAT-sep 3.90pp on Amazon-Ratings). This is a descriptive pattern across four comparisons rather than a statistically established relationship, but it is a more specific observation than HeTGB’s architecture-agnostic finding that sensitivity varies.
+Finally, our primary benchmark, Roman-Empire, is not among HeTGB’s evaluated datasets, and its dependency-parse labels give contextualization an a priori linguistic motivation, described in Section 3, that is distinct from the e-commerce setting the two studies share. We also note that HeTGB additionally evaluates PLM-based methods (e.g., fine-tuned Vicuna-7B) and co-training methods that couple PLMs with GNNs, whereas we deliberately restrict scope to message-passing GNN architectures. This restriction is intentional rather than a gap in coverage: holding the model family fixed to message-passing GNNs is what allows the matched naive/separation architecture pairs and depth-, width-, and parameter-matched capacity controls in Sections H and E, which require comparable architectural structure across the compared models. We view our contribution as complementary to, rather than a subset of, HeTGB’s broader comparison across GNN, PLM, and co-training paradigms.
+Appendix D Model Architectures
+To evaluate how different architectural designs and aggregation strategies respond to alternative node representations, we implement seven GNN architectures plus an MLP control spanning four update-mechanism categories.
+Additive Aggregation (GCN, GAT).
+These naive baselines combine self and neighborhood information within a common message-passing operation. GCN uses fixed, symmetrically normalized adjacency coefficients A^i​j\hat{A}_{ij}:
+|
+| hi(l)=σ⁡(∑j∈𝒩⁡(i)∪{i}A^i​j​W​hj(l−1)).h_{i}^{(l)}=\sigma\left(\sum_{j\in\mathcal{N}(i)\cup\{i\}}\hat{A}_{ij}Wh_{j}^{(l-1)}\right).
+|
+| (1)
+GAT instead computes learned attention coefficients αi​j\alpha_{ij}:
+|
+| hi(l)=σ⁡(∑j∈𝒩⁡(i)∪{i}αi​j​W​hj(l−1)).h_{i}^{(l)}=\sigma\left(\sum_{j\in\mathcal{N}(i)\cup\{i\}}\alpha_{ij}Wh_{j}^{(l-1)}\right).
+|
+| (2)
+In both cases, self-information is incorporated within the same aggregation operation as neighborhood information.
+Ego-Neighbor Separation (GCN-sep, GAT-sep).
+We include GCN-sep and GAT-sep as established separation-based architecture variants [1, 6]. Each variant computes node and neighborhood information through separate pathways:
+|
+| hi(l)=σ⁡(Wego(l)​hi(l−1)+∑j∈𝒩⁡(i)ai​j(l)​Wnbr(l)​hj(l−1)),h_{i}^{(l)}=\sigma\left(W_{\mathrm{ego}}^{(l)}h_{i}^{(l-1)}+\sum_{j\in\mathcal{N}(i)}a_{ij}^{(l)}W_{\mathrm{nbr}}^{(l)}h_{j}^{(l-1)}\right),
+|
+| (3)
+where ai​j(l)a_{ij}^{(l)} denotes the architecture-specific neighbor propagation coefficient. For GCN-sep, ai​j(l)a_{ij}^{(l)} is the fixed normalized adjacency coefficient; for GAT-sep, it is the learned attention coefficient αi​j\alpha_{ij}. In both variants, neighbor aggregation excludes self-loops and self-information is supplied through the separate ego transformation. We include these established variants to examine how their performance changes across node representations, rather than to claim the separation mechanism itself as a novel contribution.
+Concatenative Aggregation (GraphSAGE, H2GCN).
+These architectures separate identity preservation from the aggregation step itself. GraphSAGE uses a concatenation-based update rule:
+|
+| hv(l)=σ(W(l)⋅[hv(l−1)∥AGG({hu(l−1)}u∈𝒩⁡(v))])h_{v}^{(l)}=\sigma\left(W^{(l)}\cdot[h_{v}^{(l-1)}\parallel\text{AGG}(\{h_{u}^{(l-1)}\}_{u\in\mathcal{N}(v)})]\right)
+|
+| (4)
+H2GCN extends this by separating ego embeddings from multiple, strictly non-overlapping neighborhood hops, concatenated rather than combined additively: [hv(0)∥h𝒩⁡(v)(1)∥h𝒩⁡(v)(2)][h_{v}^{(0)}\parallel h_{\mathcal{N}(v)}^{(1)}\parallel h_{\mathcal{N}(v)}^{(2)}].
+Deep Residuals (GCNII).
+To combat over-smoothing at depth, GCNII incorporates an initial residual connection to the input features H(0)H^{(0)} and an identity mapping, without explicit ego/neighbor separation:
+|
+| H(l+1)=σ⁡(((1−αl)​P^​H(l)+αl​H(0))⋅((1−βl)​In+βl​W(l)))H^{(l+1)}=\sigma\left(\left((1-\alpha_{l})\hat{P}H^{(l)}+\alpha_{l}H^{(0)}\right)\cdot\left((1-\beta_{l})I_{n}+\beta_{l}W^{(l)}\right)\right)
+|
+| (5)
+This mechanism addresses depth-stability rather than self/neighbor entanglement, and we treat it as a distinct baseline from the separation-based architectures above.
+Appendix E Analytical Perspective on Architecture-Representation Interaction
+Our empirical results show that changing the node-feature representation does not produce a uniform change in performance across GNN architectures. This section provides a simple analytical perspective for why such architecture-dependent effects can arise. The analysis is not intended to establish a performance ordering among architectures or to provide a theorem about any particular benchmark. Instead, it characterizes the different pathways through which a change in node representation can propagate through different message-passing mechanisms.
+Generic Message-Passing Formulation.
+Consider a generic GNN layer written as
+|
+| H(l+1)=σ⁡(P(l)​(H(l),A)​H(l)​W(l)),H^{(l+1)}=\sigma\left(P^{(l)}(H^{(l)},A)H^{(l)}W^{(l)}\right),
+|
+| (6)
+where AA denotes the graph structure, P(l)P^{(l)} is the architecture-specific propagation operator, W(l)W^{(l)} is a learnable transformation, and σ\sigma is the nonlinear activation. For analytical purposes, assume that the alternative node representations have first been mapped into a common input space of dimension d0d_{0}. Let X,X′∈ℝn×d0X,X^{\prime}\in\mathbb{R}^{n\times d_{0}} denote two such representations, with
+|
+| X′=X+Δ​X.X^{\prime}=X+\Delta X.
+|
+| (7)
+More generally, the hidden representation at layer ll changes from H(l)H^{(l)} to H(l)+Δ​H(l)H^{(l)}+\Delta H^{(l)}. A first-order expansion of the next-layer representation gives
+|
+| Δ​H(l+1)≈D​σ​[P(l)​Δ​H(l)​W(l)+D​P(l)​[Δ​H(l)]​H(l)​W(l)],\Delta H^{(l+1)}\approx D\sigma\left[P^{(l)}\Delta H^{(l)}W^{(l)}+DP^{(l)}[\Delta H^{(l)}]H^{(l)}W^{(l)}\right],
+|
+| (8)
+where D​P(l)​[Δ​H(l)]DP^{(l)}[\Delta H^{(l)}] denotes the directional derivative of the propagation operator with respect to the node representations.
+This decomposition separates two effects of changing the input representation. The first term corresponds to the changed feature values being propagated through the existing graph operator. The second term appears when the propagation operator itself depends on the node representations. Consequently, two architectures can receive exactly the same change in input features while producing different changes in their hidden representations.
+Feature-Independent Propagation.
+For architectures whose propagation operator depends only on graph structure, such as the normalized propagation used by GCN, we have
+|
+| P(l)​(H(l),A)=P(l)​(A),P^{(l)}(H^{(l)},A)=P^{(l)}(A),
+|
+| (9)
+and therefore
+|
+| D​P(l)​[Δ​H(l)]=0.DP^{(l)}[\Delta H^{(l)}]=0.
+|
+| (10)
+The first-order change reduces to
+|
+| Δ​H(l+1)≈D​σ​[P(l)​Δ​H(l)​W(l)].\Delta H^{(l+1)}\approx D\sigma\left[P^{(l)}\Delta H^{(l)}W^{(l)}\right].
+|
+| (11)
+Thus, the effect of a representation change is determined by how that change is transformed and propagated by the architecture. Even when two models receive the same Δ​H(l)\Delta H^{(l)}, different propagation operators and parameterizations can result in different downstream sensitivities.
+For a linearized layer, a norm bound follows directly:
+|
+| ‖Δ​H(l+1)‖F≤‖D​σ‖2​‖P(l)‖2​‖Δ​H(l)‖F​‖W(l)‖2.\left\|\Delta H^{(l+1)}\right\|_{F}\leq\left\|D\sigma\right\|_{2}\left\|P^{(l)}\right\|_{2}\left\|\Delta H^{(l)}\right\|_{F}\left\|W^{(l)}\right\|_{2}.
+|
+| (12)
+For a 11-Lipschitz activation, the representation change is therefore scaled by the propagation and transformation operators. This provides a simple mechanism by which architectures can exhibit different responses to the same change in node features.
+Feature-Dependent Propagation.
+The situation differs for architectures such as GAT, where the propagation weights depend on the node representations through learned attention coefficients. In this case,
+|
+| P(l)=P(l)​(H(l),A),P^{(l)}=P^{(l)}(H^{(l)},A),
+|
+| (13)
+and generally
+|
+| D​P(l)​[Δ​H(l)]≠0.DP^{(l)}[\Delta H^{(l)}]\neq 0.
+|
+| (14)
+A change in the node representation can therefore influence the next layer through two pathways: it changes the content of the messages and can simultaneously change the relative weights assigned to those messages. The corresponding first-order change is
+|
+| Δ​H(l+1)≈D​σ​[P(l)​Δ​H(l)​W(l)+D​P(l)​[Δ​H(l)]​H(l)​W(l)].\Delta H^{(l+1)}\approx D\sigma\left[P^{(l)}\Delta H^{(l)}W^{(l)}+DP^{(l)}[\Delta H^{(l)}]H^{(l)}W^{(l)}\right].
+|
+| (15)
+The second term is absent in feature-independent propagation. Thus, contextualizing or otherwise changing the node representation can have a qualitatively different effect on an attention-based architecture even when the underlying graph is unchanged.
+Architectures with Multiple Information Paths.
+Architectures that preserve distinct information pathways can be represented schematically as
+|
+| H(l+1)=[H(l)Wego∥P(l)H(l)Wnbr],H^{(l+1)}=\left[H^{(l)}W_{\mathrm{ego}}\;\|\;P^{(l)}H^{(l)}W_{\mathrm{nbr}}\right],
+|
+| (16)
+where the first branch applies a transformation directly to the node representation and the second branch propagates neighborhood information. Under a change in the node representation, the corresponding change in the layer output is
+|
+| ΔH(l+1)=[ΔH(l)Wego∥P(l)ΔH(l)Wnbr].\Delta H^{(l+1)}=\left[\Delta H^{(l)}W_{\mathrm{ego}}\;\|\;P^{(l)}\Delta H^{(l)}W_{\mathrm{nbr}}\right].
+|
+| (17)
+Thus, a change in the input representation can affect the output through multiple information pathways rather than through a single aggregated representation. The formulation is schematic rather than an exact specification of every architecture, but illustrates how architectural structure can determine how changes in node features are propagated and combined. For the analytical derivation, the learned parameters are treated as fixed so that we can characterize how a representation perturbation propagates through a given architecture. This differs from our empirical protocol, where each architecture -representation combination is independently tuned; the analysis therefore provides a mechanistic interpretation rather than a decomposition of the measured performance gains.
+Connection to the Empirical Results.
+The preceding analysis provides a local, first-order mechanistic interpretation of our empirical observation that representation changes have architecture-dependent effects. The same change in node features can be propagated through a fixed graph operator, influence both message content and attention weights, or pass through multiple information pathways depending on the architecture. Consequently, a representation improvement need not translate into a uniform performance shift across GNNs.
+This perspective is consistent with the observed contextual gains in our experiments. On Roman-Empire, the change from fastText to contextual representations produces gains ranging from 2.38 to 13.67 percentage points across the evaluated GNN architectures. On Amazon-Ratings, the corresponding range is 0.20 to 6.78 percentage points. The analysis does not predict which architecture should benefit most on a particular dataset; rather, it explains why architecture and representation can interact even when the graph structure and prediction task are held fixed.
+Scope of the Analysis.
+The analysis is intentionally local and first-order. It abstracts away from nonlinear optimization, hyperparameter selection, depth-dependent effects, and dataset-specific properties, all of which can influence the final test performance of a trained GNN. It should therefore be interpreted as a mechanistic explanation for the possibility of architecture-dependent representation effects rather than as a closed-form prediction of the empirical results.
+Appendix F Statistical Comparisons.
+For selected pairwise comparisons, we report paired tt-tests across the corresponding cross-validation folds. These tests are used to assess consistency of the observed differences across folds; because cross-validation folds share training data, the resulting pp-values are interpreted as supplementary rather than as independent-sample inferential estimates.
+Table 5: Supplementary paired comparisons of GAT-sep and naive GAT across selected benchmarks. Δ\Delta denotes the Macro F1 point difference. The reported pp-values assess consistency of the paired differences across the corresponding cross-validation folds.
+| Dataset
+| Adj. Hom.
+| Naive GAT
+| GAT-sep
+| Δ\Delta
+| Score
+| Value
+| Value
+| (pp-value)
+| Roman-Empire (BERT)
+| −0.055-0.055
+| 48.69
+| 87.76
+| +39.07+39.07 (p<0.001p<0.001)
+| Amazon-Ratings (fastText)
+| −-0.141
+| 35.15
+| 45.75
+| +10.60+10.60 (p=0.008p=0.008)
+| PubMed
+| −-0.686
+| 87.20
+| 88.91
+| +1.71+1.71 (p<0.001p<0.001)
+| Cora
+| −-0.771
+| 86.94
+| 86.93
+| −0.01-0.01 (p=0.947p=0.947)
+Appendix G Architectural Ranking Stability and Interaction Analysis
+To thoroughly evaluate how node representations impact architectural rankings on heterophilic graphs, we present a statistical analysis of ranking stability and representation-dependent interaction effects across both large-scale benchmarks. Our investigation considers the possibility that changing the input representation substantially alters the relative ordering of architectures. On these two benchmarks, the empirical results do not support broad rank instability. Instead, they reveal a more nuanced distinction: while architectures exhibit highly differential performance sensitivity to alternative feature spaces, their overall relative ordering remains remarkably stable.
+We evaluate the structural stability of model rankings by computing Spearman rank correlation coefficients (ρ\rho) and Kendall rank correlation coefficients (τ\tau) between alternative feature representations. As detailed in Table 6, the relative ordering of graph architectures remains highly stable on both benchmarks. On the Roman-Empire benchmark, the relative ordering is invariant across the three pretrained representations: fastText, BERT, and RoBERTa. Even when introducing the deliberately weak Custom corpus-trained embedding space, the model hierarchy remains strongly correlated with the pretrained representations. A similarly robust preservation of architectural rankings is observed on the Amazon-Ratings graph, where node text is limited to short product titles.
+Crucially, these high rank correlations do not imply that changing node representations produces a uniform performance shift across architectures. The magnitude of the performance change is highly heterogeneous. On Roman-Empire, moving from fastText to RoBERTa yields an absolute gain of 13.67 percentage points for baseline GAT, whereas GCN-sep gains only 2.38 percentage points. Similarly, on Amazon-Ratings, baseline GAT improves by 6.78 percentage points from fastText to MPNet, whereas GCN-sep changes by only 0.20 percentage points. Thus, representation changes can substantially alter observed model performance through differential architectural sensitivity while largely preserving the relative ordering of architectures. The results therefore distinguish two effects that are easily conflated: the sensitivity of an architecture to the supplied representation and the stability of the architecture ranking across representations.
+While nominal rank reversals occur in specific cases, our fold-level interaction analysis provides no statistically significant evidence that these rank reversals are robust after correction for multiple comparisons. For architectures a,ba,b under representation rr, define Δ⁡(a,b,r)=F​1​(a,r)−F​1​(b,r)\Delta(a,b,r)=F1(a,r)-F1(b,r); a nominal reversal between representations r1r_{1} and r2r_{2} is a sign change sign⁡(Δ⁡(a,b,r1))≠sign⁡(Δ⁡(a,b,r2))\operatorname{sign}(\Delta(a,b,r_{1}))\neq\operatorname{sign}(\Delta(a,b,r_{2})). To assess whether a nominal rank reversal is statistically supported, we test the corresponding interaction Δ⁡(a,b,r1)−Δ⁡(a,b,r2)\Delta(a,b,r_{1})-\Delta(a,b,r_{2}), computed over the ten cross-validation folds, requiring both a 95% bootstrap confidence interval that excludes zero and an exact sign-flip pp-value that remains below 0.05 after Holm correction. On Roman-Empire, nominal rank reversals arise only when comparing the deliberately weak Custom representation with pretrained representations. Each such comparison contains two pairwise architecture-order inversions, involving the relative ordering of GCN-sep and GAT-sep and of GraphSAGE and H2GCN. On Amazon-Ratings, nominal inversions are more localized among closely competing architectures: the fastText-MPNet comparison contains three pairwise inversions, including reversals between GCN-sep and GAT-sep, GAT and GCNII, and GAT-sep and GraphSAGE. The fastText-SBERT and MPNet-SBERT comparisons contain two and one inversions, respectively. Although several of these interaction contrasts have bootstrap confidence intervals that exclude zero, none remain statistically significant after Holm correction. Across the twelve nominal architecture-pair-by-representation-pair reversal instances identified across the two benchmarks (six on each), none survives both criteria; the total number of statistically supported rank reversals is therefore zero under the stated family-wise error criterion.
+Table 6: Systematic evaluation of GNN architectural ranking stability across alternative node feature spaces. Spearman (ρ\rho) and Kendall (τ\tau) coefficients quantify agreement between architecture rankings; their associated pp-values explicitly test the null hypothesis of departure from zero association, rather than evaluating equivalence or stability itself. “Inversions” denotes the number of pairwise architecture-order reversals between the two representations. “Supported” denotes the number of nominal reversals satisfying both the 95% bootstrap confidence-interval criterion and the Holm-adjusted exact sign-flip significance criterion. Multi-comparison validation uses a Holm-adjusted exact sign-flip test on the corresponding interaction contrast together with a 95% bootstrap confidence interval to assess whether nominal rank reversals are statistically supported.
+| Dataset
+| Comparison
+| Spearman ρ\rho
+| Kendall τ\tau
+| Inversions
+| Supported
+| Roman
+| Custom vs. fastText
+| 0.9286 (p=.0025p=.0025)
+| 0.8095 (p=.0107p=.0107)
+| 2
+| 0
+| Custom vs. BERT
+| 0.9286 (p=.0025p=.0025)
+| 0.8095 (p=.0107p=.0107)
+| 2
+| 0
+| Custom vs. RoBERTa
+| 0.9286 (p=.0025p=.0025)
+| 0.8095 (p=.0107p=.0107)
+| 2
+| 0
+| fastText vs. BERT
+| 1.0000 (p<.001p<.001)
+| 1.0000 (p<.001p<.001)
+| 0
+| 0
+| fastText vs. RoBERTa
+| 1.0000 (p<.001p<.001)
+| 1.0000 (p<.001p<.001)
+| 0
+| 0
+| BERT vs. RoBERTa
+| 1.0000 (p<.001p<.001)
+| 1.0000 (p<.001p<.001)
+| 0
+| 0
+| Amazon
+| fastText vs. MPNet
+| 0.8571 (p=.0137p=.0137)
+| 0.7143 (p=.0302p=.0302)
+| 3
+| 0
+| fastText vs. SBERT
+| 0.9286 (p=.0025p=.0025)
+| 0.8095 (p=.0107p=.0107)
+| 2
+| 0
+| MPNet vs. SBERT
+| 0.9643 (p<.001p<.001)
+| 0.9048 (p=.0028p=.0028)
+| 1
+| 0
+Appendix H Capacity and Structural Control Experiments
+Because the primary experiments independently tune each architecture, we additionally conducted capacity and structural control experiments to assess whether the large performance differences between baseline and separation-based variants could be explained primarily by differences in model size or macro-architecture. These experiments were conducted on Roman-Empire using BERT and RoBERTa representations.
+For GAT, we increased the naive baseline from its selected 1-layer, 64-dimensional configuration to a 5-layer, 128-dimensional configuration matching the depth and hidden dimension of the BERT GAT-sep configuration. For BERT, the matched naive GAT achieves 36.29% Macro F1 versus 87.76% for GAT-sep under the same 5-layer, 128-dimensional configuration. Under RoBERTa, the corresponding high-capacity naive GAT achieves 39.13%, while the independently selected GAT-sep reaches 87.00%. This indicates that the large difference between the two variants cannot be attributed simply to the lower-capacity configuration selected for the naive baseline.
+For GCN, we additionally constructed a naive configuration with hidden dimension d=362d=362. This dimension was chosen because 3622≈2​(2562)362^{2}\approx 2(256^{2}), approximately matching the dominant hidden-to-hidden parameter count of the 256-dimensional GCN-sep model, which contains separate ego and neighbor transformations. The resulting naive GCN achieves 65.07% Macro F1, compared with 85.79% for GCN-sep under the corresponding BERT setting. Thus, increasing the naive model’s dominant parameter capacity does not reproduce the performance of the corresponding separation-based variant.
+These controls do not establish that a particular architectural mechanism is universally superior, nor do they replace the main architecture and representation analysis. Instead, they show that the architectural differences observed in the primary experiments are not explained solely by the smaller capacity or shallower configurations selected for the naive baselines.
+Table 7: Capacity and structural control experiments on Roman-Empire. The controls assess whether differences between naive and separation-based architectures can be explained primarily by depth, hidden dimension, or dominant hidden-layer parameter capacity.
+| Feature
+| Architecture
+| Control Type
+| Layers
+| Hidden Dim.
+| Macro F1 (%)
+| BERT
+| GAT-naive
+| Original
+| 1
+| 64
+| 48.69
+| BERT
+| GAT-naive
+| Depth/width matched
+| 5
+| 128
+| 36.29
+| BERT
+| GAT-sep
+| Reference
+| 5
+| 128
+| 87.76
+| RoBERTa
+| GAT-naive
+| Original
+| 1
+| 64
+| 52.63
+| RoBERTa
+| GAT-naive
+| 5L/128D control
+| 5
+| 128
+| 39.13
+| RoBERTa
+| GAT-sep
+| Reference
+| 3
+| 64
+| 87.00
+| BERT
+| GCN-naive
+| Original
+| 3
+| 256
+| 64.34
+| BERT
+| GCN-naive
+| Parameter-count matched
+| 3
+| 362
+| 65.07
+| BERT
+| GCN-sep
+| Reference
+| 3
+| 256
+| 85.79
+Appendix I Additional Limitations and Implementation Notes
+Beyond the limitations discussed in the main text, several implementation details are relevant for interpreting and reproducing the results. First, GCNII’s depth was restricted to 10 layers on the Amazon and small WebKB benchmarks, compared with 32 or 64 layers on Roman, because of the substantially higher training cost of the deeper configurations. This difference in the explored depth range may limit the best attainable GCNII performance on the WebKB datasets and should be considered when interpreting those results.
+Second, our non-graph MLP baseline is included as a feature-only reference rather than as a competing graph-based method. Its performance therefore provides an estimate of the predictive information available directly from the node representation without neighborhood propagation. The substantial variation in MLP performance across feature spaces, including the increase from 44.30% with the custom Roman-Empire representation to 76.43% with RoBERTa, demonstrates that the available node-level information itself can vary considerably across representations.
+Finally, all architecture and representation combinations are independently tuned using the procedure described in the main methodology. Consequently, differences in performance reflect the combined effects of the representation, architecture, and the selected optimization configuration. A more restrictive study using matched parameter counts, computational budgets, or jointly fixed hyperparameters could provide additional insight into the interaction between representation and architecture.
+Appendix J Interpreting Feature Sensitivity for Naive GAT
+Naive GAT exhibits the largest contextual gain among the evaluated GNN architectures on Roman-Empire, increasing from 38.96% Macro F1 with fastText to 52.63% with RoBERTa, a gain of 13.67 percentage points. This large change should be interpreted alongside the model’s absolute performance and fold-to-fold variability. Naive GAT remains the lowest-performing GNN across fastText, BERT, and RoBERTa, while its standard deviation increases from 1.23 percentage points with fastText to 2.67 with BERT and 3.40 with RoBERTa.
+Thus, the large contextual gain indicates a strong representation-dependent change for naive GAT, but should not be interpreted as evidence that GAT is the most effective architecture or that contextual representations are uniformly more beneficial for it. In this case, representation sensitivity and absolute model performance are clearly distinct quantities. The result is therefore reported as evidence that architectures can respond differently to changes in node-feature representation, rather than as a ranking of architectures by feature responsiveness.
+Appendix K Per Class Analysis
+Our per-class analysis of the tuned MLP baseline reveals substantial variation across syntactic categories that is not captured by the aggregate Macro F1 score. As shown in Fig. 1, Class 7 (compound modifiers) and Class 9 (direct objects) achieve F1 scores of approximately 64% and 58%, respectively, while Class 14 (passive nominal subjects) reaches only 32%. These differences suggest that the contextual node representation does not provide equally useful information for all syntactic roles.
+Figure 1: Per-class performance and variability for the feature-only MLP baseline on the Roman-Empire. Performance varies substantially across syntactic categories, indicating that the node representation provides uneven task-relevant information across classes.
+Figure 2: Per-class performance and variability for H2GCN on the Roman-Empire. Compared with the feature-only MLP, graph-based propagation changes performance across syntactic categories, with particularly large differences for selected classes.
+When the same node features are processed with H2GCN (Fig. 2), Class 14 improves substantially relative to the feature-only MLP. This result suggests that graph-based propagation can provide information that is not fully available from the node representation alone, particularly for categories whose prediction may benefit from relationships among neighboring nodes.
+Table 8: Overall Accuracy (OA) and Balanced Accuracy (BA) (%) across evaluated feature spaces on the Roman-Empire benchmark.
+| Model
+| Metric
+| Custom
+| fastText
+| BERT
+| RoBERTa
+| Value
+| Value
+| Value
+| Value
+| GCN
+| OA
+| 59.55 ±\pm 0.81
+| 71.66 ±\pm 0.64
+| 70.93 ±\pm 1.05
+| 74.55 ±\pm 1.93
+| BA
+| 51.82 ±\pm 0.92
+| 65.27 ±\pm 0.89
+| 63.92 ±\pm 1.08
+| 68.20 ±\pm 1.76
+| GCN-sep
+| OA
+| 71.60 ±\pm 0.78
+| 86.26 ±\pm 0.38
+| 88.36 ±\pm 0.37
+| 88.35 ±\pm 0.59
+| BA
+| 66.77 ±\pm 1.18
+| 83.17 ±\pm 0.76
+| 85.30 ±\pm 0.91
+| 85.52 ±\pm 0.60
+| GAT
+| OA
+| 35.70 ±\pm 2.15
+| 48.83 ±\pm 1.10
+| 54.86 ±\pm 2.42
+| 58.83 ±\pm 3.08
+| BA
+| 27.72 ±\pm 1.17
+| 39.27 ±\pm 1.18
+| 47.79 ±\pm 2.53
+| 51.10 ±\pm 3.14
+| GAT-sep
+| OA
+| 65.68 ±\pm 0.83
+| 86.81 ±\pm 0.89
+| 89.95 ±\pm 0.40
+| 89.58 ±\pm 0.53
+| BA
+| 58.29 ±\pm 1.28
+| 83.97 ±\pm 1.24
+| 87.94 ±\pm 0.63
+| 87.30 ±\pm 0.60
+| GraphSAGE
+| OA
+| 65.52 ±\pm 0.60
+| 82.40 ±\pm 0.73
+| 87.78 ±\pm 0.63
+| 87.48 ±\pm 0.44
+| BA
+| 58.17 ±\pm 1.02
+| 78.03 ±\pm 1.14
+| 84.71 ±\pm 1.00
+| 84.25 ±\pm 0.73
+| H2GCN
+| OA
+| 65.87 ±\pm 0.56
+| 80.16 ±\pm 0.39
+| 87.37 ±\pm 0.53
+| 87.04 ±\pm 0.50
+| BA
+| 57.04 ±\pm 0.70
+| 74.62 ±\pm 0.68
+| 82.54 ±\pm 0.83
+| 83.12 ±\pm 0.61
+| GCNII
+| OA
+| 60.23 ±\pm 0.81
+| 76.53 ±\pm 0.47
+| 82.54 ±\pm 0.57
+| 83.78 ±\pm 0.51
+| BA
+| 51.62 ±\pm 0.79
+| 70.25 ±\pm 0.98
+| 76.65 ±\pm 1.11
+| 78.12 ±\pm 0.50
+| MLP (ctrl)
+| OA
+| 51.96 ±\pm 0.43
+| 64.49 ±\pm 0.75
+| 81.57 ±\pm 0.54
+| 81.88 ±\pm 0.50
+| BA
+| 42.57 ±\pm 0.90
+| 54.51 ±\pm 1.16
+| 76.00 ±\pm 0.82
+| 75.91 ±\pm 0.59
+Figure 3: Macro F1 scaling trends across restricted corpus, static lexical, and deep contextual node feature spaces on the Roman-Empire benchmark datasets.
+Figure 4: Macro F1 scaling trends across static lexical, sentence, and base contextual node feature spaces on the Amazon-Ratings benchmark datasets.
+Figure 5: Cross-validation performance footprints across WebKB and Planetoid benchmarks, illustrating mean Macro F1-score percentages and associated variance intervals across heterophilic and homophilic graph structures.
+Figure 6: Per-class F1 scores across core network architecture transitions on the Roman-Empire benchmark datasets.
+Figure 7: Detailed comparison of per-class F1 scores across feature spaces on the Roman-Empire benchmark, highlighting performance variations across different syntactic dependencies.
+Table 9: Overall Accuracy (OA) and Balanced Accuracy (BA) (%) across evaluated feature spaces on the Amazon-Ratings benchmark.
+| Model
+| Metric
+| fastText
+| SBERT
+| MPNet
+| Value
+| Value
+| Value
+| GCN
+| OA
+| 49.82 ±\pm 0.86
+| 50.55 ±\pm 0.57
+| 50.86 ±\pm 0.65
+| BA
+| 43.55 ±\pm 0.88
+| 44.27 ±\pm 0.95
+| 44.77 ±\pm 0.64
+| GCN-sep
+| OA
+| 53.53 ±\pm 1.11
+| 53.42 ±\pm 0.42
+| 53.84 ±\pm 0.56
+| BA
+| 46.89 ±\pm 0.81
+| 47.70 ±\pm 0.77
+| 47.90 ±\pm 0.78
+| GAT
+| OA
+| 45.47 ±\pm 4.85
+| 49.50 ±\pm 0.88
+| 49.45 ±\pm 0.63
+| BA
+| 35.14 ±\pm 6.92
+| 39.59 ±\pm 1.14
+| 40.94 ±\pm 0.45
+| GAT-sep
+| OA
+| 52.28 ±\pm 0.98
+| 54.84 ±\pm 0.93
+| 55.37 ±\pm 0.90
+| BA
+| 44.63 ±\pm 1.70
+| 47.87 ±\pm 0.83
+| 48.56 ±\pm 1.12
+| GraphSAGE
+| OA
+| 54.54 ±\pm 0.60
+| 55.59 ±\pm 0.63
+| 55.39 ±\pm 0.57
+| BA
+| 47.66 ±\pm 0.87
+| 48.80 ±\pm 0.81
+| 47.77 ±\pm 0.97
+| H2GCN
+| OA
+| 52.31 ±\pm 0.47
+| 53.58 ±\pm 0.63
+| 54.59 ±\pm 0.59
+| BA
+| 43.43 ±\pm 0.57
+| 45.60 ±\pm 0.79
+| 44.65 ±\pm 0.90
+| GCNII
+| OA
+| 46.27 ±\pm 1.34
+| 47.44 ±\pm 1.33
+| 48.79 ±\pm 1.69
+| BA
+| 36.32 ±\pm 1.56
+| 38.77 ±\pm 2.04
+| 40.72 ±\pm 2.33
+| MLP (ctrl)
+| OA
+| 47.63 ±\pm 0.83
+| 50.01 ±\pm 0.38
+| 50.86 ±\pm 0.55
+| BA
+| 40.20 ±\pm 0.77
+| 42.67 ±\pm 0.67
+| 42.98 ±\pm 0.93
+Appendix L Hyperparameter Configurations
+Table 10: Optimal hyperparameter configurations for large-scale Roman-Empire and Amazon-Ratings benchmarks across all feature spaces.
+| Category
+| Dataset Space
+| Model Name
+| Layers (LL)
+| Hidden Dim (dd)
+| LR (η\eta)
+| Dropout (pp)
+| Roman-Empire
+| Custom
+| GCN
+| 5
+| 256
+| 0.01
+| 0.5
+| GCN-sep
+| 5
+| 256
+| 0.01
+| 0.5
+| GAT (8 heads)
+| 1
+| 64
+| 0.01
+| 0.2
+| GAT-sep (8 heads)
+| 3
+| 64
+| 0.005
+| 0.2
+| GraphSAGE
+| 3
+| 256
+| 0.01
+| 0.5
+| H2GCN
+| 2
+| 256
+| 0.005
+| 0.2
+| GCNII
+| 32
+| 256
+| 0.005
+| 0.2
+| MLP
+| 3
+| 128
+| 0.01
+| 0.2
+| fastText
+| GCN
+| 4
+| 256
+| 0.01
+| 0.5
+| GCN-sep
+| 5
+| 128
+| 0.01
+| 0.2
+| GAT (8 heads)
+| 1
+| 64
+| 0.01
+| 0.2
+| GAT-sep (8 heads)
+| 5
+| 128
+| 0.001
+| 0.2
+| GraphSAGE
+| 3
+| 256
+| 0.01
+| 0.5
+| H2GCN
+| 2
+| 256
+| 0.005
+| 0.2
+| GCNII
+| 32
+| 256
+| 0.005
+| 0.2
+| MLP
+| 3
+| 256
+| 0.005
+| 0.2
+| BERT
+| GCN
+| 3
+| 256
+| 0.01
+| 0.5
+| GCN-sep
+| 3
+| 256
+| 0.01
+| 0.5
+| GAT (8 heads)
+| 1
+| 64
+| 0.01
+| 0.1
+| GAT-sep (8 heads)
+| 5
+| 128
+| 0.005
+| 0.2
+| GraphSAGE
+| 3
+| 256
+| 0.005
+| 0.5
+| H2GCN
+| 2
+| 256
+| 0.005
+| 0.5
+| GCNII
+| 32
+| 256
+| 0.005
+| 0.2
+| MLP
+| 3
+| 256
+| 0.005
+| 0.5
+| RoBERTa
+| GCN
+| 5
+| 256
+| 0.01
+| 0.5
+| GCN-sep
+| 3
+| 256
+| 0.01
+| 0.5
+| GAT (8 heads)
+| 1
+| 64
+| 0.01
+| 0.2
+| GAT-sep (8 heads)
+| 3
+| 64
+| 0.005
+| 0.2
+| GraphSAGE
+| 3
+| 256
+| 0.005
+| 0.5
+| H2GCN
+| 2
+| 256
+| 0.001
+| 0.2
+| GCNII
+| 64
+| 128
+| 0.005
+| 0.2
+| MLP
+| 3
+| 256
+| 0.001
+| 0.5
+| Amazon-Ratings
+| SBERT
+| GCN
+| 3
+| 256
+| 0.005
+| 0.1
+| GCN-sep
+| 3
+| 256
+| 0.01
+| 0.5
+| GAT (8 heads)
+| 2
+| 128
+| 0.001
+| 0.2
+| GAT-sep (8 heads)
+| 3
+| 128
+| 0.001
+| 0.2
+| GraphSAGE
+| 3
+| 256
+| 0.001
+| 0.5
+| H2GCN
+| 2
+| 256
+| 0.005
+| 0.2
+| GCNII
+| 10
+| 256
+| 0.005
+| 0.2
+| MLP
+| 3
+| 256
+| 0.001
+| 0.2
+| fastText
+| GCN
+| 3
+| 256
+| 0.01
+| 0.5
+| GCN-sep
+| 3
+| 256
+| 0.005
+| 0.5
+| GAT (8 heads)
+| 2
+| 64
+| 0.01
+| 0.2
+| GAT-sep (8 heads)
+| 3
+| 64
+| 0.001
+| 0.1
+| GraphSAGE
+| 3
+| 256
+| 0.005
+| 0.5
+| H2GCN
+| 2
+| 256
+| 0.005
+| 0.2
+| GCNII
+| 10
+| 256
+| 0.005
+| 0.2
+| MLP
+| 3
+| 256
+| 0.001
+| 0.1
+| MPNet
+| GCN
+| 4
+| 256
+| 0.01
+| 0.1
+| GCN-sep
+| 3
+| 256
+| 0.005
+| 0.5
+| GAT (8 heads)
+| 2
+| 128
+| 0.001
+| 0.2
+| GAT-sep (8 heads)
+| 3
+| 128
+| 0.001
+| 0.2
+| GraphSAGE
+| 2
+| 256
+| 0.001
+| 0.2
+| H2GCN
+| 2
+| 256
+| 0.005
+| 0.5
+| GCNII
+| 10
+| 256
+| 0.005
+| 0.2
+| MLP
+| 3
+| 256
+| 0.001
+| 0.5
+Table 11: Optimal hyperparameter configurations for small-scale WebKB heterophilic benchmarks.
+| Category
+| Dataset Space
+| Model Name
+| Layers
+| Hidden Dim
+| Learning Rate
+| Dropout
+| (LL)
+| (dd)
+| (η\eta)
+| (pp)
+| Heterophilic
+| Cornell
+| GCN
+| 4
+| 64
+| 0.005
+| 0.2
+| GCN-sep
+| 4
+| 128
+| 0.01
+| 0.1
+| GAT (8 heads)
+| 1
+| 64
+| 0.01
+| 0.2
+| GAT-sep (8 heads)
+| 3
+| 64
+| 0.01
+| 0.2
+| GraphSAGE
+| 2
+| 128
+| 0.001
+| 0.2
+| H2GCN
+| 2
+| 256
+| 0.005
+| 0.5
+| GCNII
+| 10
+| 128
+| 0.005
+| 0.2
+| MLP
+| 2
+| 256
+| 0.001
+| 0.5
+| Texas
+| GCN
+| 4
+| 64
+| 0.005
+| 0.5
+| GCN-sep
+| 5
+| 64
+| 0.01
+| 0.5
+| GAT (8 heads)
+| 2
+| 64
+| 0.01
+| 0.2
+| GAT-sep (8 heads)
+| 5
+| 64
+| 0.005
+| 0.1
+| GraphSAGE
+| 3
+| 256
+| 0.005
+| 0.2
+| H2GCN
+| 2
+| 256
+| 0.005
+| 0.2
+| GCNII
+| 10
+| 128
+| 0.005
+| 0.2
+| MLP
+| 2
+| 128
+| 0.01
+| 0.1
+| Wisconsin
+| GCN
+| 5
+| 128
+| 0.005
+| 0.5
+| GCN-sep
+| 3
+| 64
+| 0.01
+| 0.5
+| GAT (8 heads)
+| 1
+| 64
+| 0.01
+| 0.2
+| GAT-sep (8 heads)
+| 5
+| 128
+| 0.005
+| 0.2
+| GraphSAGE
+| 3
+| 128
+| 0.01
+| 0.5
+| H2GCN
+| 2
+| 128
+| 0.005
+| 0.5
+| GCNII
+| 10
+| 256
+| 0.005
+| 0.2
+| MLP
+| 3
+| 256
+| 0.01
+| 0.2
+Table 12: Optimal hyperparameter configurations for homophilic citation-network baseline controls.
+| Category
+| Dataset Space
+| Model Name
+| Layers
+| Hidden Dim
+| Learning Rate
+| Dropout
+| (LL)
+| (dd)
+| (η\eta)
+| (pp)
+| Homophilic
+| Cora
+| GCN
+| 5
+| 128
+| 0.01
+| 0.1
+| GCN-sep
+| 4
+| 256
+| 0.001
+| 0.5
+| GAT (8 heads)
+| 2
+| 128
+| 0.01
+| 0.2
+| GAT-sep (8 heads)
+| 3
+| 128
+| 0.005
+| 0.1
+| GraphSAGE
+| 3
+| 256
+| 0.001
+| 0.2
+| H2GCN
+| 2
+| 256
+| 0.001
+| 0.5
+| GCNII
+| 10
+| 128
+| 0.005
+| 0.2
+| MLP
+| 3
+| 64
+| 0.001
+| 0.5
+| PubMed
+| GCN
+| 3
+| 256
+| 0.005
+| 0.5
+| GCN-sep
+| 4
+| 256
+| 0.005
+| 0.5
+| GAT (8 heads)
+| 2
+| 128
+| 0.01
+| 0.2
+| GAT-sep (8 heads)
+| 3
+| 64
+| 0.01
+| 0.2
+| GraphSAGE
+| 3
+| 64
+| 0.01
+| 0.2
+| H2GCN
+| 2
+| 256
+| 0.005
+| 0.5
+| GCNII
+| 10
+| 256
+| 0.005
+| 0.2
+| MLP
+| 2
+| 256
+| 0.001
+| 0.5
+Experimental support, please
+view the build logs
+for errors. Generated by
+L
+A
+T
+E
+xml
+.
+Instructions for reporting errors
+We are continuing to improve HTML versions of papers, and your feedback helps enhance accessibility and mobile
+support. To report errors in the HTML that will help us improve conversion and rendering, choose any of the
+methods listed below:
+Click the "Report Issue" (
+) button, located in the page header.
+Tip: You can select the relevant text first, to include it in your report.
+Our team has already identified the following issues. We appreciate your time reviewing and reporting rendering errors we
+may not have found yet. Your efforts will help us improve the HTML versions for all readers, because disability
+should not be a barrier to accessing research. Thank you for your continued support in championing open access for
+all.
+Have a free development cycle? Help support accessibility at arXiv! Our collaborators at LaTeXML maintain a list of packages that need conversion, and welcome developer contributions.
+We gratefully acknowledge support from
+our major funders,
+member institutions, ,
+and all contributors.
+About
+·
+Help
+·
+Contact
+·
+Subscribe
+·
+Copyright
+·
+Privacy
+·
+Accessibility
+·
+Operational Status (opens in new tab)
+Major funding support from

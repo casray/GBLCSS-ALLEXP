@@ -1,0 +1,585 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <title>Stage 1b 执行计划 — Selection 机制诊断 + 双路线冒烟</title>
+  <style>
+    :root {
+      --bg: #f6f7f9; --paper: #ffffff; --ink: #1f2933; --muted: #5c6670;
+      --line: #d8dee6; --accent: #2457a6; --accent-soft: #e9f0fb;
+      --warn: #8a4b00; --warn-soft: #fff3dd; --bad: #8d1f1f; --bad-soft: #fde7e7;
+      --good: #17633a; --good-soft: #e5f5ec; --code: #f0f2f5;
+    }
+    * { box-sizing: border-box; }
+    body { margin: 0; background: var(--bg); color: var(--ink);
+           font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Microsoft YaHei", Arial, sans-serif;
+           line-height: 1.65; }
+    main { max-width: 1080px; margin: 0 auto; padding: 32px 20px 64px; }
+    header, section { background: var(--paper); border: 1px solid var(--line);
+                      border-radius: 8px; padding: 24px; margin: 16px 0; }
+    h1, h2, h3 { line-height: 1.25; margin: 0 0 14px; }
+    h1 { font-size: 28px; } h2 { font-size: 22px; color: var(--accent); }
+    h3 { font-size: 18px; margin-top: 20px; }
+    p { margin: 10px 0; } ul, ol { margin: 10px 0 10px 24px; padding: 0; } li { margin: 6px 0; }
+    code, pre { font-family: "Cascadia Code", "Consolas", monospace; background: var(--code); border-radius: 5px; }
+    code { padding: 2px 5px; font-size: 0.94em; }
+    pre { padding: 14px; overflow-x: auto; border: 1px solid var(--line); white-space: pre-wrap; }
+    table { width: 100%; border-collapse: collapse; margin: 12px 0; font-size: 14px; }
+    th, td { border: 1px solid var(--line); padding: 9px 10px; vertical-align: top; text-align: left; }
+    th { background: #eef2f7; font-weight: 650; }
+    .box { border: 1px solid var(--line); border-radius: 8px; padding: 14px 16px; margin: 12px 0; background: #fafbfc; }
+    .good { border-color: #b9dfca; background: var(--good-soft); }
+    .warn { border-color: #efd19d; background: var(--warn-soft); }
+    .bad { border-color: #f0b6b6; background: var(--bad-soft); }
+    .accent { border-color: #bdd0ee; background: var(--accent-soft); }
+    .small { font-size: 14px; color: var(--muted); }
+  </style>
+</head>
+<body>
+<main>
+
+<header>
+  <h1>Stage 1b 执行计划 — Selection 诊断 + 双路线对比冒烟</h1>
+  <p class="small">创建日期：2026-06-09。基于 Stage 1 NCI1 seed0 冒烟结果。</p>
+  <div class="box accent">
+    <strong>本阶段目标：</strong>回答两个硬问题，然后把更好的去噪转化机制和原始 GB/kNN/kmeans 对比重新跑一次冒烟。
+    <br><strong>Q1：</strong>selection 输给 CE，是因为"扔样本太多导致泛化损失 > 纯度收益"吗？
+    <br><strong>Q2：</strong>如果不扔样本（label smoothing），GB 能否提供 kNN/kmeans 之外的增量？
+  </div>
+</header>
+
+<!-- ============================================================ -->
+<section>
+  <h2>0. Stage 1 冒烟结论回顾</h2>
+  <table>
+    <thead><tr><th>观察</th><th>数据</th><th>含义</th></tr></thead>
+    <tbody>
+      <tr>
+        <td>Headroom 足够</td>
+        <td>clean_oracle 0.6691 − ce 0.6302 = 3.89pp</td>
+        <td>该设置有去噪油水，不是表示质量问题</td>
+      </tr>
+      <tr>
+        <td>所有 sel_* 全输 CE</td>
+        <td>sel_gb 0.6034, sel_topk 0.6010, ce 0.6302</td>
+        <td>selection 机制本身是负效应的</td>
+      </tr>
+      <tr>
+        <td>Val acc 在 ramp 阶段崩塌</td>
+        <td>sel_topk: epoch20 val=0.628 → epoch40 val=0.577（−5.1pp）</td>
+        <td>扔 40% 样本后线性分类器泛化崩了</td>
+      </tr>
+      <tr>
+        <td>Selection precision 增益极弱</td>
+        <td>sel_topk clean_rate=0.684 vs 基线 0.601（仅 +8.3pp）</td>
+        <td>扔 40% 样本只多保留 8% clean 比例——不划算</td>
+      </tr>
+      <tr>
+        <td>GB 碎片化</td>
+        <td>780 球，平均大小 4.2，min=1</td>
+        <td>球太小，consensus 统计不可靠</td>
+      </tr>
+      <tr>
+        <td>GB vs kNN 差异无意义</td>
+        <td>sel_gb − sel_topk = +0.24pp（在全输 CE 的前提下）</td>
+        <td>不能从"两种方式更差"中得出 GB 优于 kNN 的结论</td>
+      </tr>
+    </tbody>
+  </table>
+</section>
+
+<!-- ============================================================ -->
+<section>
+  <h2>1. 本阶段设计：两条路线并行冒烟</h2>
+
+  <div class="box accent">
+    <strong>核心思路：</strong>原始 gate 用 commit-style selection 作为去噪转化机制，但诊断表明该机制在 frozen graph embedding + linear classifier 场景下是负效应的。
+    本阶段不修改原 gate 判定，而是：
+    <ol>
+      <li><strong>路线 A（soft selection）</strong>：保留 selection 框架，但改用 reweighting 而非 hard drop——让不可信样本参与训练但降权，避免样本量损失。</li>
+      <li><strong>路线 B（label smoothing）</strong>：完全不扔样本，用球/kNN/kmeans 内多数票做 soft target，替换去噪转化机制。</li>
+    </ol>
+    两条路线与原始 CE/SCE/clean_oracle 在同一个脚本中一起跑，保持同 embedding、同 split、同噪声。
+  </div>
+
+  <h3>为什么不直接调 rho/warmup？</h3>
+  <p>直接在原 gate 框架内调 rho 容易变成 post-hoc threshold shopping，违反预注册精神。我们的做法是：
+  明确定义两种 <strong>新的去噪转化机制</strong>（reweight 和 smoothing），作为独立的 ablation 对比，
+  与原 selection 机制平行报告。如果新机制能让 sel_* 赢 CE，再回到 GB vs kNN/kmeans 的核心问题。</p>
+</section>
+
+<!-- ============================================================ -->
+<section>
+  <h2>2. 路线 A — Soft Selection（Reweighting）</h2>
+
+  <h3>原理</h3>
+  <p>原 selection 的问题是 hard drop：trust score 低的样本直接排除，导致样本量从 3288 减到 1973。
+  Reweighting 改为给每个样本一个 [w_min, 1.0] 的权重，不可信样本降权但仍参与训练。</p>
+
+  <h3>具体实现</h3>
+  <pre>
+# 在 selection.py 中新增 train_with_reweight() 函数
+
+def train_with_reweight(
+    embeddings, noisy_labels, clean_labels,
+    train_idx, val_idx, test_idx,
+    reliability, num_classes, device,
+    epochs=200, lr=0.01, wd=5e-4, patience=30,
+    warmup=20, ramp=20, w_min=0.1, seed=0, trace=False,
+):
+    """
+    与 train_with_selection 的区别：
+    - 不扔样本，所有样本都参与 loss
+    - trust_score 同样 = z(-loss) + z(reliability)
+    - 权重 = 线性映射到 [w_min, 1.0]：w_i = w_min + (1-w_min) * (trust_i - min) / (max - min)
+    - warmup 阶段权重全 1.0
+    - ramp 阶段逐渐引入权重：actual_w = 1.0 * (1-progress) + w_i * progress
+    - loss = (w * per_sample_loss).sum() / w.sum()
+    """</pre>
+
+  <h3>方法集</h3>
+  <table>
+    <thead><tr><th>方法名</th><th>reliability 来源</th><th>转化机制</th></tr></thead>
+    <tbody>
+      <tr><td><code>rw_topk</code></td><td>kNN consensus</td><td>reweight</td></tr>
+      <tr><td><code>rw_kmeans</code></td><td>kmeans consensus</td><td>reweight</td></tr>
+      <tr><td><code>rw_gb</code></td><td>GB consensus</td><td>reweight</td></tr>
+      <tr><td><code>rw_shuffled</code></td><td>shuffled GB</td><td>reweight</td></tr>
+      <tr><td><code>rw_random</code></td><td>random groups</td><td>reweight</td></tr>
+      <tr><td><code>rw_noball</code></td><td>none（纯 loss reweight）</td><td>reweight</td></tr>
+    </tbody>
+  </table>
+
+  <h3>超参</h3>
+  <ul>
+    <li><code>w_min = 0.1</code>（最不可信样本的最低权重，一次性固定）</li>
+    <li><code>warmup = 20, ramp = 20</code>（与原 selection 一致）</li>
+    <li>其他分类器超参与原 gate 完全相同</li>
+  </ul>
+</section>
+
+<!-- ============================================================ -->
+<section>
+  <h2>3. 路线 B — Label Smoothing</h2>
+
+  <h3>原理</h3>
+  <p>完全不扔样本，也不改权重。改变的是 training target：
+  用球/kNN/kmeans 内邻域的 noisy label 投票分布来平滑 one-hot target。</p>
+
+  <h3>具体实现</h3>
+  <pre>
+# 在 selection.py 中新增 train_with_smoothing() 函数
+
+def train_with_smoothing(
+    embeddings, noisy_labels, clean_labels,
+    train_idx, val_idx, test_idx,
+    soft_targets,  # Tensor[num_train, num_classes], 邻域投票分布
+    num_classes, device,
+    epochs=200, lr=0.01, wd=5e-4, patience=30,
+    warmup=20, ramp=20, seed=0, trace=False,
+):
+    """
+    - warmup 阶段用 hard one-hot noisy label（标准 CE）
+    - ramp 阶段逐渐从 one-hot 过渡到 soft_targets：
+      target = (1-progress) * one_hot(noisy_label) + progress * soft_targets
+    - 之后固定用 soft_targets
+    - loss = -sum(target * log_softmax(logits), dim=-1).mean()
+    - 不扔样本，全部 train 样本参与
+    """</pre>
+
+  <h3>soft_targets 的计算</h3>
+  <pre>
+# 在 reliability.py 中新增 compute_soft_targets() 函数
+
+def compute_soft_targets(method, embeddings, noisy_labels, train_indices, num_classes, **kwargs):
+    """
+    对每个 train 样本，计算其邻域内的 noisy label 投票分布。
+    返回 Tensor[num_train, num_classes]，每行 sum=1。
+
+    method = "topk": k 近邻的 label 分布
+    method = "kmeans": 同 cluster 内的 label 分布
+    method = "gb": 同球内的 label 分布
+    method = "shuffled": shuffled GB 内的 label 分布
+    method = "random": random groups 内的 label 分布
+    method = "none": 退化为 one-hot noisy label（基线）
+    """</pre>
+
+  <h3>方法集</h3>
+  <table>
+    <thead><tr><th>方法名</th><th>soft_targets 来源</th><th>转化机制</th></tr></thead>
+    <tbody>
+      <tr><td><code>sm_topk</code></td><td>kNN 投票分布</td><td>label smoothing</td></tr>
+      <tr><td><code>sm_kmeans</code></td><td>kmeans 投票分布</td><td>label smoothing</td></tr>
+      <tr><td><code>sm_gb</code></td><td>GB 投票分布</td><td>label smoothing</td></tr>
+      <tr><td><code>sm_shuffled</code></td><td>shuffled GB 投票分布</td><td>label smoothing</td></tr>
+      <tr><td><code>sm_random</code></td><td>random groups 投票分布</td><td>label smoothing</td></tr>
+      <tr><td><code>sm_noball</code></td><td>one-hot noisy label（= CE）</td><td>label smoothing（退化）</td></tr>
+    </tbody>
+  </table>
+
+  <h3>超参</h3>
+  <ul>
+    <li><code>warmup = 20, ramp = 20</code>（与原 selection 一致）</li>
+    <li>无额外超参</li>
+  </ul>
+</section>
+
+<!-- ============================================================ -->
+<section>
+  <h2>4. GB 碎片化修复</h2>
+
+  <div class="box warn">
+    <strong>注意</strong>：这不是在原 gate 上调参，而是定义一组 GB 构造变体并行报告，明确叫做 GB fragmentation ablation。
+  </div>
+
+  <p>当前 purity_threshold=0.7 在二分类 symmetric 0.4 下会过度分裂（真实 purity 上限约 0.6+0.4/2=0.8，
+  很多球天然 purity 在 0.6 附近，远未达 0.7，导致无限分裂到 min_samples 为止）。</p>
+
+  <h3>新增一组 GB 配置</h3>
+  <table>
+    <thead><tr><th>配置名</th><th>purity_threshold</th><th>min_samples</th><th>max_size</th><th>预期效果</th></tr></thead>
+    <tbody>
+      <tr>
+        <td><code>gb_orig</code>（原配置）</td>
+        <td>0.7</td><td>5</td><td>100</td>
+        <td>780 球，平均 4.2（基线）</td>
+      </tr>
+      <tr>
+        <td><code>gb_relaxed</code></td>
+        <td>0.6</td><td>10</td><td>200</td>
+        <td>预期球更大更少，consensus 更稳</td>
+      </tr>
+      <tr>
+        <td><code>gb_strict_size</code></td>
+        <td>0.7</td><td>20</td><td>200</td>
+        <td>保留原 purity 标准但强制最小球 20</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <p>三种 GB 配置都在路线 B（label smoothing）下测试，因为路线 B 不扔样本，更容易看出 GB 结构本身的贡献。
+  kNN/kmeans 的 k/n_clusters 仍 match 每种 GB 配置的平均球大小/球数。</p>
+</section>
+
+<!-- ============================================================ -->
+<section>
+  <h2>5. 完整实验矩阵（NCI1 seed0 冒烟）</h2>
+
+  <h3>Phase 1: 路线 A + 路线 B 基本冒烟</h3>
+  <p>用 <code>gb_orig</code> 配置，跑以下方法：</p>
+
+  <table>
+    <thead><tr><th>方法</th><th>类型</th><th>作用</th></tr></thead>
+    <tbody>
+      <tr><td><code>ce</code></td><td>baseline</td><td>下界</td></tr>
+      <tr><td><code>sce</code></td><td>baseline</td><td>robust loss 基线</td></tr>
+      <tr><td><code>clean_oracle</code></td><td>diagnostic</td><td>上界</td></tr>
+      <tr><td colspan="3" style="background:#eef2f7"><strong>路线 A: Reweight</strong></td></tr>
+      <tr><td><code>rw_topk</code></td><td>reweight</td><td>kNN 对照</td></tr>
+      <tr><td><code>rw_kmeans</code></td><td>reweight</td><td>kmeans 对照</td></tr>
+      <tr><td><code>rw_gb</code></td><td>reweight</td><td>主方法</td></tr>
+      <tr><td><code>rw_shuffled</code></td><td>reweight</td><td>结构对照</td></tr>
+      <tr><td><code>rw_random</code></td><td>reweight</td><td>随机对照</td></tr>
+      <tr><td><code>rw_noball</code></td><td>reweight</td><td>消融：纯 loss reweight</td></tr>
+      <tr><td colspan="3" style="background:#eef2f7"><strong>路线 B: Label Smoothing</strong></td></tr>
+      <tr><td><code>sm_topk</code></td><td>smoothing</td><td>kNN 对照</td></tr>
+      <tr><td><code>sm_kmeans</code></td><td>smoothing</td><td>kmeans 对照</td></tr>
+      <tr><td><code>sm_gb</code></td><td>smoothing</td><td>主方法</td></tr>
+      <tr><td><code>sm_shuffled</code></td><td>smoothing</td><td>结构对照</td></tr>
+      <tr><td><code>sm_random</code></td><td>smoothing</td><td>随机对照</td></tr>
+      <tr><td><code>sm_noball</code></td><td>smoothing</td><td>消融：无邻域 = CE</td></tr>
+    </tbody>
+  </table>
+  <p>共 15 个方法。全部用 trace=True 记录每 epoch 指标。</p>
+
+  <h3>Phase 2: GB 碎片化 ablation（仅路线 B）</h3>
+  <p>仅当 Phase 1 路线 B 的 sm_gb 至少不输 CE 时才执行。
+  用 <code>gb_relaxed</code> 和 <code>gb_strict_size</code> 配置，跑 sm_gb / sm_topk / sm_kmeans / sm_shuffled / sm_random。</p>
+</section>
+
+<!-- ============================================================ -->
+<section>
+  <h2>6. 新增代码清单</h2>
+
+  <h3>6.1 修改 <code>src/gb_graphcl/selection.py</code></h3>
+  <p>新增两个函数：</p>
+  <ul>
+    <li><code>train_with_reweight()</code> — 路线 A 训练函数</li>
+    <li><code>train_with_smoothing()</code> — 路线 B 训练函数</li>
+  </ul>
+
+  <h3>6.2 修改 <code>src/gb_graphcl/reliability.py</code></h3>
+  <p>新增：</p>
+  <ul>
+    <li><code>compute_soft_targets()</code> — 统一接口，返回 Tensor[num_train, num_classes] 的邻域投票分布</li>
+  </ul>
+
+  <h3>6.3 新增 <code>scripts/run_stage1b_smoke.py</code></h3>
+  <p>整合路线 A + 路线 B 的完整冒烟脚本。输出到 <code>reports/stage1b_smoke_{dataset}_{noise}_{rate}_seed{seed}/</code>。</p>
+
+  <h3>6.4 新增 <code>tests/test_reweight.py</code> 和 <code>tests/test_smoothing.py</code></h3>
+  <p>覆盖新函数的基本正确性。</p>
+</section>
+
+<!-- ============================================================ -->
+<section>
+  <h2>7. 各新函数详细规格</h2>
+
+  <h3>7.1 <code>train_with_reweight()</code></h3>
+  <pre>
+def train_with_reweight(
+    embeddings, noisy_labels, clean_labels,
+    train_idx, val_idx, test_idx,
+    reliability,   # Tensor[num_train], 与 train_with_selection 同义
+    num_classes, device,
+    epochs=200, lr=0.01, wd=5e-4, patience=30,
+    warmup=20, ramp=20, w_min=0.1, seed=0, trace=False,
+):
+    """
+    训练线性分类器，用 reliability 引导的 sample reweighting（不丢弃样本）。
+
+    核心逻辑（每 epoch）：
+      1. logits = Linear(embeddings[train_idx])
+      2. per_sample_loss = CE(logits, noisy_labels[train_idx])  # reduction="none"
+      3. trust = z_score(-per_sample_loss) + z_score(reliability)
+         如果 reliability 全零则 trust = z_score(-per_sample_loss)
+      4. w_raw = linearly map trust to [0, 1]: (trust - min) / (max - min)
+         w = w_min + (1 - w_min) * w_raw          # 映射到 [w_min, 1.0]
+      5. progress = ramp_progress(epoch, warmup, ramp)  # 0.0 → 1.0
+         actual_w = (1.0 - progress) * 1.0 + progress * w   # warmup 全 1.0, ramp 后用真实权重
+      6. loss = (actual_w * per_sample_loss).sum() / actual_w.sum()
+      7. 反向传播 + val early stopping
+
+    返回同 train_with_selection 的 dict 结构，包含 trace（如启用）。
+    selection_precision / noise_exclusion_recall 基于低权重（<0.5）样本计算，
+    或保持与原格式兼容：
+      - selection_precision = 权重加权的 clean 比例
+      - noise_exclusion_recall = 权重 < 0.5 的样本中 noisy 样本的比例
+    """
+    pass</pre>
+
+  <h3>7.2 <code>compute_soft_targets()</code></h3>
+  <pre>
+def compute_soft_targets(
+    method: str,
+    embeddings: Tensor,
+    noisy_labels: Tensor,
+    train_indices: list[int],
+    num_classes: int,
+    **kwargs,
+) -> Tensor:
+    """
+    计算每个 train 样本的邻域 label 投票分布。
+    返回 Tensor[num_train, num_classes]，每行 sum ≈ 1.0。
+
+    method = "topk":
+      对每个 train 样本，找 k 近邻（含自身），统计 noisy label 分布。
+      kwargs: k=int
+
+    method = "kmeans":
+      对 train embedding 做 kmeans(n_clusters)，统计 cluster 内 label 分布。
+      kwargs: n_clusters=int
+
+    method = "gb":
+      统计同球内 noisy label 分布。
+      kwargs: group_ids=Tensor
+
+    method = "shuffled":
+      用 shuffled group_ids 统计。
+      kwargs: group_ids=Tensor, seed=int
+
+    method = "random":
+      用 random group_ids 统计。
+      kwargs: group_sizes=list, seed=int
+
+    method = "none":
+      返回 one-hot(noisy_labels[train_indices])，即不做平滑。
+
+    注意：计算邻域分布时包含自身。这样单样本球会退化为 one-hot，
+    大球会产生更强的平滑效果——这正是 GB 自适应粒度的优势假设。
+    """
+    pass</pre>
+
+  <h3>7.3 <code>train_with_smoothing()</code></h3>
+  <pre>
+def train_with_smoothing(
+    embeddings, noisy_labels, clean_labels,
+    train_idx, val_idx, test_idx,
+    soft_targets,  # Tensor[num_train, num_classes], 预计算的邻域分布
+    num_classes, device,
+    epochs=200, lr=0.01, wd=5e-4, patience=30,
+    warmup=20, ramp=20, seed=0, trace=False,
+):
+    """
+    训练线性分类器，用邻域投票分布平滑训练目标（不丢弃样本）。
+
+    核心逻辑（每 epoch）：
+      1. logits = Linear(embeddings[train_idx])
+      2. one_hot = one_hot(noisy_labels[train_idx], num_classes).float()
+      3. progress = ramp_progress(epoch, warmup, ramp)  # 0.0 → 1.0
+         target = (1.0 - progress) * one_hot + progress * soft_targets
+         target = target / target.sum(dim=-1, keepdim=True)  # 确保归一化
+      4. log_prob = log_softmax(logits, dim=-1)
+         loss = -(target * log_prob).sum(dim=-1).mean()
+      5. 反向传播 + val early stopping
+
+    返回 dict：
+      test_acc_at_best_val: float
+      selection_precision: 0.0  （不适用，占位）
+      noise_exclusion_recall: 0.0  （不适用，占位）
+      loss_history: list
+      trace: list[dict] 如启用
+      stopped_epoch: int 如启用
+
+    trace 中额外记录：
+      target_entropy: float  # 当前 epoch 的平均 target 分布熵
+    """
+    pass</pre>
+
+  <h3>7.4 辅助函数</h3>
+  <pre>
+def _ramp_progress(epoch: int, warmup: int, ramp: int) -> float:
+    """
+    返回 [0.0, 1.0] 的进度值：
+    epoch < warmup: 0.0
+    warmup <= epoch < warmup+ramp: (epoch - warmup) / ramp
+    epoch >= warmup+ramp: 1.0
+    """
+    if epoch < warmup:
+        return 0.0
+    if epoch >= warmup + ramp:
+        return 1.0
+    return (epoch - warmup) / float(ramp)</pre>
+</section>
+
+<!-- ============================================================ -->
+<section>
+  <h2>8. <code>scripts/run_stage1b_smoke.py</code> 规格</h2>
+  <pre>
+用法: python scripts/run_stage1b_smoke.py --dataset NCI1 --noise-type symmetric --noise-rate 0.4 --seed 0
+
+流程:
+1. 加载 embeddings (H.pt) 和 split+noise（复用已缓存的 artifacts）
+2. 构建 granular balls（gb_orig 配置）
+3. 计算 6 种 reliability（与 run_smoke.py 完全一致）
+4. 计算 6 种 soft_targets（新增）
+5. k = GB 平均球大小, n_clusters = GB 球数（matched）
+6. 跑 15 个方法（全部 trace=True）:
+   - ce, sce, clean_oracle（基线，与 Stage 1 相同代码）
+   - rw_topk, rw_kmeans, rw_gb, rw_shuffled, rw_random, rw_noball（路线 A）
+   - sm_topk, sm_kmeans, sm_gb, sm_shuffled, sm_random, sm_noball（路线 B）
+7. 保存:
+   - reports/stage1b_smoke_{dataset}_{noise}_{rate}_seed{seed}/results.csv
+     列: method, test_acc, selection_precision, noise_exclusion_recall
+   - reports/stage1b_smoke_{dataset}_{noise}_{rate}_seed{seed}/gb_stats.json
+   - reports/stage1b_smoke_{dataset}_{noise}_{rate}_seed{seed}/traces/trace_{method}.csv  （每个方法一个）
+   - reports/stage1b_smoke_{dataset}_{noise}_{rate}_seed{seed}/report.md
+8. 打印排序后的格式化报告:
+   - 按 test_acc 从高到低排列全部 15 个方法
+   - 标注 headroom = clean_oracle - ce
+   - 标注路线 A 最佳 vs CE 的 delta
+   - 标注路线 B 最佳 vs CE 的 delta
+   - 标注 sm_gb vs sm_topk、sm_gb vs sm_kmeans 的 delta
+   - 标注 rw_gb vs rw_topk、rw_gb vs rw_kmeans 的 delta
+   - 标注 sm_gb vs sm_shuffled、sm_gb vs sm_random（结构有效性）</pre>
+</section>
+
+<!-- ============================================================ -->
+<section>
+  <h2>9. 单元测试</h2>
+
+  <h3>tests/test_reweight.py</h3>
+  <pre>
+test_reweight_all_samples_participate:
+    """所有 train 样本都参与 loss（不像 selection 会扔掉一部分）。
+    用小玩具数据测：stopped_epoch > 0 且 loss_history 非空。"""
+
+test_reweight_w_min_one_equals_ce:
+    """w_min=1.0 时 reweight 退化为 CE（所有权重 = 1.0）。
+    检查 test_acc 与 train_ce_baseline 一致（容差 1e-4，同 seed）。"""
+
+test_reweight_warmup_is_uniform:
+    """warmup 阶段权重全 1.0。用 trace=True，
+    检查 epoch 0 到 warmup-1 的 selected_count == len(train_idx)。"""</pre>
+
+  <h3>tests/test_smoothing.py</h3>
+  <pre>
+test_soft_targets_sum_to_one:
+    """每行 sum ≈ 1.0（容差 1e-5）。"""
+
+test_soft_targets_none_is_one_hot:
+    """method="none" 返回 one-hot noisy label。"""
+
+test_smoothing_with_one_hot_equals_ce:
+    """soft_targets = one_hot(noisy_labels) 时，smoothing 在 ramp 后
+    也等价于 CE（因为 target 不变）。检查 test_acc 接近 CE（容差 1pp）。"""
+
+test_smoothing_perfect_labels_high_acc:
+    """soft_targets = one_hot(clean_labels) 时（不现实但作为 sanity check），
+    test_acc 应接近 clean_oracle。"""</pre>
+</section>
+
+<!-- ============================================================ -->
+<section>
+  <h2>10. 冒烟判读逻辑</h2>
+
+  <div class="box good">
+    <strong>好的信号（至少满足一条才继续 5-seed gate）</strong>：
+    <ul>
+      <li>路线 A 或 B 中至少一个方法稳定赢 CE ≥ 1pp</li>
+      <li>该路线中 gb 方法 ≥ topk 方法（哪怕微弱，也说明 GB 在新机制下有信号）</li>
+      <li>shuffled/random 比 gb 差（结构有效性）</li>
+    </ul>
+  </div>
+
+  <div class="box warn">
+    <strong>中等信号（记录但需要思考下一步）</strong>：
+    <ul>
+      <li>路线 A 或 B 的最佳方法 ≈ CE（±0.5pp 内）</li>
+      <li>gb ≈ topk ≈ kmeans（GB 无独立增量，但 selection/smoothing 本身不伤害）</li>
+    </ul>
+  </div>
+
+  <div class="box bad">
+    <strong>坏的信号（及时止损）</strong>：
+    <ul>
+      <li>路线 A 和 B 全部输给 CE（说明在 frozen graph embedding + linear classifier 下，任何 local consensus 去噪都没用）</li>
+      <li>sm_noball（= CE）≈ sm_gb（说明邻域 soft target 没有贡献）</li>
+    </ul>
+  </div>
+</section>
+
+<!-- ============================================================ -->
+<section>
+  <h2>11. 执行顺序</h2>
+  <ol>
+    <li>在 <code>src/gb_graphcl/selection.py</code> 中添加 <code>_ramp_progress()</code>、<code>train_with_reweight()</code>、<code>train_with_smoothing()</code></li>
+    <li>在 <code>src/gb_graphcl/reliability.py</code> 中添加 <code>compute_soft_targets()</code></li>
+    <li>写 <code>tests/test_reweight.py</code> 和 <code>tests/test_smoothing.py</code></li>
+    <li>写 <code>scripts/run_stage1b_smoke.py</code></li>
+    <li>跑测试全绿：<pre>cd C:\Users\Admin\Desktop\实验8去噪5.19-\gb_graphcl_noisy_graphcls
+C:\Users\Admin\Desktop\三论文融合\三论文融合\GRACE-master\.venv-rocm\Scripts\python.exe tests/run_unit_tests.py</pre></li>
+    <li>跑 stage1b 冒烟：<pre>C:\Users\Admin\Desktop\三论文融合\三论文融合\GRACE-master\.venv-rocm\Scripts\python.exe scripts/run_stage1b_smoke.py --dataset NCI1 --noise-type symmetric --noise-rate 0.4 --seed 0</pre></li>
+    <li><strong>停在这里</strong>，输出报告，交回用户。不要自行跑 5-seed 或 GB 碎片化 ablation。</li>
+  </ol>
+</section>
+
+<!-- ============================================================ -->
+<section>
+  <h2>12. 护栏（硬约束）</h2>
+  <div class="box bad">
+    <ol>
+      <li>Clean labels 只用于 val/test 评估 + 事后诊断指标。<strong>绝不进入 reliability / soft_targets / weight / loss / target</strong>。</li>
+      <li>所有方法同 frozen embedding、同 split、同噪声实例、同 epochs/lr/patience。</li>
+      <li>不修改原 Stage 1 的代码或结果。新函数新增，不覆盖旧函数。</li>
+      <li>不修改 configs/default.yaml。新超参（w_min 等）在脚本中硬编码并注释。</li>
+      <li>不做 5-seed gate、不做 PROTEINS、不做 pair noise——那些是下一步。</li>
+      <li>新增代码必须补单测并保持全绿。</li>
+      <li>test 一律 test_acc_at_best_val；数字来自 CSV，禁止手填。</li>
+    </ol>
+  </div>
+</section>
+
+</main>
+</body>
+</html>

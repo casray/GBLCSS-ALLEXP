@@ -1,0 +1,121 @@
+Source: D:\我的文件夹\我的周报\NAUGRIN研究生周报-曹思磊26.3.20.docx
+
+NAUGRIN研究生工作周报
+姓   名
+曹思磊
+填表时间
+3.20
+有效工作
+时    长
+工作时段： 30小时
+其他时段：  5小时
+合    计： 35小时
+研究主题
+深度学习+粒球
+任务目标
+继续思考idea及尝试。
+工
+作
+内
+容
+及
+主
+要
+进
+展
+对于RVFL，模型上限太低，且较难作出开创性的创新。
+上一个实验可作为尝试和经验。转向图神经网络：
+《Graph Coarsening via Supervised Granular-Ball for Scalable Graph Neural Network Training》
+项目结构不小，理解花了较多时间。
+刚开始有点无从下手，还是先关注数据流向，暂时忽略tools下的代码，最后再去一个一个理解。
+数据集：
+Planetoid数据集（Cora、Citeseer、Pubmed）
+Coauthor数据集（CS、Physics）
+Planetoid数据集在PyG中内置了train_mask等属性，
+而Coauthor数据集默认不包含这些掩码属性。所以需要手动创建数据对象。
+稀疏邻接矩阵（COO格式），是一个“中间格式”，
+方便从 PyG 的边列表过渡到 NetworkX 的图结构。
+使用了两种划分技巧：
+"complete"划分：将最后1000个节点作为测试集，用于与早期研究进行公平比较，
+"normal"划分：标准比例划分（6:2:2），用于模型泛化能力评估，一般取多次平均值
+如果每篇论文都使用不同的随机划分，会对准确率有浮动，
+这在上一个实验中也遇到了，无法确定是算法改进还是划分差异
+如果只看main文件，和正常的GNN并没太大的区别
+最重要的就是new_data = gb_division(fun_data, args)这一步
+作者把所有与粒球相关的操作都封装进去了
+gb_division：
+原始data：
+x: 节点特征矩阵[节点数量, 特征维度]
+dge_index: 边索引矩阵 [2, 几条边]
+y: 节点标签向量[节点数量]
+train_mask: 训练集掩码[节点数量]
+val_mask: 验证集掩码 [节点数量]
+test_mask: 测试集掩码[节点数量]
+-->稀疏邻接矩阵（COO格式）：
+data: 边权重，本文全为1（无权图）
+(row,col): 边索引，row为源节点索引，col为目标节点索引
+shape: 矩阵形状 [节点数量, 节点数量]
+type: 数据类型为float32
+-->NetworkX 图对象（nx.Graph）(get_dataset)
+节点：attributes：原始特征向量。label：原始标签
+边：稀疏邻接矩阵的边索引
+边属性：edge_attr = np.zeros(3)（长度 3 的占位边特征）（没用到）
+-->构建双向ID映射字典
+total_degree_dict_old:{原始节点ID:度数}
+total_degree_dict:{连续新ID:度数}
+id_dict:{新ID:旧ID}
+id_dict_oldtonew:{旧ID:新ID}
+data_matrix：[old_index, features..., label, new_id（从0开始）]
+-->初始化第一个大粒球：
+C[[old_index, features..., label, new_id]，total_degree_dict]即[节点矩阵，节点度数]
+-->粗粒度划分（initial_splite）：
+对于每个连通分量的每个类别选取max(1, int(sqrt(num_nodes) / num_classes))个中心
+得到粗划分的少许粒球new_C
+-->控制粒球数量，如果大于目标数量total_balls_num，从粒球质量最小的开始移除。认为是去噪，提升效率的方式。
+-->添加纯度new_C = add_purity(new_C)
+new_C[[old_index, features..., label, new_id]，total_degree_dict,purity]
+-->基于纯度继续细划分粒球（split_ball_purity）
+new_C = split_ball_purity(graph, id_dict, new_C, total_degree_dict, total_balls_num)
+按照纯度升序排序，对于低于阈值的粒球，选择度数最高的两个节点作为划分中心，
+-->如果粒球数量未达到要求，继续划分质量大的粒球
+new_C = split_ball_further(graph, id_dict, new_C, total_degree_dict, total_balls_num)
+两者都调用split_2_co，通过BFS计算中心到所有节点的距离从而分配。
+-->补充粒球标签信息
+new_C[[old_index, features..., label, new_id]，total_degree_dict,purity,major_label]
+-->对每个粒球，计算所有节点特征的平均值GB_features。
+因为后续粒球将作为一个超节点输入到CNN
+-->构建粒球图：节点是粒球；边是原始图中节点连接的映射：如果原始图中两个节点分别属于不同的粒球（忽略球内边），则在对应粒球之间添加边。（GB_graph = new_graph(new_C, graph)）。
+可以考虑边权重=原始边数量，
+-->最后转化为输入到GNN的格式：new_f：{特征矩阵（gb_features）；标签向量（gb_labels）；边索引矩阵（adj）}
+尝试1：
+原论文在构建粒球图时，只要两个粒度球之间有边相连，就在新图中连一条无权边。这丢失了粒球之间连接强度的信息，所以尝试在粒球图间引入加权边，权重设为两个粒球之间包含的原图边数量。
+在new_graph中把跨球边改为累加weight
+并在gb_division中用权重导出COO，并新增返回new_f['adj_weight']
+最后在三个模型的前向传播中加入权重属性输入。
+（数据集cora，模型：GCN，runs=10，epochs=60）
+ball_r
+原始代码 
+加权图
+提升值
+0.45
+0.8783 ± 0.0069
+0.8738 ± 0.0091
+-0.0045
+0.50
+0.8733 ± 0.0061
+0.8733 ± 0.0057
++0.0000
+0.55
+0.8803 ± 0.0040
+0.8755 ± 0.0074
+-0.0048
+存在问题及拟解决方案
+gb_divisoin中为什么一定要构建稀疏邻接矩阵（COO格式）而不能直接把data变为NetworkX格式呢？
+1.可以方便的直接给 numpy 用，不需要频繁在Tensor和numpy之间转换。
+借由稀疏矩阵的nonzero()方法，可以快速去掉构建粒球时不需要的自环
+old_index和new_id到底有什么用？
+1如果孤立节点被删，下标可能就不再连续，所以需要给剩余节点重新排序new_id，
+2.最后需要建立粒球与粒球之间的连边，需要回到原始的邻接矩阵来找old_index
+最后矩阵就变成了[old_index, features..., label, new_id]的形式
+下周计划
+继续尝试不用固定 T=1，按球内特征方差或密度动态设阈值。并在不同数据集和模型下测试

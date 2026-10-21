@@ -1,0 +1,27 @@
+\begingroup
+\fontsize{9}{11}\selectfont
+\setlength{\tabcolsep}{3pt}
+\renewcommand{\arraystretch}{1.12}
+\setlength{\TableWidth}{\dimexpr\linewidth-4\tabcolsep\relax}
+\begin{longtable}{@{}>{\raggedright\arraybackslash}p{\dimexpr 0.190000\TableWidth\relax}>{\raggedright\arraybackslash}p{\dimexpr 0.300000\TableWidth\relax}>{\raggedright\arraybackslash}p{\dimexpr 0.510000\TableWidth\relax}@{}}
+\caption{Implementations of graph-based and distillation methods.}\label{tab:F.1}\\
+\toprule
+\textbf{Method} & \textbf{Implementation} & \textbf{Components and adaptations} \\
+\midrule\endfirsthead
+\multicolumn{3}{l}{\small\itshape Table \thetable{} (continued)}\\
+\toprule
+\textbf{Method} & \textbf{Implementation} & \textbf{Components and adaptations} \\
+\midrule\endhead
+\midrule\multicolumn{3}{r}{\small\itshape Continued on the next page}\\\endfoot
+\bottomrule\endlastfoot
+PosteL & Authors' target-generation code & Posterior soft-target construction; iterative pseudo-labeling disabled \\*
+ALS & Mechanism adaptation & Adaptive label smoothing, pacing, and KL term \\
+SALS & Mechanism adaptation & Structure-aware label smoothing \\
+Graph-MLP & Adapted to the common MLP & Multi-hop NContrast objective \\
+GSDN & Mechanism adaptation & Neighborhood self-distillation at the feature and label levels \\
+GCN(X)+CE teacher & Implemented for this study & GCN-to-MLP response distillation \\
+FF-G2M & Reimplemented with the common GCN and MLP & Low- and high-frequency distillation \\
+KRD & Mechanism adaptation & Reliability-based knowledge selection \\*
+VQGraph & Mechanism adaptation & Soft-codebook distillation \\
+\end{longtable}
+\endgroup

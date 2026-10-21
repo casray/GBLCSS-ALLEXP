@@ -1,0 +1,9 @@
+# 独立审查及解释边界
+
+2026-10-15，独立只读审查。未发现阻塞本轮实验的标签泄漏、BFS连通/残余度、目标公式或配对初始化错误。另独立核对315目标行无重复键、270配对差值全部与逐单元结果一致；当前gate有效。
+
+发现P2恢复完整性缺口：原screen/student脚本每次保存结果后才刷新派生CSV；若恰在之间中断，resume可能跳过该单元而保留旧CSV。本轮screen正常完成，实际未受影响。保持已冻结source不变，新增check_gate.py从审计过的原metrics.json核对完整键集合/CSV/gate；最终汇总无条件从逐结果JSON重建。未来版本应在resume完成后无条件summarize，分析器直接读取审计JSON。
+
+整体q_accuracy含无支持节点的均匀分布与argmax并列。本轮新增conditional_q_metrics/summary以报告support>=2的条件准确率；门槛仍使用全部训练节点target Brier，不回改规则。
+
+run_students中的historical_accuracy_delta_pp只作为附加参考，不能仅据它宣称历史复现通过。七臂全部重新训练，主要比较不依赖历史分数；最终需要来源config/训练源码/目标数组/原logits核查后才能认定历史一致性。独立学生审计在训练完成后进行，核完整210键及保存logits。

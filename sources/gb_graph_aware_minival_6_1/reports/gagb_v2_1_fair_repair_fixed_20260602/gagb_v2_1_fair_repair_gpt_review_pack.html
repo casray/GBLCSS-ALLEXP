@@ -1,0 +1,208 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<title>GAGB v2.1 Fair-Control Repair GPT Review Pack</title>
+<style>
+body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Microsoft YaHei', sans-serif; line-height: 1.65; color: #1f2937; margin: 0; background: #f7f8fb; }
+main { max-width: 1180px; margin: 0 auto; padding: 32px 28px 64px; background: white; }
+h1 { font-size: 30px; margin: 0 0 8px; }
+h2 { border-top: 1px solid #e5e7eb; padding-top: 24px; margin-top: 32px; font-size: 22px; }
+h3 { margin-top: 22px; font-size: 18px; }
+.note { background: #fff7ed; border: 1px solid #fed7aa; padding: 12px 14px; border-radius: 6px; }
+.ok { background: #ecfdf5; border: 1px solid #a7f3d0; padding: 12px 14px; border-radius: 6px; }
+.warn { background: #fef2f2; border: 1px solid #fecaca; padding: 12px 14px; border-radius: 6px; }
+.meta { color: #6b7280; margin-bottom: 22px; }
+code, pre { font-family: Consolas, 'SFMono-Regular', monospace; }
+pre { white-space: pre-wrap; background: #111827; color: #f9fafb; padding: 16px; border-radius: 6px; overflow-x: auto; }
+table { border-collapse: collapse; width: 100%; margin: 12px 0 20px; font-size: 13px; }
+th, td { border: 1px solid #d1d5db; padding: 7px 8px; vertical-align: top; }
+th { background: #f3f4f6; text-align: left; }
+ul { padding-left: 22px; }
+.small { font-size: 13px; color: #4b5563; }
+</style>
+</head>
+<body><main>
+<h1>GAGB v2.1 Fair-Control Repair Minival: GPT Review Pack</h1>
+<div class="meta">Generated: 2026-06-02 11:21:26<br>Evidence root: C:\Users\Admin\Desktop\实验8去噪5.19-\gb_graph_aware_minival_6_1\reports\gagb_v2_1_fair_repair_fixed_20260602</div>
+
+<section><h2>1. Context And Objective</h2>
+<p>本实验属于 GAGB / GB-GCL 研究线：在 frozen GRACE 图对比表示空间中构造 Graph-aware Granular Balls，并把粒球作为带噪标签节点分类中的保守 soft-label generator。</p>
+<p>本轮 v2.1 的核心问题不是再设计新公式，而是做公平控制：上一轮 v2 target repair 发现 <code>alpha09</code> 与 <code>replace_qmix</code> 可以产生正的 noise correction rate，但还不能判断收益来自 GAGB grouping，还是来自任意局部扰动、kmeans、topk、khop-only 或随机分组。</p>
+</section>
+
+<section><h2>2. Prior Experiment Chain</h2>
+<ul>
+<li>v1 GAGB 使用 graph-aware grouping + local soft label，但常出现 NCR=0 或精度收益不稳定。</li>
+<li>v2 target-only repair 引入 noisy-train teacher 与 conflict gate，发现 <code>alpha09</code> / <code>replace_qmix</code> 有机制信号。</li>
+<li>v2.1 的目标是补齐 fair controls，不改 GRACE、不改构球、不做 view generation。</li>
+</ul>
+<div class="warn"><strong>有效性说明：</strong>旧汇总 <code>reports/gagb_v2_1_fair_repair_20260602</code> 无效。发现 <code>_method_grouping()</code> 路由 bug 后，已修复并重跑，本文只使用 <code>reports/gagb_v2_1_fair_repair_fixed_20260602</code>。</div>
+</section>
+
+<section><h2>3. Method / Algorithm</h2>
+<h3>Graph-aware Ball Construction</h3>
+<ul>
+<li>输入：normalized embedding <code>H</code> 与 <code>edge_index</code>。</li>
+<li>中心选择：未分配节点中 degree 最大者，随机数只用于 tie-break。</li>
+<li>候选集合：默认 <code>candidate_scope=khop</code>，<code>max_hops=2</code>。</li>
+<li>membership score: <code>0.7 * cosine(h_i, h_c) + 0.3 * (1 / hop_distance)</code>。</li>
+<li>阈值：<code>tau_add=0.55</code>；<code>min_ball_size=5</code>；<code>max_ball_size=128</code>。</li>
+</ul>
+<h3>Teacher-Aware Conflict-Gated Target Repair</h3>
+<pre>For each ball B:
+  q_label_B = noisy label distribution over train nodes in B
+  q_pred_B  = mean teacher probability over all nodes in B
+  q_mix     = 0.5 * q_label_B + 0.5 * q_pred_B
+
+For each train node i in B:
+  gate_i = (q_mix[noisy_y_i] <= 0.35) and (max(q_mix) >= 0.55)
+
+alpha09:
+  if gate_i: target_i = 0.1 * one_hot(noisy_y_i) + 0.9 * q_mix
+
+replace_qmix:
+  if gate_i: target_i = q_mix</pre>
+<p>本轮不修改 GRACE pretraining、不修改 graph augmentations、不做 prototype pulling，不把 same-ball membership 当 hard positive label。</p>
+</section>
+
+<section><h2>4. Clean-Label And Data-Leakage Boundary</h2>
+<div class="ok">Teacher 只使用 noisy train labels 训练；clean labels 不参与构球、teacher、target 构造或 classifier training。</div>
+<p>Clean labels 只用于：最终 validation/test evaluation，以及 NCR、CDR、AUROC 等 diagnostics。也就是说，NCR/CDR 可以用来理解机制，但不能被误解为训练时可用信号。</p>
+</section>
+
+<section><h2>5. Experimental Protocol</h2>
+<ul>
+<li>Datasets: Cora, CiteSeer</li>
+<li>Split: <code>ratio_train0p2_val0p1_split0</code></li>
+<li>Noise: symmetric label noise, rates 0.2 and 0.4</li>
+<li>Seeds: 0,1,2,3,4</li>
+<li>Mode: frozen GRACE embedding</li>
+<li>Classifier: epochs 200, patience 30</li>
+<li>Teacher: linear teacher on frozen embedding, noisy train labels only, epochs 100, lr 0.01, weight decay 5e-4, temperature 1.0</li>
+</ul>
+</section>
+
+<section><h2>6. Baselines And Fair Controls</h2>
+<ul>
+<li><code>gb</code>: ordinary embedding GB smoothing.</li>
+<li><code>gagb</code>: v1 graph-aware GB target smoothing.</li>
+<li><code>khop_only</code>: topology-only grouping.</li>
+<li><code>alpha03</code>: weak conflict-gated repair baseline.</li>
+<li><code>shuffled_*_matched</code>: randomized grouping controls. Important caveat: after repair, these often change almost no nodes, so they are sanity controls but not fully intervention-strength matched.</li>
+<li><code>kmeans_gagb_matched_*</code>: kmeans grouping with GAGB-matched group count.</li>
+<li><code>topk_gagb_train_matched_*</code>: train-node effective group size matched topk neighborhood control; not a strict partition.</li>
+<li><code>khop_only_*</code>: same target repair formula on khop-only topology grouping.</li>
+</ul>
+</section>
+
+<section><h2>7. Metrics And Definitions</h2>
+<table><thead><tr><th>Metric</th><th>Definition</th></tr></thead><tbody><tr><td>test_at_best_val_mean</td><td>每个 seed 在验证集最佳 epoch 对应的 test accuracy；用于主准确率比较。</td></tr><tr><td>noise_detection_auroc</td><td>只用于诊断。训练节点上，把 suspicion = 1 - soft_target[noisy_label] 或 1 - sample_weight，当作噪声检测分数；clean labels 只在诊断中使用。</td></tr><tr><td>noise_correction_rate (NCR)</td><td>训练集中真实被翻转的 noisy nodes 中，soft target 的 argmax 是否等于 clean label 的比例。clean label 只用于诊断。</td></tr><tr><td>clean_damage_rate (CDR)</td><td>训练集中原本干净的 nodes 中，soft target 的 argmax 是否偏离 clean label 的比例。clean label 只用于诊断。</td></tr><tr><td>target_changed_train_count</td><td>训练节点中 target argmax 相比 noisy label 发生改变的平均数量。</td></tr><tr><td>paired_delta_mean</td><td>同一 dataset/noise/seed 协议下 method 的 test accuracy 减 baseline 的均值。positive_delta_count 是 5 个 seed 中 delta &gt; 0 的数量。</td></tr></tbody></table>
+</section>
+
+<section><h2>8. Main Results</h2>
+<table><thead><tr><th>Setting</th><th>Method</th><th>Acc mean</th><th>Acc std</th><th>NCR</th><th>CDR</th><th>AUROC</th><th>Changed train nodes</th></tr></thead><tbody><tr><td>Cora 0.2</td><td>GB ordinary</td><td>0.8061</td><td>0.0100</td><td>0.0000</td><td>0.0000</td><td>0.6824</td><td>345.6</td></tr><tr><td>Cora 0.2</td><td>v1 GAGB</td><td>0.8033</td><td>0.0111</td><td>0.0000</td><td>0.0000</td><td>0.6499</td><td>299.8</td></tr><tr><td>Cora 0.2</td><td>K-hop only</td><td>0.8031</td><td>0.0111</td><td>0.0000</td><td>0.0000</td><td>0.5710</td><td>202.2</td></tr><tr><td>Cora 0.2</td><td>GAGB conflict alpha03</td><td>0.8039</td><td>0.0109</td><td>0.0000</td><td>0.0000</td><td>0.6237</td><td>34.2</td></tr><tr><td>Cora 0.2</td><td>GAGB conflict alpha09</td><td>0.8083</td><td>0.0075</td><td>0.2519</td><td>0.0143</td><td>0.6226</td><td>34.2</td></tr><tr><td>Cora 0.2</td><td>GAGB replace qmix</td><td>0.8090</td><td>0.0075</td><td>0.2519</td><td>0.0143</td><td>0.6226</td><td>34.2</td></tr><tr><td>Cora 0.2</td><td>Shuffled alpha09</td><td>0.8038</td><td>0.0111</td><td>0.0000</td><td>0.0005</td><td>0.5007</td><td>0.4</td></tr><tr><td>Cora 0.2</td><td>KMeans alpha09</td><td>0.8095</td><td>0.0051</td><td>0.1167</td><td>0.0023</td><td>0.5572</td><td>13.6</td></tr><tr><td>Cora 0.2</td><td>TopK alpha09</td><td>0.7990</td><td>0.0093</td><td>0.6148</td><td>0.0806</td><td>0.8092</td><td>55.0</td></tr><tr><td>Cora 0.2</td><td>K-hop alpha09</td><td>0.8071</td><td>0.0036</td><td>0.1741</td><td>0.0157</td><td>0.5850</td><td>26.8</td></tr><tr><td>Cora 0.4</td><td>GB ordinary</td><td>0.7968</td><td>0.0056</td><td>0.0000</td><td>0.0000</td><td>0.6450</td><td>345.6</td></tr><tr><td>Cora 0.4</td><td>v1 GAGB</td><td>0.7945</td><td>0.0063</td><td>0.0000</td><td>0.0000</td><td>0.6186</td><td>299.8</td></tr><tr><td>Cora 0.4</td><td>K-hop only</td><td>0.7937</td><td>0.0070</td><td>0.0000</td><td>0.0000</td><td>0.5507</td><td>202.2</td></tr><tr><td>Cora 0.4</td><td>GAGB conflict alpha03</td><td>0.7949</td><td>0.0082</td><td>0.0000</td><td>0.0000</td><td>0.5399</td><td>18.6</td></tr><tr><td>Cora 0.4</td><td>GAGB conflict alpha09</td><td>0.7907</td><td>0.0097</td><td>0.0811</td><td>0.0025</td><td>0.5398</td><td>18.6</td></tr><tr><td>Cora 0.4</td><td>GAGB replace qmix</td><td>0.7886</td><td>0.0090</td><td>0.0811</td><td>0.0025</td><td>0.5398</td><td>18.6</td></tr><tr><td>Cora 0.4</td><td>Shuffled alpha09</td><td>0.7931</td><td>0.0077</td><td>0.0000</td><td>0.0000</td><td>0.5005</td><td>0.2</td></tr><tr><td>Cora 0.4</td><td>KMeans alpha09</td><td>0.7848</td><td>0.0136</td><td>0.0378</td><td>0.0006</td><td>0.5186</td><td>8.4</td></tr><tr><td>Cora 0.4</td><td>TopK alpha09</td><td>0.7800</td><td>0.0185</td><td>0.2894</td><td>0.0203</td><td>0.6469</td><td>29.0</td></tr><tr><td>Cora 0.4</td><td>K-hop alpha09</td><td>0.7922</td><td>0.0063</td><td>0.0461</td><td>0.0062</td><td>0.5205</td><td>12.2</td></tr><tr><td>CiteSeer 0.2</td><td>GB ordinary</td><td>0.6997</td><td>0.0116</td><td>0.0000</td><td>0.0000</td><td>0.6061</td><td>386.2</td></tr><tr><td>CiteSeer 0.2</td><td>v1 GAGB</td><td>0.6999</td><td>0.0116</td><td>0.0000</td><td>0.0000</td><td>0.5670</td><td>280.8</td></tr><tr><td>CiteSeer 0.2</td><td>K-hop only</td><td>0.7047</td><td>0.0087</td><td>0.0000</td><td>0.0000</td><td>0.5349</td><td>175.4</td></tr><tr><td>CiteSeer 0.2</td><td>GAGB conflict alpha03</td><td>0.7058</td><td>0.0080</td><td>0.0000</td><td>0.0000</td><td>0.5738</td><td>36.4</td></tr><tr><td>CiteSeer 0.2</td><td>GAGB conflict alpha09</td><td>0.7087</td><td>0.0044</td><td>0.1444</td><td>0.0255</td><td>0.5733</td><td>36.4</td></tr><tr><td>CiteSeer 0.2</td><td>GAGB replace qmix</td><td>0.7064</td><td>0.0064</td><td>0.1444</td><td>0.0255</td><td>0.5733</td><td>36.4</td></tr><tr><td>CiteSeer 0.2</td><td>Shuffled alpha09</td><td>0.7064</td><td>0.0088</td><td>0.0000</td><td>0.0004</td><td>0.4998</td><td>0.2</td></tr><tr><td>CiteSeer 0.2</td><td>KMeans alpha09</td><td>0.7082</td><td>0.0112</td><td>0.0436</td><td>0.0068</td><td>0.5215</td><td>10.2</td></tr><tr><td>CiteSeer 0.2</td><td>TopK alpha09</td><td>0.7082</td><td>0.0053</td><td>0.4722</td><td>0.1238</td><td>0.7404</td><td>80.0</td></tr><tr><td>CiteSeer 0.2</td><td>K-hop alpha09</td><td>0.7044</td><td>0.0053</td><td>0.1098</td><td>0.0146</td><td>0.5546</td><td>24.2</td></tr><tr><td>CiteSeer 0.4</td><td>GB ordinary</td><td>0.6970</td><td>0.0091</td><td>0.0000</td><td>0.0000</td><td>0.5822</td><td>386.2</td></tr><tr><td>CiteSeer 0.4</td><td>v1 GAGB</td><td>0.6934</td><td>0.0092</td><td>0.0000</td><td>0.0000</td><td>0.5542</td><td>280.8</td></tr><tr><td>CiteSeer 0.4</td><td>K-hop only</td><td>0.6986</td><td>0.0102</td><td>0.0000</td><td>0.0000</td><td>0.5306</td><td>175.4</td></tr><tr><td>CiteSeer 0.4</td><td>GAGB conflict alpha03</td><td>0.6982</td><td>0.0093</td><td>0.0000</td><td>0.0000</td><td>0.5314</td><td>21.6</td></tr><tr><td>CiteSeer 0.4</td><td>GAGB conflict alpha09</td><td>0.6981</td><td>0.0097</td><td>0.0617</td><td>0.0075</td><td>0.5313</td><td>21.6</td></tr><tr><td>CiteSeer 0.4</td><td>GAGB replace qmix</td><td>0.6997</td><td>0.0077</td><td>0.0617</td><td>0.0075</td><td>0.5313</td><td>21.6</td></tr><tr><td>CiteSeer 0.4</td><td>Shuffled alpha09</td><td>0.6979</td><td>0.0090</td><td>0.0000</td><td>0.0000</td><td>0.5000</td><td>0.0</td></tr><tr><td>CiteSeer 0.4</td><td>KMeans alpha09</td><td>0.6979</td><td>0.0107</td><td>0.0195</td><td>0.0020</td><td>0.5103</td><td>6.8</td></tr><tr><td>CiteSeer 0.4</td><td>TopK alpha09</td><td>0.6967</td><td>0.0055</td><td>0.2481</td><td>0.0455</td><td>0.6248</td><td>30.4</td></tr><tr><td>CiteSeer 0.4</td><td>K-hop alpha09</td><td>0.6993</td><td>0.0095</td><td>0.0376</td><td>0.0035</td><td>0.5185</td><td>12.2</td></tr></tbody></table>
+</section>
+
+<section><h2>9. Diagnostic Results</h2>
+<table><thead><tr><th>Comparison</th><th>Setting wins</th><th>Cora 0.2</th><th>Cora 0.4</th><th>CiteSeer 0.2</th><th>CiteSeer 0.4</th></tr></thead><tbody><tr><td>alpha09 vs alpha03</td><td>2/4</td><td>0.0044 (4/5 seeds +)</td><td>-0.0042 (2/5 seeds +)</td><td>0.0028 (2/5 seeds +)</td><td>-0.0001 (2/5 seeds +)</td></tr><tr><td>alpha09 vs GB</td><td>3/4</td><td>0.0022 (3/5 seeds +)</td><td>-0.0061 (1/5 seeds +)</td><td>0.0090 (4/5 seeds +)</td><td>0.0011 (2/5 seeds +)</td></tr><tr><td>alpha09 vs v1 GAGB</td><td>3/4</td><td>0.0051 (3/5 seeds +)</td><td>-0.0038 (3/5 seeds +)</td><td>0.0088 (4/5 seeds +)</td><td>0.0047 (3/5 seeds +)</td></tr><tr><td>alpha09 vs shuffled</td><td>3/4</td><td>0.0045 (3/5 seeds +)</td><td>-0.0024 (2/5 seeds +)</td><td>0.0022 (3/5 seeds +)</td><td>0.0003 (2/5 seeds +)</td></tr><tr><td>alpha09 vs kmeans</td><td>3/4</td><td>-0.0012 (2/5 seeds +)</td><td>0.0059 (3/5 seeds +)</td><td>0.0005 (1/5 seeds +)</td><td>0.0003 (2/5 seeds +)</td></tr><tr><td>alpha09 vs topk</td><td>4/4</td><td>0.0093 (4/5 seeds +)</td><td>0.0107 (4/5 seeds +)</td><td>0.0004 (3/5 seeds +)</td><td>0.0014 (3/5 seeds +)</td></tr><tr><td>alpha09 vs khop repair</td><td>2/4</td><td>0.0013 (3/5 seeds +)</td><td>-0.0015 (3/5 seeds +)</td><td>0.0043 (5/5 seeds +)</td><td>-0.0012 (1/5 seeds +)</td></tr><tr><td>replace vs alpha03</td><td>3/4</td><td>0.0051 (4/5 seeds +)</td><td>-0.0063 (1/5 seeds +)</td><td>0.0005 (2/5 seeds +)</td><td>0.0015 (3/5 seeds +)</td></tr><tr><td>replace vs GB</td><td>3/4</td><td>0.0029 (3/5 seeds +)</td><td>-0.0082 (0/5 seeds +)</td><td>0.0067 (3/5 seeds +)</td><td>0.0027 (3/5 seeds +)</td></tr><tr><td>replace vs v1 GAGB</td><td>3/4</td><td>0.0057 (3/5 seeds +)</td><td>-0.0059 (2/5 seeds +)</td><td>0.0064 (4/5 seeds +)</td><td>0.0063 (4/5 seeds +)</td></tr><tr><td>replace vs shuffled</td><td>3/4</td><td>0.0054 (3/5 seeds +)</td><td>-0.0043 (2/5 seeds +)</td><td>0.0001 (2/5 seeds +)</td><td>0.0018 (3/5 seeds +)</td></tr><tr><td>replace vs kmeans</td><td>2/4</td><td>-0.0022 (2/5 seeds +)</td><td>0.0049 (2/5 seeds +)</td><td>-0.0016 (1/5 seeds +)</td><td>0.0023 (3/5 seeds +)</td></tr><tr><td>replace vs topk</td><td>3/4</td><td>0.0065 (3/5 seeds +)</td><td>0.0079 (3/5 seeds +)</td><td>-0.0025 (2/5 seeds +)</td><td>0.0046 (3/5 seeds +)</td></tr><tr><td>replace vs khop repair</td><td>3/4</td><td>0.0019 (4/5 seeds +)</td><td>-0.0038 (2/5 seeds +)</td><td>0.0012 (2/5 seeds +)</td><td>0.0029 (3/5 seeds +)</td></tr></tbody></table>
+<div class="note"><strong>诊断重点：</strong>topk controls 的 NCR 很高，但 CDR 也高，说明它能改更多 noisy nodes，但对 clean nodes 损伤也大；GAGB repair 的 CDR 更可控。</div>
+</section>
+
+<section><h2>10. Supported Conclusions</h2>
+<ul>
+<li>Target repair 不再是 inert 模块：<code>alpha09</code> 和 <code>replace_qmix</code> 在 4/4 settings 都有 NCR &gt; 0。</li>
+<li>Clean damage 可控：主方法 CDR 均低于 0.03。</li>
+<li><code>replace_qmix</code> 通过 hard gate 中的 alpha03 比较：3/4 settings wins。</li>
+<li>修复路由后，主方法 vs shuffled matched 是 3/4 wins，不再是旧汇总中的完全相同结果。</li>
+</ul>
+</section>
+
+<section><h2>11. Unsupported Or Still-Hypothetical Claims</h2>
+<ul>
+<li>不能强 claim “GAGB grouping 稳定优于所有公平 matched controls”。</li>
+<li>Cora 0.4 是失败 setting：主方法输给 alpha03、GB 或 shuffled control。</li>
+<li>许多 accuracy gain 小于或接近 std，不能包装成显著提升。</li>
+<li>shuffled controls 不是完全 intervention-strength matched，因为 target changed count 经常接近 0。</li>
+</ul>
+</section>
+
+<section><h2>12. Missing Information / Residual Risk</h2>
+<ul>
+<li>未实现 correction-by-class bias 诊断。</li>
+<li>未分析 Cora 0.4 的 gated nodes 是否集中在特定类别或低质量 balls。</li>
+<li>未做 threshold sweep，因此 conflict gate 的 0.35/0.55 是否过严尚未确认。</li>
+<li>topk control 是 neighborhood pseudo-group，不是严格 partition，对照解释需要谨慎。</li>
+<li>当前只覆盖 Cora/CiteSeer 和 symmetric noise，尚未覆盖 PubMed/OGBN 或 asymmetric/instance-dependent noise。</li>
+</ul>
+</section>
+
+<section><h2>13. Questions For GPT</h2>
+<ol>
+<li>这个实验是否足以说明 target repair 机制值得继续？</li>
+<li>当前 GAGB-specific 证据应该如何定性：弱支持、部分支持，还是仍不成立？</li>
+<li>Cora 0.4 失败最可能来自 gate 阈值、teacher、ball quality，还是噪声设置？</li>
+<li>下一步最小实验应优先做 correction-by-class、intervention-strength matched shuffled、Cora 0.4 failure analysis，还是 gate threshold sweep？</li>
+<li>如果写论文，目前 claim 应该降级成什么表述？</li>
+</ol>
+</section>
+
+<section><h2>14. Full Paste-Ready GPT Prompt</h2>
+<p>下面这段可以直接复制给 GPT / Deep Research：</p>
+<pre>你看不到我的本地实验文件夹、代码、CSV、日志和浏览器页面，所以我把关键信息完整整理在下面。请只基于这份 self-contained 信息进行科研判断，不要假设你能访问本地路径。
+
+我希望你帮助我思考：
+1. 这个实验真正验证了什么，没有验证什么？
+2. 当前结果支持哪些结论，哪些只是猜测？
+3. 失败、不稳定或不显著的最可能原因是什么？
+4. 是否存在 baseline/control/metric/protocol 上的信息缺口？
+5. 下一步最小实验应该是什么？
+
+请不要做代码审查，除非我在文中贴出了相关代码片段。请不要要求查看本地文件；如果你需要某类信息，请明确说出缺失的信息类型。
+
+【实验背景】
+研究方向是 GAGB / GB-GCL：在 frozen GRACE 图对比表示上构造 Graph-aware Granular Balls，用作带噪标签节点分类中的保守 soft-label generator。上一轮 v2 target repair 显示 alpha09 / replace_qmix 可以带来正 NCR，但缺少公平 matched controls。本轮 v2.1 检验这些收益是否真的依赖 GAGB grouping。
+
+【有效性说明】
+旧汇总 reports/gagb_v2_1_fair_repair_20260602 不作为结论依据，因为发现 repair controls 被错误路由到 GAGB grouping。修复后新增测试并重跑 20 个 frozen classifier runs，生成有效目录 reports/gagb_v2_1_fair_repair_fixed_20260602。
+
+【方法】
+GAGB 构球：输入 normalized embedding H 与 edge_index。中心为未分配节点中 degree 最高者；候选节点默认为 max_hops=2 的 k-hop 节点；membership score = 0.7*cosine_similarity + 0.3*(1/hop_distance)，tau_add=0.55，min_ball_size=5，max_ball_size=128。v2.1 不改 GRACE、不改构球、不做 view generation。
+
+Target repair：每个球 B 内 q_label_B 来自球内 train noisy labels；q_pred_B 来自 noisy-train linear teacher 在球内 all nodes 的预测均值；q_mix = 0.5*q_label_B + 0.5*q_pred_B。Conflict gate 条件是 q_mix[noisy_y_i] &lt;= 0.35 且 max(q_mix) &gt;= 0.55。alpha09 用 fixed alpha=0.9 混合 noisy one-hot 与 q_mix；replace_qmix 对 gated nodes 直接用 q_mix 替换 target。
+
+【clean-label 边界】
+Teacher 只使用 noisy train labels 训练。Clean labels 不用于构造 ball、teacher、target 或训练；只用于 NCR/CDR/AUROC 和最终 test/val 评估诊断。
+
+【协议】
+Datasets: Cora, CiteSeer；split=ratio_train0p2_val0p1_split0；noise=symmetric；noise rates=0.2,0.4；seeds=0..4；mode=frozen GRACE embedding；classifier epochs=200；patience=30；base alpha=0.3；teacher epochs=100, lr=0.01, weight_decay=5e-4, temperature=1.0。
+
+【方法与控制组】
+主方法：gagb_qb_conflict_gate_alpha09, gagb_qb_conflict_gate_replace_qmix。
+对照：gb, gagb, khop_only, alpha03, shuffled matched, kmeans GAGB-matched, topk train-node matched, khop-only repair。topk 是 train-node effective group size matched 的 neighborhood control，不是严格 partition。
+
+【成功标准】
+Hard gate: 主方法 NCR&gt;0 且 CDR&lt;0.03；至少 3/4 setting 超过 alpha03；至少 2/4 超过 shuffled matched；至少 2/4 超过 kmeans/topk matched。Strong gate 还要求 3/4 超过 shuffled/kmeans/topk，且至少 2 个 setting 有约 0.3 std 以上 accuracy gain，并且无 correction-by-class bias。但 correction-by-class 尚未实现。
+
+【核心结果】
+&lt;table&gt;&lt;thead&gt;&lt;tr&gt;&lt;th&gt;Setting&lt;/th&gt;&lt;th&gt;Method&lt;/th&gt;&lt;th&gt;Acc mean&lt;/th&gt;&lt;th&gt;Acc std&lt;/th&gt;&lt;th&gt;NCR&lt;/th&gt;&lt;th&gt;CDR&lt;/th&gt;&lt;th&gt;AUROC&lt;/th&gt;&lt;th&gt;Changed train nodes&lt;/th&gt;&lt;/tr&gt;&lt;/thead&gt;&lt;tbody&gt;&lt;tr&gt;&lt;td&gt;Cora 0.2&lt;/td&gt;&lt;td&gt;GB ordinary&lt;/td&gt;&lt;td&gt;0.8061&lt;/td&gt;&lt;td&gt;0.0100&lt;/td&gt;&lt;td&gt;0.0000&lt;/td&gt;&lt;td&gt;0.0000&lt;/td&gt;&lt;td&gt;0.6824&lt;/td&gt;&lt;td&gt;345.6&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;Cora 0.2&lt;/td&gt;&lt;td&gt;v1 GAGB&lt;/td&gt;&lt;td&gt;0.8033&lt;/td&gt;&lt;td&gt;0.0111&lt;/td&gt;&lt;td&gt;0.0000&lt;/td&gt;&lt;td&gt;0.0000&lt;/td&gt;&lt;td&gt;0.6499&lt;/td&gt;&lt;td&gt;299.8&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;Cora 0.2&lt;/td&gt;&lt;td&gt;K-hop only&lt;/td&gt;&lt;td&gt;0.8031&lt;/td&gt;&lt;td&gt;0.0111&lt;/td&gt;&lt;td&gt;0.0000&lt;/td&gt;&lt;td&gt;0.0000&lt;/td&gt;&lt;td&gt;0.5710&lt;/td&gt;&lt;td&gt;202.2&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;Cora 0.2&lt;/td&gt;&lt;td&gt;GAGB conflict alpha03&lt;/td&gt;&lt;td&gt;0.8039&lt;/td&gt;&lt;td&gt;0.0109&lt;/td&gt;&lt;td&gt;0.0000&lt;/td&gt;&lt;td&gt;0.0000&lt;/td&gt;&lt;td&gt;0.6237&lt;/td&gt;&lt;td&gt;34.2&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;Cora 0.2&lt;/td&gt;&lt;td&gt;GAGB conflict alpha09&lt;/td&gt;&lt;td&gt;0.8083&lt;/td&gt;&lt;td&gt;0.0075&lt;/td&gt;&lt;td&gt;0.2519&lt;/td&gt;&lt;td&gt;0.0143&lt;/td&gt;&lt;td&gt;0.6226&lt;/td&gt;&lt;td&gt;34.2&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;Cora 0.2&lt;/td&gt;&lt;td&gt;GAGB replace qmix&lt;/td&gt;&lt;td&gt;0.8090&lt;/td&gt;&lt;td&gt;0.0075&lt;/td&gt;&lt;td&gt;0.2519&lt;/td&gt;&lt;td&gt;0.0143&lt;/td&gt;&lt;td&gt;0.6226&lt;/td&gt;&lt;td&gt;34.2&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;Cora 0.2&lt;/td&gt;&lt;td&gt;Shuffled alpha09&lt;/td&gt;&lt;td&gt;0.8038&lt;/td&gt;&lt;td&gt;0.0111&lt;/td&gt;&lt;td&gt;0.0000&lt;/td&gt;&lt;td&gt;0.0005&lt;/td&gt;&lt;td&gt;0.5007&lt;/td&gt;&lt;td&gt;0.4&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;Cora 0.2&lt;/td&gt;&lt;td&gt;KMeans alpha09&lt;/td&gt;&lt;td&gt;0.8095&lt;/td&gt;&lt;td&gt;0.0051&lt;/td&gt;&lt;td&gt;0.1167&lt;/td&gt;&lt;td&gt;0.0023&lt;/td&gt;&lt;td&gt;0.5572&lt;/td&gt;&lt;td&gt;13.6&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;Cora 0.2&lt;/td&gt;&lt;td&gt;TopK alpha09&lt;/td&gt;&lt;td&gt;0.7990&lt;/td&gt;&lt;td&gt;0.0093&lt;/td&gt;&lt;td&gt;0.6148&lt;/td&gt;&lt;td&gt;0.0806&lt;/td&gt;&lt;td&gt;0.8092&lt;/td&gt;&lt;td&gt;55.0&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;Cora 0.2&lt;/td&gt;&lt;td&gt;K-hop alpha09&lt;/td&gt;&lt;td&gt;0.8071&lt;/td&gt;&lt;td&gt;0.0036&lt;/td&gt;&lt;td&gt;0.1741&lt;/td&gt;&lt;td&gt;0.0157&lt;/td&gt;&lt;td&gt;0.5850&lt;/td&gt;&lt;td&gt;26.8&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;Cora 0.4&lt;/td&gt;&lt;td&gt;GB ordinary&lt;/td&gt;&lt;td&gt;0.7968&lt;/td&gt;&lt;td&gt;0.0056&lt;/td&gt;&lt;td&gt;0.0000&lt;/td&gt;&lt;td&gt;0.0000&lt;/td&gt;&lt;td&gt;0.6450&lt;/td&gt;&lt;td&gt;345.6&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;Cora 0.4&lt;/td&gt;&lt;td&gt;v1 GAGB&lt;/td&gt;&lt;td&gt;0.7945&lt;/td&gt;&lt;td&gt;0.0063&lt;/td&gt;&lt;td&gt;0.0000&lt;/td&gt;&lt;td&gt;0.0000&lt;/td&gt;&lt;td&gt;0.6186&lt;/td&gt;&lt;td&gt;299.8&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;Cora 0.4&lt;/td&gt;&lt;td&gt;K-hop only&lt;/td&gt;&lt;td&gt;0.7937&lt;/td&gt;&lt;td&gt;0.0070&lt;/td&gt;&lt;td&gt;0.0000&lt;/td&gt;&lt;td&gt;0.0000&lt;/td&gt;&lt;td&gt;0.5507&lt;/td&gt;&lt;td&gt;202.2&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;Cora 0.4&lt;/td&gt;&lt;td&gt;GAGB conflict alpha03&lt;/td&gt;&lt;td&gt;0.7949&lt;/td&gt;&lt;td&gt;0.0082&lt;/td&gt;&lt;td&gt;0.0000&lt;/td&gt;&lt;td&gt;0.0000&lt;/td&gt;&lt;td&gt;0.5399&lt;/td&gt;&lt;td&gt;18.6&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;Cora 0.4&lt;/td&gt;&lt;td&gt;GAGB conflict alpha09&lt;/td&gt;&lt;td&gt;0.7907&lt;/td&gt;&lt;td&gt;0.0097&lt;/td&gt;&lt;td&gt;0.0811&lt;/td&gt;&lt;td&gt;0.0025&lt;/td&gt;&lt;td&gt;0.5398&lt;/td&gt;&lt;td&gt;18.6&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;Cora 0.4&lt;/td&gt;&lt;td&gt;GAGB replace qmix&lt;/td&gt;&lt;td&gt;0.7886&lt;/td&gt;&lt;td&gt;0.0090&lt;/td&gt;&lt;td&gt;0.0811&lt;/td&gt;&lt;td&gt;0.0025&lt;/td&gt;&lt;td&gt;0.5398&lt;/td&gt;&lt;td&gt;18.6&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;Cora 0.4&lt;/td&gt;&lt;td&gt;Shuffled alpha09&lt;/td&gt;&lt;td&gt;0.7931&lt;/td&gt;&lt;td&gt;0.0077&lt;/td&gt;&lt;td&gt;0.0000&lt;/td&gt;&lt;td&gt;0.0000&lt;/td&gt;&lt;td&gt;0.5005&lt;/td&gt;&lt;td&gt;0.2&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;Cora 0.4&lt;/td&gt;&lt;td&gt;KMeans alpha09&lt;/td&gt;&lt;td&gt;0.7848&lt;/td&gt;&lt;td&gt;0.0136&lt;/td&gt;&lt;td&gt;0.0378&lt;/td&gt;&lt;td&gt;0.0006&lt;/td&gt;&lt;td&gt;0.5186&lt;/td&gt;&lt;td&gt;8.4&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;Cora 0.4&lt;/td&gt;&lt;td&gt;TopK alpha09&lt;/td&gt;&lt;td&gt;0.7800&lt;/td&gt;&lt;td&gt;0.0185&lt;/td&gt;&lt;td&gt;0.2894&lt;/td&gt;&lt;td&gt;0.0203&lt;/td&gt;&lt;td&gt;0.6469&lt;/td&gt;&lt;td&gt;29.0&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;Cora 0.4&lt;/td&gt;&lt;td&gt;K-hop alpha09&lt;/td&gt;&lt;td&gt;0.7922&lt;/td&gt;&lt;td&gt;0.0063&lt;/td&gt;&lt;td&gt;0.0461&lt;/td&gt;&lt;td&gt;0.0062&lt;/td&gt;&lt;td&gt;0.5205&lt;/td&gt;&lt;td&gt;12.2&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;CiteSeer 0.2&lt;/td&gt;&lt;td&gt;GB ordinary&lt;/td&gt;&lt;td&gt;0.6997&lt;/td&gt;&lt;td&gt;0.0116&lt;/td&gt;&lt;td&gt;0.0000&lt;/td&gt;&lt;td&gt;0.0000&lt;/td&gt;&lt;td&gt;0.6061&lt;/td&gt;&lt;td&gt;386.2&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;CiteSeer 0.2&lt;/td&gt;&lt;td&gt;v1 GAGB&lt;/td&gt;&lt;td&gt;0.6999&lt;/td&gt;&lt;td&gt;0.0116&lt;/td&gt;&lt;td&gt;0.0000&lt;/td&gt;&lt;td&gt;0.0000&lt;/td&gt;&lt;td&gt;0.5670&lt;/td&gt;&lt;td&gt;280.8&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;CiteSeer 0.2&lt;/td&gt;&lt;td&gt;K-hop only&lt;/td&gt;&lt;td&gt;0.7047&lt;/td&gt;&lt;td&gt;0.0087&lt;/td&gt;&lt;td&gt;0.0000&lt;/td&gt;&lt;td&gt;0.0000&lt;/td&gt;&lt;td&gt;0.5349&lt;/td&gt;&lt;td&gt;175.4&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;CiteSeer 0.2&lt;/td&gt;&lt;td&gt;GAGB conflict alpha03&lt;/td&gt;&lt;td&gt;0.7058&lt;/td&gt;&lt;td&gt;0.0080&lt;/td&gt;&lt;td&gt;0.0000&lt;/td&gt;&lt;td&gt;0.0000&lt;/td&gt;&lt;td&gt;0.5738&lt;/td&gt;&lt;td&gt;36.4&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;CiteSeer 0.2&lt;/td&gt;&lt;td&gt;GAGB conflict alpha09&lt;/td&gt;&lt;td&gt;0.7087&lt;/td&gt;&lt;td&gt;0.0044&lt;/td&gt;&lt;td&gt;0.1444&lt;/td&gt;&lt;td&gt;0.0255&lt;/td&gt;&lt;td&gt;0.5733&lt;/td&gt;&lt;td&gt;36.4&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;CiteSeer 0.2&lt;/td&gt;&lt;td&gt;GAGB replace qmix&lt;/td&gt;&lt;td&gt;0.7064&lt;/td&gt;&lt;td&gt;0.0064&lt;/td&gt;&lt;td&gt;0.1444&lt;/td&gt;&lt;td&gt;0.0255&lt;/td&gt;&lt;td&gt;0.5733&lt;/td&gt;&lt;td&gt;36.4&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;CiteSeer 0.2&lt;/td&gt;&lt;td&gt;Shuffled alpha09&lt;/td&gt;&lt;td&gt;0.7064&lt;/td&gt;&lt;td&gt;0.0088&lt;/td&gt;&lt;td&gt;0.0000&lt;/td&gt;&lt;td&gt;0.0004&lt;/td&gt;&lt;td&gt;0.4998&lt;/td&gt;&lt;td&gt;0.2&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;CiteSeer 0.2&lt;/td&gt;&lt;td&gt;KMeans alpha09&lt;/td&gt;&lt;td&gt;0.7082&lt;/td&gt;&lt;td&gt;0.0112&lt;/td&gt;&lt;td&gt;0.0436&lt;/td&gt;&lt;td&gt;0.0068&lt;/td&gt;&lt;td&gt;0.5215&lt;/td&gt;&lt;td&gt;10.2&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;CiteSeer 0.2&lt;/td&gt;&lt;td&gt;TopK alpha09&lt;/td&gt;&lt;td&gt;0.7082&lt;/td&gt;&lt;td&gt;0.0053&lt;/td&gt;&lt;td&gt;0.4722&lt;/td&gt;&lt;td&gt;0.1238&lt;/td&gt;&lt;td&gt;0.7404&lt;/td&gt;&lt;td&gt;80.0&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;CiteSeer 0.2&lt;/td&gt;&lt;td&gt;K-hop alpha09&lt;/td&gt;&lt;td&gt;0.7044&lt;/td&gt;&lt;td&gt;0.0053&lt;/td&gt;&lt;td&gt;0.1098&lt;/td&gt;&lt;td&gt;0.0146&lt;/td&gt;&lt;td&gt;0.5546&lt;/td&gt;&lt;td&gt;24.2&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;CiteSeer 0.4&lt;/td&gt;&lt;td&gt;GB ordinary&lt;/td&gt;&lt;td&gt;0.6970&lt;/td&gt;&lt;td&gt;0.0091&lt;/td&gt;&lt;td&gt;0.0000&lt;/td&gt;&lt;td&gt;0.0000&lt;/td&gt;&lt;td&gt;0.5822&lt;/td&gt;&lt;td&gt;386.2&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;CiteSeer 0.4&lt;/td&gt;&lt;td&gt;v1 GAGB&lt;/td&gt;&lt;td&gt;0.6934&lt;/td&gt;&lt;td&gt;0.0092&lt;/td&gt;&lt;td&gt;0.0000&lt;/td&gt;&lt;td&gt;0.0000&lt;/td&gt;&lt;td&gt;0.5542&lt;/td&gt;&lt;td&gt;280.8&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;CiteSeer 0.4&lt;/td&gt;&lt;td&gt;K-hop only&lt;/td&gt;&lt;td&gt;0.6986&lt;/td&gt;&lt;td&gt;0.0102&lt;/td&gt;&lt;td&gt;0.0000&lt;/td&gt;&lt;td&gt;0.0000&lt;/td&gt;&lt;td&gt;0.5306&lt;/td&gt;&lt;td&gt;175.4&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;CiteSeer 0.4&lt;/td&gt;&lt;td&gt;GAGB conflict alpha03&lt;/td&gt;&lt;td&gt;0.6982&lt;/td&gt;&lt;td&gt;0.0093&lt;/td&gt;&lt;td&gt;0.0000&lt;/td&gt;&lt;td&gt;0.0000&lt;/td&gt;&lt;td&gt;0.5314&lt;/td&gt;&lt;td&gt;21.6&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;CiteSeer 0.4&lt;/td&gt;&lt;td&gt;GAGB conflict alpha09&lt;/td&gt;&lt;td&gt;0.6981&lt;/td&gt;&lt;td&gt;0.0097&lt;/td&gt;&lt;td&gt;0.0617&lt;/td&gt;&lt;td&gt;0.0075&lt;/td&gt;&lt;td&gt;0.5313&lt;/td&gt;&lt;td&gt;21.6&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;CiteSeer 0.4&lt;/td&gt;&lt;td&gt;GAGB replace qmix&lt;/td&gt;&lt;td&gt;0.6997&lt;/td&gt;&lt;td&gt;0.0077&lt;/td&gt;&lt;td&gt;0.0617&lt;/td&gt;&lt;td&gt;0.0075&lt;/td&gt;&lt;td&gt;0.5313&lt;/td&gt;&lt;td&gt;21.6&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;CiteSeer 0.4&lt;/td&gt;&lt;td&gt;Shuffled alpha09&lt;/td&gt;&lt;td&gt;0.6979&lt;/td&gt;&lt;td&gt;0.0090&lt;/td&gt;&lt;td&gt;0.0000&lt;/td&gt;&lt;td&gt;0.0000&lt;/td&gt;&lt;td&gt;0.5000&lt;/td&gt;&lt;td&gt;0.0&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;CiteSeer 0.4&lt;/td&gt;&lt;td&gt;KMeans alpha09&lt;/td&gt;&lt;td&gt;0.6979&lt;/td&gt;&lt;td&gt;0.0107&lt;/td&gt;&lt;td&gt;0.0195&lt;/td&gt;&lt;td&gt;0.0020&lt;/td&gt;&lt;td&gt;0.5103&lt;/td&gt;&lt;td&gt;6.8&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;CiteSeer 0.4&lt;/td&gt;&lt;td&gt;TopK alpha09&lt;/td&gt;&lt;td&gt;0.6967&lt;/td&gt;&lt;td&gt;0.0055&lt;/td&gt;&lt;td&gt;0.2481&lt;/td&gt;&lt;td&gt;0.0455&lt;/td&gt;&lt;td&gt;0.6248&lt;/td&gt;&lt;td&gt;30.4&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;CiteSeer 0.4&lt;/td&gt;&lt;td&gt;K-hop alpha09&lt;/td&gt;&lt;td&gt;0.6993&lt;/td&gt;&lt;td&gt;0.0095&lt;/td&gt;&lt;td&gt;0.0376&lt;/td&gt;&lt;td&gt;0.0035&lt;/td&gt;&lt;td&gt;0.5185&lt;/td&gt;&lt;td&gt;12.2&lt;/td&gt;&lt;/tr&gt;&lt;/tbody&gt;&lt;/table&gt;
+
+【Paired deltas】
+&lt;table&gt;&lt;thead&gt;&lt;tr&gt;&lt;th&gt;Comparison&lt;/th&gt;&lt;th&gt;Setting wins&lt;/th&gt;&lt;th&gt;Cora 0.2&lt;/th&gt;&lt;th&gt;Cora 0.4&lt;/th&gt;&lt;th&gt;CiteSeer 0.2&lt;/th&gt;&lt;th&gt;CiteSeer 0.4&lt;/th&gt;&lt;/tr&gt;&lt;/thead&gt;&lt;tbody&gt;&lt;tr&gt;&lt;td&gt;alpha09 vs alpha03&lt;/td&gt;&lt;td&gt;2/4&lt;/td&gt;&lt;td&gt;0.0044 (4/5 seeds +)&lt;/td&gt;&lt;td&gt;-0.0042 (2/5 seeds +)&lt;/td&gt;&lt;td&gt;0.0028 (2/5 seeds +)&lt;/td&gt;&lt;td&gt;-0.0001 (2/5 seeds +)&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;alpha09 vs GB&lt;/td&gt;&lt;td&gt;3/4&lt;/td&gt;&lt;td&gt;0.0022 (3/5 seeds +)&lt;/td&gt;&lt;td&gt;-0.0061 (1/5 seeds +)&lt;/td&gt;&lt;td&gt;0.0090 (4/5 seeds +)&lt;/td&gt;&lt;td&gt;0.0011 (2/5 seeds +)&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;alpha09 vs v1 GAGB&lt;/td&gt;&lt;td&gt;3/4&lt;/td&gt;&lt;td&gt;0.0051 (3/5 seeds +)&lt;/td&gt;&lt;td&gt;-0.0038 (3/5 seeds +)&lt;/td&gt;&lt;td&gt;0.0088 (4/5 seeds +)&lt;/td&gt;&lt;td&gt;0.0047 (3/5 seeds +)&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;alpha09 vs shuffled&lt;/td&gt;&lt;td&gt;3/4&lt;/td&gt;&lt;td&gt;0.0045 (3/5 seeds +)&lt;/td&gt;&lt;td&gt;-0.0024 (2/5 seeds +)&lt;/td&gt;&lt;td&gt;0.0022 (3/5 seeds +)&lt;/td&gt;&lt;td&gt;0.0003 (2/5 seeds +)&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;alpha09 vs kmeans&lt;/td&gt;&lt;td&gt;3/4&lt;/td&gt;&lt;td&gt;-0.0012 (2/5 seeds +)&lt;/td&gt;&lt;td&gt;0.0059 (3/5 seeds +)&lt;/td&gt;&lt;td&gt;0.0005 (1/5 seeds +)&lt;/td&gt;&lt;td&gt;0.0003 (2/5 seeds +)&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;alpha09 vs topk&lt;/td&gt;&lt;td&gt;4/4&lt;/td&gt;&lt;td&gt;0.0093 (4/5 seeds +)&lt;/td&gt;&lt;td&gt;0.0107 (4/5 seeds +)&lt;/td&gt;&lt;td&gt;0.0004 (3/5 seeds +)&lt;/td&gt;&lt;td&gt;0.0014 (3/5 seeds +)&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;alpha09 vs khop repair&lt;/td&gt;&lt;td&gt;2/4&lt;/td&gt;&lt;td&gt;0.0013 (3/5 seeds +)&lt;/td&gt;&lt;td&gt;-0.0015 (3/5 seeds +)&lt;/td&gt;&lt;td&gt;0.0043 (5/5 seeds +)&lt;/td&gt;&lt;td&gt;-0.0012 (1/5 seeds +)&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;replace vs alpha03&lt;/td&gt;&lt;td&gt;3/4&lt;/td&gt;&lt;td&gt;0.0051 (4/5 seeds +)&lt;/td&gt;&lt;td&gt;-0.0063 (1/5 seeds +)&lt;/td&gt;&lt;td&gt;0.0005 (2/5 seeds +)&lt;/td&gt;&lt;td&gt;0.0015 (3/5 seeds +)&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;replace vs GB&lt;/td&gt;&lt;td&gt;3/4&lt;/td&gt;&lt;td&gt;0.0029 (3/5 seeds +)&lt;/td&gt;&lt;td&gt;-0.0082 (0/5 seeds +)&lt;/td&gt;&lt;td&gt;0.0067 (3/5 seeds +)&lt;/td&gt;&lt;td&gt;0.0027 (3/5 seeds +)&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;replace vs v1 GAGB&lt;/td&gt;&lt;td&gt;3/4&lt;/td&gt;&lt;td&gt;0.0057 (3/5 seeds +)&lt;/td&gt;&lt;td&gt;-0.0059 (2/5 seeds +)&lt;/td&gt;&lt;td&gt;0.0064 (4/5 seeds +)&lt;/td&gt;&lt;td&gt;0.0063 (4/5 seeds +)&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;replace vs shuffled&lt;/td&gt;&lt;td&gt;3/4&lt;/td&gt;&lt;td&gt;0.0054 (3/5 seeds +)&lt;/td&gt;&lt;td&gt;-0.0043 (2/5 seeds +)&lt;/td&gt;&lt;td&gt;0.0001 (2/5 seeds +)&lt;/td&gt;&lt;td&gt;0.0018 (3/5 seeds +)&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;replace vs kmeans&lt;/td&gt;&lt;td&gt;2/4&lt;/td&gt;&lt;td&gt;-0.0022 (2/5 seeds +)&lt;/td&gt;&lt;td&gt;0.0049 (2/5 seeds +)&lt;/td&gt;&lt;td&gt;-0.0016 (1/5 seeds +)&lt;/td&gt;&lt;td&gt;0.0023 (3/5 seeds +)&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;replace vs topk&lt;/td&gt;&lt;td&gt;3/4&lt;/td&gt;&lt;td&gt;0.0065 (3/5 seeds +)&lt;/td&gt;&lt;td&gt;0.0079 (3/5 seeds +)&lt;/td&gt;&lt;td&gt;-0.0025 (2/5 seeds +)&lt;/td&gt;&lt;td&gt;0.0046 (3/5 seeds +)&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;replace vs khop repair&lt;/td&gt;&lt;td&gt;3/4&lt;/td&gt;&lt;td&gt;0.0019 (4/5 seeds +)&lt;/td&gt;&lt;td&gt;-0.0038 (2/5 seeds +)&lt;/td&gt;&lt;td&gt;0.0012 (2/5 seeds +)&lt;/td&gt;&lt;td&gt;0.0029 (3/5 seeds +)&lt;/td&gt;&lt;/tr&gt;&lt;/tbody&gt;&lt;/table&gt;
+
+【当前结论边界】
+支持：target repair 不再 inert；alpha09 和 replace_qmix 在 4/4 setting 都有 NCR&gt;0；CDR 都低于 0.03；replace_qmix vs alpha03 是 3/4 wins；两种主方法 vs shuffled matched 是 3/4 wins。
+削弱：Cora 0.4 明显失败；GAGB-specific value 只部分成立，replace vs kmeans 只有 2/4 wins，alpha09 vs khop repair 只有 2/4 wins；很多 accuracy gain 小于或接近 std；shuffled controls 经常几乎不改变 target，因此不是完全 intervention-strength matched；correction-by-class bias 未评估。
+
+【我的初步判断】
+这轮结果是 mechanism-positive、partially method-positive，但还不能作为强 GAGB-specific paper claim。更稳的表述是：conservative conflict-gated target repair 可以带来有界 clean damage 的噪声纠正；GAGB grouping 可能有贡献，但还没有稳定压过所有公平 matched grouping。
+
+请你基于以上信息，给出严格科研判断：
+1. 这个方向是否还值得继续？
+2. 当前最可能的问题在 GAGB 构球、conflict gate、teacher、还是控制组匹配？
+3. 下一步最小实验应该优先做 correction-by-class、intervention-strength matched shuffled、Cora 0.4 failure analysis，还是调 gate 阈值？
+4. 如果要写论文，当前 claim 应该如何降级？
+</pre>
+</section>
+
+</main></body></html>

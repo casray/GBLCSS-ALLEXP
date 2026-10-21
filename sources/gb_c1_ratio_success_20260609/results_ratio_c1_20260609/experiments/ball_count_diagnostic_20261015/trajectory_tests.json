@@ -1,0 +1,96 @@
+{
+  "date": "2026-10-15",
+  "scope": "CPU nested granular-ball trajectory contracts; no student or GPU training",
+  "command": "& 'D:\\codex_temp\\noisygl-rocm721\\Scripts\\python.exe' -B experiments/ball_count_diagnostic_20261015/test_trajectory.py",
+  "numeric_environment": {
+    "embedding_dtype": "float64",
+    "normalization": "per-row L2 with overflow-safe initial scaling",
+    "split_num_threads": 1,
+    "kmeans_clusters": 2,
+    "kmeans_n_init": 10,
+    "kmeans_seed": "(random_state + leaf_id) % (2**32 - 1)",
+    "test_outer_threadpool_limit": 4,
+    "test_OMP_NUM_THREADS": 4,
+    "test_MKL_NUM_THREADS": 4,
+    "test_OPENBLAS_NUM_THREADS": 4
+  },
+  "red_missing_implementation": {
+    "exit_code": 1,
+    "tests_run": 12,
+    "failures": 12,
+    "errors": 0,
+    "test_seconds": 0.055,
+    "failure": "AssertionError: unexpectedly None : nested ball trajectory implementation is missing"
+  },
+  "first_green_before_determinism_stress": {
+    "exit_code": 0,
+    "tests_run": 12,
+    "failures": 0,
+    "errors": 0,
+    "test_seconds": 1.344
+  },
+  "red_detected_parallel_nondeterminism": {
+    "exit_code": 1,
+    "tests_run": 14,
+    "failures": 1,
+    "errors": 0,
+    "test_seconds": 1.483,
+    "failed_test": "test_budget_extension_cannot_change_existing_memberships_or_summaries",
+    "failure": "Arrays are not equal; mismatched elements: 1024 / 1024 (100%); first values 6 vs 4",
+    "test_data": "1024 equally spaced points on the unit circle, all nodes training, random_state=0",
+    "diagnostic": {
+      "comparison": "budgets [1,8,16] vs [1,8,16,32], repeated 20 times",
+      "four_threads_prefix_failures": 15,
+      "one_thread_prefix_failures": 0,
+      "first_divergence_step": 0,
+      "first_parent_sse": 1024.0,
+      "first_child_sse_run_a": [304.49356485759995, 304.4935648576001],
+      "first_child_sse_run_b": [304.49356485759984, 304.49356485759995]
+    },
+    "fix": "Use threadpool_limits(limits=1) internally so parallel floating-point KMeans reductions cannot change symmetric split ties."
+  },
+  "red_thread_metadata_contract": {
+    "exit_code": 1,
+    "tests_run": 14,
+    "failures": 1,
+    "errors": 0,
+    "test_seconds": 0.938,
+    "failure": "AssertionError: None != 1 for summary split_num_threads"
+  },
+  "final_green": {
+    "exit_code": 0,
+    "tests_run": 14,
+    "failures": 0,
+    "errors": 0,
+    "test_seconds": 1.042,
+    "wall_seconds": 4.5181206,
+    "output": "..............\nRan 14 tests in 1.042s\nOK"
+  },
+  "contracts": [
+    "nested complete partitions with contiguous IDs",
+    "budget extension cannot change earlier memberships, summary, or trace prefix",
+    "no class or label parameter; train_index required",
+    "fixed support and size floors with honest support cap",
+    "globally insufficient support keeps one root",
+    "local support can stop actual count below global ceiling",
+    "None training membership disables support only",
+    "identical points, zeros, and single-node roots are not forced to split",
+    "duplicate groups and geometry ceiling are reported honestly",
+    "projection fallback preserves support",
+    "trace count/SSE conservation, best-first order, monotone SSE",
+    "same-seed determinism and training-index order invariance",
+    "input validation",
+    "scale invariance with huge finite embeddings"
+  ],
+  "source_sha256": {
+    "GB-LCSS_code/src/gblcss/granular_ball_trajectory.py": "FB21B68D389285C541DEDF26FA6E2F28DA5EFE1A813C39354313DE06ACE67E9C",
+    "experiments/ball_count_diagnostic_20261015/test_trajectory.py": "C39CDA8C94DD041D3B6D01955F4B2684B0844A39B8D4CA1AD12D3FDCA9A14B63",
+    "GB-LCSS_code/src/gblcss/granular_ball_adaptive.py": "E6D4B629A1C67D06DA654B871D7721B01455D98275F816BFCF0BCEF356E3F3B6"
+  },
+  "limitations": [
+    "Count caps do not guarantee enough feasible splits; class purity is not optimized.",
+    "Determinism is verified in this installed numeric environment; cross-version sklearn behavior is not guaranteed.",
+    "Private geometry helpers are imported from the frozen adaptive generator; future changes to those helpers need revalidation.",
+    "Internal threadpool controls are process-wide; separate processes are safer than concurrent Python threads for differing pool limits."
+  ]
+}

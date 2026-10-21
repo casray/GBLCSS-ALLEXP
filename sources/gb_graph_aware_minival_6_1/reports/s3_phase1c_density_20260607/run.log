@@ -1,0 +1,48 @@
+(R) s0 | sel_dcgb_emb                   test=0.7788 sel_prec=0.8738 noise_excl=0.8111
+(R) s0 | sel_topk_matched               test=0.7930 sel_prec=0.9138 noise_excl=0.8710
+(R) s0 | sel_density_gb                 test=0.7867 sel_prec=0.8308 noise_excl=0.7465
+(R) s0 | sel_shuffled_density_matched   test=0.6690 sel_prec=0.6493 noise_excl=0.1935
+(R) s0 | sel_random_density_matched     test=0.6727 sel_prec=0.6493 noise_excl=0.1935
+(R) s0 | sel_clean_oracle               test=0.8126 sel_prec=1.0000 noise_excl=1.0000
+(R) s1 | sel_dcgb_emb                   test=0.8073 sel_prec=0.9138 noise_excl=0.8710
+(R) s1 | sel_topk_matched               test=0.8010 sel_prec=0.9200 noise_excl=0.8802
+(R) s1 | sel_density_gb                 test=0.7598 sel_prec=0.8277 noise_excl=0.7419
+(R) s1 | sel_shuffled_density_matched   test=0.7128 sel_prec=0.8308 noise_excl=0.7465
+(R) s1 | sel_random_density_matched     test=0.7128 sel_prec=0.6346 noise_excl=0.1429
+(R) s1 | sel_clean_oracle               test=0.8105 sel_prec=1.0000 noise_excl=1.0000
+(R) s2 | sel_dcgb_emb                   test=0.8115 sel_prec=0.9108 noise_excl=0.8664
+(R) s2 | sel_topk_matched               test=0.7988 sel_prec=0.9323 noise_excl=0.8986
+(R) s2 | sel_density_gb                 test=0.7899 sel_prec=0.8646 noise_excl=0.7972
+(R) s2 | sel_shuffled_density_matched   test=0.7334 sel_prec=0.6473 noise_excl=0.1889
+(R) s2 | sel_random_density_matched     test=0.7888 sel_prec=0.8492 noise_excl=0.7742
+(R) s2 | sel_clean_oracle               test=0.8157 sel_prec=1.0000 noise_excl=1.0000
+(R) s3 | sel_dcgb_emb                   test=0.7978 sel_prec=0.9169 noise_excl=0.8756
+(R) s3 | sel_topk_matched               test=0.7941 sel_prec=0.9292 noise_excl=0.8940
+(R) s3 | sel_density_gb                 test=0.7191 sel_prec=0.6751 noise_excl=0.2857
+(R) s3 | sel_shuffled_density_matched   test=0.7202 sel_prec=0.6771 noise_excl=0.2903
+(R) s3 | sel_random_density_matched     test=0.7656 sel_prec=0.7969 noise_excl=0.6959
+(R) s3 | sel_clean_oracle               test=0.8099 sel_prec=1.0000 noise_excl=1.0000
+(R) s4 | sel_dcgb_emb                   test=0.8057 sel_prec=0.9046 noise_excl=0.8571
+(R) s4 | sel_topk_matched               test=0.7978 sel_prec=0.9169 noise_excl=0.8756
+(R) s4 | sel_density_gb                 test=0.8015 sel_prec=0.8369 noise_excl=0.7558
+(R) s4 | sel_shuffled_density_matched   test=0.7233 sel_prec=0.6231 noise_excl=0.0968
+(R) s4 | sel_random_density_matched     test=0.7661 sel_prec=0.8246 noise_excl=0.7373
+(R) s4 | sel_clean_oracle               test=0.8226 sel_prec=1.0000 noise_excl=1.0000
+
+=== per-seed test acc ===
+seed            ce       gb_soft  sel_clean_or  sel_density_  sel_dcgb_emb  sel_topk_mat  sel_shuffled  sel_random_d
+  0         0.7878        0.7962        0.8126        0.7867        0.7788        0.7930        0.6690        0.6727
+  1         0.7973        0.7962        0.8105        0.7598        0.8073        0.8010        0.7128        0.7128
+  2         0.7925        0.7962        0.8157        0.7899        0.8115        0.7988        0.7334        0.7888
+  3         0.8068        0.8073        0.8099        0.7191        0.7978        0.7941        0.7202        0.7656
+  4         0.7830        0.7909        0.8226        0.8015        0.8057        0.7978        0.7233        0.7661
+mean        0.7935        0.7974        0.8143        0.7714        0.8002        0.7969        0.7117        0.7412
+
+=== PRE-REGISTERED VERDICT (density vs topk) ===
+  density>topk test wins 1/5, mean delta -2.56pp (need >=4/5 & >=0.50pp)
+  sel_precision: density 0.8070 >= topk 0.9225 -> False
+  noise_excl_recall: density 0.6654 >= topk 0.8839 -> False
+  density vs shuffled mean delta +5.97pp ; vs random +3.02pp
+>>> VERDICT: NO independent increment -> needs ball-aware representation / encoder coupling
+
+saved C:\Users\Admin\Desktop\สตั้8ศฅิ๋5.19-\gb_graph_aware_minival_6_1\reports\s3_phase1c_density_20260607\s3_phase1c_rows.csv

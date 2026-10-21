@@ -1,0 +1,10 @@
+method,training_uses_graph,inference_uses_graph,uses_unlabeled_nodes,uses_all_edges,resource_note
+mlp_ce,0,0,0,0,X-only supervised MLP baseline
+graphmlp,1,0,1,1,NContrast-style graph regularization during training
+gsdn,1,0,1,1,Feature/label neighbor self-distillation during training
+frozengrace_gb_mlp_softdist_beta05,1,0,1,1,Frozen GRACE-H preprocessing uses the full graph; downstream MLP is X-only
+gcn,1,1,0,1,Reference message-passing model; not graph-free at inference
+gcn_xh_ce,1,1,0,1,Reference message-passing model with frozen-H input
+mlp_distill_gcn,1,0,1,1,GCN(X) teacher distills to X-only student
+mlp_distill_gcn_xh,1,0,1,1,GCN[X||H] teacher distills to X-only student
+mlp_distill_knn_xh,1,0,1,1,GCN[X||H] teacher distills to X-only student

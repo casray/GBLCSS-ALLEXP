@@ -1,0 +1,1010 @@
+{
+  "main": {
+    "pages": 23,
+    "page_records": [
+      {
+        "page": 1,
+        "body_bottom": 708.5,
+        "head": "Granular ball local consensus for graph-free node classiﬁcation under label noise\nSilei Caoa, Kun Wanga, Jingyu Zhub, Tianxing Wangc,∗, Bing",
+        "tail": "Corresponding author.\nEmail addresses: mp2509053@stu.nau.edu.cn (Silei Cao), kun_wang@nau.edu.cn (Kun Wang), jingyuzhu77@gmail.com (Jingyu Zhu),\nwangtianxing@nau.edu.cn (Tianxing Wang), huangbing@nau.edu.cn (Bing Huang)\n",
+        "min_font": 5.98,
+        "fonts": [
+          "CMBX10",
+          "CMR10",
+          "CMR12",
+          "CMR7",
+          "CMR8",
+          "CMSY6",
+          "CMSY7",
+          "CMTI10",
+          "CMTI7",
+          "CMTI8",
+          "CMTT8"
+        ]
+      },
+      {
+        "page": 2,
+        "body_bottom": 744.7,
+        "head": "Graph-free classiﬁers face a related challenge: errors in the labels used to train an MLP or its teacher can carry over\nto the deployed mode",
+        "tail": "nsistent predictions, or modifying the training objective. Sample-selection methods use the training\nloss to assess label reliability: Co-teaching [17] exchanged small-loss samples between two networks, and JoCoR [18]\n2\n",
+        "min_font": 9.96,
+        "fonts": [
+          "CMBX10",
+          "CMR10",
+          "CMTI10"
+        ]
+      },
+      {
+        "page": 3,
+        "body_bottom": 744.7,
+        "head": "1\nLabel-free node representation learning\n2\nLabel-agnostic granular ball partition\n3\nLeave-one-out local-consensus targets\n4\nMLP training an",
+        "tail": "ssessing label reliability, several methods have constructed additional supervision. DND-NET [24] used\nneighborhood uncertainty to reweight pseudo-label supervision, and RNCGLN [25] combined graph contrastive learning\n3\n",
+        "min_font": 2.86,
+        "fonts": [
+          "Arial-Black",
+          "Arial-BoldMT",
+          "ArialMT",
+          "CMBX9",
+          "CMR10",
+          "CMR9",
+          "CMTI10",
+          "CambriaMath",
+          "LucidaSansUnicode",
+          "Type3 (97 0 R)"
+        ]
+      },
+      {
+        "page": 4,
+        "body_bottom": 744.7,
+        "head": "with pseudo-graphs and pseudo-labels to address graph and label noise. Prototype-Guided Supervision [26] formed class-\nlevel prototypes by a",
+        "tail": "ed classiﬁcation [15], and subsequent work reﬁned adaptive ball generation [16]. MGNR [42] used granular\nball representations to construct multi-granularity neighborhood relationships for classiﬁcation and clustering.\n4\n",
+        "min_font": 9.96,
+        "fonts": [
+          "CMR10",
+          "CMTI10"
+        ]
+      },
+      {
+        "page": 5,
+        "body_bottom": 744.7,
+        "head": "On graphs, supervised granular ball coarsening [43] and GBGC [44] used granular regions to construct coarsened\ngraphs, reducing the size of ",
+        "tail": " the normalized representation of the n-th node and h is the representation dimension. Let g′\nn denote the\nencoder output for node vn before normalization. Its normalized representation is\ngn =\ng′\nn\nmax(∥g′n∥2, ε)\n(3)\n5\n",
+        "min_font": 6.97,
+        "fonts": [
+          "CMBX10",
+          "CMEX10",
+          "CMMI10",
+          "CMMI7",
+          "CMR10",
+          "CMR7",
+          "CMSY10",
+          "CMSY7",
+          "CMTI10",
+          "MSBM10"
+        ]
+      },
+      {
+        "page": 6,
+        "body_bottom": 744.7,
+        "head": "Table 1. Main notation.\nSymbol\nMeaning\nGraph and data\nV, E\nNode set and edge set\nN, C\nNumber of nodes and number of classes\nn, ℓ\nNode indice",
+        "tail": "nition 1. For a nonempty granular ball Bj, each member node vn ∈Bj has the normalized representation gn.\nThe center µj and mean radius D(Bj) of the ball are\nµj =\n1\n|Bj|\n∑\nvn∈Bj\ngn,\nD(Bj) =\n1\n|Bj|\n∑\nvn∈Bj\n∥gn −µj∥2\n(4)\n6\n",
+        "min_font": 4.98,
+        "fonts": [
+          "CMBX10",
+          "CMBX9",
+          "CMEX10",
+          "CMMI10",
+          "CMMI5",
+          "CMMI6",
+          "CMMI7",
+          "CMMI9",
+          "CMMIB10",
+          "CMR10",
+          "CMR6",
+          "CMR7",
+          "CMR9",
+          "CMSY10",
+          "CMSY6",
+          "CMSY7",
+          "CMSY9",
+          "CMTI10",
+          "CMTI9",
+          "MSBM10"
+        ]
+      },
+      {
+        "page": 7,
+        "body_bottom": 744.7,
+        "head": "The mean radius is the average Euclidean distance from the member representations to the ball center. A smaller\nvalue indicates a more compa",
+        "tail": "structs each training target by summarizing the observed labels of the other\ntraining nodes in the same ball and combining their consensus with the node’s own observed label. These targets then\nsupervise MLP training.\n7\n",
+        "min_font": 5.98,
+        "fonts": [
+          "CMBX10",
+          "CMBX9",
+          "CMMI10",
+          "CMMI6",
+          "CMMI7",
+          "CMMI9",
+          "CMR10",
+          "CMR6",
+          "CMR7",
+          "CMR9",
+          "CMSY10",
+          "CMSY6",
+          "CMSY7",
+          "CMSY9",
+          "CMTI10",
+          "CMTI9"
+        ]
+      },
+      {
+        "page": 8,
+        "body_bottom": 744.7,
+        "head": "3.3.1. Within-ball label consensus\nConsider a training node vn and the granular ball Bj containing it. We construct its target using a leave",
+        "tail": "convex combination of the observed one-hot label and local consensus, with αn controlling the\nconsensus contribution. Nodes with fewer than smin other training nodes in their ball retain their observed one-hot\nlabels.\n8\n",
+        "min_font": 4.98,
+        "fonts": [
+          "CMBX10",
+          "CMEX10",
+          "CMMI10",
+          "CMMI5",
+          "CMMI7",
+          "CMR10",
+          "CMR7",
+          "CMSY10",
+          "CMSY7",
+          "CMTI10",
+          "MSBM10"
+        ]
+      },
+      {
+        "page": 9,
+        "body_bottom": 744.7,
+        "head": "Equations (7)–(12) use only the observed labels of training nodes; validation and test labels are not used in target\nconstruction. For each ",
+        "tail": "nd an,yn selects the proportion for the true class of\nvn. A positive ∆n means that this class receives more clean votes than any competing class. We use Pr to denote\nprobability over the independent label corruptions.\n9\n",
+        "min_font": 4.98,
+        "fonts": [
+          "CMBX10",
+          "CMBX9",
+          "CMEX10",
+          "CMEX9",
+          "CMMI10",
+          "CMMI5",
+          "CMMI6",
+          "CMMI7",
+          "CMMI9",
+          "CMR10",
+          "CMR6",
+          "CMR7",
+          "CMR9",
+          "CMSY10",
+          "CMSY6",
+          "CMSY7",
+          "CMSY9",
+          "CMTI10",
+          "CMTI9",
+          "MSBM10"
+        ]
+      },
+      {
+        "page": 10,
+        "body_bottom": 744.7,
+        "head": "Proposition 1. Suppose that C ≥2, ∆n > 0, and 0 ≤η < (C −1)/C, and let γ = 1 −Cη/(C −1) > 0. Each voting\nlabel is independently ﬂipped with ",
+        "tail": "he change in Brier score combines the error reduction on corrupted labels with any error\nintroduced on correct labels. Section 4.3.1 reports the net reduction, and Appendix I.2 measures the two components\nseparately.\n10\n",
+        "min_font": 4.98,
+        "fonts": [
+          "CMBX10",
+          "CMEX10",
+          "CMMI10",
+          "CMMI5",
+          "CMMI7",
+          "CMR10",
+          "CMR7",
+          "CMSY10",
+          "CMSY7",
+          "CMTI10",
+          "MSBM10"
+        ]
+      },
+      {
+        "page": 11,
+        "body_bottom": 744.7,
+        "head": "3.5. Graph-teacher distillation extension\nThe base method trains the MLP on the labeled training nodes. In the extension, the same targets s",
+        "tail": "hs. The loss in Eq. (13) involves only the training nodes, but the full-batch implementation\nevaluates all N nodes in each epoch, at a total cost of O(TSN(dF + FC)). At inference, the cost per node is\nO(dF + FC)\n(23)\n11\n",
+        "min_font": 4.98,
+        "fonts": [
+          "CMBX10",
+          "CMEX10",
+          "CMMI10",
+          "CMMI5",
+          "CMMI7",
+          "CMMIB10",
+          "CMR10",
+          "CMR7",
+          "CMSY10",
+          "CMSY7",
+          "CMTI10",
+          "MSBM10"
+        ]
+      },
+      {
+        "page": 12,
+        "body_bottom": 744.7,
+        "head": "The model parameters also require O(dF + FC) space. The extension additionally trains a GCN teacher and then\ntrains an MLP student on the te",
+        "tail": ". All of them use graph information only during training in our protocol. PosteL uses the oﬃcial target-\nconstruction code with iterative pseudo-labeling disabled. Graph-MLP is adapted to the common MLP, whereas ALS,\n12\n",
+        "min_font": 8.97,
+        "fonts": [
+          "CMBX10",
+          "CMBX9",
+          "CMMI10",
+          "CMR10",
+          "CMR9",
+          "CMSY10",
+          "CMTI10"
+        ]
+      },
+      {
+        "page": 13,
+        "body_bottom": 744.7,
+        "head": "SALS, and GSDN are implemented as mechanism adaptations under the common protocol. Appendix F identiﬁes the\nretained components and paramete",
+        "tail": "29±0.45\n88.37±0.53\n76.08±3.11\nELR\n44.28±1.38\n43.17±3.95\n32.14±0.67\n88.29±0.73\n73.93±2.12\nLogitClip\n47.50±1.50\n46.57±3.52\n34.69±1.17\n88.40±0.21\n74.98±2.38\nGB-LCSS\n57.49±0.76\n55.24±2.04\n37.39±0.51\n90.71±0.59\n82.12±1.08\n13\n",
+        "min_font": 6.97,
+        "fonts": [
+          "CMBX10",
+          "CMBX9",
+          "CMMI10",
+          "CMR10",
+          "CMR7",
+          "CMR9",
+          "CMSY10",
+          "CMSY7",
+          "CMSY9",
+          "CMTI10"
+        ]
+      },
+      {
+        "page": 14,
+        "body_bottom": 744.7,
+        "head": "GB-LCSS attains the highest mean accuracy on all ﬁve datasets under uniform 0.4, exceeding the strongest baseline\non each dataset by 1.33–5.",
+        "tail": "4, 1.76, and 5.07 points, respectively, whereas Graph-MLP has the higher mean on Cora and CiteSeer, by 5.74\nand 1.99 points. GB-LCSS exceeds GSDN on all ﬁve datasets. Graph-MLP and GB-LCSS thus use the training graph\n14\n",
+        "min_font": 7.26,
+        "fonts": [
+          "Arial-BoldMT",
+          "ArialMT",
+          "CMBX9",
+          "CMR10",
+          "CMR9",
+          "CMTI10"
+        ]
+      },
+      {
+        "page": 15,
+        "body_bottom": 744.7,
+        "head": "0.2\n0.4\n0.6\n30\n40\n50\n60\nTest accuracy (%)\nCora\n0.2\n0.4\n0.6\n30\n40\n50\n60\nCiteSeer\n0.2\n0.4\n0.6\n20\n30\n40\nCoraFull\n0.2\n0.4\n0.6\n80\n85\n90\nCoauthor-",
+        "tail": "e-matched grouping lowers accuracy in all 25 settings, by 8.69 percentage points on average, to approx-\nimately the level of MLP+CE. Uniform and prior smoothing recover little of this gain. These controls support the\n15\n",
+        "min_font": 7.26,
+        "fonts": [
+          "Arial-BoldMT",
+          "ArialMT",
+          "CMBX9",
+          "CMR10",
+          "CMR9",
+          "CMSY9",
+          "CMTI10"
+        ]
+      },
+      {
+        "page": 16,
+        "body_bottom": 744.7,
+        "head": "Table 5. Target-construction ablations under uniform 0.4 noise.\nDataset\nGB-LCSS\nOwn vote\nincluded\nRandom\nsize-matched\ngrouping\nUniform\nsmoot",
+        "tail": "0±0.51\n+3.11\n39.26±0.48\n+1.87\nCoauthor-CS\n90.71±0.59\n90.83±0.57\n+0.12\n91.01±0.64\n+0.29\nAmazon-Photo\n82.12±1.08\n82.23±1.20\n+0.11\n81.68±0.66\n−0.44\nGB denotes granular ball grouping. Diﬀerences are in percentage points.\n16\n",
+        "min_font": 4.98,
+        "fonts": [
+          "CMBX10",
+          "CMBX9",
+          "CMEX10",
+          "CMMI5",
+          "CMMI7",
+          "CMR10",
+          "CMR7",
+          "CMR8",
+          "CMR9",
+          "CMSY10",
+          "CMSY7",
+          "CMSY9",
+          "CMTI10"
+        ]
+      },
+      {
+        "page": 17,
+        "body_bottom": 744.7,
+        "head": "0.2\n0.4\n0.6\n0.8\n1.0\n1.2\nObserved one-hot target Brier score\n0.2\n0.4\n0.6\n0.8\n1.0\n1.2\nGB-LCSS target Brier score\nTarget quality\nCora\nCiteSeer\n",
+        "tail": "epresentation using three downstream seeds. Partitions obtained from diﬀerent pretraining seeds diﬀer\nsubstantially, with adjusted Rand indices [51] between 0.247 and 0.365. After averaging over downstream seeds, the\n17\n",
+        "min_font": 6.77,
+        "fonts": [
+          "Arial-BoldMT",
+          "ArialMT",
+          "CMBX10",
+          "CMBX9",
+          "CMR10",
+          "CMR7",
+          "CMR9",
+          "CMTI10"
+        ]
+      },
+      {
+        "page": 18,
+        "body_bottom": 744.7,
+        "head": "Table 7. Eﬀect of the representation used for partitioning under uniform 0.4 noise.\nDataset\nAccuracy\nNumber of balls\nGRACE\nRaw X\nA2X\nGRACE\nR",
+        "tail": "y 3.12–23.86 points under uniform 0.4 and 5.21–29.48 points under uniform 0.6. The\nextension adds a GCN teacher and distillation over all nodes during training, while retaining the same MLP architecture\nat inference.\n18\n",
+        "min_font": 5.98,
+        "fonts": [
+          "CMBX9",
+          "CMR10",
+          "CMR6",
+          "CMR9",
+          "CMSY9",
+          "CMTI10"
+        ]
+      },
+      {
+        "page": 19,
+        "body_bottom": 744.7,
+        "head": "Table 8. Test accuracy of deployed MLPs under direct training and graph-to-MLP distillation.\n(a) Uniform 0.4\nTraining route\nCora\nCiteSeer\nCo",
+        "tail": "operty used in the\nconditional expected-error analysis of Corollary 1. Under uniform 0.4 noise, the reduction in Brier error on corrupted\nlabels exceeds the error introduced on correctly labeled nodes (Appendix I.2).\n19\n",
+        "min_font": 8.97,
+        "fonts": [
+          "CMBX9",
+          "CMR10",
+          "CMR9",
+          "CMSY9",
+          "CMTI10",
+          "CMTT10"
+        ]
+      },
+      {
+        "page": 20,
+        "body_bottom": 744.7,
+        "head": "Cora\nCiteSeer\nCoraFull\nCoauthor-CS\nAmazon-Photo\n0\n5\n10\n15\nConstruction time (s)\na\nEnd-to-end construction\nCora\nCiteSeer\nCoraFull\nCoauthor-CS",
+        "tail": "rganizes nodes into granular balls in a frozen, label-free graph representation and combines\neach observed label with the consensus of the other training nodes in its ball. Our analysis relates local-vote reliability\n20\n",
+        "min_font": 7.76,
+        "fonts": [
+          "Arial-BoldMT",
+          "ArialMT",
+          "CMBX10",
+          "CMBX9",
+          "CMR10",
+          "CMR9"
+        ]
+      },
+      {
+        "page": 21,
+        "body_bottom": 744.7,
+        "head": "to the number of available votes and their clean-class margin under symmetric noise, decomposes the squared error of\nthe soft target, and gi",
+        "tail": "nsistency for noisy labels, Proc.\nIEEE/CVF Conf. Comput. Vis. Pattern Recognit. (2022) 4672–4681.\n[12] D. Bahri, H. Jiang, M. Gupta, Deep k-NN for noisy labels, Proc. Int. Conf. Mach. Learn., PMLR 119 (2020)\n540–550.\n21\n",
+        "min_font": 9.96,
+        "fonts": [
+          "CMBX10",
+          "CMR10"
+        ]
+      },
+      {
+        "page": 22,
+        "body_bottom": 744.7,
+        "head": "[13] Y. Zhu, Y. Xu, F. Yu, Q. Liu, S. Wu, L. Wang, Deep graph contrastive representation learning, Proc. ICML\nWorkshop Graph Represent. Lear",
+        "tail": " (2024).\n[34] T. Wu, Z. Zhao, J. Wang, X. Bai, L. Wang, N. Wong, Y. Yang, Edge-free but structure-aware: Prototype-guided\nknowledge distillation from GNNs to MLPs, Proc. Int. Conf. Comput. Linguist. (2025) 5656–5667.\n22\n",
+        "min_font": 9.96,
+        "fonts": [
+          "CMR10"
+        ]
+      },
+      {
+        "page": 23,
+        "body_bottom": 744.7,
+        "head": "[35] Z. Zhou, Z. Ding, J. Shi, L. Qing, S. Shen, TINED: GNNs-to-MLPs by teacher injection and Dirichlet energy\ndistillation, Proc. Int. Conf",
+        "tail": "d. J. Stat. 6 (1979) 65–70.\n[50] G.W. Brier, Veriﬁcation of forecasts expressed in terms of probability, Mon. Weather Rev. 78 (1950) 1–3.\n[51] L. Hubert, P. Arabie, Comparing partitions, J. Classif. 2 (1985) 193–218.\n23\n",
+        "min_font": 9.96,
+        "fonts": [
+          "CMR10"
+        ]
+      }
+    ],
+    "fonts": [
+      {
+        "name": "IHAIZV+CMR12",
+        "extension": "cff",
+        "embedded_bytes": 2648
+      },
+      {
+        "name": "BZIVMZ+CMR10",
+        "extension": "cff",
+        "embedded_bytes": 10863
+      },
+      {
+        "name": "IXFAWU+CMR7",
+        "extension": "cff",
+        "embedded_bytes": 1808
+      },
+      {
+        "name": "TQTHRL+CMSY7",
+        "extension": "cff",
+        "embedded_bytes": 1131
+      },
+      {
+        "name": "YEUUOC+CMTI7",
+        "extension": "cff",
+        "embedded_bytes": 691
+      },
+      {
+        "name": "AKHCZK+CMTI8",
+        "extension": "cff",
+        "embedded_bytes": 5910
+      },
+      {
+        "name": "VDVGTR+CMBX10",
+        "extension": "cff",
+        "embedded_bytes": 5467
+      },
+      {
+        "name": "CAFSZL+CMTI10",
+        "extension": "cff",
+        "embedded_bytes": 9142
+      },
+      {
+        "name": "DDIEWW+CMSY6",
+        "extension": "cff",
+        "embedded_bytes": 918
+      },
+      {
+        "name": "FKPJSN+CMR8",
+        "extension": "cff",
+        "embedded_bytes": 4486
+      },
+      {
+        "name": "PVTTLK+CMTT8",
+        "extension": "cff",
+        "embedded_bytes": 3805
+      },
+      {
+        "name": "JAGKKY+CMBX9",
+        "extension": "cff",
+        "embedded_bytes": 6892
+      },
+      {
+        "name": "NOMARO+CMR9",
+        "extension": "cff",
+        "embedded_bytes": 9326
+      },
+      {
+        "name": "AAAAAA+ArialMT",
+        "extension": "ttf",
+        "embedded_bytes": 44824
+      },
+      {
+        "name": "BAAAAA+Arial-BoldMT",
+        "extension": "ttf",
+        "embedded_bytes": 36488
+      },
+      {
+        "name": "CAAAAA+LucidaSansUnicode",
+        "extension": "ttf",
+        "embedded_bytes": 46172
+      },
+      {
+        "name": "",
+        "extension": "n/a",
+        "embedded_bytes": 0
+      },
+      {
+        "name": "EAAAAA+CambriaMath",
+        "extension": "ttf",
+        "embedded_bytes": 22576
+      },
+      {
+        "name": "FAAAAA+Arial-Black",
+        "extension": "ttf",
+        "embedded_bytes": 6796
+      },
+      {
+        "name": "KPXLOM+CMSY10",
+        "extension": "cff",
+        "embedded_bytes": 2612
+      },
+      {
+        "name": "UTACNV+CMMI10",
+        "extension": "cff",
+        "embedded_bytes": 6276
+      },
+      {
+        "name": "FZDNHS+CMMI7",
+        "extension": "cff",
+        "embedded_bytes": 3381
+      },
+      {
+        "name": "DZGKAF+MSBM10",
+        "extension": "cff",
+        "embedded_bytes": 942
+      },
+      {
+        "name": "GJMHKB+CMEX10",
+        "extension": "cff",
+        "embedded_bytes": 2037
+      },
+      {
+        "name": "NITCSQ+CMTI9",
+        "extension": "cff",
+        "embedded_bytes": 4012
+      },
+      {
+        "name": "UBBQTN+CMSY9",
+        "extension": "cff",
+        "embedded_bytes": 2039
+      },
+      {
+        "name": "LPOGEQ+CMMI9",
+        "extension": "cff",
+        "embedded_bytes": 4217
+      },
+      {
+        "name": "GQYLQL+CMMI6",
+        "extension": "cff",
+        "embedded_bytes": 1661
+      },
+      {
+        "name": "WXMALW+CMMIB10",
+        "extension": "cff",
+        "embedded_bytes": 629
+      },
+      {
+        "name": "XKCNTN+CMR6",
+        "extension": "cff",
+        "embedded_bytes": 2408
+      },
+      {
+        "name": "AIBCOH+CMMI5",
+        "extension": "cff",
+        "embedded_bytes": 1099
+      },
+      {
+        "name": "ALHFJP+CMEX9",
+        "extension": "cff",
+        "embedded_bytes": 390
+      },
+      {
+        "name": "GZROMK+ArialMT",
+        "extension": "ttf",
+        "embedded_bytes": 41264
+      },
+      {
+        "name": "GZROMK+Arial-BoldMT",
+        "extension": "ttf",
+        "embedded_bytes": 22204
+      },
+      {
+        "name": "GZROMK+ArialMT",
+        "extension": "ttf",
+        "embedded_bytes": 43500
+      },
+      {
+        "name": "GZROMK+Arial-BoldMT",
+        "extension": "ttf",
+        "embedded_bytes": 20724
+      },
+      {
+        "name": "GZROMK+ArialMT",
+        "extension": "ttf",
+        "embedded_bytes": 43156
+      },
+      {
+        "name": "GZROMK+Arial-BoldMT",
+        "extension": "ttf",
+        "embedded_bytes": 21852
+      },
+      {
+        "name": "FBXEDP+CMTT10",
+        "extension": "cff",
+        "embedded_bytes": 1961
+      },
+      {
+        "name": "OKBHQQ+ArialMT",
+        "extension": "ttf",
+        "embedded_bytes": 32328
+      },
+      {
+        "name": "MSHJMH+Arial-BoldMT",
+        "extension": "ttf",
+        "embedded_bytes": 14940
+      }
+    ]
+  },
+  "supplementary": {
+    "pages": 14,
+    "page_records": [
+      {
+        "page": 1,
+        "body_bottom": 744.7,
+        "head": "Supplementary Material\nGranular ball local consensus for graph-free node classiﬁcation under label noise\nAppendix A. Results of the main com",
+        "tail": "±3.27\nLogitClip\n58.75±1.44\n46.57±3.52\n34.47±1.69\n45.78±1.06\n47.41±2.64\nRandom size-matched\ngrouping\n55.13±1.85\n42.08±2.88\n30.36±1.88\n43.92±1.67\n43.07±2.00\nGB-LCSS\n63.92±1.12\n55.24±2.04\n42.02±3.14\n51.70±2.14\n55.58±2.54\n1\n",
+        "min_font": 8.97,
+        "fonts": [
+          "CMBX10",
+          "CMBX12",
+          "CMBX9",
+          "CMR10",
+          "CMR9",
+          "CMSY10",
+          "CMSY9",
+          "CMTI10"
+        ]
+      },
+      {
+        "page": 2,
+        "body_bottom": 744.7,
+        "head": "Appendix A.3. CoraFull\nTable A.3. Test accuracy on CoraFull under all ﬁve noise settings.\nMethod\nUniform 0.2\nUniform 0.4\nUniform 0.6\nPair 0.",
+        "tail": "\n73.59±1.19\nJoCoR\n85.60±1.26\n79.57±0.53\n66.48±4.43\n66.94±6.36\n74.80±1.79\nSCE\n84.74±0.94\n76.08±3.11\n57.82±4.07\n66.51±6.96\n73.08±2.54\nELR\n82.31±1.98\n73.93±2.12\n59.32±4.53\n66.07±5.25\n69.41±2.70\nContinued on the next page\n2\n",
+        "min_font": 8.97,
+        "fonts": [
+          "CMBX9",
+          "CMR10",
+          "CMR9",
+          "CMSY9",
+          "CMTI10",
+          "CMTI9"
+        ]
+      },
+      {
+        "page": 3,
+        "body_bottom": 744.7,
+        "head": "Table A.5 (continued)\nMethod\nUniform 0.2\nUniform 0.4\nUniform 0.6\nPair 0.4\nInstance 0.4\nLogitClip\n83.78±1.02\n74.98±2.38\n62.42±4.37\n68.52±4.20",
+        "tail": "iteSeer\nUniform 0.4\nRandom grouping\n+13.16\n[+11.26, +15.06]\n5/5\n< 0.001\nCiteSeer\nUniform 0.4\nMLP+CE\n+11.74\n[+9.99, +13.50]\n5/5\n0.001\nCiteSeer\nUniform 0.4\nJoCoR\n+5.34\n[+2.51, +8.16]\n5/5\n0.062\nContinued on the next page\n3\n",
+        "min_font": 8.97,
+        "fonts": [
+          "CMBX10",
+          "CMBX9",
+          "CMMI10",
+          "CMMI9",
+          "CMR10",
+          "CMR9",
+          "CMSY9",
+          "CMTI9"
+        ]
+      },
+      {
+        "page": 4,
+        "body_bottom": 744.7,
+        "head": "Table B.1 (continued)\nDataset\nNoise\nReference method\nMean\ndiﬀerence\n(pp)\n95% CI (pp)\nWins\n(seeds)\nAdjusted p\nCiteSeer\nUniform 0.6\nRandom gro",
+        "tail": "Coauthor-CS\nPair 0.4\nRandom grouping\n+10.25\n[+8.67, +11.83]\n5/5\n0.001\nCoauthor-CS\nPair 0.4\nMLP+CE\n+10.32\n[+8.97, +11.67]\n5/5\n< 0.001\nCoauthor-CS\nPair 0.4\nJoCoR\n+5.22\n[+3.82, +6.62]\n5/5\n0.011\nContinued on the next page\n4\n",
+        "min_font": 8.97,
+        "fonts": [
+          "CMBX9",
+          "CMMI9",
+          "CMR10",
+          "CMR9",
+          "CMTI9"
+        ]
+      },
+      {
+        "page": 5,
+        "body_bottom": 744.7,
+        "head": "Table B.1 (continued)\nDataset\nNoise\nReference method\nMean\ndiﬀerence\n(pp)\n95% CI (pp)\nWins\n(seeds)\nAdjusted p\nCoauthor-CS\nInstance 0.4\nRandom",
+        "tail": "51.72±1.30\n50.77±1.98\nCora\nPosteL\n47.09±1.81\n46.81±1.94\nCiteSeer\nGB-LCSS\n55.24±2.04\n54.99±2.18\nCiteSeer\nRandom size-matched grouping\n42.08±2.88\n42.65±2.49\nCiteSeer\nGSDN\n50.36±3.39\n50.60±1.84\nContinued on the next page\n5\n",
+        "min_font": 7.97,
+        "fonts": [
+          "CMBX10",
+          "CMBX9",
+          "CMR10",
+          "CMR8",
+          "CMR9",
+          "CMSY9",
+          "CMTI9"
+        ]
+      },
+      {
+        "page": 6,
+        "body_bottom": 744.7,
+        "head": "Table C.1 (continued)\nDataset\nMethod\nClean validation\nNoisy validation\nCiteSeer\nMLP+CE\n43.50±3.02\n43.06±2.96\nCiteSeer\nJoCoR\n49.91±3.37\n50.67",
+        "tail": " common splits, noise realizations, and graph-free inference protocol (Appendix F). GB-LCSS has the highest mean\nin 24 of the 25 settings; the exception is CoraFull under uniform 0.2, where PosteL and SALS are higher.\n6\n",
+        "min_font": 6.97,
+        "fonts": [
+          "CMBX10",
+          "CMBX9",
+          "CMMI10",
+          "CMMI7",
+          "CMR10",
+          "CMR8",
+          "CMR9",
+          "CMSY9",
+          "CMTI9"
+        ]
+      },
+      {
+        "page": 7,
+        "body_bottom": 744.7,
+        "head": "Table E.1. Test accuracy of graph-based soft-target methods under all ﬁve noise settings.\nDataset\nNoise setting\nGB-LCSS\nPosteL\nALS\nSALS\nCora",
+        "tail": " each method and the components retained under the common\nprotocol. All methods share the data splits and noise realizations and deploy an attribute-only MLP. Table F.2 lists\ntheir method-speciﬁc settings and sources.\n7\n",
+        "min_font": 8.97,
+        "fonts": [
+          "CMBX10",
+          "CMBX9",
+          "CMMI10",
+          "CMR10",
+          "CMR9",
+          "CMSY10",
+          "CMSY9"
+        ]
+      },
+      {
+        "page": 8,
+        "body_bottom": 744.7,
+        "head": "Table F.1. Implementations of graph-based and distillation methods.\nMethod\nImplementation\nComponents and adaptations\nPosteL\nAuthors’ target-",
+        "tail": "ng; ties keep the empirical\ndistribution; 2-means uses Euclidean distance, k-means++,\nand 10 restarts\nEstablished through iterative method\ndevelopment; used unchanged in the\nmain comparisons\nContinued on the next page\n8\n",
+        "min_font": 5.98,
+        "fonts": [
+          "CMBX9",
+          "CMMI9",
+          "CMR10",
+          "CMR6",
+          "CMR9",
+          "CMTI9"
+        ]
+      },
+      {
+        "page": 9,
+        "body_bottom": 744.7,
+        "head": "Table F.2 (continued)\nMethod\nKey settings\nParameter selection\nGCN(X)+CE teacher\nTwo-layer GCN teacher and two-layer MLP student, both\nwidth ",
+        "tail": "ndirected\nedges\nFeatures\nClasses\nTraining nodes\nEdge\nhomophily\nPubMed\n19,717\n44,324\n500\n3\n3,943\n0.802\nAmazon-Computers\n13,752\n245,861\n767\n10\n2,750\n0.777\nCora ML\n2,995\n8,158\n2,879\n7\n599\n0.789\nContinued on the next page\n9\n",
+        "min_font": 8.47,
+        "fonts": [
+          "CMBX10",
+          "CMBX8",
+          "CMBX9",
+          "CMR10",
+          "CMR8",
+          "CMR9",
+          "CMTI9"
+        ]
+      },
+      {
+        "page": 10,
+        "body_bottom": 744.7,
+        "head": "Table G.1 (continued)\nDataset\nNodes\nUndirected\nedges\nFeatures\nClasses\nTraining nodes\nEdge\nhomophily\nAttributed-Wiki\n2,405\n11,596\n4,973\n17\n48",
+        "tail": "ng expected target error.\nAs in Section 3.4, the\ngraph, representation, ball assignments, training-node set, and clean labels are ﬁxed, and randomness comes only from\nindependent symmetric label corruption at rate η.\n10\n",
+        "min_font": 8.47,
+        "fonts": [
+          "CMBX10",
+          "CMBX8",
+          "CMBX9",
+          "CMMI10",
+          "CMR10",
+          "CMR8",
+          "CMR9",
+          "CMSY10",
+          "CMSY8",
+          "CMSY9",
+          "CMTI9"
+        ]
+      },
+      {
+        "page": 11,
+        "body_bottom": 744.7,
+        "head": "Appendix H.1. Reliability of the local vote\nConsider a training node vn with sn = |Un| ≥smin other training nodes voting in its ball. The cl",
+        "tail": "s. With Z and T denoting the observed one-hot and soft-target matrices,\nrespectively, the diﬀerence between their mean Brier scores is\nBS(Z) −BS(T) =\n1\n|VL|\n∑\nvn∈Verr\n(\n2 −BSn(tn)\n)\n−\n1\n|VL|\n∑\nvn∈Vclean\nBSn(tn)\n(H.5)\n11\n",
+        "min_font": 4.98,
+        "fonts": [
+          "CMBX10",
+          "CMEX10",
+          "CMMI10",
+          "CMMI5",
+          "CMMI7",
+          "CMR10",
+          "CMR5",
+          "CMR7",
+          "CMSY10",
+          "CMSY7",
+          "CMTI10",
+          "MSBM10"
+        ]
+      },
+      {
+        "page": 12,
+        "body_bottom": 744.7,
+        "head": "The ﬁrst term measures the error removed on corrupted labels, and the second measures the error introduced on correct\nlabels. Both are avera",
+        "tail": " = 1\n55.87±1.70\n55.94±1.80\n37.16±0.75\n90.37±0.54\n81.10±1.21\nnmin = 16\n56.72±1.47\n56.49±1.17\n37.16±0.62\n90.32±0.57\n81.58±1.71\nnmin = 64\n57.42±1.56\n55.94±2.70\n37.63±0.56\n90.66±0.59\n82.30±0.34\nContinued on the next page\n12\n",
+        "min_font": 4.98,
+        "fonts": [
+          "CMBX10",
+          "CMBX9",
+          "CMMI10",
+          "CMMI5",
+          "CMMI7",
+          "CMMI9",
+          "CMR10",
+          "CMR6",
+          "CMR7",
+          "CMR9",
+          "CMSY10",
+          "CMSY9",
+          "CMTI10",
+          "MSBM10"
+        ]
+      },
+      {
+        "page": 13,
+        "body_bottom": 744.7,
+        "head": "Table I.1 (continued)\nConﬁguration\nCora\nCiteSeer\nCoraFull\nCoauthor-CS\nAmazon-Photo\nδ = 0.01\n57.49±0.76\n55.24±2.04\n37.39±0.51\n90.71±0.59\n82.2",
+        "tail": "ror alone therefore does not explain the accuracy advantage of representation-based\ngrouping, consistent with the observation in Appendix H.2 that a target with a lower Brier score can still favor an\nincorrect class.\n13\n",
+        "min_font": 5.98,
+        "fonts": [
+          "CMBX9",
+          "CMMI10",
+          "CMMI9",
+          "CMR10",
+          "CMR6",
+          "CMR7",
+          "CMR9",
+          "CMSY10",
+          "CMSY9",
+          "CMTI10"
+        ]
+      },
+      {
+        "page": 14,
+        "body_bottom": 744.7,
+        "head": "Proposition 1 requires ∆n > 0: node vn’s true class receives more clean votes than any other class. This holds for\n75.64%, 65.02%, 36.13%, 8",
+        "tail": "des on Cora, CiteSeer, CoraFull, Coauthor-CS, and Amazon-\nPhoto, respectively. The net reductions in Table I.2 follow the same ordering across the ﬁve datasets. Table I.2 includes\nnodes with zero or negative margins.\n14\n",
+        "min_font": 6.97,
+        "fonts": [
+          "CMMI10",
+          "CMMI7",
+          "CMR10"
+        ]
+      }
+    ],
+    "fonts": [
+      {
+        "name": "IHAIZV+CMBX12",
+        "extension": "cff",
+        "embedded_bytes": 1760
+      },
+      {
+        "name": "BZIVMZ+CMR10",
+        "extension": "cff",
+        "embedded_bytes": 9711
+      },
+      {
+        "name": "IXFAWU+CMBX10",
+        "extension": "cff",
+        "embedded_bytes": 4950
+      },
+      {
+        "name": "TQTHRL+CMSY10",
+        "extension": "cff",
+        "embedded_bytes": 1843
+      },
+      {
+        "name": "YEUUOC+CMTI10",
+        "extension": "cff",
+        "embedded_bytes": 6737
+      },
+      {
+        "name": "AKHCZK+CMBX9",
+        "extension": "cff",
+        "embedded_bytes": 7433
+      },
+      {
+        "name": "VDVGTR+CMR9",
+        "extension": "cff",
+        "embedded_bytes": 9498
+      },
+      {
+        "name": "CAFSZL+CMSY9",
+        "extension": "cff",
+        "embedded_bytes": 378
+      },
+      {
+        "name": "DDIEWW+CMTI9",
+        "extension": "cff",
+        "embedded_bytes": 4354
+      },
+      {
+        "name": "FKPJSN+CMMI10",
+        "extension": "cff",
+        "embedded_bytes": 3949
+      },
+      {
+        "name": "PVTTLK+CMMI9",
+        "extension": "cff",
+        "embedded_bytes": 1313
+      },
+      {
+        "name": "JAGKKY+CMR8",
+        "extension": "cff",
+        "embedded_bytes": 7489
+      },
+      {
+        "name": "NOMARO+CMMI7",
+        "extension": "cff",
+        "embedded_bytes": 1570
+      },
+      {
+        "name": "KPXLOM+CMR6",
+        "extension": "cff",
+        "embedded_bytes": 1107
+      },
+      {
+        "name": "UTACNV+CMBX8",
+        "extension": "cff",
+        "embedded_bytes": 5575
+      },
+      {
+        "name": "FZDNHS+CMSY8",
+        "extension": "cff",
+        "embedded_bytes": 379
+      },
+      {
+        "name": "DZGKAF+CMR7",
+        "extension": "cff",
+        "embedded_bytes": 1484
+      },
+      {
+        "name": "GJMHKB+MSBM10",
+        "extension": "cff",
+        "embedded_bytes": 678
+      },
+      {
+        "name": "NITCSQ+CMMI5",
+        "extension": "cff",
+        "embedded_bytes": 469
+      },
+      {
+        "name": "UBBQTN+CMEX10",
+        "extension": "cff",
+        "embedded_bytes": 1058
+      },
+      {
+        "name": "LPOGEQ+CMSY7",
+        "extension": "cff",
+        "embedded_bytes": 532
+      },
+      {
+        "name": "GQYLQL+CMR5",
+        "extension": "cff",
+        "embedded_bytes": 927
+      }
+    ]
+  },
+  "highlights": {
+    "pages": 1,
+    "page_records": [
+      {
+        "page": 1,
+        "body_bottom": 164.6,
+        "head": "Highlights\n• Construct granular balls from graph contrastive representations without labels.\n• Convert training-time graph structure into so",
+        "tail": "ime graph structure into soft targets for an attribute-only MLP.\n• Reﬁne noisy supervision using leave-one-out consensus within granular balls.\n• Achieve the highest mean accuracy in 24 of 25 settings with the same MLP.\n",
+        "min_font": 9.96,
+        "fonts": [
+          "CMBX12",
+          "CMR10",
+          "SFRM1000"
+        ]
+      }
+    ],
+    "fonts": [
+      {
+        "name": "IHAIZV+CMBX12",
+        "extension": "cff",
+        "embedded_bytes": 1085
+      },
+      {
+        "name": "BZIVMZ+SFRM1000",
+        "extension": "cff",
+        "embedded_bytes": 241
+      },
+      {
+        "name": "IXFAWU+CMR10",
+        "extension": "cff",
+        "embedded_bytes": 4386
+      }
+    ]
+  }
+}

@@ -1,0 +1,622 @@
+C:\Users\Admin\Desktop\ÈýÂÛÎÄÈÚºÏ\ÈýÂÛÎÄÈÚºÏ\GRACE-master\.venv-rocm\Lib\site-packages\torch_geometric\nn\conv\gcn_conv.py:274: UserWarning: Converting sparse tensor to CSR format for more efficient processing. Consider converting your sparse tensor to CSR format beforehand to avoid repeated conversion (got 'torch.sparse_coo')
+  return spmm(adj_t, x, reduce=self.aggr)
+C:\Users\Admin\Desktop\ÈýÂÛÎÄÈÚºÏ\ÈýÂÛÎÄÈÚºÏ\GRACE-master\.venv-rocm\Lib\site-packages\torch_geometric\utils\_spmm.py:71: UserWarning: Sparse CSR tensor support is in beta state. If you miss a functionality in the sparse tensor support, please submit a feature request to https://github.com/pytorch/pytorch/issues. (Triggered internally at C:\b\pytorch\aten\src\ATen\SparseCsrTensorImpl.cpp:55.)
+  src = src.to_sparse_csr()
+Namespace(dataset='citeseer', method='frozengrace_gb_gcn_softdist_dynalpha_fast_shuffled', noise_type='uniform', noise_rate=0.4, device='cuda:0', seed=0, split_type='percent', train_percent=0.2, val_percent=0.1, test_percent=0.7)
+----Data statistics------'
+                Name: citeseer
+                #Nodes 3327
+                #Edges 4552
+                #Classes 6
+                #Ave_degree 2.74
+----Split statistics------'
+                #Train samples 665 (20.0 % of nodes)
+                #Val samples 332 (10.0 % of nodes)
+                #Test samples 2328 (70.0 % of nodes)
+Current device: cuda:0
+----label noise information:------
+Uniform noise
+#Actual noise rate 0.39 
+Frozen-GRACE GB diagnostics: {'num_balls': 64, 'mean_ball_size': 51.984375, 'max_ball_size': 126, 'singleton_ratio': 0.0, 'mean_radius': 0.47660940885543823, 'min_train_per_ball': 2, 'eligible_balls': 64, 'eligible_train_nodes': 665, 'alpha_positive_balls': 64, 'alpha_positive_train_nodes': 665, 'alpha_positive_train_ratio_by_ball': 1.0, 'alpha_positive_train_count': 665, 'alpha_positive_train_ratio': 1.0, 'mean_alpha_train': 0.213233083486557, 'soft_shift_train_mass': 87.55509948730469, 'soft_pseudo_changed_train_count': 436, 'soft_pseudo_ncr': 0.13382899628252787, 'soft_pseudo_cdr': 0.6641414141414141, 'soft_clean_mass_delta': -54.25356674194336, 'soft_alpha_baseline': 'multiclass', 'soft_target_mode': 'distribution', 'random_control': 1}
+[2026-06-10 14:49:55] [32mIntermediate result: 0.3373493975903614  (Index 0)[0m
+Epoch 00001 | Time(s) 1.1945 | Loss(train) 1.7954 | Acc(train) 0.1714 | Loss(val) 1.7079 | Acc(val) 0.3373 | *
+Dynamic alpha refresh: {'epoch': 1, 'refresh_count': 1, 'mean_alpha_train': 0.16627103090286255, 'soft_shift_train_mass': 52.999122619628906}
+[2026-06-10 14:49:55] [32mIntermediate result: 0.39457831325301207  (Index 1)[0m
+Epoch 00002 | Time(s) 0.0586 | Loss(train) 1.6244 | Acc(train) 0.5038 | Loss(val) 1.6287 | Acc(val) 0.3946 | *
+Dynamic alpha refresh: {'epoch': 2, 'refresh_count': 2, 'mean_alpha_train': 0.17156891524791718, 'soft_shift_train_mass': 52.21687316894531}
+[2026-06-10 14:49:55] [32mIntermediate result: 0.46686746987951805  (Index 2)[0m
+Epoch 00003 | Time(s) 0.0582 | Loss(train) 1.4464 | Acc(train) 0.6000 | Loss(val) 1.5772 | Acc(val) 0.4669 | *
+Dynamic alpha refresh: {'epoch': 3, 'refresh_count': 3, 'mean_alpha_train': 0.1729816496372223, 'soft_shift_train_mass': 49.926788330078125}
+[2026-06-10 14:49:55] [32mIntermediate result: 0.4246987951807229  (Index 3)[0m
+Epoch 00004 | Time(s) 0.0550 | Loss(train) 1.2892 | Acc(train) 0.6586 | Loss(val) 1.5780 | Acc(val) 0.4247 | 
+Dynamic alpha refresh: {'epoch': 4, 'refresh_count': 4, 'mean_alpha_train': 0.17165005207061768, 'soft_shift_train_mass': 48.49688720703125}
+[2026-06-10 14:49:55] [32mIntermediate result: 0.41566265060240964  (Index 4)[0m
+Epoch 00005 | Time(s) 0.0560 | Loss(train) 1.1503 | Acc(train) 0.7143 | Loss(val) 1.6237 | Acc(val) 0.4157 | 
+Dynamic alpha refresh: {'epoch': 5, 'refresh_count': 5, 'mean_alpha_train': 0.17195193469524384, 'soft_shift_train_mass': 47.30742645263672}
+[2026-06-10 14:49:55] [32mIntermediate result: 0.4126506024096386  (Index 5)[0m
+Epoch 00006 | Time(s) 0.0590 | Loss(train) 1.0566 | Acc(train) 0.7609 | Loss(val) 1.6884 | Acc(val) 0.4127 | 
+Dynamic alpha refresh: {'epoch': 6, 'refresh_count': 6, 'mean_alpha_train': 0.17553260922431946, 'soft_shift_train_mass': 46.5166015625}
+[2026-06-10 14:49:55] [32mIntermediate result: 0.39156626506024095  (Index 6)[0m
+Epoch 00007 | Time(s) 0.0551 | Loss(train) 0.9873 | Acc(train) 0.7940 | Loss(val) 1.7743 | Acc(val) 0.3916 | 
+Dynamic alpha refresh: {'epoch': 7, 'refresh_count': 7, 'mean_alpha_train': 0.17727747559547424, 'soft_shift_train_mass': 46.46013259887695}
+[2026-06-10 14:49:55] [32mIntermediate result: 0.35843373493975905  (Index 7)[0m
+Epoch 00008 | Time(s) 0.0560 | Loss(train) 0.9253 | Acc(train) 0.8120 | Loss(val) 1.8691 | Acc(val) 0.3584 | 
+Dynamic alpha refresh: {'epoch': 8, 'refresh_count': 8, 'mean_alpha_train': 0.18062730133533478, 'soft_shift_train_mass': 45.667274475097656}
+[2026-06-10 14:49:56] [32mIntermediate result: 0.31626506024096385  (Index 8)[0m
+Epoch 00009 | Time(s) 0.0570 | Loss(train) 0.8985 | Acc(train) 0.8436 | Loss(val) 1.9715 | Acc(val) 0.3163 | 
+Dynamic alpha refresh: {'epoch': 9, 'refresh_count': 9, 'mean_alpha_train': 0.182310089468956, 'soft_shift_train_mass': 45.63091278076172}
+[2026-06-10 14:49:56] [32mIntermediate result: 0.3192771084337349  (Index 9)[0m
+Epoch 00010 | Time(s) 0.0511 | Loss(train) 0.8568 | Acc(train) 0.8586 | Loss(val) 2.0485 | Acc(val) 0.3193 | 
+Dynamic alpha refresh: {'epoch': 10, 'refresh_count': 10, 'mean_alpha_train': 0.1814405620098114, 'soft_shift_train_mass': 45.48805236816406}
+[2026-06-10 14:49:56] [32mIntermediate result: 0.31626506024096385  (Index 10)[0m
+Epoch 00011 | Time(s) 0.0545 | Loss(train) 0.8386 | Acc(train) 0.8722 | Loss(val) 2.1117 | Acc(val) 0.3163 | 
+Dynamic alpha refresh: {'epoch': 11, 'refresh_count': 11, 'mean_alpha_train': 0.18247441947460175, 'soft_shift_train_mass': 45.72441864013672}
+[2026-06-10 14:49:56] [32mIntermediate result: 0.3102409638554217  (Index 11)[0m
+Epoch 00012 | Time(s) 0.0535 | Loss(train) 0.8194 | Acc(train) 0.8797 | Loss(val) 2.1580 | Acc(val) 0.3102 | 
+Dynamic alpha refresh: {'epoch': 12, 'refresh_count': 12, 'mean_alpha_train': 0.18323130905628204, 'soft_shift_train_mass': 45.81853485107422}
+[2026-06-10 14:49:56] [32mIntermediate result: 0.3102409638554217  (Index 12)[0m
+Epoch 00013 | Time(s) 0.0550 | Loss(train) 0.7998 | Acc(train) 0.8977 | Loss(val) 2.1782 | Acc(val) 0.3102 | 
+Dynamic alpha refresh: {'epoch': 13, 'refresh_count': 13, 'mean_alpha_train': 0.1843310296535492, 'soft_shift_train_mass': 45.81853485107422}
+[2026-06-10 14:49:56] [32mIntermediate result: 0.3192771084337349  (Index 13)[0m
+Epoch 00014 | Time(s) 0.0586 | Loss(train) 0.7762 | Acc(train) 0.9038 | Loss(val) 2.1779 | Acc(val) 0.3193 | 
+Dynamic alpha refresh: {'epoch': 14, 'refresh_count': 14, 'mean_alpha_train': 0.18466845154762268, 'soft_shift_train_mass': 46.118534088134766}
+[2026-06-10 14:49:56] [32mIntermediate result: 0.3253012048192771  (Index 14)[0m
+Epoch 00015 | Time(s) 0.0556 | Loss(train) 0.7721 | Acc(train) 0.8962 | Loss(val) 2.1692 | Acc(val) 0.3253 | 
+Dynamic alpha refresh: {'epoch': 15, 'refresh_count': 15, 'mean_alpha_train': 0.1855582296848297, 'soft_shift_train_mass': 46.118534088134766}
+[2026-06-10 14:49:56] [32mIntermediate result: 0.32228915662650603  (Index 15)[0m
+Epoch 00016 | Time(s) 0.0570 | Loss(train) 0.7538 | Acc(train) 0.9038 | Loss(val) 2.1537 | Acc(val) 0.3223 | 
+Dynamic alpha refresh: {'epoch': 16, 'refresh_count': 16, 'mean_alpha_train': 0.18470679223537445, 'soft_shift_train_mass': 45.632171630859375}
+[2026-06-10 14:49:56] [32mIntermediate result: 0.32228915662650603  (Index 16)[0m
+Epoch 00017 | Time(s) 0.0580 | Loss(train) 0.7367 | Acc(train) 0.9248 | Loss(val) 2.1384 | Acc(val) 0.3223 | 
+Dynamic alpha refresh: {'epoch': 17, 'refresh_count': 17, 'mean_alpha_train': 0.18411487340927124, 'soft_shift_train_mass': 45.73217010498047}
+[2026-06-10 14:49:56] [32mIntermediate result: 0.32228915662650603  (Index 17)[0m
+Epoch 00018 | Time(s) 0.0580 | Loss(train) 0.7316 | Acc(train) 0.9188 | Loss(val) 2.1180 | Acc(val) 0.3223 | 
+Dynamic alpha refresh: {'epoch': 18, 'refresh_count': 18, 'mean_alpha_train': 0.18460869789123535, 'soft_shift_train_mass': 45.68931579589844}
+[2026-06-10 14:49:56] [32mIntermediate result: 0.3192771084337349  (Index 18)[0m
+Epoch 00019 | Time(s) 0.0550 | Loss(train) 0.7236 | Acc(train) 0.9203 | Loss(val) 2.0962 | Acc(val) 0.3193 | 
+Dynamic alpha refresh: {'epoch': 19, 'refresh_count': 19, 'mean_alpha_train': 0.1857689917087555, 'soft_shift_train_mass': 45.93931579589844}
+[2026-06-10 14:49:56] [32mIntermediate result: 0.3132530120481928  (Index 19)[0m
+Epoch 00020 | Time(s) 0.0556 | Loss(train) 0.7206 | Acc(train) 0.9308 | Loss(val) 2.0812 | Acc(val) 0.3133 | 
+Dynamic alpha refresh: {'epoch': 20, 'refresh_count': 20, 'mean_alpha_train': 0.18629613518714905, 'soft_shift_train_mass': 46.23931884765625}
+[2026-06-10 14:49:56] [32mIntermediate result: 0.3132530120481928  (Index 20)[0m
+Epoch 00021 | Time(s) 0.0571 | Loss(train) 0.7179 | Acc(train) 0.9323 | Loss(val) 2.0713 | Acc(val) 0.3133 | 
+Dynamic alpha refresh: {'epoch': 21, 'refresh_count': 21, 'mean_alpha_train': 0.18588601052761078, 'soft_shift_train_mass': 45.839317321777344}
+[2026-06-10 14:49:56] [32mIntermediate result: 0.3102409638554217  (Index 21)[0m
+Epoch 00022 | Time(s) 0.0530 | Loss(train) 0.7120 | Acc(train) 0.9414 | Loss(val) 2.0782 | Acc(val) 0.3102 | 
+Dynamic alpha refresh: {'epoch': 22, 'refresh_count': 22, 'mean_alpha_train': 0.18591244518756866, 'soft_shift_train_mass': 45.839317321777344}
+[2026-06-10 14:49:56] [32mIntermediate result: 0.3102409638554217  (Index 22)[0m
+Epoch 00023 | Time(s) 0.0570 | Loss(train) 0.7043 | Acc(train) 0.9398 | Loss(val) 2.0941 | Acc(val) 0.3102 | 
+Dynamic alpha refresh: {'epoch': 23, 'refresh_count': 23, 'mean_alpha_train': 0.18563221395015717, 'soft_shift_train_mass': 45.63931655883789}
+[2026-06-10 14:49:56] [32mIntermediate result: 0.3132530120481928  (Index 23)[0m
+Epoch 00024 | Time(s) 0.0599 | Loss(train) 0.6918 | Acc(train) 0.9474 | Loss(val) 2.1213 | Acc(val) 0.3133 | 
+Dynamic alpha refresh: {'epoch': 24, 'refresh_count': 24, 'mean_alpha_train': 0.18616428971290588, 'soft_shift_train_mass': 45.63931655883789}
+[2026-06-10 14:49:56] [32mIntermediate result: 0.3192771084337349  (Index 24)[0m
+Epoch 00025 | Time(s) 0.0920 | Loss(train) 0.6870 | Acc(train) 0.9474 | Loss(val) 2.1419 | Acc(val) 0.3193 | 
+Dynamic alpha refresh: {'epoch': 25, 'refresh_count': 25, 'mean_alpha_train': 0.18754510581493378, 'soft_shift_train_mass': 45.43931579589844}
+[2026-06-10 14:49:57] [32mIntermediate result: 0.32831325301204817  (Index 25)[0m
+Epoch 00026 | Time(s) 0.0920 | Loss(train) 0.6844 | Acc(train) 0.9519 | Loss(val) 2.1610 | Acc(val) 0.3283 | 
+Dynamic alpha refresh: {'epoch': 26, 'refresh_count': 26, 'mean_alpha_train': 0.18795880675315857, 'soft_shift_train_mass': 45.43931579589844}
+[2026-06-10 14:49:57] [32mIntermediate result: 0.3373493975903614  (Index 26)[0m
+Epoch 00027 | Time(s) 0.0690 | Loss(train) 0.6814 | Acc(train) 0.9474 | Loss(val) 2.1684 | Acc(val) 0.3373 | 
+Dynamic alpha refresh: {'epoch': 27, 'refresh_count': 27, 'mean_alpha_train': 0.1879761666059494, 'soft_shift_train_mass': 45.43931579589844}
+[2026-06-10 14:49:57] [32mIntermediate result: 0.33433734939759036  (Index 27)[0m
+Epoch 00028 | Time(s) 0.0650 | Loss(train) 0.6854 | Acc(train) 0.9474 | Loss(val) 2.1766 | Acc(val) 0.3343 | 
+Dynamic alpha refresh: {'epoch': 28, 'refresh_count': 28, 'mean_alpha_train': 0.18672417104244232, 'soft_shift_train_mass': 44.78931427001953}
+[2026-06-10 14:49:57] [32mIntermediate result: 0.32831325301204817  (Index 28)[0m
+Epoch 00029 | Time(s) 0.0650 | Loss(train) 0.6816 | Acc(train) 0.9429 | Loss(val) 2.1893 | Acc(val) 0.3283 | 
+Dynamic alpha refresh: {'epoch': 29, 'refresh_count': 29, 'mean_alpha_train': 0.18615546822547913, 'soft_shift_train_mass': 44.74519729614258}
+[2026-06-10 14:49:57] [32mIntermediate result: 0.31626506024096385  (Index 29)[0m
+Epoch 00030 | Time(s) 0.0660 | Loss(train) 0.6768 | Acc(train) 0.9474 | Loss(val) 2.2057 | Acc(val) 0.3163 | 
+Dynamic alpha refresh: {'epoch': 30, 'refresh_count': 30, 'mean_alpha_train': 0.1867828220129013, 'soft_shift_train_mass': 44.94519805908203}
+[2026-06-10 14:49:57] [32mIntermediate result: 0.3132530120481928  (Index 30)[0m
+Epoch 00031 | Time(s) 0.0680 | Loss(train) 0.6732 | Acc(train) 0.9504 | Loss(val) 2.2156 | Acc(val) 0.3133 | 
+Dynamic alpha refresh: {'epoch': 31, 'refresh_count': 31, 'mean_alpha_train': 0.18790437281131744, 'soft_shift_train_mass': 44.94519805908203}
+[2026-06-10 14:49:57] [32mIntermediate result: 0.3192771084337349  (Index 31)[0m
+Epoch 00032 | Time(s) 0.0620 | Loss(train) 0.6677 | Acc(train) 0.9519 | Loss(val) 2.2028 | Acc(val) 0.3193 | 
+Dynamic alpha refresh: {'epoch': 32, 'refresh_count': 32, 'mean_alpha_train': 0.18714092671871185, 'soft_shift_train_mass': 45.006736755371094}
+[2026-06-10 14:49:57] [32mIntermediate result: 0.3192771084337349  (Index 32)[0m
+Epoch 00033 | Time(s) 0.0640 | Loss(train) 0.6657 | Acc(train) 0.9534 | Loss(val) 2.1727 | Acc(val) 0.3193 | 
+Dynamic alpha refresh: {'epoch': 33, 'refresh_count': 33, 'mean_alpha_train': 0.18795064091682434, 'soft_shift_train_mass': 45.006736755371094}
+[2026-06-10 14:49:57] [32mIntermediate result: 0.3192771084337349  (Index 33)[0m
+Epoch 00034 | Time(s) 0.0885 | Loss(train) 0.6682 | Acc(train) 0.9549 | Loss(val) 2.1379 | Acc(val) 0.3193 | 
+Dynamic alpha refresh: {'epoch': 34, 'refresh_count': 34, 'mean_alpha_train': 0.18742628395557404, 'soft_shift_train_mass': 44.421669006347656}
+[2026-06-10 14:49:57] [32mIntermediate result: 0.32228915662650603  (Index 34)[0m
+Epoch 00035 | Time(s) 0.0693 | Loss(train) 0.6658 | Acc(train) 0.9654 | Loss(val) 2.1263 | Acc(val) 0.3223 | 
+Dynamic alpha refresh: {'epoch': 35, 'refresh_count': 35, 'mean_alpha_train': 0.1870996654033661, 'soft_shift_train_mass': 44.421669006347656}
+[2026-06-10 14:49:57] [32mIntermediate result: 0.33433734939759036  (Index 35)[0m
+Epoch 00036 | Time(s) 0.0740 | Loss(train) 0.6643 | Acc(train) 0.9624 | Loss(val) 2.1344 | Acc(val) 0.3343 | 
+Dynamic alpha refresh: {'epoch': 36, 'refresh_count': 36, 'mean_alpha_train': 0.1871756911277771, 'soft_shift_train_mass': 44.52166748046875}
+[2026-06-10 14:49:57] [32mIntermediate result: 0.3253012048192771  (Index 36)[0m
+Epoch 00037 | Time(s) 0.0636 | Loss(train) 0.6572 | Acc(train) 0.9609 | Loss(val) 2.1559 | Acc(val) 0.3253 | 
+Dynamic alpha refresh: {'epoch': 37, 'refresh_count': 37, 'mean_alpha_train': 0.1865830272436142, 'soft_shift_train_mass': 44.52166748046875}
+[2026-06-10 14:49:57] [32mIntermediate result: 0.32228915662650603  (Index 37)[0m
+Epoch 00038 | Time(s) 0.0650 | Loss(train) 0.6685 | Acc(train) 0.9549 | Loss(val) 2.1668 | Acc(val) 0.3223 | 
+Dynamic alpha refresh: {'epoch': 38, 'refresh_count': 38, 'mean_alpha_train': 0.1871151179075241, 'soft_shift_train_mass': 44.52166748046875}
+[2026-06-10 14:49:57] [32mIntermediate result: 0.34036144578313254  (Index 38)[0m
+Epoch 00039 | Time(s) 0.0610 | Loss(train) 0.6629 | Acc(train) 0.9594 | Loss(val) 2.1456 | Acc(val) 0.3404 | 
+Dynamic alpha refresh: {'epoch': 39, 'refresh_count': 39, 'mean_alpha_train': 0.18690121173858643, 'soft_shift_train_mass': 44.3216667175293}
+[2026-06-10 14:49:57] [32mIntermediate result: 0.3463855421686747  (Index 39)[0m
+Epoch 00040 | Time(s) 0.0630 | Loss(train) 0.6603 | Acc(train) 0.9639 | Loss(val) 2.1329 | Acc(val) 0.3464 | 
+Dynamic alpha refresh: {'epoch': 40, 'refresh_count': 40, 'mean_alpha_train': 0.18557369709014893, 'soft_shift_train_mass': 44.52166748046875}
+[2026-06-10 14:49:58] [32mIntermediate result: 0.3463855421686747  (Index 40)[0m
+Epoch 00041 | Time(s) 0.0630 | Loss(train) 0.6537 | Acc(train) 0.9639 | Loss(val) 2.1463 | Acc(val) 0.3464 | 
+Dynamic alpha refresh: {'epoch': 41, 'refresh_count': 41, 'mean_alpha_train': 0.187245175242424, 'soft_shift_train_mass': 44.7216682434082}
+[2026-06-10 14:49:58] [32mIntermediate result: 0.33433734939759036  (Index 41)[0m
+Epoch 00042 | Time(s) 0.0600 | Loss(train) 0.6646 | Acc(train) 0.9579 | Loss(val) 2.1823 | Acc(val) 0.3343 | 
+Dynamic alpha refresh: {'epoch': 42, 'refresh_count': 42, 'mean_alpha_train': 0.1876133531332016, 'soft_shift_train_mass': 44.7216682434082}
+[2026-06-10 14:49:58] [32mIntermediate result: 0.3253012048192771  (Index 42)[0m
+Epoch 00043 | Time(s) 0.0610 | Loss(train) 0.6580 | Acc(train) 0.9579 | Loss(val) 2.2102 | Acc(val) 0.3253 | 
+Dynamic alpha refresh: {'epoch': 43, 'refresh_count': 43, 'mean_alpha_train': 0.18721850216388702, 'soft_shift_train_mass': 44.63320541381836}
+[2026-06-10 14:49:58] [32mIntermediate result: 0.33433734939759036  (Index 43)[0m
+Epoch 00044 | Time(s) 0.0606 | Loss(train) 0.6553 | Acc(train) 0.9654 | Loss(val) 2.2018 | Acc(val) 0.3343 | 
+Dynamic alpha refresh: {'epoch': 44, 'refresh_count': 44, 'mean_alpha_train': 0.18636713922023773, 'soft_shift_train_mass': 44.371665954589844}
+[2026-06-10 14:49:58] [32mIntermediate result: 0.3313253012048193  (Index 44)[0m
+Epoch 00045 | Time(s) 0.0630 | Loss(train) 0.6485 | Acc(train) 0.9669 | Loss(val) 2.1953 | Acc(val) 0.3313 | 
+Dynamic alpha refresh: {'epoch': 45, 'refresh_count': 45, 'mean_alpha_train': 0.18599119782447815, 'soft_shift_train_mass': 44.371665954589844}
+[2026-06-10 14:49:58] [32mIntermediate result: 0.32228915662650603  (Index 45)[0m
+Epoch 00046 | Time(s) 0.0626 | Loss(train) 0.6442 | Acc(train) 0.9654 | Loss(val) 2.1972 | Acc(val) 0.3223 | 
+Dynamic alpha refresh: {'epoch': 46, 'refresh_count': 46, 'mean_alpha_train': 0.1870160847902298, 'soft_shift_train_mass': 44.533203125}
+[2026-06-10 14:49:58] [32mIntermediate result: 0.3253012048192771  (Index 46)[0m
+Epoch 00047 | Time(s) 0.0590 | Loss(train) 0.6546 | Acc(train) 0.9609 | Loss(val) 2.2071 | Acc(val) 0.3253 | 
+Dynamic alpha refresh: {'epoch': 47, 'refresh_count': 47, 'mean_alpha_train': 0.18602435290813446, 'soft_shift_train_mass': 44.533203125}
+[2026-06-10 14:49:58] [32mIntermediate result: 0.31626506024096385  (Index 47)[0m
+Epoch 00048 | Time(s) 0.0530 | Loss(train) 0.6487 | Acc(train) 0.9654 | Loss(val) 2.2252 | Acc(val) 0.3163 | 
+Dynamic alpha refresh: {'epoch': 48, 'refresh_count': 48, 'mean_alpha_train': 0.1865880787372589, 'soft_shift_train_mass': 44.533203125}
+[2026-06-10 14:49:58] [32mIntermediate result: 0.32228915662650603  (Index 48)[0m
+Epoch 00049 | Time(s) 0.0590 | Loss(train) 0.6437 | Acc(train) 0.9609 | Loss(val) 2.2346 | Acc(val) 0.3223 | 
+Dynamic alpha refresh: {'epoch': 49, 'refresh_count': 49, 'mean_alpha_train': 0.1873897761106491, 'soft_shift_train_mass': 44.783203125}
+[2026-06-10 14:49:58] [32mIntermediate result: 0.3253012048192771  (Index 49)[0m
+Epoch 00050 | Time(s) 0.0557 | Loss(train) 0.6390 | Acc(train) 0.9669 | Loss(val) 2.2296 | Acc(val) 0.3253 | 
+Dynamic alpha refresh: {'epoch': 50, 'refresh_count': 50, 'mean_alpha_train': 0.18577544391155243, 'soft_shift_train_mass': 44.58320617675781}
+[2026-06-10 14:49:58] [32mIntermediate result: 0.32831325301204817  (Index 50)[0m
+Epoch 00051 | Time(s) 0.0572 | Loss(train) 0.6476 | Acc(train) 0.9579 | Loss(val) 2.2134 | Acc(val) 0.3283 | 
+Dynamic alpha refresh: {'epoch': 51, 'refresh_count': 51, 'mean_alpha_train': 0.18666797876358032, 'soft_shift_train_mass': 44.58320617675781}
+[2026-06-10 14:49:58] [32mIntermediate result: 0.31626506024096385  (Index 51)[0m
+Epoch 00052 | Time(s) 0.0566 | Loss(train) 0.6436 | Acc(train) 0.9594 | Loss(val) 2.2131 | Acc(val) 0.3163 | 
+Dynamic alpha refresh: {'epoch': 52, 'refresh_count': 52, 'mean_alpha_train': 0.18720008432865143, 'soft_shift_train_mass': 44.58320617675781}
+[2026-06-10 14:49:58] [32mIntermediate result: 0.3072289156626506  (Index 52)[0m
+Epoch 00053 | Time(s) 0.0540 | Loss(train) 0.6462 | Acc(train) 0.9639 | Loss(val) 2.2341 | Acc(val) 0.3072 | 
+Dynamic alpha refresh: {'epoch': 53, 'refresh_count': 53, 'mean_alpha_train': 0.18842768669128418, 'soft_shift_train_mass': 44.88320541381836}
+[2026-06-10 14:49:58] [32mIntermediate result: 0.3192771084337349  (Index 53)[0m
+Epoch 00054 | Time(s) 0.0591 | Loss(train) 0.6404 | Acc(train) 0.9654 | Loss(val) 2.2578 | Acc(val) 0.3193 | 
+Dynamic alpha refresh: {'epoch': 54, 'refresh_count': 54, 'mean_alpha_train': 0.18814073503017426, 'soft_shift_train_mass': 44.589088439941406}
+[2026-06-10 14:49:58] [32mIntermediate result: 0.3072289156626506  (Index 54)[0m
+Epoch 00055 | Time(s) 0.0550 | Loss(train) 0.6485 | Acc(train) 0.9684 | Loss(val) 2.2661 | Acc(val) 0.3072 | 
+Dynamic alpha refresh: {'epoch': 55, 'refresh_count': 55, 'mean_alpha_train': 0.18820741772651672, 'soft_shift_train_mass': 44.589088439941406}
+[2026-06-10 14:49:58] [32mIntermediate result: 0.3042168674698795  (Index 55)[0m
+Epoch 00056 | Time(s) 0.0570 | Loss(train) 0.6393 | Acc(train) 0.9699 | Loss(val) 2.2647 | Acc(val) 0.3042 | 
+Dynamic alpha refresh: {'epoch': 56, 'refresh_count': 56, 'mean_alpha_train': 0.18798185884952545, 'soft_shift_train_mass': 44.589088439941406}
+[2026-06-10 14:49:58] [32mIntermediate result: 0.3072289156626506  (Index 56)[0m
+Epoch 00057 | Time(s) 0.0580 | Loss(train) 0.6420 | Acc(train) 0.9609 | Loss(val) 2.2734 | Acc(val) 0.3072 | 
+Dynamic alpha refresh: {'epoch': 57, 'refresh_count': 57, 'mean_alpha_train': 0.18804819881916046, 'soft_shift_train_mass': 44.88320541381836}
+[2026-06-10 14:49:59] [32mIntermediate result: 0.31626506024096385  (Index 57)[0m
+Epoch 00058 | Time(s) 0.0600 | Loss(train) 0.6407 | Acc(train) 0.9669 | Loss(val) 2.2781 | Acc(val) 0.3163 | 
+Dynamic alpha refresh: {'epoch': 58, 'refresh_count': 58, 'mean_alpha_train': 0.18779371678829193, 'soft_shift_train_mass': 44.88320541381836}
+[2026-06-10 14:49:59] [32mIntermediate result: 0.3102409638554217  (Index 58)[0m
+Epoch 00059 | Time(s) 0.0540 | Loss(train) 0.6461 | Acc(train) 0.9654 | Loss(val) 2.2826 | Acc(val) 0.3102 | 
+Dynamic alpha refresh: {'epoch': 59, 'refresh_count': 59, 'mean_alpha_train': 0.18710628151893616, 'soft_shift_train_mass': 44.621665954589844}
+[2026-06-10 14:49:59] [32mIntermediate result: 0.29819277108433734  (Index 59)[0m
+Epoch 00060 | Time(s) 0.0585 | Loss(train) 0.6357 | Acc(train) 0.9759 | Loss(val) 2.2970 | Acc(val) 0.2982 | 
+Dynamic alpha refresh: {'epoch': 60, 'refresh_count': 60, 'mean_alpha_train': 0.18769630789756775, 'soft_shift_train_mass': 44.783203125}
+[2026-06-10 14:49:59] [32mIntermediate result: 0.30120481927710846  (Index 60)[0m
+Epoch 00061 | Time(s) 0.0530 | Loss(train) 0.6345 | Acc(train) 0.9699 | Loss(val) 2.3084 | Acc(val) 0.3012 | 
+Dynamic alpha refresh: {'epoch': 61, 'refresh_count': 61, 'mean_alpha_train': 0.18739555776119232, 'soft_shift_train_mass': 44.58320617675781}
+[2026-06-10 14:49:59] [32mIntermediate result: 0.3072289156626506  (Index 61)[0m
+Epoch 00062 | Time(s) 0.0540 | Loss(train) 0.6355 | Acc(train) 0.9639 | Loss(val) 2.2958 | Acc(val) 0.3072 | 
+Dynamic alpha refresh: {'epoch': 62, 'refresh_count': 62, 'mean_alpha_train': 0.1872451901435852, 'soft_shift_train_mass': 44.58320617675781}
+[2026-06-10 14:49:59] [32mIntermediate result: 0.3042168674698795  (Index 62)[0m
+Epoch 00063 | Time(s) 0.0590 | Loss(train) 0.6345 | Acc(train) 0.9669 | Loss(val) 2.2855 | Acc(val) 0.3042 | 
+Dynamic alpha refresh: {'epoch': 63, 'refresh_count': 63, 'mean_alpha_train': 0.18664368987083435, 'soft_shift_train_mass': 44.3216667175293}
+[2026-06-10 14:49:59] [32mIntermediate result: 0.30120481927710846  (Index 63)[0m
+Epoch 00064 | Time(s) 0.0566 | Loss(train) 0.6369 | Acc(train) 0.9669 | Loss(val) 2.3037 | Acc(val) 0.3012 | 
+Dynamic alpha refresh: {'epoch': 64, 'refresh_count': 64, 'mean_alpha_train': 0.18703697621822357, 'soft_shift_train_mass': 44.58320617675781}
+[2026-06-10 14:49:59] [32mIntermediate result: 0.29819277108433734  (Index 64)[0m
+Epoch 00065 | Time(s) 0.0590 | Loss(train) 0.6296 | Acc(train) 0.9714 | Loss(val) 2.3172 | Acc(val) 0.2982 | 
+Dynamic alpha refresh: {'epoch': 65, 'refresh_count': 65, 'mean_alpha_train': 0.18747958540916443, 'soft_shift_train_mass': 44.58320617675781}
+[2026-06-10 14:49:59] [32mIntermediate result: 0.2891566265060241  (Index 65)[0m
+Epoch 00066 | Time(s) 0.0572 | Loss(train) 0.6314 | Acc(train) 0.9699 | Loss(val) 2.3263 | Acc(val) 0.2892 | 
+Dynamic alpha refresh: {'epoch': 66, 'refresh_count': 66, 'mean_alpha_train': 0.18809762597084045, 'soft_shift_train_mass': 44.921669006347656}
+[2026-06-10 14:49:59] [32mIntermediate result: 0.2891566265060241  (Index 66)[0m
+Epoch 00067 | Time(s) 0.0566 | Loss(train) 0.6327 | Acc(train) 0.9639 | Loss(val) 2.3137 | Acc(val) 0.2892 | 
+Dynamic alpha refresh: {'epoch': 67, 'refresh_count': 67, 'mean_alpha_train': 0.18814389407634735, 'soft_shift_train_mass': 44.783203125}
+[2026-06-10 14:49:59] [32mIntermediate result: 0.30120481927710846  (Index 67)[0m
+Epoch 00068 | Time(s) 0.0544 | Loss(train) 0.6349 | Acc(train) 0.9669 | Loss(val) 2.3073 | Acc(val) 0.3012 | 
+Dynamic alpha refresh: {'epoch': 68, 'refresh_count': 68, 'mean_alpha_train': 0.1876927614212036, 'soft_shift_train_mass': 44.783203125}
+[2026-06-10 14:49:59] [32mIntermediate result: 0.3102409638554217  (Index 68)[0m
+Epoch 00069 | Time(s) 0.0548 | Loss(train) 0.6299 | Acc(train) 0.9699 | Loss(val) 2.3020 | Acc(val) 0.3102 | 
+Dynamic alpha refresh: {'epoch': 69, 'refresh_count': 69, 'mean_alpha_train': 0.1873835027217865, 'soft_shift_train_mass': 44.7216682434082}
+[2026-06-10 14:49:59] [32mIntermediate result: 0.31626506024096385  (Index 69)[0m
+Epoch 00070 | Time(s) 0.0584 | Loss(train) 0.6294 | Acc(train) 0.9669 | Loss(val) 2.3197 | Acc(val) 0.3163 | 
+Dynamic alpha refresh: {'epoch': 70, 'refresh_count': 70, 'mean_alpha_train': 0.18700756132602692, 'soft_shift_train_mass': 44.7216682434082}
+[2026-06-10 14:49:59] [32mIntermediate result: 0.3042168674698795  (Index 70)[0m
+Epoch 00071 | Time(s) 0.0555 | Loss(train) 0.6343 | Acc(train) 0.9609 | Loss(val) 2.3364 | Acc(val) 0.3042 | 
+Dynamic alpha refresh: {'epoch': 71, 'refresh_count': 71, 'mean_alpha_train': 0.18732565641403198, 'soft_shift_train_mass': 44.52166748046875}
+[2026-06-10 14:49:59] [32mIntermediate result: 0.3072289156626506  (Index 71)[0m
+Epoch 00072 | Time(s) 0.0580 | Loss(train) 0.6271 | Acc(train) 0.9714 | Loss(val) 2.3431 | Acc(val) 0.3072 | 
+Dynamic alpha refresh: {'epoch': 72, 'refresh_count': 72, 'mean_alpha_train': 0.1877189427614212, 'soft_shift_train_mass': 44.783203125}
+[2026-06-10 14:49:59] [32mIntermediate result: 0.3072289156626506  (Index 72)[0m
+Epoch 00073 | Time(s) 0.0537 | Loss(train) 0.6310 | Acc(train) 0.9669 | Loss(val) 2.3370 | Acc(val) 0.3072 | 
+Dynamic alpha refresh: {'epoch': 73, 'refresh_count': 73, 'mean_alpha_train': 0.18801747262477875, 'soft_shift_train_mass': 44.783203125}
+[2026-06-10 14:49:59] [32mIntermediate result: 0.3042168674698795  (Index 73)[0m
+Epoch 00074 | Time(s) 0.0594 | Loss(train) 0.6300 | Acc(train) 0.9639 | Loss(val) 2.3247 | Acc(val) 0.3042 | 
+Dynamic alpha refresh: {'epoch': 74, 'refresh_count': 74, 'mean_alpha_train': 0.1873696893453598, 'soft_shift_train_mass': 44.783203125}
+[2026-06-10 14:50:00] [32mIntermediate result: 0.3102409638554217  (Index 74)[0m
+Epoch 00075 | Time(s) 0.0590 | Loss(train) 0.6373 | Acc(train) 0.9669 | Loss(val) 2.3266 | Acc(val) 0.3102 | 
+Dynamic alpha refresh: {'epoch': 75, 'refresh_count': 75, 'mean_alpha_train': 0.187369704246521, 'soft_shift_train_mass': 44.52166748046875}
+[2026-06-10 14:50:00] [32mIntermediate result: 0.3102409638554217  (Index 75)[0m
+Epoch 00076 | Time(s) 0.0550 | Loss(train) 0.6353 | Acc(train) 0.9639 | Loss(val) 2.3359 | Acc(val) 0.3102 | 
+Dynamic alpha refresh: {'epoch': 76, 'refresh_count': 76, 'mean_alpha_train': 0.1869274228811264, 'soft_shift_train_mass': 44.48908996582031}
+[2026-06-10 14:50:00] [32mIntermediate result: 0.3042168674698795  (Index 76)[0m
+Epoch 00077 | Time(s) 0.0560 | Loss(train) 0.6296 | Acc(train) 0.9684 | Loss(val) 2.3441 | Acc(val) 0.3042 | 
+Dynamic alpha refresh: {'epoch': 77, 'refresh_count': 77, 'mean_alpha_train': 0.18684148788452148, 'soft_shift_train_mass': 44.43194580078125}
+[2026-06-10 14:50:00] [32mIntermediate result: 0.3042168674698795  (Index 77)[0m
+Epoch 00078 | Time(s) 0.0570 | Loss(train) 0.6365 | Acc(train) 0.9699 | Loss(val) 2.3282 | Acc(val) 0.3042 | 
+Dynamic alpha refresh: {'epoch': 78, 'refresh_count': 78, 'mean_alpha_train': 0.18599236011505127, 'soft_shift_train_mass': 44.58320617675781}
+[2026-06-10 14:50:00] [32mIntermediate result: 0.3102409638554217  (Index 78)[0m
+Epoch 00079 | Time(s) 0.0566 | Loss(train) 0.6274 | Acc(train) 0.9669 | Loss(val) 2.3137 | Acc(val) 0.3102 | 
+Dynamic alpha refresh: {'epoch': 79, 'refresh_count': 79, 'mean_alpha_train': 0.18630196154117584, 'soft_shift_train_mass': 44.533203125}
+[2026-06-10 14:50:00] [32mIntermediate result: 0.3132530120481928  (Index 79)[0m
+Epoch 00080 | Time(s) 0.0555 | Loss(train) 0.6232 | Acc(train) 0.9699 | Loss(val) 2.3114 | Acc(val) 0.3133 | 
+Dynamic alpha refresh: {'epoch': 80, 'refresh_count': 80, 'mean_alpha_train': 0.18585966527462006, 'soft_shift_train_mass': 44.533203125}
+[2026-06-10 14:50:00] [32mIntermediate result: 0.286144578313253  (Index 80)[0m
+Epoch 00081 | Time(s) 0.0566 | Loss(train) 0.6353 | Acc(train) 0.9624 | Loss(val) 2.3554 | Acc(val) 0.2861 | 
+Dynamic alpha refresh: {'epoch': 81, 'refresh_count': 81, 'mean_alpha_train': 0.18690913915634155, 'soft_shift_train_mass': 44.4390869140625}
+[2026-06-10 14:50:00] [32mIntermediate result: 0.27710843373493976  (Index 81)[0m
+Epoch 00082 | Time(s) 0.0530 | Loss(train) 0.6312 | Acc(train) 0.9654 | Loss(val) 2.3713 | Acc(val) 0.2771 | 
+Dynamic alpha refresh: {'epoch': 82, 'refresh_count': 82, 'mean_alpha_train': 0.18729358911514282, 'soft_shift_train_mass': 44.4775505065918}
+[2026-06-10 14:50:00] [32mIntermediate result: 0.30120481927710846  (Index 82)[0m
+Epoch 00083 | Time(s) 0.0880 | Loss(train) 0.6345 | Acc(train) 0.9669 | Loss(val) 2.3301 | Acc(val) 0.3012 | 
+Dynamic alpha refresh: {'epoch': 83, 'refresh_count': 83, 'mean_alpha_train': 0.18716999888420105, 'soft_shift_train_mass': 44.27166748046875}
+[2026-06-10 14:50:00] [32mIntermediate result: 0.30120481927710846  (Index 83)[0m
+Epoch 00084 | Time(s) 0.0870 | Loss(train) 0.6332 | Acc(train) 0.9684 | Loss(val) 2.3379 | Acc(val) 0.3012 | 
+Dynamic alpha refresh: {'epoch': 84, 'refresh_count': 84, 'mean_alpha_train': 0.1870948076248169, 'soft_shift_train_mass': 44.27166748046875}
+[2026-06-10 14:50:00] [32mIntermediate result: 0.3042168674698795  (Index 84)[0m
+Epoch 00085 | Time(s) 0.0822 | Loss(train) 0.6297 | Acc(train) 0.9684 | Loss(val) 2.3668 | Acc(val) 0.3042 | 
+Dynamic alpha refresh: {'epoch': 85, 'refresh_count': 85, 'mean_alpha_train': 0.18719890713691711, 'soft_shift_train_mass': 44.533203125}
+[2026-06-10 14:50:00] [32mIntermediate result: 0.29819277108433734  (Index 85)[0m
+Epoch 00086 | Time(s) 0.0680 | Loss(train) 0.6278 | Acc(train) 0.9639 | Loss(val) 2.3963 | Acc(val) 0.2982 | 
+Dynamic alpha refresh: {'epoch': 86, 'refresh_count': 86, 'mean_alpha_train': 0.18620173633098602, 'soft_shift_train_mass': 44.33320617675781}
+[2026-06-10 14:50:00] [32mIntermediate result: 0.31626506024096385  (Index 86)[0m
+Epoch 00087 | Time(s) 0.0620 | Loss(train) 0.6315 | Acc(train) 0.9684 | Loss(val) 2.3571 | Acc(val) 0.3163 | 
+Dynamic alpha refresh: {'epoch': 87, 'refresh_count': 87, 'mean_alpha_train': 0.1871965229511261, 'soft_shift_train_mass': 44.58320617675781}
+[2026-06-10 14:50:00] [32mIntermediate result: 0.3253012048192771  (Index 87)[0m
+Epoch 00088 | Time(s) 0.0666 | Loss(train) 0.6326 | Acc(train) 0.9624 | Loss(val) 2.3258 | Acc(val) 0.3253 | 
+Dynamic alpha refresh: {'epoch': 88, 'refresh_count': 88, 'mean_alpha_train': 0.18761757016181946, 'soft_shift_train_mass': 44.58320617675781}
+[2026-06-10 14:50:00] [32mIntermediate result: 0.3072289156626506  (Index 88)[0m
+Epoch 00089 | Time(s) 0.0666 | Loss(train) 0.6323 | Acc(train) 0.9684 | Loss(val) 2.3384 | Acc(val) 0.3072 | 
+Dynamic alpha refresh: {'epoch': 89, 'refresh_count': 89, 'mean_alpha_train': 0.18757791817188263, 'soft_shift_train_mass': 44.7260627746582}
+[2026-06-10 14:50:00] [32mIntermediate result: 0.29518072289156627  (Index 89)[0m
+Epoch 00090 | Time(s) 0.0670 | Loss(train) 0.6320 | Acc(train) 0.9699 | Loss(val) 2.3635 | Acc(val) 0.2952 | 
+Dynamic alpha refresh: {'epoch': 90, 'refresh_count': 90, 'mean_alpha_train': 0.18657009303569794, 'soft_shift_train_mass': 44.926063537597656}
+[2026-06-10 14:50:01] [32mIntermediate result: 0.3072289156626506  (Index 90)[0m
+Epoch 00091 | Time(s) 0.0700 | Loss(train) 0.6283 | Acc(train) 0.9669 | Loss(val) 2.3420 | Acc(val) 0.3072 | 
+Dynamic alpha refresh: {'epoch': 91, 'refresh_count': 91, 'mean_alpha_train': 0.1877020001411438, 'soft_shift_train_mass': 45.02606201171875}
+[2026-06-10 14:50:01] [32mIntermediate result: 0.32228915662650603  (Index 91)[0m
+Epoch 00092 | Time(s) 0.0820 | Loss(train) 0.6257 | Acc(train) 0.9714 | Loss(val) 2.3242 | Acc(val) 0.3223 | 
+Dynamic alpha refresh: {'epoch': 92, 'refresh_count': 92, 'mean_alpha_train': 0.18793995678424835, 'soft_shift_train_mass': 44.7645263671875}
+[2026-06-10 14:50:01] [32mIntermediate result: 0.3102409638554217  (Index 92)[0m
+Epoch 00093 | Time(s) 0.0745 | Loss(train) 0.6355 | Acc(train) 0.9684 | Loss(val) 2.3339 | Acc(val) 0.3102 | 
+Dynamic alpha refresh: {'epoch': 93, 'refresh_count': 93, 'mean_alpha_train': 0.18759527802467346, 'soft_shift_train_mass': 44.52166748046875}
+[2026-06-10 14:50:01] [32mIntermediate result: 0.2891566265060241  (Index 93)[0m
+Epoch 00094 | Time(s) 0.0690 | Loss(train) 0.6259 | Acc(train) 0.9714 | Loss(val) 2.3797 | Acc(val) 0.2892 | 
+Dynamic alpha refresh: {'epoch': 94, 'refresh_count': 94, 'mean_alpha_train': 0.1875462532043457, 'soft_shift_train_mass': 44.783203125}
+[2026-06-10 14:50:01] [32mIntermediate result: 0.29819277108433734  (Index 94)[0m
+Epoch 00095 | Time(s) 0.0716 | Loss(train) 0.6296 | Acc(train) 0.9669 | Loss(val) 2.3880 | Acc(val) 0.2982 | 
+Dynamic alpha refresh: {'epoch': 95, 'refresh_count': 95, 'mean_alpha_train': 0.18742482364177704, 'soft_shift_train_mass': 44.533203125}
+[2026-06-10 14:50:01] [32mIntermediate result: 0.3072289156626506  (Index 95)[0m
+Epoch 00096 | Time(s) 0.0650 | Loss(train) 0.6319 | Acc(train) 0.9609 | Loss(val) 2.3888 | Acc(val) 0.3072 | 
+Dynamic alpha refresh: {'epoch': 96, 'refresh_count': 96, 'mean_alpha_train': 0.1877012550830841, 'soft_shift_train_mass': 44.27166748046875}
+[2026-06-10 14:50:01] [32mIntermediate result: 0.3102409638554217  (Index 96)[0m
+Epoch 00097 | Time(s) 0.0662 | Loss(train) 0.6316 | Acc(train) 0.9669 | Loss(val) 2.3898 | Acc(val) 0.3102 | 
+Dynamic alpha refresh: {'epoch': 97, 'refresh_count': 97, 'mean_alpha_train': 0.18801937997341156, 'soft_shift_train_mass': 44.73320770263672}
+[2026-06-10 14:50:01] [32mIntermediate result: 0.30120481927710846  (Index 97)[0m
+Epoch 00098 | Time(s) 0.0660 | Loss(train) 0.6273 | Acc(train) 0.9594 | Loss(val) 2.4022 | Acc(val) 0.3012 | 
+Dynamic alpha refresh: {'epoch': 98, 'refresh_count': 98, 'mean_alpha_train': 0.18809457123279572, 'soft_shift_train_mass': 44.783203125}
+[2026-06-10 14:50:01] [32mIntermediate result: 0.29819277108433734  (Index 98)[0m
+Epoch 00099 | Time(s) 0.0617 | Loss(train) 0.6259 | Acc(train) 0.9699 | Loss(val) 2.4041 | Acc(val) 0.2982 | 
+Dynamic alpha refresh: {'epoch': 99, 'refresh_count': 99, 'mean_alpha_train': 0.18739201128482819, 'soft_shift_train_mass': 44.58320617675781}
+[2026-06-10 14:50:01] [32mIntermediate result: 0.30120481927710846  (Index 99)[0m
+Epoch 00100 | Time(s) 0.0675 | Loss(train) 0.6220 | Acc(train) 0.9729 | Loss(val) 2.3860 | Acc(val) 0.3012 | 
+Dynamic alpha refresh: {'epoch': 100, 'refresh_count': 100, 'mean_alpha_train': 0.18782378733158112, 'soft_shift_train_mass': 44.683204650878906}
+[2026-06-10 14:50:01] [32mIntermediate result: 0.3072289156626506  (Index 100)[0m
+Epoch 00101 | Time(s) 0.0600 | Loss(train) 0.6284 | Acc(train) 0.9624 | Loss(val) 2.3699 | Acc(val) 0.3072 | 
+Dynamic alpha refresh: {'epoch': 101, 'refresh_count': 101, 'mean_alpha_train': 0.18782378733158112, 'soft_shift_train_mass': 44.683204650878906}
+[2026-06-10 14:50:01] [32mIntermediate result: 0.29518072289156627  (Index 101)[0m
+Epoch 00102 | Time(s) 0.0608 | Loss(train) 0.6249 | Acc(train) 0.9699 | Loss(val) 2.3496 | Acc(val) 0.2952 | 
+Dynamic alpha refresh: {'epoch': 102, 'refresh_count': 102, 'mean_alpha_train': 0.1875469982624054, 'soft_shift_train_mass': 44.683204650878906}
+[2026-06-10 14:50:01] [32mIntermediate result: 0.29819277108433734  (Index 102)[0m
+Epoch 00103 | Time(s) 0.0629 | Loss(train) 0.6280 | Acc(train) 0.9669 | Loss(val) 2.3531 | Acc(val) 0.2982 | 
+Dynamic alpha refresh: {'epoch': 103, 'refresh_count': 103, 'mean_alpha_train': 0.1876135766506195, 'soft_shift_train_mass': 44.683204650878906}
+[2026-06-10 14:50:01] [32mIntermediate result: 0.29819277108433734  (Index 103)[0m
+Epoch 00104 | Time(s) 0.0620 | Loss(train) 0.6292 | Acc(train) 0.9669 | Loss(val) 2.3519 | Acc(val) 0.2982 | 
+Dynamic alpha refresh: {'epoch': 104, 'refresh_count': 104, 'mean_alpha_train': 0.18714509904384613, 'soft_shift_train_mass': 44.88320541381836}
+[2026-06-10 14:50:02] [32mIntermediate result: 0.29819277108433734  (Index 104)[0m
+Epoch 00105 | Time(s) 0.0636 | Loss(train) 0.6241 | Acc(train) 0.9699 | Loss(val) 2.3713 | Acc(val) 0.2982 | 
+Dynamic alpha refresh: {'epoch': 105, 'refresh_count': 105, 'mean_alpha_train': 0.1868417114019394, 'soft_shift_train_mass': 44.6890869140625}
+[2026-06-10 14:50:02] [32mIntermediate result: 0.3042168674698795  (Index 105)[0m
+Epoch 00106 | Time(s) 0.0606 | Loss(train) 0.6261 | Acc(train) 0.9579 | Loss(val) 2.3904 | Acc(val) 0.3042 | 
+Dynamic alpha refresh: {'epoch': 106, 'refresh_count': 106, 'mean_alpha_train': 0.18658146262168884, 'soft_shift_train_mass': 44.783203125}
+[2026-06-10 14:50:02] [32mIntermediate result: 0.29819277108433734  (Index 106)[0m
+Epoch 00107 | Time(s) 0.0570 | Loss(train) 0.6227 | Acc(train) 0.9624 | Loss(val) 2.3927 | Acc(val) 0.2982 | 
+Dynamic alpha refresh: {'epoch': 107, 'refresh_count': 107, 'mean_alpha_train': 0.18786710500717163, 'soft_shift_train_mass': 44.783203125}
+[2026-06-10 14:50:02] [32mIntermediate result: 0.29819277108433734  (Index 107)[0m
+Epoch 00108 | Time(s) 0.0540 | Loss(train) 0.6230 | Acc(train) 0.9744 | Loss(val) 2.3709 | Acc(val) 0.2982 | 
+Dynamic alpha refresh: {'epoch': 108, 'refresh_count': 108, 'mean_alpha_train': 0.18760600686073303, 'soft_shift_train_mass': 44.58320617675781}
+[2026-06-10 14:50:02] [32mIntermediate result: 0.2891566265060241  (Index 108)[0m
+Epoch 00109 | Time(s) 0.0535 | Loss(train) 0.6257 | Acc(train) 0.9729 | Loss(val) 2.3657 | Acc(val) 0.2892 | 
+Dynamic alpha refresh: {'epoch': 109, 'refresh_count': 109, 'mean_alpha_train': 0.18760600686073303, 'soft_shift_train_mass': 44.58320617675781}
+[2026-06-10 14:50:02] [32mIntermediate result: 0.3042168674698795  (Index 109)[0m
+Epoch 00110 | Time(s) 0.0530 | Loss(train) 0.6291 | Acc(train) 0.9669 | Loss(val) 2.3625 | Acc(val) 0.3042 | 
+Dynamic alpha refresh: {'epoch': 110, 'refresh_count': 110, 'mean_alpha_train': 0.18771854043006897, 'soft_shift_train_mass': 44.683204650878906}
+[2026-06-10 14:50:02] [32mIntermediate result: 0.3072289156626506  (Index 110)[0m
+Epoch 00111 | Time(s) 0.0553 | Loss(train) 0.6294 | Acc(train) 0.9684 | Loss(val) 2.3811 | Acc(val) 0.3072 | 
+Dynamic alpha refresh: {'epoch': 111, 'refresh_count': 111, 'mean_alpha_train': 0.18729358911514282, 'soft_shift_train_mass': 44.683204650878906}
+[2026-06-10 14:50:02] [32mIntermediate result: 0.29819277108433734  (Index 111)[0m
+Epoch 00112 | Time(s) 0.0517 | Loss(train) 0.6268 | Acc(train) 0.9684 | Loss(val) 2.3735 | Acc(val) 0.2982 | 
+Dynamic alpha refresh: {'epoch': 112, 'refresh_count': 112, 'mean_alpha_train': 0.18741776049137115, 'soft_shift_train_mass': 44.7216682434082}
+[2026-06-10 14:50:02] [32mIntermediate result: 0.3102409638554217  (Index 112)[0m
+Epoch 00113 | Time(s) 0.0560 | Loss(train) 0.6208 | Acc(train) 0.9684 | Loss(val) 2.3556 | Acc(val) 0.3102 | 
+Dynamic alpha refresh: {'epoch': 113, 'refresh_count': 113, 'mean_alpha_train': 0.18770967423915863, 'soft_shift_train_mass': 44.621665954589844}
+[2026-06-10 14:50:02] [32mIntermediate result: 0.3042168674698795  (Index 113)[0m
+Epoch 00114 | Time(s) 0.0520 | Loss(train) 0.6219 | Acc(train) 0.9714 | Loss(val) 2.3730 | Acc(val) 0.3042 | 
+Dynamic alpha refresh: {'epoch': 114, 'refresh_count': 114, 'mean_alpha_train': 0.1861581951379776, 'soft_shift_train_mass': 44.2275505065918}
+[2026-06-10 14:50:02] [32mIntermediate result: 0.29819277108433734  (Index 114)[0m
+Epoch 00115 | Time(s) 0.0570 | Loss(train) 0.6215 | Acc(train) 0.9744 | Loss(val) 2.3934 | Acc(val) 0.2982 | 
+Dynamic alpha refresh: {'epoch': 115, 'refresh_count': 115, 'mean_alpha_train': 0.1860853135585785, 'soft_shift_train_mass': 44.2275505065918}
+[2026-06-10 14:50:02] [32mIntermediate result: 0.2891566265060241  (Index 115)[0m
+Epoch 00116 | Time(s) 0.0556 | Loss(train) 0.6238 | Acc(train) 0.9714 | Loss(val) 2.3966 | Acc(val) 0.2892 | 
+Dynamic alpha refresh: {'epoch': 116, 'refresh_count': 116, 'mean_alpha_train': 0.18727558851242065, 'soft_shift_train_mass': 44.48908996582031}
+[2026-06-10 14:50:02] [32mIntermediate result: 0.2921686746987952  (Index 116)[0m
+Epoch 00117 | Time(s) 0.0547 | Loss(train) 0.6168 | Acc(train) 0.9744 | Loss(val) 2.3695 | Acc(val) 0.2922 | 
+Dynamic alpha refresh: {'epoch': 117, 'refresh_count': 117, 'mean_alpha_train': 0.18798856437206268, 'soft_shift_train_mass': 44.783203125}
+[2026-06-10 14:50:02] [32mIntermediate result: 0.29819277108433734  (Index 117)[0m
+Epoch 00118 | Time(s) 0.0578 | Loss(train) 0.6238 | Acc(train) 0.9654 | Loss(val) 2.3637 | Acc(val) 0.2982 | 
+Dynamic alpha refresh: {'epoch': 118, 'refresh_count': 118, 'mean_alpha_train': 0.18768781423568726, 'soft_shift_train_mass': 44.58320617675781}
+[2026-06-10 14:50:02] [32mIntermediate result: 0.2891566265060241  (Index 118)[0m
+Epoch 00119 | Time(s) 0.0570 | Loss(train) 0.6203 | Acc(train) 0.9684 | Loss(val) 2.3909 | Acc(val) 0.2892 | 
+Dynamic alpha refresh: {'epoch': 119, 'refresh_count': 119, 'mean_alpha_train': 0.1883818507194519, 'soft_shift_train_mass': 44.783203125}
+[2026-06-10 14:50:02] [32mIntermediate result: 0.2921686746987952  (Index 119)[0m
+Epoch 00120 | Time(s) 0.0526 | Loss(train) 0.6224 | Acc(train) 0.9729 | Loss(val) 2.3969 | Acc(val) 0.2922 | 
+Dynamic alpha refresh: {'epoch': 120, 'refresh_count': 120, 'mean_alpha_train': 0.18803977966308594, 'soft_shift_train_mass': 44.783203125}
+[2026-06-10 14:50:02] [32mIntermediate result: 0.29518072289156627  (Index 120)[0m
+Epoch 00121 | Time(s) 0.0521 | Loss(train) 0.6278 | Acc(train) 0.9699 | Loss(val) 2.3860 | Acc(val) 0.2952 | 
+Dynamic alpha refresh: {'epoch': 121, 'refresh_count': 121, 'mean_alpha_train': 0.18764649331569672, 'soft_shift_train_mass': 44.52166748046875}
+[2026-06-10 14:50:02] [32mIntermediate result: 0.3072289156626506  (Index 121)[0m
+Epoch 00122 | Time(s) 0.0591 | Loss(train) 0.6269 | Acc(train) 0.9669 | Loss(val) 2.3663 | Acc(val) 0.3072 | 
+Dynamic alpha refresh: {'epoch': 122, 'refresh_count': 122, 'mean_alpha_train': 0.18657651543617249, 'soft_shift_train_mass': 44.3216667175293}
+[2026-06-10 14:50:03] [32mIntermediate result: 0.29819277108433734  (Index 122)[0m
+Epoch 00123 | Time(s) 0.0560 | Loss(train) 0.6164 | Acc(train) 0.9774 | Loss(val) 2.3601 | Acc(val) 0.2982 | 
+Dynamic alpha refresh: {'epoch': 123, 'refresh_count': 123, 'mean_alpha_train': 0.18739555776119232, 'soft_shift_train_mass': 44.58320617675781}
+[2026-06-10 14:50:03] [32mIntermediate result: 0.3132530120481928  (Index 123)[0m
+Epoch 00124 | Time(s) 0.0556 | Loss(train) 0.6294 | Acc(train) 0.9699 | Loss(val) 2.3633 | Acc(val) 0.3133 | 
+Dynamic alpha refresh: {'epoch': 124, 'refresh_count': 124, 'mean_alpha_train': 0.18754594027996063, 'soft_shift_train_mass': 44.783203125}
+[2026-06-10 14:50:03] [32mIntermediate result: 0.32228915662650603  (Index 124)[0m
+Epoch 00125 | Time(s) 0.0555 | Loss(train) 0.6202 | Acc(train) 0.9759 | Loss(val) 2.3843 | Acc(val) 0.3223 | 
+Dynamic alpha refresh: {'epoch': 125, 'refresh_count': 125, 'mean_alpha_train': 0.18753932416439056, 'soft_shift_train_mass': 44.58320617675781}
+[2026-06-10 14:50:03] [32mIntermediate result: 0.3253012048192771  (Index 125)[0m
+Epoch 00126 | Time(s) 0.0540 | Loss(train) 0.6195 | Acc(train) 0.9639 | Loss(val) 2.3788 | Acc(val) 0.3253 | 
+Dynamic alpha refresh: {'epoch': 126, 'refresh_count': 126, 'mean_alpha_train': 0.18683677911758423, 'soft_shift_train_mass': 44.58320617675781}
+[2026-06-10 14:50:03] [32mIntermediate result: 0.3072289156626506  (Index 126)[0m
+Epoch 00127 | Time(s) 0.0550 | Loss(train) 0.6304 | Acc(train) 0.9654 | Loss(val) 2.3814 | Acc(val) 0.3072 | 
+Dynamic alpha refresh: {'epoch': 127, 'refresh_count': 127, 'mean_alpha_train': 0.1880546659231186, 'soft_shift_train_mass': 44.906734466552734}
+[2026-06-10 14:50:03] [32mIntermediate result: 0.29819277108433734  (Index 127)[0m
+Epoch 00128 | Time(s) 0.0560 | Loss(train) 0.6237 | Acc(train) 0.9684 | Loss(val) 2.3837 | Acc(val) 0.2982 | 
+Dynamic alpha refresh: {'epoch': 128, 'refresh_count': 128, 'mean_alpha_train': 0.18851089477539062, 'soft_shift_train_mass': 44.88320541381836}
+[2026-06-10 14:50:03] [32mIntermediate result: 0.29819277108433734  (Index 128)[0m
+Epoch 00129 | Time(s) 0.0540 | Loss(train) 0.6277 | Acc(train) 0.9654 | Loss(val) 2.3928 | Acc(val) 0.2982 | 
+Dynamic alpha refresh: {'epoch': 129, 'refresh_count': 129, 'mean_alpha_train': 0.18848207592964172, 'soft_shift_train_mass': 44.783203125}
+[2026-06-10 14:50:03] [32mIntermediate result: 0.3072289156626506  (Index 129)[0m
+Epoch 00130 | Time(s) 0.0551 | Loss(train) 0.6313 | Acc(train) 0.9699 | Loss(val) 2.4010 | Acc(val) 0.3072 | 
+Dynamic alpha refresh: {'epoch': 130, 'refresh_count': 130, 'mean_alpha_train': 0.18787866830825806, 'soft_shift_train_mass': 44.533203125}
+[2026-06-10 14:50:03] [32mIntermediate result: 0.29819277108433734  (Index 130)[0m
+Epoch 00131 | Time(s) 0.0560 | Loss(train) 0.6291 | Acc(train) 0.9654 | Loss(val) 2.4159 | Acc(val) 0.2982 | 
+Dynamic alpha refresh: {'epoch': 131, 'refresh_count': 131, 'mean_alpha_train': 0.18787594139575958, 'soft_shift_train_mass': 44.73320770263672}
+[2026-06-10 14:50:03] [32mIntermediate result: 0.29819277108433734  (Index 131)[0m
+Epoch 00132 | Time(s) 0.0620 | Loss(train) 0.6238 | Acc(train) 0.9669 | Loss(val) 2.4015 | Acc(val) 0.2982 | 
+Dynamic alpha refresh: {'epoch': 132, 'refresh_count': 132, 'mean_alpha_train': 0.18576951324939728, 'soft_shift_train_mass': 44.533203125}
+[2026-06-10 14:50:03] [32mIntermediate result: 0.30120481927710846  (Index 132)[0m
+Epoch 00133 | Time(s) 0.0559 | Loss(train) 0.6184 | Acc(train) 0.9714 | Loss(val) 2.3998 | Acc(val) 0.3012 | 
+Dynamic alpha refresh: {'epoch': 133, 'refresh_count': 133, 'mean_alpha_train': 0.1872752606868744, 'soft_shift_train_mass': 44.783203125}
+[2026-06-10 14:50:03] [32mIntermediate result: 0.3042168674698795  (Index 133)[0m
+Epoch 00134 | Time(s) 0.0551 | Loss(train) 0.6201 | Acc(train) 0.9684 | Loss(val) 2.4017 | Acc(val) 0.3042 | 
+Dynamic alpha refresh: {'epoch': 134, 'refresh_count': 134, 'mean_alpha_train': 0.1872752606868744, 'soft_shift_train_mass': 44.783203125}
+[2026-06-10 14:50:03] [32mIntermediate result: 0.3042168674698795  (Index 134)[0m
+Epoch 00135 | Time(s) 0.0563 | Loss(train) 0.6184 | Acc(train) 0.9669 | Loss(val) 2.4141 | Acc(val) 0.3042 | 
+Dynamic alpha refresh: {'epoch': 135, 'refresh_count': 135, 'mean_alpha_train': 0.1871892511844635, 'soft_shift_train_mass': 44.783203125}
+[2026-06-10 14:50:03] [32mIntermediate result: 0.29518072289156627  (Index 135)[0m
+Epoch 00136 | Time(s) 0.0550 | Loss(train) 0.6248 | Acc(train) 0.9699 | Loss(val) 2.4322 | Acc(val) 0.2952 | 
+Dynamic alpha refresh: {'epoch': 136, 'refresh_count': 136, 'mean_alpha_train': 0.18674695491790771, 'soft_shift_train_mass': 44.48908996582031}
+[2026-06-10 14:50:03] [32mIntermediate result: 0.2891566265060241  (Index 136)[0m
+Epoch 00137 | Time(s) 0.0555 | Loss(train) 0.6279 | Acc(train) 0.9684 | Loss(val) 2.4074 | Acc(val) 0.2892 | 
+Dynamic alpha refresh: {'epoch': 137, 'refresh_count': 137, 'mean_alpha_train': 0.18608903884887695, 'soft_shift_train_mass': 44.58320617675781}
+[2026-06-10 14:50:03] [32mIntermediate result: 0.30120481927710846  (Index 137)[0m
+Epoch 00138 | Time(s) 0.0580 | Loss(train) 0.6264 | Acc(train) 0.9639 | Loss(val) 2.3742 | Acc(val) 0.3012 | 
+Dynamic alpha refresh: {'epoch': 138, 'refresh_count': 138, 'mean_alpha_train': 0.1872127205133438, 'soft_shift_train_mass': 44.58320617675781}
+[2026-06-10 14:50:03] [32mIntermediate result: 0.3102409638554217  (Index 138)[0m
+Epoch 00139 | Time(s) 0.0520 | Loss(train) 0.6220 | Acc(train) 0.9684 | Loss(val) 2.3625 | Acc(val) 0.3102 | 
+Dynamic alpha refresh: {'epoch': 139, 'refresh_count': 139, 'mean_alpha_train': 0.18639448285102844, 'soft_shift_train_mass': 44.289085388183594}
+[2026-06-10 14:50:03] [32mIntermediate result: 0.30120481927710846  (Index 139)[0m
+Epoch 00140 | Time(s) 0.0580 | Loss(train) 0.6214 | Acc(train) 0.9729 | Loss(val) 2.3628 | Acc(val) 0.3012 | 
+Dynamic alpha refresh: {'epoch': 140, 'refresh_count': 140, 'mean_alpha_train': 0.18678776919841766, 'soft_shift_train_mass': 44.289085388183594}
+[2026-06-10 14:50:04] [32mIntermediate result: 0.2921686746987952  (Index 140)[0m
+Epoch 00141 | Time(s) 0.0740 | Loss(train) 0.6192 | Acc(train) 0.9699 | Loss(val) 2.3944 | Acc(val) 0.2922 | 
+Dynamic alpha refresh: {'epoch': 141, 'refresh_count': 141, 'mean_alpha_train': 0.18681669235229492, 'soft_shift_train_mass': 44.289085388183594}
+[2026-06-10 14:50:04] [32mIntermediate result: 0.2921686746987952  (Index 141)[0m
+Epoch 00142 | Time(s) 0.0850 | Loss(train) 0.6241 | Acc(train) 0.9699 | Loss(val) 2.3832 | Acc(val) 0.2922 | 
+Dynamic alpha refresh: {'epoch': 142, 'refresh_count': 142, 'mean_alpha_train': 0.1873515248298645, 'soft_shift_train_mass': 44.289085388183594}
+[2026-06-10 14:50:04] [32mIntermediate result: 0.3253012048192771  (Index 142)[0m
+Epoch 00143 | Time(s) 0.0790 | Loss(train) 0.6198 | Acc(train) 0.9744 | Loss(val) 2.3777 | Acc(val) 0.3253 | 
+Dynamic alpha refresh: {'epoch': 143, 'refresh_count': 143, 'mean_alpha_train': 0.18797309696674347, 'soft_shift_train_mass': 44.52166748046875}
+[2026-06-10 14:50:04] [32mIntermediate result: 0.29819277108433734  (Index 143)[0m
+Epoch 00144 | Time(s) 0.0700 | Loss(train) 0.6299 | Acc(train) 0.9594 | Loss(val) 2.3835 | Acc(val) 0.2982 | 
+Dynamic alpha refresh: {'epoch': 144, 'refresh_count': 144, 'mean_alpha_train': 0.1883663833141327, 'soft_shift_train_mass': 44.783203125}
+[2026-06-10 14:50:04] [32mIntermediate result: 0.29518072289156627  (Index 144)[0m
+Epoch 00145 | Time(s) 0.0691 | Loss(train) 0.6250 | Acc(train) 0.9759 | Loss(val) 2.3961 | Acc(val) 0.2952 | 
+Dynamic alpha refresh: {'epoch': 145, 'refresh_count': 145, 'mean_alpha_train': 0.1883663833141327, 'soft_shift_train_mass': 44.783203125}
+[2026-06-10 14:50:04] [32mIntermediate result: 0.30120481927710846  (Index 145)[0m
+Epoch 00146 | Time(s) 0.0616 | Loss(train) 0.6197 | Acc(train) 0.9699 | Loss(val) 2.3980 | Acc(val) 0.3012 | 
+Dynamic alpha refresh: {'epoch': 146, 'refresh_count': 146, 'mean_alpha_train': 0.18829426169395447, 'soft_shift_train_mass': 44.783203125}
+[2026-06-10 14:50:04] [32mIntermediate result: 0.3042168674698795  (Index 146)[0m
+Epoch 00147 | Time(s) 0.0640 | Loss(train) 0.6232 | Acc(train) 0.9699 | Loss(val) 2.4093 | Acc(val) 0.3042 | 
+Dynamic alpha refresh: {'epoch': 147, 'refresh_count': 147, 'mean_alpha_train': 0.1880001276731491, 'soft_shift_train_mass': 44.88320541381836}
+[2026-06-10 14:50:04] [32mIntermediate result: 0.3042168674698795  (Index 147)[0m
+Epoch 00148 | Time(s) 0.0670 | Loss(train) 0.6226 | Acc(train) 0.9714 | Loss(val) 2.3895 | Acc(val) 0.3042 | 
+Dynamic alpha refresh: {'epoch': 148, 'refresh_count': 148, 'mean_alpha_train': 0.18859541416168213, 'soft_shift_train_mass': 44.98320770263672}
+[2026-06-10 14:50:04] [32mIntermediate result: 0.29819277108433734  (Index 148)[0m
+Epoch 00149 | Time(s) 0.0720 | Loss(train) 0.6210 | Acc(train) 0.9669 | Loss(val) 2.3845 | Acc(val) 0.2982 | 
+Dynamic alpha refresh: {'epoch': 149, 'refresh_count': 149, 'mean_alpha_train': 0.1886620968580246, 'soft_shift_train_mass': 44.98320770263672}
+[2026-06-10 14:50:04] [32mIntermediate result: 0.31626506024096385  (Index 149)[0m
+Epoch 00150 | Time(s) 0.0865 | Loss(train) 0.6222 | Acc(train) 0.9714 | Loss(val) 2.3821 | Acc(val) 0.3163 | 
+Dynamic alpha refresh: {'epoch': 150, 'refresh_count': 150, 'mean_alpha_train': 0.1885117143392563, 'soft_shift_train_mass': 44.88320541381836}
+[2026-06-10 14:50:04] [32mIntermediate result: 0.31626506024096385  (Index 150)[0m
+Epoch 00151 | Time(s) 0.0740 | Loss(train) 0.6270 | Acc(train) 0.9654 | Loss(val) 2.3927 | Acc(val) 0.3163 | 
+Dynamic alpha refresh: {'epoch': 151, 'refresh_count': 151, 'mean_alpha_train': 0.18747380375862122, 'soft_shift_train_mass': 44.52166748046875}
+[2026-06-10 14:50:04] [32mIntermediate result: 0.286144578313253  (Index 151)[0m
+Epoch 00152 | Time(s) 0.0686 | Loss(train) 0.6246 | Acc(train) 0.9729 | Loss(val) 2.4272 | Acc(val) 0.2861 | 
+Dynamic alpha refresh: {'epoch': 152, 'refresh_count': 152, 'mean_alpha_train': 0.18746718764305115, 'soft_shift_train_mass': 44.58320617675781}
+[2026-06-10 14:50:04] [32mIntermediate result: 0.2891566265060241  (Index 152)[0m
+Epoch 00153 | Time(s) 0.0650 | Loss(train) 0.6158 | Acc(train) 0.9759 | Loss(val) 2.4313 | Acc(val) 0.2892 | 
+Dynamic alpha refresh: {'epoch': 153, 'refresh_count': 153, 'mean_alpha_train': 0.18786048889160156, 'soft_shift_train_mass': 44.58320617675781}
+[2026-06-10 14:50:04] [32mIntermediate result: 0.3072289156626506  (Index 153)[0m
+Epoch 00154 | Time(s) 0.0677 | Loss(train) 0.6232 | Acc(train) 0.9744 | Loss(val) 2.4021 | Acc(val) 0.3072 | 
+Dynamic alpha refresh: {'epoch': 154, 'refresh_count': 154, 'mean_alpha_train': 0.18736308813095093, 'soft_shift_train_mass': 44.58320617675781}
+[2026-06-10 14:50:05] [32mIntermediate result: 0.3102409638554217  (Index 154)[0m
+Epoch 00155 | Time(s) 0.0646 | Loss(train) 0.6242 | Acc(train) 0.9624 | Loss(val) 2.3982 | Acc(val) 0.3102 | 
+Dynamic alpha refresh: {'epoch': 155, 'refresh_count': 155, 'mean_alpha_train': 0.18766383826732635, 'soft_shift_train_mass': 44.783203125}
+[2026-06-10 14:50:05] [32mIntermediate result: 0.286144578313253  (Index 155)[0m
+Epoch 00156 | Time(s) 0.0640 | Loss(train) 0.6175 | Acc(train) 0.9759 | Loss(val) 2.4258 | Acc(val) 0.2861 | 
+Dynamic alpha refresh: {'epoch': 156, 'refresh_count': 156, 'mean_alpha_train': 0.1879904419183731, 'soft_shift_train_mass': 44.783203125}
+[2026-06-10 14:50:05] [32mIntermediate result: 0.28012048192771083  (Index 156)[0m
+Epoch 00157 | Time(s) 0.0670 | Loss(train) 0.6174 | Acc(train) 0.9699 | Loss(val) 2.4369 | Acc(val) 0.2801 | 
+Dynamic alpha refresh: {'epoch': 157, 'refresh_count': 157, 'mean_alpha_train': 0.18814082443714142, 'soft_shift_train_mass': 44.88320541381836}
+[2026-06-10 14:50:05] [32mIntermediate result: 0.29518072289156627  (Index 157)[0m
+Epoch 00158 | Time(s) 0.0597 | Loss(train) 0.6237 | Acc(train) 0.9669 | Loss(val) 2.4204 | Acc(val) 0.2952 | 
+Dynamic alpha refresh: {'epoch': 158, 'refresh_count': 158, 'mean_alpha_train': 0.18796037137508392, 'soft_shift_train_mass': 44.88320541381836}
+[2026-06-10 14:50:05] [32mIntermediate result: 0.32228915662650603  (Index 158)[0m
+Epoch 00159 | Time(s) 0.0630 | Loss(train) 0.6231 | Acc(train) 0.9684 | Loss(val) 2.4078 | Acc(val) 0.3223 | 
+Dynamic alpha refresh: {'epoch': 159, 'refresh_count': 159, 'mean_alpha_train': 0.1875670850276947, 'soft_shift_train_mass': 44.88320541381836}
+[2026-06-10 14:50:05] [32mIntermediate result: 0.3042168674698795  (Index 159)[0m
+Epoch 00160 | Time(s) 0.0629 | Loss(train) 0.6186 | Acc(train) 0.9714 | Loss(val) 2.4188 | Acc(val) 0.3042 | 
+Dynamic alpha refresh: {'epoch': 160, 'refresh_count': 160, 'mean_alpha_train': 0.1873696893453598, 'soft_shift_train_mass': 44.783203125}
+[2026-06-10 14:50:05] [32mIntermediate result: 0.3072289156626506  (Index 160)[0m
+Epoch 00161 | Time(s) 0.0600 | Loss(train) 0.6226 | Acc(train) 0.9699 | Loss(val) 2.4132 | Acc(val) 0.3072 | 
+Dynamic alpha refresh: {'epoch': 161, 'refresh_count': 161, 'mean_alpha_train': 0.1870935559272766, 'soft_shift_train_mass': 44.88320541381836}
+[2026-06-10 14:50:05] [32mIntermediate result: 0.32228915662650603  (Index 161)[0m
+Epoch 00162 | Time(s) 0.0600 | Loss(train) 0.6167 | Acc(train) 0.9639 | Loss(val) 2.3968 | Acc(val) 0.3223 | 
+Dynamic alpha refresh: {'epoch': 162, 'refresh_count': 162, 'mean_alpha_train': 0.1881696581840515, 'soft_shift_train_mass': 44.88320541381836}
+[2026-06-10 14:50:05] [32mIntermediate result: 0.3192771084337349  (Index 162)[0m
+Epoch 00163 | Time(s) 0.0600 | Loss(train) 0.6187 | Acc(train) 0.9729 | Loss(val) 2.3928 | Acc(val) 0.3193 | 
+Dynamic alpha refresh: {'epoch': 163, 'refresh_count': 163, 'mean_alpha_train': 0.18757666647434235, 'soft_shift_train_mass': 44.621665954589844}
+[2026-06-10 14:50:05] [32mIntermediate result: 0.3132530120481928  (Index 163)[0m
+Epoch 00164 | Time(s) 0.0611 | Loss(train) 0.6256 | Acc(train) 0.9624 | Loss(val) 2.3985 | Acc(val) 0.3133 | 
+Dynamic alpha refresh: {'epoch': 164, 'refresh_count': 164, 'mean_alpha_train': 0.18712016940116882, 'soft_shift_train_mass': 44.52166748046875}
+[2026-06-10 14:50:05] [32mIntermediate result: 0.31626506024096385  (Index 164)[0m
+Epoch 00165 | Time(s) 0.0600 | Loss(train) 0.6229 | Acc(train) 0.9699 | Loss(val) 2.4147 | Acc(val) 0.3163 | 
+Dynamic alpha refresh: {'epoch': 165, 'refresh_count': 165, 'mean_alpha_train': 0.18667790293693542, 'soft_shift_train_mass': 44.48908996582031}
+[2026-06-10 14:50:05] [32mIntermediate result: 0.3072289156626506  (Index 165)[0m
+Epoch 00166 | Time(s) 0.0550 | Loss(train) 0.6209 | Acc(train) 0.9669 | Loss(val) 2.3984 | Acc(val) 0.3072 | 
+Dynamic alpha refresh: {'epoch': 166, 'refresh_count': 166, 'mean_alpha_train': 0.18712018430233002, 'soft_shift_train_mass': 44.783203125}
+[2026-06-10 14:50:05] [32mIntermediate result: 0.3192771084337349  (Index 166)[0m
+Epoch 00167 | Time(s) 0.0540 | Loss(train) 0.6236 | Acc(train) 0.9669 | Loss(val) 2.3922 | Acc(val) 0.3193 | 
+Dynamic alpha refresh: {'epoch': 167, 'refresh_count': 167, 'mean_alpha_train': 0.18744677305221558, 'soft_shift_train_mass': 44.783203125}
+[2026-06-10 14:50:05] [32mIntermediate result: 0.3253012048192771  (Index 167)[0m
+Epoch 00168 | Time(s) 0.0550 | Loss(train) 0.6189 | Acc(train) 0.9744 | Loss(val) 2.4050 | Acc(val) 0.3253 | 
+Dynamic alpha refresh: {'epoch': 168, 'refresh_count': 168, 'mean_alpha_train': 0.1879904568195343, 'soft_shift_train_mass': 44.88320541381836}
+[2026-06-10 14:50:05] [32mIntermediate result: 0.3072289156626506  (Index 168)[0m
+Epoch 00169 | Time(s) 0.0555 | Loss(train) 0.6259 | Acc(train) 0.9699 | Loss(val) 2.4190 | Acc(val) 0.3072 | 
+Dynamic alpha refresh: {'epoch': 169, 'refresh_count': 169, 'mean_alpha_train': 0.1863217055797577, 'soft_shift_train_mass': 44.48908996582031}
+[2026-06-10 14:50:05] [32mIntermediate result: 0.29819277108433734  (Index 169)[0m
+Epoch 00170 | Time(s) 0.0530 | Loss(train) 0.6206 | Acc(train) 0.9729 | Loss(val) 2.4364 | Acc(val) 0.2982 | 
+Dynamic alpha refresh: {'epoch': 170, 'refresh_count': 170, 'mean_alpha_train': 0.1880405992269516, 'soft_shift_train_mass': 44.48908996582031}
+[2026-06-10 14:50:05] [32mIntermediate result: 0.29819277108433734  (Index 170)[0m
+Epoch 00171 | Time(s) 0.0540 | Loss(train) 0.6324 | Acc(train) 0.9639 | Loss(val) 2.4166 | Acc(val) 0.2982 | 
+Dynamic alpha refresh: {'epoch': 171, 'refresh_count': 171, 'mean_alpha_train': 0.18649116158485413, 'soft_shift_train_mass': 44.783203125}
+[2026-06-10 14:50:06] [32mIntermediate result: 0.3132530120481928  (Index 171)[0m
+Epoch 00172 | Time(s) 0.0530 | Loss(train) 0.6277 | Acc(train) 0.9654 | Loss(val) 2.4055 | Acc(val) 0.3133 | 
+Dynamic alpha refresh: {'epoch': 172, 'refresh_count': 172, 'mean_alpha_train': 0.18624798953533173, 'soft_shift_train_mass': 44.52166748046875}
+[2026-06-10 14:50:06] [32mIntermediate result: 0.3102409638554217  (Index 172)[0m
+Epoch 00173 | Time(s) 0.0520 | Loss(train) 0.6247 | Acc(train) 0.9684 | Loss(val) 2.4061 | Acc(val) 0.3102 | 
+Dynamic alpha refresh: {'epoch': 173, 'refresh_count': 173, 'mean_alpha_train': 0.18669913709163666, 'soft_shift_train_mass': 44.783203125}
+[2026-06-10 14:50:06] [32mIntermediate result: 0.3102409638554217  (Index 173)[0m
+Epoch 00174 | Time(s) 0.0565 | Loss(train) 0.6156 | Acc(train) 0.9654 | Loss(val) 2.4108 | Acc(val) 0.3102 | 
+Dynamic alpha refresh: {'epoch': 174, 'refresh_count': 174, 'mean_alpha_train': 0.18589600920677185, 'soft_shift_train_mass': 44.58320617675781}
+[2026-06-10 14:50:06] [32mIntermediate result: 0.30120481927710846  (Index 174)[0m
+Epoch 00175 | Time(s) 0.0528 | Loss(train) 0.6167 | Acc(train) 0.9669 | Loss(val) 2.4222 | Acc(val) 0.3012 | 
+Dynamic alpha refresh: {'epoch': 175, 'refresh_count': 175, 'mean_alpha_train': 0.18553511798381805, 'soft_shift_train_mass': 44.58320617675781}
+[2026-06-10 14:50:06] [32mIntermediate result: 0.29819277108433734  (Index 175)[0m
+Epoch 00176 | Time(s) 0.0510 | Loss(train) 0.6244 | Acc(train) 0.9654 | Loss(val) 2.4138 | Acc(val) 0.2982 | 
+Dynamic alpha refresh: {'epoch': 176, 'refresh_count': 176, 'mean_alpha_train': 0.18566153943538666, 'soft_shift_train_mass': 44.58320617675781}
+[2026-06-10 14:50:06] [32mIntermediate result: 0.3102409638554217  (Index 176)[0m
+Epoch 00177 | Time(s) 0.0550 | Loss(train) 0.6206 | Acc(train) 0.9699 | Loss(val) 2.4203 | Acc(val) 0.3102 | 
+Dynamic alpha refresh: {'epoch': 177, 'refresh_count': 177, 'mean_alpha_train': 0.18731683492660522, 'soft_shift_train_mass': 44.58320617675781}
+[2026-06-10 14:50:06] [32mIntermediate result: 0.2891566265060241  (Index 177)[0m
+Epoch 00178 | Time(s) 0.0555 | Loss(train) 0.6226 | Acc(train) 0.9699 | Loss(val) 2.4434 | Acc(val) 0.2892 | 
+Dynamic alpha refresh: {'epoch': 178, 'refresh_count': 178, 'mean_alpha_train': 0.18819370865821838, 'soft_shift_train_mass': 44.683204650878906}
+[2026-06-10 14:50:06] [32mIntermediate result: 0.29819277108433734  (Index 178)[0m
+Epoch 00179 | Time(s) 0.0530 | Loss(train) 0.6238 | Acc(train) 0.9684 | Loss(val) 2.4310 | Acc(val) 0.2982 | 
+Dynamic alpha refresh: {'epoch': 179, 'refresh_count': 179, 'mean_alpha_train': 0.18831516802310944, 'soft_shift_train_mass': 44.683204650878906}
+[2026-06-10 14:50:06] [32mIntermediate result: 0.3102409638554217  (Index 179)[0m
+Epoch 00180 | Time(s) 0.0520 | Loss(train) 0.6264 | Acc(train) 0.9669 | Loss(val) 2.3968 | Acc(val) 0.3102 | 
+Dynamic alpha refresh: {'epoch': 180, 'refresh_count': 180, 'mean_alpha_train': 0.1883663833141327, 'soft_shift_train_mass': 44.783203125}
+[2026-06-10 14:50:06] [32mIntermediate result: 0.3102409638554217  (Index 180)[0m
+Epoch 00181 | Time(s) 0.0540 | Loss(train) 0.6246 | Acc(train) 0.9714 | Loss(val) 2.3981 | Acc(val) 0.3102 | 
+Dynamic alpha refresh: {'epoch': 181, 'refresh_count': 181, 'mean_alpha_train': 0.1872531920671463, 'soft_shift_train_mass': 44.52166748046875}
+[2026-06-10 14:50:06] [32mIntermediate result: 0.31626506024096385  (Index 181)[0m
+Epoch 00182 | Time(s) 0.0540 | Loss(train) 0.6245 | Acc(train) 0.9684 | Loss(val) 2.4190 | Acc(val) 0.3163 | 
+Dynamic alpha refresh: {'epoch': 182, 'refresh_count': 182, 'mean_alpha_train': 0.1872531920671463, 'soft_shift_train_mass': 44.52166748046875}
+[2026-06-10 14:50:06] [32mIntermediate result: 0.3102409638554217  (Index 182)[0m
+Epoch 00183 | Time(s) 0.0576 | Loss(train) 0.6202 | Acc(train) 0.9699 | Loss(val) 2.4200 | Acc(val) 0.3102 | 
+Dynamic alpha refresh: {'epoch': 183, 'refresh_count': 183, 'mean_alpha_train': 0.18721932172775269, 'soft_shift_train_mass': 44.783203125}
+[2026-06-10 14:50:06] [32mIntermediate result: 0.31626506024096385  (Index 183)[0m
+Epoch 00184 | Time(s) 0.0551 | Loss(train) 0.6224 | Acc(train) 0.9744 | Loss(val) 2.3975 | Acc(val) 0.3163 | 
+Dynamic alpha refresh: {'epoch': 184, 'refresh_count': 184, 'mean_alpha_train': 0.18754594027996063, 'soft_shift_train_mass': 44.783203125}
+[2026-06-10 14:50:06] [32mIntermediate result: 0.3072289156626506  (Index 184)[0m
+Epoch 00185 | Time(s) 0.0545 | Loss(train) 0.6258 | Acc(train) 0.9714 | Loss(val) 2.3881 | Acc(val) 0.3072 | 
+Dynamic alpha refresh: {'epoch': 185, 'refresh_count': 185, 'mean_alpha_train': 0.18828624486923218, 'soft_shift_train_mass': 44.58320617675781}
+[2026-06-10 14:50:06] [32mIntermediate result: 0.29518072289156627  (Index 185)[0m
+Epoch 00186 | Time(s) 0.0560 | Loss(train) 0.6276 | Acc(train) 0.9699 | Loss(val) 2.4051 | Acc(val) 0.2952 | 
+Dynamic alpha refresh: {'epoch': 186, 'refresh_count': 186, 'mean_alpha_train': 0.1878802329301834, 'soft_shift_train_mass': 44.58320617675781}
+[2026-06-10 14:50:06] [32mIntermediate result: 0.3102409638554217  (Index 186)[0m
+Epoch 00187 | Time(s) 0.0551 | Loss(train) 0.6270 | Acc(train) 0.9699 | Loss(val) 2.4241 | Acc(val) 0.3102 | 
+Dynamic alpha refresh: {'epoch': 187, 'refresh_count': 187, 'mean_alpha_train': 0.18768779933452606, 'soft_shift_train_mass': 44.58320617675781}
+[2026-06-10 14:50:06] [32mIntermediate result: 0.3042168674698795  (Index 187)[0m
+Epoch 00188 | Time(s) 0.0510 | Loss(train) 0.6189 | Acc(train) 0.9759 | Loss(val) 2.4449 | Acc(val) 0.3042 | 
+Dynamic alpha refresh: {'epoch': 188, 'refresh_count': 188, 'mean_alpha_train': 0.18729449808597565, 'soft_shift_train_mass': 44.58320617675781}
+[2026-06-10 14:50:06] [32mIntermediate result: 0.2891566265060241  (Index 188)[0m
+Epoch 00189 | Time(s) 0.0530 | Loss(train) 0.6207 | Acc(train) 0.9699 | Loss(val) 2.4286 | Acc(val) 0.2892 | 
+Dynamic alpha refresh: {'epoch': 189, 'refresh_count': 189, 'mean_alpha_train': 0.1874961256980896, 'soft_shift_train_mass': 44.783203125}
+[2026-06-10 14:50:07] [32mIntermediate result: 0.2891566265060241  (Index 189)[0m
+Epoch 00190 | Time(s) 0.0530 | Loss(train) 0.6162 | Acc(train) 0.9684 | Loss(val) 2.4219 | Acc(val) 0.2892 | 
+Dynamic alpha refresh: {'epoch': 190, 'refresh_count': 190, 'mean_alpha_train': 0.18667788803577423, 'soft_shift_train_mass': 44.783203125}
+[2026-06-10 14:50:07] [32mIntermediate result: 0.29518072289156627  (Index 190)[0m
+Epoch 00191 | Time(s) 0.0540 | Loss(train) 0.6204 | Acc(train) 0.9729 | Loss(val) 2.4212 | Acc(val) 0.2952 | 
+Dynamic alpha refresh: {'epoch': 191, 'refresh_count': 191, 'mean_alpha_train': 0.18742093443870544, 'soft_shift_train_mass': 44.98320770263672}
+[2026-06-10 14:50:07] [32mIntermediate result: 0.2921686746987952  (Index 191)[0m
+Epoch 00192 | Time(s) 0.0560 | Loss(train) 0.6151 | Acc(train) 0.9744 | Loss(val) 2.4298 | Acc(val) 0.2922 | 
+Dynamic alpha refresh: {'epoch': 192, 'refresh_count': 192, 'mean_alpha_train': 0.1863771378993988, 'soft_shift_train_mass': 44.6890869140625}
+[2026-06-10 14:50:07] [32mIntermediate result: 0.2891566265060241  (Index 192)[0m
+Epoch 00193 | Time(s) 0.0540 | Loss(train) 0.6225 | Acc(train) 0.9684 | Loss(val) 2.4299 | Acc(val) 0.2892 | 
+Dynamic alpha refresh: {'epoch': 193, 'refresh_count': 193, 'mean_alpha_train': 0.18688294291496277, 'soft_shift_train_mass': 44.78908920288086}
+[2026-06-10 14:50:07] [32mIntermediate result: 0.29518072289156627  (Index 193)[0m
+Epoch 00194 | Time(s) 0.0520 | Loss(train) 0.6191 | Acc(train) 0.9699 | Loss(val) 2.4060 | Acc(val) 0.2952 | 
+Dynamic alpha refresh: {'epoch': 194, 'refresh_count': 194, 'mean_alpha_train': 0.18664853274822235, 'soft_shift_train_mass': 44.88320541381836}
+[2026-06-10 14:50:07] [32mIntermediate result: 0.31626506024096385  (Index 194)[0m
+Epoch 00195 | Time(s) 0.0540 | Loss(train) 0.6144 | Acc(train) 0.9729 | Loss(val) 2.3887 | Acc(val) 0.3163 | 
+Dynamic alpha refresh: {'epoch': 195, 'refresh_count': 195, 'mean_alpha_train': 0.1878928542137146, 'soft_shift_train_mass': 44.88320541381836}
+[2026-06-10 14:50:07] [32mIntermediate result: 0.30120481927710846  (Index 195)[0m
+Epoch 00196 | Time(s) 0.0540 | Loss(train) 0.6215 | Acc(train) 0.9684 | Loss(val) 2.4067 | Acc(val) 0.3012 | 
+Dynamic alpha refresh: {'epoch': 196, 'refresh_count': 196, 'mean_alpha_train': 0.1880517452955246, 'soft_shift_train_mass': 44.88320541381836}
+[2026-06-10 14:50:07] [32mIntermediate result: 0.29518072289156627  (Index 196)[0m
+Epoch 00197 | Time(s) 0.0645 | Loss(train) 0.6168 | Acc(train) 0.9684 | Loss(val) 2.4364 | Acc(val) 0.2952 | 
+Dynamic alpha refresh: {'epoch': 197, 'refresh_count': 197, 'mean_alpha_train': 0.18819370865821838, 'soft_shift_train_mass': 44.783203125}
+[2026-06-10 14:50:07] [32mIntermediate result: 0.29819277108433734  (Index 197)[0m
+Epoch 00198 | Time(s) 0.0630 | Loss(train) 0.6257 | Acc(train) 0.9609 | Loss(val) 2.4338 | Acc(val) 0.2982 | 
+Dynamic alpha refresh: {'epoch': 198, 'refresh_count': 198, 'mean_alpha_train': 0.1886853277683258, 'soft_shift_train_mass': 44.926063537597656}
+[2026-06-10 14:50:07] [32mIntermediate result: 0.31626506024096385  (Index 198)[0m
+Epoch 00199 | Time(s) 0.0710 | Loss(train) 0.6220 | Acc(train) 0.9684 | Loss(val) 2.3942 | Acc(val) 0.3163 | 
+Dynamic alpha refresh: {'epoch': 199, 'refresh_count': 199, 'mean_alpha_train': 0.18805797398090363, 'soft_shift_train_mass': 44.7260627746582}
+[2026-06-10 14:50:07] [32mIntermediate result: 0.3192771084337349  (Index 199)[0m
+Epoch 00200 | Time(s) 0.0885 | Loss(train) 0.6179 | Acc(train) 0.9684 | Loss(val) 2.3713 | Acc(val) 0.3193 | 
+Optimization Finished!
+Time(s): 6.9675
+Loss(test) 1.3035 | Acc(test) 0.6491

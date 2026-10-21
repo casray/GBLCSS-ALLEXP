@@ -1,0 +1,18 @@
+{
+  "datasets": ["actor", "chameleon_filtered", "squirrel_filtered", "roman", "corafull", "coauthorcs"],
+  "new_datasets": ["actor", "chameleon_filtered", "squirrel_filtered"],
+  "spaces": ["GRACE", "GREET"],
+  "protocol_seeds": [0, 1, 2],
+  "conditions": {"clean": 0.0, "uniform": 0.4, "pair": 0.4},
+  "budgets": [1, 8, 16, 32, 64, 128, 256],
+  "include_sqrt_budget": true,
+  "trajectory": {"min_train_per_ball": 16, "min_leaf_size": 16, "random_state": "protocol_seed", "priority": "largest total SSE"},
+  "target": {"min_votes": 2, "beta": 0.5},
+  "training": {"hidden": 64, "layers": 2, "dropout": 0.5, "learning_rate": 0.01, "weight_decay": 0.0005, "epochs": 200},
+  "grace": {"epochs": 1000, "seed": 0, "chunk_size": 512},
+  "greet": {"seed": 0, "export_seed": 91015, "epochs": 400, "half_dim": 128, "projection_dim": 128, "layers": 2, "k": 20, "batch_size": 512, "learning_rate": 0.001, "highpass_alpha": 0.1, "margin": 0.5, "cl_rounds": 2, "maskfeat_rates": [0.1, 0.5], "dropedge_rates": [0.5, 0.1], "se_hops": 16, "se_walks": 1024, "se_block": 128, "structural_encoding": "Monte Carlo return frequencies, same portable approximation"},
+  "threads": 4,
+  "independent_knn_kmeans_baselines": false,
+  "aliases": "identical frozen targets within same data/seed/condition reuse the same student result; never count aliases as independent runs",
+  "selection": "all budgets diagnostic only; no test-accuracy-based deployment selection; algorithm proposal follows mechanisms"
+}

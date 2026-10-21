@@ -1,0 +1,1756 @@
+Sparse Bayesian Message Passing under Structural Uncertainty
+Report GitHub Issue
+×
+Title:
+Content selection saved. Describe the issue below:
+Description:
+Submit without GitHub
+Submit in GitHub
+arXiv is now an independent nonprofit!
+Learn more
+×
+Back to arXiv
+Why HTML?
+Report Issue
+Back to Abstract
+Download PDF
+Abstract
+1 Introduction
+2 Related Work
+Heterophily-Aware and Signed Graph Neural Networks.
+Graph Structure Learning and Robust GNNs.
+Uncertainty-Aware and Bayesian GNNs.
+3 Preliminaries
+4 Methodology
+4.1 Structural Uncertainty & Sampling (Block 1)
+4.2 Sparse & Signed Aggregation (Block 2)
+Local sparse coding problem.
+Signed aggregation.
+Layer summary.
+4.3 Stacked S2S^{2} Layer & Training (Block 3)
+Training Objective.
+5 Theoretical Analysis
+5.1 Risk Decomposition under Structural Uncertainty
+5.2 Sparse Signed Aggregation as MAP Estimation
+Local linear-Gaussian-Laplace model.
+Robustness to noisy neighbors.
+6 Experiments
+6.1 (Q1) Main Result
+6.2 (Q2) Structural Posterior Modeling
+6.3 (Q3) Sparse Signed Message Passing
+6.4 (Q4) Robustness Analysis
+7 Conclusion
+References
+A Illustrative Example
+B Comparative Analysis
+B.1 Homophily GNNs
+Key differences.
+B.2 Heterophily GNNs
+Key differences.
+B.3 Uncertainty-aware GNNs
+Key differences.
+B.4 Bayesian GNNs
+Key differences.
+C Implementation, Time Complexity, and Algorithmic Details
+C.1 Implementation Details
+C.2 Time Complexity
+Overall complexity.
+C.3 Overall Algorithm
+D Deeper Theoretical Analysis
+D.1 Proof of Theorem
+D.2 Signed Aggregation under Contextual Stochastic Block Models
+CSBM formulation.
+Expected signed propagation under CSBM.
+Cluster-separation effect.
+Role of sparse coding.
+Implications.
+D.3 Consistency of Signed Structural Posterior under CSBM
+Proof.
+D.4 Signed Aggregation Increases Inter-Cluster Separation
+Proof.
+D.5 Sparse Coding Recovers Informative Neighbors under CSBM
+Proof.
+E Datasets and Baselines
+E.1 Datasets
+Roman-Empire.
+Minesweeper.
+Amazon-Ratings.
+Chameleon and Squirrel.
+Actor.
+Cornell, Texas, Wisconsin.
+E.2 Baselines
+F More Experiments
+F.1 Analysis on Homophilic Benchmarks
+F.2 SpaM on Large Heterophilic Graphs
+F.3 Effect of Monte Carlo Marginalization
+F.4 Parameter Sensitivity
+G Limitations
+Computational overhead.
+Dependence on posterior quality.
+Future work.
+License: arXiv.org perpetual non-exclusive license
+arXiv:2601.01207v1 [cs.LG] 03 Jan 2026
+Sparse Bayesian Message Passing under Structural Uncertainty
+Yoonhyuk Choi
+††thanks: Equal contribution
+Email: {chldbsgur123
+Jiho Choi
+Email: jihochoi1993}@gmail.com
+Chanran Kim
+Affiliation: Sookmyung Women’s University, Seoul, Republic of Korea
+Email:
+{shining04
+Yumin Lee
+Affiliation: Sookmyung Women’s University, Seoul, Republic of Korea
+Email: lee.yoomin4004
+Hawon Shin
+Affiliation: Sookmyung Women’s University, Seoul, Republic of Korea
+Email: shinhawon920
+Yeowon Jeon
+Affiliation: Sookmyung Women’s University, Seoul, Republic of Korea
+Email: wyw24
+Minjeong Kim
+Affiliation: Sookmyung Women’s University, Seoul, Republic of Korea
+Email: kgpg0292}@sookmyung.ac.kr
+Jiwoo Kang
+††thanks: Corresponding Author
+Affiliation: Sookmyung Women’s University, Seoul, Republic of Korea
+Affiliation: KAIST, Seoul, Republic of Korea
+Abstract
+Semi-supervised learning on real-world graphs is frequently challenged by heterophily, where the observed graph is unreliable or label-disassortative. Many existing graph neural networks either rely on a fixed adjacency structure or attempt to handle structural noise through regularization. In this work, we explicitly capture structural uncertainty by modeling a posterior distribution over signed adjacency matrices, allowing each edge to be positive, negative, or absent. We propose a sparse signed message passing network that is naturally robust to edge noise and heterophily, which can be interpreted from a Bayesian perspective. By combining (i) posterior marginalization over signed graph structures with (ii) sparse signed message aggregation, our approach offers a principled way to handle both edge noise and heterophily. Experimental results demonstrate that our method outperforms strong baseline models on heterophilic benchmarks under both synthetic and real-world structural noise. We provide an anonymous repository at: https://anonymous.4open.science/r/SpaM-F2C8
+1 Introduction
+Since the introduction of graph convolutional networks Kipf and Welling (2017) and attention-based architectures Veličković et al. (2018), graph neural networks (GNNs) have become a standard approach for semi-supervised node classification and link prediction, demonstrating strong empirical performance on social, citation, and knowledge graphs. Despite their success under homophilic assumptions, it remains unclear how these models behave when the observed graph structure is noisy or exhibits label disassortativity (a.k.a. graph heterophily) Bodnar et al. (2022).
+Many message-passing GNNs implicitly assume that the observed adjacency matrix is reliable and predominantly homophilic, such that neighboring nodes tend to share similar labels. In practice, however, real-world graphs often violate this assumption: edges may be noisy, and heterophilic connections frequently arise in social networks and information diffusion Zügner et al. (2018); Pei et al. (2020). Conventional message passing mechanisms tend to spread spurious signals under these conditions, resulting in oversmoothing and degrading predictive performance Yan et al. (2022).
+Existing heterophily-aware GNNs attempt to mitigate this issue by modifying message propagation rules or graph filters using the higher-order neighborhoods. Specifically, they incorporate structural encoding or employ decoupled representation channels Bo et al. (2021); Chien et al. (2021); Luan et al. (2022); Ko et al. (2023); Duan et al. (2024); Li et al. (2024); Choi et al. (2025b); Choi et al. (2025a). Although these methods improve performance on heterophilic benchmarks Platonov et al. (2023); Dwivedi et al. (2023), they typically operate on a fixed, pre-processed graph with deterministic edge signs. Consequently, they remain sensitive to structural noise and adversarial corruptions in the observed graph Zügner et al. (2020); Liang et al. (2025).
+Complementary to heterophily-aware architectures, graph structure learning and robust GNNs aim to infer cleaner adjacency structures against structural perturbations Rong et al. (2019); Jin et al. (2020); Guo et al. (2022); Choi et al. (2022); He et al. (2024); Han et al. (2025). However, these methods produce a single refined graph or apply deterministic edge reweighting, discarding edges whose reliability is uncertain but has useful information. In a related direction, uncertainty-aware and Bayesian GNNs primarily concentrate on predictive or parameter-level uncertainty Zhang et al. (2019); Hasanzadeh et al. (2020); Liu et al. (2022); Hsu et al. (2022); Huang et al. (2023); Fan et al. (2023); Trivedi et al. (2024); Fuchsgruber et al. (2024). However, these approaches typically model uncertainty at the parameter or prediction level, while leaving uncertainty in edge existence and edge polarity largely unaddressed Kipf and Welling (2016); Zhu et al. (2020); Yan et al. (2022); Bodnar et al. (2022).
+In the presence of noisy or heterophilic graphs, we argue that the fundamental object may not be a single optimal adjacency matrix, but rather a posterior distribution over signed adjacency matrices (see Appendix A for additional discussion). A Bayesian viewpoint suggests that reliable prediction may benefit from reasoning over multiple plausible signed graphs that are consistent with the observed labels Deshpande et al. (2018). This provides a unified treatment of structural robustness, heterophily, and uncertainty. Instead of committing to a single denoised structure, a model needs to reason over a population of candidate graphs to achieve reliable message passing under noise and disassortativity.
+We instantiate this perspective through a Sparse Bayesian Message passing network (SpaM), which maintains a distribution over signed adjacency matrices Z∈{−1,0,+1}n×nZ\in\{-1,0,+1\}^{n\times n}. Building on this structural posterior, we employ a message passing layer that selectively attends to informative neighbors. While our method admits a Bayesian interpretation, its core mechanism is a sparse signed message passing layer, which remains effective even without explicit posterior sampling. By explicitly modeling edge uncertainty and sign, this design reduces the influence of noisy or adversarial neighbors during message aggregation Hou et al. (2024). Our main contributions are as follows:
+•
+We model structural uncertainty through a posterior distribution over signed adjacency matrices. Specifically, we design a sparse signed message passing layer that performs local sparse coding, which aggregates positive and negative relations through separate channels.
+•
+We provide a theoretical analysis showing that the proposed estimator can be interpreted as approximating a Bayes-optimal predictor under a simplified structural uncertainty model.
+•
+Through extensive experiments on synthetic and real-world benchmarks, we demonstrate improved robustness to structural noise and heterophily compared to existing graph learning methods.
+2 Related Work
+Heterophily-Aware and Signed Graph Neural Networks.
+Recent studies have examined how standard message passing breaks down in heterophilic graphs. Early approaches attempt to mitigate heterophily by augmenting message aggregation with higher-order neighborhoods or explicit structural encodings Bo et al. (2021); Chien et al. (2021). Subsequent methods modify propagation rules to control oversmoothing effects, whereas spectral approaches design filters that explicitly respond to heterophilic connectivity patterns Luan et al. (2022); Bodnar et al. (2022). Parallel efforts explicitly model non-positive relations by introducing signed Laplacians and polarity-aware message passing Ko et al. (2023); Choi et al. (2025b); Choi et al. (2025a). The most recent algorithms further separate homophilic and heterophilic channels Duan et al. (2024); Li et al. (2024). Despite improved performance on standard heterophilic benchmarks, these models generally assume a fixed graph with deterministic edge polarity, which makes them sensitive to noisy or adversarial edge perturbations Zügner et al. (2020); Dwivedi et al. (2023).
+Graph Structure Learning and Robust GNNs.
+Graph structure learning (GSL) methods reconstruct relational structure by exploiting feature similarity, sparsity constraints, or low-rank assumptions Jin et al. (2020); Guo et al. (2022); Choi et al. (2022); Han et al. (2025). Robust GNNs address structural perturbations through mechanisms such as stochastic edge dropping, adversarial denoising, and certified robustness guarantees Rong et al. (2019); He et al. (2024). While these approaches improve resilience to structural noise, they typically return a single refined adjacency. As a result, they potentially discard uncertain yet informative edges, lacking a principled treatment of epistemic uncertainty. In contrast, our framework treats adjacency as a latent random object and marginalizes predictions over sampled signed graphs.
+Uncertainty-Aware and Bayesian GNNs.
+A separate body of work focuses on modeling predictive uncertainty for classification, calibration, and out-of-distribution (OOD) detection tasks Liu et al. (2022); Hsu et al. (2022); Huang et al. (2023); Fan et al. (2023); Trivedi et al. (2024). Bayesian GNNs introduce distributions over parameters or edges via variational inference or sampling-based approximations to a limited extent Kipf and Welling (2016); Hasanzadeh et al. (2020); Fuchsgruber et al. (2024). However, most of these methods focus on parameter or label uncertainty rather than edge existence and polarity. When structural uncertainty is incorporated, it is typically modeled through simple dropout or rewiring distributions, which are insufficient to represent heterophilic graph structure Zhu et al. (2020); Yan et al. (2022); Bodnar et al. (2022). In contrast, our approach can be viewed as modeling uncertainty over signed adjacency structures, offering a principled perspective on graph heterophily.
+More details are provided in Appendix B.
+Figure 1: Architecture of the Sparse Bayesian Message Passing Network (SpaM), which consists of three main modules: (i) Structural Uncertainty & Sampling (Block 1): A Variational Graph Autoencoder (VGAE) learns the posterior qϕ​(Z∣Aobs,X,…)q_{\phi}(Z\mid A_{\text{obs}},X,\ldots) over the latent signed graph ZZ. (ii) S2 Layer (Block 2): For a sampled ZZ, each node ii solves a local LASSO problem minα⁡∥ti−Vi​α∥22+λ​∥α∥1\min_{\alpha}\lVert t_{i}-V_{i}\alpha\rVert_{2}^{2}+\lambda\lVert\alpha\rVert_{1} to find a sparse coefficient vector αi∗\alpha_{i}^{\ast} from its neighbors. (iii) Prediction & Joint Training (Block 3): The S2 layers are stacked LL times, and predictions pθ​(yi∣X,Z(k))p_{\theta}(y_{i}\mid X,Z^{(k)}) from all KK samples are averaged to form the final predictive distribution (Monte Carlo averaging).
+3 Preliminaries
+We consider a graph 𝒢obs=(𝒱,ℰobs)\mathcal{G}_{\text{obs}}=(\mathcal{V},\mathcal{E}_{\text{obs}}) with |𝒱|=n|\mathcal{V}|=n nodes and observed edges ℰobs⊆𝒱×𝒱\mathcal{E}_{\text{obs}}\subseteq\mathcal{V}\times\mathcal{V}. Each node i∈𝒱i\in\mathcal{V} is associated with a feature matrix X∈ℝn×dX\in\mathbb{R}^{n\times d}, and a label set 𝒴={1,…,C}\mathcal{Y}=\{1,\dots,C\}. We observe labels yi∈𝒴y_{i}\in\mathcal{Y} only for a subset ℒ⊂𝒱\mathcal{L}\subset\mathcal{V}. The remaining nodes 𝒰=𝒱∖ℒ\mathcal{U}=\mathcal{V}\setminus\mathcal{L} are unlabeled. We denote the observed adjacency by Aobs∈{0,1}n×nA_{\text{obs}}\in\{0,1\}^{n\times n}, where Aobs,i​j=1A_{\text{obs},ij}=1 iff (i,j)∈ℰobs(i,j)\in\mathcal{E}_{\text{obs}}. We inherit the global homophily ratio of Zhu et al. (2020), which is given by:
+|
+| 𝒢h≔1|ℰobs|​∑{i,j}∈ℰobs𝕀⁡(yi=yj),\mathcal{G}_{h}\coloneqq\frac{1}{|\mathcal{E}_{\text{obs}}|}\sum_{\{i,j\}\in\mathcal{E}_{\text{obs}}}\mathbb{I}\bigl(y_{i}=y_{j}\bigr),
+|
+| (1)
+The goal is to predict labels for nodes in 𝒰\mathcal{U} using both observed labels YℒY_{\mathcal{L}} and structural/feature information (Aobs,X)(A_{\text{obs}},X). Given model parameters θ\theta, a predictor outputs a distribution pθ​(yi∣X,Aobs)p_{\theta}(y_{i}\mid X,A_{\text{obs}}) for each i∈𝒰i\in\mathcal{U}.
+Graph neural networks (GNNs).
+Most GNN architectures follow a message passing paradigm: intermediate node representations hi(ℓ)h_{i}^{(\ell)} are updated using neighbor features via
+|
+| hi(ℓ+1)=σ⁡(Wself​hi(ℓ)+∑j∈𝒩i​(Aobs)αi​j(ℓ)​Wmsg​hj(ℓ)),h_{i}^{(\ell+1)}=\sigma\bigg(W_{\text{self}}h_{i}^{(\ell)}+\sum_{j\in\mathcal{N}_{i}(A_{\text{obs}})}\alpha_{ij}^{(\ell)}W_{\text{msg}}h_{j}^{(\ell)}\bigg),
+|
+| (2)
+where αi​j(ℓ)\alpha_{ij}^{(\ell)} is an attention or normalization coefficient, WselfW_{\text{self}} and WmsgW_{\text{msg}} are learned linear maps, and σ\sigma is a nonlinear activation. Classical GNNs assume that all edges contribute positively (i.e., homophilic propagation), implicitly treating the adjacency as reliable and supportive. Under noisy and heterophilic graphs, propagating messages along all observed edges or merely down-weighting some edges through normalization can degrade performance. Crucially, the trustworthiness and sign of each edge are uncertain and should not be determined deterministically.
+Signed adjacency and structural uncertainty.
+To capture heterophily and noise, we posit a latent signed adjacency:
+|
+| Z∈{−1,0,+1}n×n,Z\in\{-1,0,+1\}^{n\times n},
+|
+| (3)
+where zi​j=+1z_{ij}=+1 denotes a supporting (homophilic) relation, zi​j=−1z_{ij}=-1 an opposing (heterophilic) relation, and zi​j=0z_{ij}=0 absence of dependency. Instead of predicting a single ZZ from AobsA_{\text{obs}}, we model a posterior distribution as below:
+|
+| qϕ​(Z∣Aobs,X,Yℒ),q_{\phi}(Z\mid A_{\text{obs}},X,Y_{\mathcal{L}}),
+|
+| (4)
+which captures uncertainty regarding both the existence and the polarity (sign) of edges.
+Bayesian prediction under structural uncertainty.
+For a fixed ZZ, a GNN can compute pθ​(yi∣X,Z)p_{\theta}(y_{i}\mid X,Z). However, when ZZ is uncertain, the Bayes-optimal classifier marginalizes predictions over all plausible ZZ as follows:
+|
+| p⋆​(yi∣X,Aobs,Yℒ)=𝔼Z∼p⁡(Z∣Aobs,X,Yℒ)​[p⁡(yi∣X,Z)].p^{\star}(y_{i}\mid X,A_{\text{obs}},Y_{\mathcal{L}})=\mathbb{E}_{Z\sim p(Z\mid A_{\text{obs}},X,Y_{\mathcal{L}})}\big[p(y_{i}\mid X,Z)\big].
+|
+| (5)
+We emphasize that Eq. 5 serves as an idealized reference rather than a directly realizable predictor. In the following sections, we combine (i) a structural posterior qϕq_{\phi} and (ii) a message passing function to exploit signed structures.
+4 Methodology
+Our central assumption is that AobsA_{\text{obs}} is a noisy observation of an unobserved signed adjacency Z∈{−1,0,+1}n×nZ\in\{-1,0,+1\}^{n\times n} encoding positive (+1+1), negative (−1-1), or absent (00) edges. We explicitly model structural uncertainty via a learned posterior distribution qϕ​(Z∣Aobs,X,Yℒ)q_{\phi}(Z\mid A_{\text{obs}},X,Y_{\mathcal{L}}). Our predictive distribution can be approximated by Monte Carlo marginalization, which can be interpreted from a Bayesian perspective as follows:
+|
+| pθ​(yiCLOSE\displaystyle p_{\theta}(y_{i}
+| ∣X,Aobs)≈𝔼Z∼qϕ[pθ(yi∣X,Z)]\displaystyle\mid X,A_{\text{obs}})\approx\mathbb{E}_{Z\sim q_{\phi}}[p_{\theta}(y_{i}\mid X,Z)]
+|
+| (6)
+|
+|
+| ≈1K​∑k=1Kpθ​(yi∣X,Z(k)),\displaystyle\approx\frac{1}{K}\sum_{k=1}^{K}p_{\theta}(y_{i}\mid X,Z^{(k)}),
+|
+| (7)
+where Z(k)∼qϕ(⋅∣Aobs,X,Yℒ)Z^{(k)}\sim q_{\phi}(\cdot\mid A_{\text{obs}},X,Y_{\mathcal{L}}) are i.i.d. samples and pθ(⋅∣X,Z)p_{\theta}(\cdot\mid X,Z) is realized by a Sparse signed Message passing network (SpaM) described below. In this section, we first outline the structural posterior (§4.1). Then, we define a single sparse signed message passing layer (§4.2). Finally, we present the layer stacking and training objective (§4.3).
+4.1 Structural Uncertainty & Sampling (Block 1)
+We treat the latent signed adjacency ZZ as a discrete random variable with values in {−1,0,+1}n×n\{-1,0,+1\}^{n\times n} and factorized prior p⁡(Z)=∏(i,j)∈ℰobsp⁡(zi​j)p(Z)=\prod_{(i,j)\in\mathcal{E}_{\text{obs}}}p(z_{ij}), where we set zi​j=0z_{ij}=0 for (i,j)∉ℰobs(i,j)\notin\mathcal{E}_{\text{obs}}. Given observed graph AobsA_{\text{obs}}, features XX, and labeled nodes (Yℒ)(Y_{\mathcal{L}}), one could in principle form the true posterior p⁡(Z∣Aobs,X,Yℒ)p(Z\mid A_{\text{obs}},X,Y_{\mathcal{L}}) via Bayes rule. In practice, this is intractable, so we approximate it with a parametric posterior qϕ​(Z∣Aobs,X,Yℒ)q_{\phi}(Z\mid A_{\text{obs}},X,Y_{\mathcal{L}}). To instantiate the structural posterior qϕq_{\phi}, we adopt a variational graph autoencoder (VGAE) framework. As shown in Figure 1 (Block 1), we employ a GCN Kipf and Welling (2017) as an encoder to parameterize qϕq_{\phi} as a factorized categorical distribution over the edge types s∈{−1,0,+1}s\in\{-1,0,+1\}. Specifically, the encoder computes node embeddings Hϕ=GCNϕ​(Aobs,X,Yℒ)H_{\phi}=\text{GCN}_{\phi}(A_{\text{obs}},X,Y_{\mathcal{L}}), from which we derive edge-level logits using a pairwise decoder function (e.g., an MLP taking concatenated node pairs representing potential edges). Applying a softmax over these logits yields the posterior marginal probabilities πi​js=qϕ​(zi​j=s)\pi_{ij}^{s}=q_{\phi}(z_{ij}=s) for each pair (i,j)(i,j) and sign ss. This parameterization readily permits efficient sampling of Z(k)Z^{(k)} using the Gumbel-softmax trick during training. The parameters ϕ\phi are trained jointly with the classifier θ\theta by maximizing the Evidence Lower Bound (ELBO) as in §4.3. Given a sampled signed adjacency ZZ, we define neighbor types for each node ii as follows:
+|
+| 𝒩i+​(Z)={j∣zi​j=+1},𝒩i−​(Z)={j∣zi​j=−1},\mathcal{N}^{+}_{i}(Z)=\{j\mid z_{ij}=+1\},\quad\mathcal{N}^{-}_{i}(Z)=\{j\mid z_{ij}=-1\},
+|
+| (8)
+where 𝒩i​(Z)=𝒩i+​(Z)∪𝒩i−​(Z)\mathcal{N}_{i}(Z)=\mathcal{N}^{+}_{i}(Z)\cup\mathcal{N}^{-}_{i}(Z). Intuitively, 𝒩i+\mathcal{N}^{+}_{i} contains neighbors that should provide supporting information for ii, while 𝒩i−\mathcal{N}^{-}_{i} contains contrasting or inhibitory neighbors.
+Remark. We emphasize that SpaM does not rely on a specific posterior parameterization, and VGAE is adopted here as a convenient instantiation rather than a core contribution.
+4.2 Sparse & Signed Aggregation (Block 2)
+As illustrated in the middle of Fig. 1, a single message passing layer operates on a fixed signed adjacency ZZ sampled from qϕq_{\phi}. Let H∈ℝn×dinH\in\mathbb{R}^{n\times d_{\text{in}}} denote the input node representations, and H′∈ℝn×doutH^{\prime}\in\mathbb{R}^{n\times d_{\text{out}}} the output. We employ a linear value projection V=H​Wv∈ℝn×dvalV=HW_{v}\in\mathbb{R}^{n\times d_{\text{val}}} with Wv∈ℝdin×dvalW_{v}\in\mathbb{R}^{d_{\text{in}}\times d_{\text{val}}}.
+Local sparse coding problem.
+For each node ii, we consider its current representation hi∈ℝdinh_{i}\in\mathbb{R}^{d_{\text{in}}} and the value vectors of its signed neighbors vj∈ℝdvalv_{j}\in\mathbb{R}^{d_{\text{val}}} for j∈𝒩i​(Z)j\in\mathcal{N}_{i}(Z). We form a local dictionary matrix Vi∈ℝdval×|𝒩i​(Z)|V_{i}\in\mathbb{R}^{d_{\text{val}}\times|\mathcal{N}_{i}(Z)|} by stacking neighbor values as columns:
+|
+| Vi=[vj]j∈𝒩i​(Z).V_{i}=[v_{j}]_{j\in\mathcal{N}_{i}(Z)}.
+|
+| (9)
+Our goal is to express a target vector tit_{i} for node ii as a sparse linear combination of neighbor values:
+|
+| ti≈Vi​αi,t_{i}\approx V_{i}\alpha_{i},
+|
+| (10)
+where αi∈ℝ|𝒩i​(Z)|\alpha_{i}\in\mathbb{R}^{|\mathcal{N}_{i}(Z)|} is a vector of neighbor coefficients. A simple choice for tit_{i} is a linear transform of hih_{i}:
+|
+| ti=Wt​hi,Wt∈ℝdval×din,t_{i}=W_{t}h_{i},\quad W_{t}\in\mathbb{R}^{d_{\text{val}}\times d_{\text{in}}},
+|
+| (11)
+but more general parameterizations are possible. We obtain αi\alpha_{i} in Eq. 10 as the solution to a local LASSO problem:
+|
+| αi⋆=arg⁡minα∈ℝ|𝒩i​(Z)|​{‖ti−Vi​α‖22⏟reconstruction error+λ​‖α‖1},\alpha_{i}^{\star}=\arg\min_{\alpha\in\mathbb{R}^{|\mathcal{N}_{i}(Z)|}}\left\{\underbrace{\big\|t_{i}-V_{i}\alpha\big\|_{2}^{2}}_{\text{reconstruction error}}+\lambda\|\alpha\|_{1}\right\},
+|
+| (12)
+where λ>0\lambda>0 controls sparsity. This objective admits a standard probabilistic interpretation: if we assume a Gaussian likelihood ti|αi,Vi∼𝒩⁡(Vi​αi,σ2​I)t_{i}\mid\alpha_{i},V_{i}\sim\mathcal{N}(V_{i}\alpha_{i},\sigma^{2}I) and a Laplace prior p⁡(αi)∝exp⁡(−λ​‖αi‖1)p(\alpha_{i})\propto\exp(-\lambda\|\alpha_{i}\|_{1}), then αi⋆\alpha_{i}^{\star} is the maximum a posteriori (MAP) estimator. We index the coefficient vector αi\alpha_{i} consistently with 𝒩i​(Z)\mathcal{N}_{i}(Z). Let αi​j\alpha_{ij} denote the coefficient corresponding to neighbor jj. Then, αi​j=0\alpha_{ij}=0 if j∉𝒩i​(Z)j\notin\mathcal{N}_{i}(Z).
+Signed aggregation.
+Once we obtain αi⋆\alpha_{i}^{\star}, we aggregate neighbors with a sign-aware rule. Let us define
+|
+| αi​j+\displaystyle\alpha_{ij}^{+}
+| ={αi​j,j∈𝒩i+​(Z),0,otherwise,\displaystyle=\begin{cases}\alpha_{ij},&j\in\mathcal{N}^{+}_{i}(Z),\\
+0,&\text{otherwise},\end{cases}
+| αi​j−\displaystyle\alpha_{ij}^{-}
+| ={αi​j,j∈𝒩i−​(Z),0,otherwise.\displaystyle=\begin{cases}\alpha_{ij},&j\in\mathcal{N}^{-}_{i}(Z),\\
+0,&\text{otherwise}.\end{cases}
+|
+| (13)
+Then, the updated representation is given by:
+|
+| hi=Wo​(∑j∈𝒩i+​(Z)αi​j+​vj−γ​∑j∈𝒩i−​(Z)|αi​j−|​vj)+b,h_{i}=W_{o}\left(\sum_{j\in\mathcal{N}^{+}_{i}(Z)}\alpha_{ij}^{+}v_{j}-\gamma\sum_{j\in\mathcal{N}^{-}_{i}(Z)}\big|\alpha_{ij}^{-}\big|v_{j}\right)+b,
+|
+| (14)
+where Wo∈ℝdout×dvalW_{o}\in\mathbb{R}^{d_{\text{out}}\times d_{\text{val}}} (γ≥0\gamma\geq 0) controls the strength of negative messages (bb is a bias). Here, positive neighbors contribute additively, while negative ones subtract from them.
+Remark. Our goal is not to exactly solve the LASSO problem, but to retain its inductive bias of sparse neighbor selection within a differentiable and scalable message passing layer. While this approximation does not provide formal sparsity guarantees, it empirically recovers sparse coefficient patterns that are consistent with the LASSO objective.
+Layer summary.
+Given (H,Z)(H,Z), the sparse signed layer (i) constructs tit_{i} and ViV_{i} (Eqs. 9-10), (ii) approximates the local LASSO (Eq. 12) to obtain αi\alpha_{i}, and (iii) applies signed aggregation (Eq. 14) to get hih_{i}. We denote this layer as follows:
+|
+| H′=S2​Layerθ​(H,Z),H^{\prime}=\text{S}^{2}\text{Layer}_{\theta}(H,Z),
+|
+| (15)
+where θ\theta collects trainable parameters.
+4.3 Stacked S2S^{2} Layer & Training (Block 3)
+As shown in Block 3 (Fig. 1), we construct multiple LL-layer networks by stacking S2​Layers\text{S}^{2}\text{Layers} (Block 2). Given an input feature matrix H(0)=XH^{(0)}=X and a sampled signed adjacency ZZ with ℓ=0,…,L−1\ell=0,\dots,L-1 (H′=H(L)H^{\prime}=H^{(L)}), we define:
+|
+| H(ℓ+1)\displaystyle H^{(\ell+1)}
+| =σ⁡(S2​Layerθ​(H(ℓ),Z)),\displaystyle=\sigma\big(\text{S}^{2}\text{Layer}_{\theta}(H^{(\ell)},Z)\big),
+|
+| (16)
+|
+| ℓi​(Z,θ)\displaystyle\ell_{i}(Z;\theta)
+| =Wc​hi′+c,\displaystyle=W_{c}h_{i}^{\prime}+c,
+|
+| (17)
+|
+| pθ​(yi∣X,Z)\displaystyle p_{\theta}(y_{i}\mid X,Z)
+| =softmax​(ℓi​(Z,θ)),\displaystyle=\text{softmax}\big(\ell_{i}(Z;\theta)\big),
+|
+| (18)
+where Wc∈ℝC×doutW_{c}\in\mathbb{R}^{C\times d_{\text{out}}} and c∈ℝCc\in\mathbb{R}^{C} are classification head parameters. The σ⁡(⋅)\sigma(\cdot) is a pointwise nonlinearity (e.g., ReLU). Given the structural posterior qϕ​(Z∣Aobs,X,Yℒ)q_{\phi}(Z\mid A_{\text{obs}},X,Y_{\mathcal{L}}), we approximate the predictive distribution via Monte Carlo as in Eq. 6. This yields our SpaM estimator as follows:
+|
+| p^θ​(yi∣X,Aobs)=1K​∑k=1Kpθ​(yi∣X,Z(k)),\hat{p}_{\theta}(y_{i}\mid X,A_{\text{obs}})=\frac{1}{K}\sum_{k=1}^{K}p_{\theta}(y_{i}\mid X,Z^{(k)}),
+|
+| (19)
+where Z(k)∼qϕ​(Z∣Aobs,X,Yℒ)Z^{(k)}\sim q_{\phi}(Z\mid A_{\text{obs}},X,Y_{\mathcal{L}}).
+Training Objective.
+We learn the message passing parameters θ\theta and structural parameters ϕ\phi jointly. First, for the node classification task, we minimize the expected supervised loss under the structural posterior. For a labeled node i∈ℒi\in\mathcal{L}, define the Monte Carlo approximation of the negative log-likelihood as below:
+|
+| ℒcls,i​(θ)=−log⁡p^θ​(yi∣X,Aobs)\displaystyle\mathcal{L}_{\text{cls},i}(\theta)=-\log\hat{p}_{\theta}(y_{i}\mid X,A_{\text{obs}})
+|
+| (20)
+|
+| ≈−log1K∑k=1Kpθ(yi∣X,Z(k)).\displaystyle\approx-\log\frac{1}{K}\sum_{k=1}^{K}p_{\theta}(y_{i}\mid X,Z^{(k)}).
+|
+| (21)
+We also penalize the magnitude of sparse coefficients to encourage beneficial neighbor sets:
+|
+| ℒsparse​(θ)=1n​∑i=1n𝔼Z∼qϕ​[‖αi​(Z)‖1]\displaystyle\mathcal{L}_{\text{sparse}}(\theta)=\frac{1}{n}\sum_{i=1}^{n}\mathbb{E}_{Z\sim q_{\phi}}\big[\|\alpha_{i}(Z)\|_{1}\big]
+|
+| (22)
+|
+| ≈1n​K​∑i=1n∑k=1K‖αi​(Z(k))‖1.\displaystyle\approx\frac{1}{nK}\sum_{i=1}^{n}\sum_{k=1}^{K}\|\alpha_{i}(Z^{(k)})\|_{1}.
+|
+| (23)
+To learn the structure, we maximize the Evidence Lower Bound (ELBO), which is equivalent to minimizing its negative. This acts as a structural regularization loss:
+|
+| ℒstruct(ϕ)=KL(qϕ(Z|Aobs,X,Yℒ)∥p(Z))−𝔼qϕ[logp(Aobs|Z)].\mathcal{L}_{\text{struct}}(\phi)=\text{KL}\big(q_{\phi}(Z|A_{\text{obs}},X,Y_{\mathcal{L}})\|p(Z)\big)-\mathbb{E}_{q_{\phi}}[\log p(A_{\text{obs}}|Z)].
+|
+| (24)
+The overall objective is a weighted sum of these terms:
+|
+| ℒtotal​(θ,ϕ)=1|ℒ|​∑i∈ℒℒcls,i​(θ)+λsp​ℒsparse​(θ)+λst​ℒstruct​(ϕ),\mathcal{L}_{\text{total}}(\theta,\phi)=\frac{1}{|\mathcal{L}|}\sum_{i\in\mathcal{L}}\mathcal{L}_{\text{cls},i}(\theta)+\lambda_{\text{sp}}\mathcal{L}_{\text{sparse}}(\theta)+\lambda_{\text{st}}\mathcal{L}_{\text{struct}}(\phi),
+|
+| (25)
+where λsp=0.01\lambda_{\text{sp}}=0.01 and λst=0.1\lambda_{\text{st}}=0.1 are hyperparameters balancing accuracy, sparsity, and structural fidelity. Specifically, we draw KK structural samples per mini-batch and backpropagate through the entire network. The computational cost, implementations, and algorithms are provided in Appendix C.
+Table 1: Statistical details of nine heterophilic benchmark graphs.
+Datasets
+RomanEmpire
+Minesweeper
+AmazonRatings
+Chameleon
+Squirrel
+Actor
+Cornell
+Texas
+Wisconsin
+Nodes
+22,662
+10,000
+24,492
+2,277
+5,201
+7,600
+183
+183
+251
+Edges
+32,927
+39,000
+93,050
+33,824
+211,872
+25,944
+295
+309
+499
+Features
+300
+2
+300
+2,325
+2,089
+931
+1,703
+1,703
+1,703
+Classes
+18
+2
+5
+5
+5
+5
+5
+5
+5
+5 Theoretical Analysis
+We provide a theoretical perspective on the proposed Sparse Bayesian Message Passing (SpaM) network. Our goal is not to give fully general guarantees, but to justify two key design choices: (i) modeling a posterior over signed adjacency and marginalizing predictions over this posterior, and (ii) using local sparse coding as the aggregation rule under a signed adjacency. We first formalize a simple generative model and show that SpaM can be interpreted as approximating an ideal Bayesian predictor under structural uncertainty. Then, we interpret the sparse signed layer as a MAP estimator under a linear-Gaussian Laplace model and discuss its robustness.
+5.1 Risk Decomposition under Structural Uncertainty
+Consider a latent data-generating process. Let Z⋆∈{−1,0,+1}n×nZ^{\star}\in\{-1,0,+1\}^{n\times n} denote the true signed adjacency, XX denote node features, and YY denote node labels. Assume we observe a noisy adjacency AobsA_{\text{obs}} obtained from a channel p⁡(Aobs∣Z⋆)p(A_{\text{obs}}\mid Z^{\star}). We are given labels YℒY_{\mathcal{L}} for a subset ℒ\mathcal{L} and wish to predict Y𝒰Y_{\mathcal{U}} for 𝒰=𝒱∖ℒ\mathcal{U}=\mathcal{V}\setminus\mathcal{L}. Let ℓ⁡(y,p^)\ell(y,\hat{p}) be a loss function, where we use ℓ​(y,p^)=−log⁡p^​(y)\ell(y,\hat{p})=-\log\hat{p}(y) for classification. The Bayes-optimal predictor under 0-1 or cross-entropy loss is the posterior predictive distribution as below:
+|
+| p⋆​(yiCLOSE\displaystyle p^{\star}(y_{i}
+| ∣X,Aobs,Yℒ)=∑Zp(yi,Z∣X,Aobs,Yℒ)\displaystyle\mid X,A_{\text{obs}},Y_{\mathcal{L}})=\sum_{Z}p(y_{i},Z\mid X,A_{\text{obs}},Y_{\mathcal{L}})
+|
+| (26)
+|
+|
+| =𝔼Z∼p⁡(Z∣X,Aobs,Yℒ)​[p⁡(yi∣X,Z)].\displaystyle=\mathbb{E}_{Z\sim p(Z\mid X,A_{\text{obs}},Y_{\mathcal{L}})}\big[p(y_{i}\mid X,Z)\big].
+|
+| (27)
+If we restrict ourselves to a parametric family {pθ​(yi∣X,Z)}\{p_{\theta}(y_{i}\mid X,Z)\} and an approximate structural posterior qϕ​(Z∣Aobs,X,Yℒ)q_{\phi}(Z\mid A_{\text{obs}},X,Y_{\mathcal{L}}), our estimator in Eq. 6 becomes
+|
+| p^θ​(yi∣X,Aobs,Yℒ)=𝔼Z∼qϕ​[pθ​(yi∣X,Z)].\hat{p}_{\theta}(y_{i}\mid X,A_{\text{obs}},Y_{\mathcal{L}})=\mathbb{E}_{Z\sim q_{\phi}}\big[p_{\theta}(y_{i}\mid X,Z)\big].
+|
+| (28)
+We now state an excess-risk decomposition measuring the effect of structural approximation.
+Theorem 5.1 (Risk decomposition under structural approximation).
+Fix parameters θ\theta and a loss ℓ\ell that is LL-Lipschitz in its second argument with respect to ℓ1\ell_{1} distance. Let the expected risk of a predictor p^\hat{p} on node ii be
+|
+| R⁡(p^)=𝔼(X,Aobs,Yi)​[ℓ⁡(Yi,p^​(Yi∣X,Aobs,Yℒ))].R(\hat{p})=\mathbb{E}_{(X,A_{\text{obs}},Y_{i})}\big[\ell\big(Y_{i},\hat{p}(Y_{i}\mid X,A_{\text{obs}},Y_{\mathcal{L}})\big)\big].
+|
+| (29)
+Then, the excess risk of our estimator relative to an idealized predictor that uses the true structural posterior satisfies:
+|
+|
+| R⁡(p^θ)−R⁡(p~θ)≤\displaystyle R(\hat{p}_{\theta})-R(\tilde{p}_{\theta})\leq
+|
+| (30)
+|
+|
+| L𝔼X,Aobs,Yℒ[∥qϕ(⋅∣X,Aobs,Yℒ)−p(⋅∣X,Aobs,Yℒ)∥1],\displaystyle L\mathbb{E}_{X,A_{\text{obs}},Y_{\mathcal{L}}}\big[\|q_{\phi}(\cdot\mid X,A_{\text{obs}},Y_{\mathcal{L}})-p(\cdot\mid X,A_{\text{obs}},Y_{\mathcal{L}})\|_{1}\big],
+|
+| (31)
+where
+|
+| p~θ(yi∣X,Aobs,Yℒ)=𝔼Z∼p(⋅∣X,Aobs,Yℒ)[pθ(yi∣X,Z)].\tilde{p}_{\theta}(y_{i}\mid X,A_{\text{obs}},Y_{\mathcal{L}})=\mathbb{E}_{Z\sim p(\cdot\mid X,A_{\text{obs}},Y_{\mathcal{L}})}[p_{\theta}(y_{i}\mid X,Z)].
+|
+| (32)
+Proof is given in Appendix D.1.
+For a fixed conditional family pθ​(yi∣X,Z)p_{\theta}(y_{i}\mid X,Z), Theorem 5.1 shows that the excess risk incurred by using an approximate structural posterior is controlled by the ℓ1\ell_{1} distance between qϕq_{\phi} and the true structural posterior. The excess risk vanishes in the idealized limit where qϕq_{\phi} converges to the true posterior. This motivates the use of a dedicated structural inference module (e.g., our VGAE-based encoder or more expressive models) to approximate p⁡(Z∣X,Aobs,Yℒ)p(Z\mid X,A_{\text{obs}},Y_{\mathcal{L}}) rather than relying on a single point estimate of ZZ. The Monte Carlo estimator with KK samples
+|
+| p^θ(K)​(yi∣X,Aobs,Yℒ)=1K​∑k=1Kpθ​(yi∣X,Z(k))\hat{p}_{\theta}^{(K)}(y_{i}\mid X,A_{\text{obs}},Y_{\mathcal{L}})=\frac{1}{K}\sum_{k=1}^{K}p_{\theta}(y_{i}\mid X,Z^{(k)})
+|
+| (33)
+converges to p^θ\hat{p}_{\theta} as K→∞K\to\infty, and Var⁡[p^θ(K)]=O⁡(1/K)\mathrm{Var}[\hat{p}_{\theta}^{(K)}]=O(1/K), showing the computation-stability trade-off.
+Table 2: (Q1) Node classification performance across nine heterophilic benchmarks. We evaluate baselines including structure-aware, spectral, and heterophily-oriented GNNs. The top three scores per dataset are highlighted.
+Dataset
+Roman
+Mine
+Amazon
+Chameleon
+Squirrel
+Actor
+Cornell
+Texas
+Wisconsin
+𝒢h\mathcal{G}_{h} (Eq. 1)
+0.05
+0.03
+0.18
+0.23
+0.22
+0.22
+0.11
+0.06
+0.16
+GCN
+47.7±0.38
+81.4±0.98
+38.5±0.45
+54.9±0.59
+31.1±0.71
+20.3±0.46
+39.9±0.79
+57.0±0.90
+49.0±0.78
+GAT
+45.9±0.42
+80.0±1.08
+39.0±0.52
+54.4±0.84
+31.0±0.93
+22.8±0.41
+42.6±0.80
+58.8±1.01
+50.2±0.97
+H2GCN
+60.6±0.54
+84.9±1.30
+41.3±0.62
+53.1±0.88
+31.2±0.68
+25.9±1.07
+55.0±1.15
+66.1±1.27
+62.0±1.25
+GCNII
+62.2±0.57
+84.8±1.35
+41.6±0.59
+54.0±0.77
+30.8±0.91
+26.2±1.22
+56.0±1.27
+69.1±1.34
+63.9±1.29
+MagNet
+65.2±0.64
+85.6±1.48
+41.9±0.71
+56.9±1.34
+32.4±1.15
+26.4±0.97
+55.1±1.31
+65.3±1.46
+61.7±1.54
+GPRGNN
+63.1±0.60
+85.3±1.19
+42.0±0.63
+55.8±0.81
+30.6±0.63
+25.2±0.89
+51.4±1.36
+60.7±1.28
+63.1±1.21
+FAGCN
+61.7±0.66
+83.5±1.26
+40.9±0.59
+54.8±0.81
+31.2±0.87
+26.8±1.24
+56.8±1.22
+69.7±1.41
+64.3±1.25
+ACM-GCN
+64.5±0.67
+86.1±1.34
+42.4±0.61
+56.6±1.40
+32.1±1.05
+25.9±1.02
+55.1±1.35
+65.9±1.52
+62.1±1.45
+GloGNN
+63.1±0.64
+85.7±1.27
+41.9±0.67
+53.9±0.70
+31.0±0.82
+27.0±0.73
+48.8±1.15
+62.5±1.21
+60.2±1.12
+Auto-HeG
+66.3±0.67
+86.0±1.38
+42.7±0.68
+54.3±1.33
+31.7±1.11
+26.5±0.99
+53.9±1.03
+67.4±1.65
+64.0±1.49
+DirGNN
+67.1±0.69
+86.2±1.46
+43.4±0.71
+59.8±1.45
+35.2±1.13
+27.5±0.95
+57.9±1.80
+68.8±1.57
+63.0±1.33
+PCNet
+64.2±0.64
+85.9±1.32
+42.3±0.64
+57.6±1.65
+31.8±0.58
+26.6±0.90
+54.1±1.02
+62.5±1.16
+60.5±1.13
+TFE-GNN
+68.7±0.70
+86.1±1.50
+43.7±0.72
+60.2±1.61
+36.0±0.59
+28.1±0.81
+53.7±1.07
+63.8±1.11
+62.5±1.19
+CGNN
+70.3±0.75
+86.6±1.53
+43.9±0.75
+59.1±0.78
+34.4±0.97
+26.5±1.17
+57.4±1.25
+70.3±1.36
+64.9±1.22
+L2DGCN
+65.4±0.65
+85.7±1.37
+43.2±0.67
+53.1±0.37
+35.4±0.52
+31.3±0.35
+51.5±3.28
+76.7±2.77
+65.8±3.01
+SpaM (ours)
+75.0±1.10
+87.2±0.95
+46.3±0.88
+62.7±1.29
+35.8±0.36
+37.4±0.66
+70.8±1.93
+83.8±0.44
+72.6±2.14
+5.2 Sparse Signed Aggregation as MAP Estimation
+We justify the local sparse coding problem in Eq. 12 from a probabilistic standpoint and discuss its robustness.
+Local linear-Gaussian-Laplace model.
+Fix a node ii and a signed adjacency ZZ. Conditional on ZZ and neighbor representations {vj}j∈𝒩i​(Z)\{v_{j}\}_{j\in\mathcal{N}_{i}(Z)}, suppose that the target vector tit_{i} is generated as follows:
+|
+| αi\displaystyle\alpha_{i}
+| ∼Laplace​(𝟎,λ−1​I),\displaystyle\sim\text{Laplace}(\mathbf{0},\lambda^{-1}I),
+|
+| (34)
+|
+| ti|αi,Z,{vj}\displaystyle t_{i}\mid\alpha_{i},Z,\{v_{j}\}
+| ∼𝒩⁡(Vi​αi,σ2​I),\displaystyle\sim\mathcal{N}(V_{i}\alpha_{i},\sigma^{2}I),
+|
+| (35)
+where ViV_{i} stacks neighbor values as in Eq. 9. Then, the posterior over αi\alpha_{i} satisfies
+|
+| p⁡(αi∣ti,Vi)∝exp⁡(−1σ2​‖ti−Vi​αi‖22−λ​‖αi‖1).p(\alpha_{i}\mid t_{i},V_{i})\propto\exp\left(-\frac{1}{\sigma^{2}}\big\|t_{i}-V_{i}\alpha_{i}\big\|_{2}^{2}-\lambda\|\alpha_{i}\|_{1}\right).
+|
+| (36)
+Thus, the MAP estimator of αi\alpha_{i} is the minimizer of Eq. 12 (scaling of λ\lambda), showing that our layer implements a MAP estimate of local combination weights under a sparse prior.
+Robustness to noisy neighbors.
+Suppose neighbors decompose into useful neighbors 𝒩igood\mathcal{N}^{\text{good}}_{i} and noisy neighbors 𝒩ibad\mathcal{N}^{\text{bad}}_{i}.
+Assume tit_{i} lies approximately in the span of {vj:j∈𝒩igood}\{v_{j}:j\in\mathcal{N}^{\text{good}}_{i}\}, while {vj:j∈𝒩ibad}\{v_{j}:j\in\mathcal{N}^{\text{bad}}_{i}\} are approximately uncorrelated with tit_{i}. Under standard conditions on ViV_{i}, classical sparse regression results imply that the LASSO solution αi⋆\alpha_{i}^{\star} will (i) suppress noisy neighbors and (ii) recover a sparse set of useful neighbors when λ\lambda is appropriately chosen. Corresponding ℓ1\ell_{1}/ℓ2\ell_{2} error bounds follow from restricted eigenvalue or mutual coherence conditions. Thus, even for a fixed ZZ containing spurious edges, sparse coding reduces their influence in aggregation and marginalization over ZZ. Additional theoretical details with Contextual Stochastic Block Models are in Appendix D.2∼\simD.5.
+6 Experiments
+We conduct empirical evaluations to examine predictive performance and the contribution of individual components.
+•
+Q1: Predictive Performance.
+Does SpaM improve node classification accuracy on heterophilic graphs? How does it perform when the observed adjacency suffers from structural noise or spurious edges?
+•
+Q2: Modeling Structural Posterior.
+Does inferring a distribution over positive, negative, and neutral relations lead to measurable performance gains?
+•
+Q3: Sparse Signed Message Passing.
+What is the contribution of sparsity-inducing message selection and sign-aware aggregation in mitigating oversmoothing?
+•
+Q4: Robustness.
+Is SpaM robust against random deletions, feature noise, or adversarially corrupted edges?
+Datasets
+We evaluate SpaM on nine public benchmarks that exhibit diverse structural properties and varying degrees of heterophily (Table 1). Unlike classical citation networks that are predominantly homophilic, many of these benchmarks exhibit low homophily ratios or mixed relational patterns. Additional details regarding the datasets and baselines are provided in Appendix E.
+6.1 (Q1) Main Result
+Table 2 reports node classification accuracy on nine heterophilic benchmarks. Across these datasets, classical convolutional GNNs such as GCN Kipf and Welling (2017) and GAT Veličković et al. (2018) show clear performance degradation, particularly on graphs with low homophily or noisy connectivity. In contrast, heterophily-aware architectures (the remaining methods) generally improve upon these baselines. However, their accuracy remains sensitive to edge noise and ambiguous neighborhood structure, as they typically rely on a fixed adjacency matrix or deterministic propagation rules.
+SpaM differs from prior approaches by marginalizing predictions over sampled signed graphs and restricting message aggregation to a sparse subset of neighbors. As shown in the table, our design leads to improved accuracy on most benchmarks, with especially pronounced gains on datasets exhibiting weak connectivity or strong heterophily (e.g., Cornell, Texas, and Wisconsin). On datasets with comparatively milder heterophily (e.g., Mine or Amazon), SpaM remains competitive with existing methods, suggesting that the proposed mechanisms do not sacrifice performance in easier regimes. Overall, the combination of structural marginalization and sparse signed aggregation reduces the influence of unreliable neighbors and limits excessive message mixing, contributing to more stable performance by limiting redundant message mixing under noisy connectivity.
+Further experimental results are reported in Appendix F, including homophilic benchmarks, large heterophilic graphs, Monte Carlo marginalization, and parameter sensitivity.
+Figure 2: (Q2) Structural posterior modeling on the Texas dataset. (a) Edge-wise posterior distributions over signed relations qϕ​(zi​j)q_{\phi}(z_{ij}). (b) Accuracy comparison of ablation variants.
+6.2 (Q2) Structural Posterior Modeling
+In Fig. 2, we analyze the learned structural posterior and its downstream impact on classification accuracy using Texas dataset. Panel (a) visualizes the edge-wise posterior distributions qϕ​(zi​j)q_{\phi}(z_{ij}) over negative (z=−1z=-1), neutral (z=0z=0), and positive (z=+1z=+1) relations. Unlike hard sign assignments, the probabilistic encoder assigns non-degenerate probability mass to multiple edge types, reflecting uncertainty in edge polarity rather than committing to a single discrete label. In the right figure, panel (b) compares three variants: (i) NoPosterior, which removes the structural posterior entirely; (ii) HardSign, which assigns discrete signs without uncertainty; and (iii) FullPosterior, our proposed stochastic structural layer. As shown in the figure, FullPosterior improves accuracy by approximately 7% over NoPosterior and 4% over HardSign, indicating that modeling uncertainty over edge polarity provides measurable benefits in this setting.
+Figure 3: (Q3) Effect of sparse signed message passing on depth robustness (Texas dataset). (a) Accuracy as network depth increases. (b) Oversmoothing behavior under ablations removing sparsity or sign-aware aggregation.
+6.3 (Q3) Sparse Signed Message Passing
+In this experiment, we isolate the contribution of two key components of SpaM: (i) the sparsity-inducing message selection arising from the local LASSO formulation, and (ii) the signed aggregation rule that separates positive and negative neighbors. Figure 3 summarizes how these mechanisms affect predictive performance and the degree of oversmoothing as the network depth increases. (Mitigating oversmoothing) In our benchmark, both GCN and GAT achieve their best accuracy at L=2L=2, followed by a steady decline as additional layers exacerbate oversmoothing. This trend is visible in panel (a), while panel (b) further illustrates how removing sparsity or sign-awareness accelerates oversmoothing within SpaM. In contrast, SpaM exhibits a slower accuracy degradation as depth increases, consistent with reduced oversmoothing compared to GCN and GAT. The sparse neighbor selection limits redundant message propagation, while the sign-aware aggregation reduces the accumulation of incompatible information. (Sparsity and signed structure) Removing the sparsity constraint causes the local coefficients αi\alpha_{i} to become dense, which increases message mixing and amplifies oversmoothing. Similarly, removing sign information forces all neighbors to contribute positively, leading to the aggregation of contradictory heterophilic signals.
+Figure 4: (Q4) Robustness under three perturbations on the Texas dataset: (a) random edge deletions, (b) additive Gaussian feature noise, and (c) adversarial edge perturbations.
+6.4 (Q4) Robustness Analysis
+Figure 4 reports classification accuracy as a function of perturbation strength. Specifically, we employ (i) Random edge deletions: A fraction ρ∈[0,0.6]\rho\in[0,0.6] of observed edges is removed uniformly at random from the input graph (node features are fixed). (ii) Feature noise: Gaussian noise 𝒩⁡(0,σ2)\mathcal{N}(0,\sigma^{2}) is independently added to each node feature dimension, where σ\sigma controls the noise level. (iii) Adversarial edge perturbations: We consider targeted adversarial attacks that iteratively modify a limited budget of edges. Following standard practice, the attack budget is defined as a fixed percentage of the original number of edges, and perturbations are constrained to edge additions or deletions without changing node features. Across all settings, GCN and GAT exhibit faster performance degradation as perturbations increase, while SpaM shows a more gradual decline. This is because GCN and GAT aggregate information densely from local neighborhoods, making them sensitive to spurious edges and noisy feature propagation. In contrast, SpaM aggregates messages from a sparse subset of neighbors, which separates positive/negative relations and improves robustness.
+7 Conclusion
+We propose a sparse signed message passing framework that explicitly models structural uncertainty through a learned distribution over graph relations. By marginalizing predictions over sampled graph structures and employing local sparse coding to select informative neighbors, our approach provides a principled mechanism for tackling noisy, heterophilic, and structurally unreliable graphs. Theoretical analysis supports the benefits of posterior predictive modeling and the robustness of sparse signed aggregation, while empirical results demonstrate consistent improvements across diverse benchmarks. Our findings highlight the value of explicitly representing uncertainty in graph structure rather than relying on fixed or heuristically reweighted edges. Future work includes developing scalable posterior inference modules, extending the framework to dynamic or continuous-time graphs, and exploring fairness in uncertainty-aware graph learning.
+References
+Bo et al. (2021)
+D. Bo, X. Wang, and C. Shi
+Beyond low-frequency information in graph convolutional networks.
+In AAAI,
+Cited by: §B.2,
+2nd item,
+§1,
+§2.
+Bodnar et al. (2022)
+C. Bodnar, F. Di Giovanni, B. Chamberlain, P. Lio, and M. Bronstein
+Neural sheaf diffusion: a topological perspective on heterophily and oversmoothing in gnns.
+Advances in Neural Information Processing Systems 35, pp. 18527–18541.
+Cited by: §1,
+§1,
+§2,
+§2.
+Chen et al. (2020)
+M. Chen, Z. Wei, Z. Huang, B. Ding, and Y. Li
+Simple and deep graph convolutional networks.
+In International conference on machine learning,
+pp. 1725–1735.
+Cited by: §B.1,
+3rd item,
+Table 5,
+Table 6.
+Chien et al. (2021)
+E. Chien, C. Pan, W. Peng, and O. Milenkovic
+Adaptive universal generalized pagerank graph neural network.
+In ICLR,
+Cited by: 2nd item,
+Table 5,
+Table 6,
+§1,
+§2.
+Choi et al. (2022)
+Y. Choi, J. Choi, T. Ko, H. Byun, and C. Kim
+Finding heterophilic neighbors via confidence-based subgraph matching for semi-supervised node classification.
+In Proceedings of the 31st ACM international conference on information & knowledge management,
+pp. 283–292.
+Cited by: §1,
+§2.
+Choi et al. (2025a)
+Y. Choi, T. Ko, J. Choi, and C. Kim
+Beyond binary: improving signed message passing in graph neural networks for multi-class graphs.
+IEEE Transactions on Pattern Analysis and Machine Intelligence.
+Cited by: §1,
+§2.
+Choi et al. (2025b)
+Y. Choi, T. Ko, J. Choi, and C. Kim
+Selective blocking for message-passing neural networks on heterophilic graphs.
+In The 41st Conference on Uncertainty in Artificial Intelligence,
+Cited by: §1,
+§2.
+Deshpande et al. (2018)
+Y. Deshpande, S. Sen, A. Montanari, and E. Mossel
+Contextual stochastic block models.
+Advances in Neural Information Processing Systems 31.
+Cited by: §1.
+Ding et al. (2025)
+S. Ding, J. Zhang, L. Guo, X. Li, et al.
+L2DGCN: learnable enhancement and label selection dynamic graph convolutional networks for mitigating degree bias.
+In The Thirty-ninth Annual Conference on Neural Information Processing Systems,
+Cited by: §B.2,
+3rd item.
+Du et al. (2022)
+L. Du, X. Shi, Q. Fu, X. Ma, H. Liu, S. Han, and D. Zhang
+Gbk-gnn: gated bi-kernel graph neural networks for modeling both homophily and heterophily.
+In Proceedings of the ACM web conference 2022,
+pp. 1550–1558.
+Cited by: §B.2.
+Duan et al. (2024)
+R. Duan, M. Guang, J. Wang, C. Yan, H. Qi, W. Su, C. Tian, and H. Yang
+Unifying homophily and heterophily for spectral graph neural networks via triple filter ensembles.
+Advances in Neural Information Processing Systems 37, pp. 93540–93567.
+Cited by: 2nd item,
+§1,
+§2.
+Dwivedi et al. (2023)
+V. P. Dwivedi, C. K. Joshi, A. T. Luu, T. Laurent, Y. Bengio, and X. Bresson
+Benchmarking graph neural networks.
+Journal of Machine Learning Research 24 (43), pp. 1–48.
+Cited by: §1,
+§2.
+Fan et al. (2023)
+S. Fan, X. Wang, C. Shi, P. Cui, and B. Wang
+Generalizing graph neural networks on out-of-distribution graphs.
+IEEE transactions on pattern analysis and machine intelligence 46 (1), pp. 322–337.
+Cited by: §1,
+§2.
+Fuchsgruber et al. (2024)
+D. Fuchsgruber, T. Wollschläger, and S. Günnemann
+Energy-based epistemic uncertainty for graph neural networks.
+Advances in Neural Information Processing Systems 37, pp. 34378–34428.
+Cited by: §1,
+§2.
+Guo et al. (2022)
+K. Guo, K. Zhou, X. Hu, Y. Li, Y. Chang, and X. Wang
+Orthogonal graph neural networks.
+In Proceedings of the AAAI Conference on Artificial Intelligence,
+Vol. 36, pp. 3996–4004.
+Cited by: §1,
+§2.
+Hamilton et al. (2017)
+W. Hamilton, Z. Ying, and J. Leskovec
+Inductive representation learning on large graphs.
+Advances in neural information processing systems 30.
+Cited by: §B.1.
+Han et al. (2025)
+S. Han, Z. Zhou, J. Chen, Z. Hao, S. Zhou, G. Wang, Y. Feng, C. Chen, and C. Wang
+Uncertainty-aware graph structure learning.
+In Proceedings of the ACM on Web Conference 2025,
+pp. 4863–4874.
+Cited by: §B.3,
+§1,
+§2.
+Hasanzadeh et al. (2020)
+A. Hasanzadeh, E. Hajiramezanali, S. Boluki, M. Zhou, N. Duffield, K. Narayanan, and X. Qian
+Bayesian graph neural networks with adaptive connection sampling.
+In International conference on machine learning,
+pp. 4094–4104.
+Cited by: §B.4,
+§1,
+§2.
+He et al. (2024)
+D. He, L. Shan, J. Zhao, H. Zhang, Z. Wang, and W. Zhang
+Exploitation of a latent mechanism in graph contrastive learning: representation scattering.
+Advances in Neural Information Processing Systems 37, pp. 115351–115376.
+Cited by: §1,
+§2.
+Hou et al. (2024)
+Z. Hou, R. Feng, T. Derr, and X. Liu
+Robust graph neural networks via unbiased aggregation.
+Advances in Neural Information Processing Systems 37, pp. 110097–110130.
+Cited by: §1.
+Hsu et al. (2022)
+H. H. Hsu, Y. Shen, C. Tomani, and D. Cremers
+What makes graph neural networks miscalibrated?.
+Advances in Neural Information Processing Systems 35, pp. 13775–13786.
+Cited by: §1,
+§2.
+Huang et al. (2023)
+K. Huang, Y. Jin, E. Candes, and J. Leskovec
+Uncertainty quantification over graph with conformalized graph neural networks.
+Advances in Neural Information Processing Systems 36, pp. 26699–26721.
+Cited by: §1,
+§2.
+Jin et al. (2020)
+W. Jin, Y. Ma, X. Liu, X. Tang, S. Wang, and J. Tang
+Graph structure learning for robust graph neural networks.
+In Proceedings of the 26th ACM SIGKDD international conference on knowledge discovery & data mining,
+pp. 66–74.
+Cited by: §1,
+§2.
+Kipf and Welling (2016)
+T. N. Kipf and M. Welling
+Variational graph auto-encoders.
+arXiv preprint arXiv:1611.07308.
+Cited by: §1,
+§2.
+Kipf and Welling (2017)
+T. N. Kipf and M. Welling
+Semi-supervised classification with graph convolutional networks.
+ICLR.
+Cited by: §B.1,
+1st item,
+Table 5,
+Table 6,
+§1,
+§4.1,
+§6.1,
+2.
+Ko et al. (2023)
+T. Ko, Y. Choi, and C. Kim
+A spectral graph convolution for signed directed graphs via magnetic laplacian.
+Neural Networks 164, pp. 562–574.
+Cited by: §1,
+§2.
+Li et al. (2024)
+B. Li, E. Pan, and Z. Kang
+Pc-conv: unifying homophily and heterophily with two-fold filtering.
+In Proceedings of the AAAI conference on artificial intelligence,
+Vol. 38, pp. 13437–13445.
+Cited by: 2nd item,
+§1,
+§2.
+Li et al. (2022)
+X. Li, R. Zhu, Y. Cheng, C. Shan, S. Luo, D. Li, and W. Qian
+Finding global homophily in graph neural networks when meeting heterophily.
+In International conference on machine learning,
+pp. 13242–13256.
+Cited by: 2nd item.
+Liang et al. (2025)
+Y. Liang, W. Zhang, Z. Sheng, L. Yang, Q. Xu, J. Jiang, Y. Tong, and B. Cui
+Towards scalable and deep graph neural networks via noise masking.
+In Proceedings of the AAAI Conference on Artificial Intelligence,
+Vol. 39, pp. 18693–18701.
+Cited by: §1.
+Liu et al. (2022)
+H. Liu, B. Hu, X. Wang, C. Shi, Z. Zhang, and J. Zhou
+Confidence may cheat: self-training on graph neural networks under distribution shift.
+In Proceedings of the ACM web conference 2022,
+pp. 1248–1258.
+Cited by: §1,
+§2.
+Luan et al. (2022)
+S. Luan, C. Hua, Q. Lu, J. Zhu, M. Zhao, S. Zhang, X. Chang, and D. Precup
+Revisiting heterophily for graph neural networks.
+Advances in neural information processing systems 35, pp. 1362–1375.
+Cited by: §B.2,
+2nd item,
+§1,
+§2.
+Pei et al. (2020)
+H. Pei, B. Wei, K. C. Chang, Y. Lei, and B. Yang
+Geom-gcn: geometric graph convolutional networks.
+In International Conference on Learning Representations (ICLR),
+Cited by: §1.
+Platonov et al. (2023)
+O. Platonov, D. Kuznedelev, M. Diskin, A. Babenko, and L. Prokhorenkova
+A critical look at the evaluation of gnns under heterophily: are we really making progress?.
+arXiv preprint arXiv:2302.11640.
+Cited by: §1.
+Rong et al. (2019)
+Y. Rong, W. Huang, T. Xu, and J. Huang
+Dropedge: towards deep graph convolutional networks on node classification.
+arXiv preprint arXiv:1907.10903.
+Cited by: §B.1,
+§B.3,
+§1,
+§2.
+Rossi et al. (2024)
+E. Rossi, B. Charpentier, F. Di Giovanni, F. Frasca, S. Günnemann, and M. M. Bronstein
+Edge directionality improves learning on heterophilic graphs.
+In Learning on graphs conference,
+pp. 25–1.
+Cited by: 3rd item.
+Rozemberczki et al. (2019)
+B. Rozemberczki, R. Davies, R. Sarkar, and C. Sutton
+Gemsec: graph embedding with self clustering.
+In Proceedings of the 2019 IEEE/ACM international conference on advances in social networks analysis and mining,
+pp. 65–72.
+Cited by: §E.1.
+Trivedi et al. (2024)
+P. Trivedi, M. Heimann, R. Anirudh, D. Koutra, and J. J. Thiagarajan
+Accurate and scalable estimation of epistemic uncertainty for graph neural networks.
+arXiv preprint arXiv:2401.03350.
+Cited by: §1,
+§2.
+Veličković et al. (2018)
+P. Veličković, G. Cucurull, A. Casanova, A. Romero, P. Liò, and Y. Bengio
+Graph attention networks.
+In ICLR,
+Cited by: §B.1,
+1st item,
+Table 5,
+Table 6,
+§1,
+§6.1.
+Xu and Markovich (2025)
+F. Xu and T. Markovich
+Uncertainty estimation on graphs with structure informed stochastic partial differential equations.
+arXiv preprint arXiv:2506.06907.
+Cited by: §B.3.
+Yan et al. (2022)
+J. Yan, Y. Wang, Q. Wang, W. He, and S. Pan
+Two sides of the same coin: heterophily and oversmoothing in graph convolutional neural networks.
+In Proceedings of the AAAI Conference on Artificial Intelligence,
+Cited by: §1,
+§1,
+§2.
+Zhang et al. (2021)
+X. Zhang, J. Bu, Z. Zhu, Q. Xuan, and Z. Yu
+MagNet: a neural network for directed graphs.
+In NeurIPS,
+Cited by: 3rd item.
+Zhang et al. (2019)
+Y. Zhang, S. Pal, M. Coates, and D. Ustebay
+Bayesian graph convolutional neural networks for semi-supervised classification.
+In Proceedings of the AAAI conference on artificial intelligence,
+Vol. 33, pp. 5829–5836.
+Cited by: §B.4,
+§1.
+Zheng et al. (2023)
+X. Zheng, M. Zhang, C. Chen, Q. Zhang, C. Zhou, and S. Pan
+Auto-heg: automated graph neural network on heterophilic graphs.
+In Proceedings of the ACM Web Conference 2023,
+pp. 611–620.
+Cited by: 2nd item.
+Zhu et al. (2020)
+J. Zhu, Y. Yan, L. Zhao, M. Heimann, L. Akoglu, and D. Koutra
+Beyond homophily in graph neural networks: current limitations and effective designs.
+Advances in neural information processing systems 33, pp. 7793–7804.
+Cited by: §B.2,
+2nd item,
+Table 5,
+Table 6,
+§1,
+§2,
+§3.
+Zhuo et al. (2025)
+W. Zhuo, H. Yu, G. Tan, and X. Li
+Commute graph neural networks.
+In Proceedings of the 42nd International Conference on Machine Learning,  A. Singh, M. Fazel, D. Hsu, S. Lacoste-Julien, F. Berkenkamp, T. Maharaj, K. Wagstaff, and J. Zhu (Eds.),
+Proceedings of Machine Learning Research, Vol. 267, pp. 80612–80628.
+External Links: Link
+Cited by: 2nd item.
+Zügner et al. (2018)
+D. Zügner, A. Akbarnejad, and S. Günnemann
+Adversarial attacks on neural networks for graph data.
+In Proceedings of the 24th ACM SIGKDD international conference on knowledge discovery & data mining,
+pp. 2847–2856.
+Cited by: §1.
+Zügner et al. (2020)
+D. Zügner, O. Borchert, A. Akbarnejad, and S. Günnemann
+Adversarial attacks on graph neural networks: perturbations and their patterns.
+ACM Transactions on Knowledge Discovery from Data (TKDD) 14 (5), pp. 1–31.
+Cited by: §1,
+§2.
+Technical Appendix
+Figure 5: Illustrative comparison of baseline GNNs and SpaM. Left: A baseline GNN aggregates messages from all observed neighbors of node 00 in 𝒢obs\mathcal{G}_{\text{obs}}, treating them as equally informative. Right: SpaM first infers a posterior over signed edges qϕ​(Z∣Aobs,X,Yℒ)q_{\phi}(Z\mid A_{\text{obs}},X,Y_{\mathcal{L}}) and converts raw edges into Bayesian messages {z0​j∈{−1,0,+1}}\{z_{0j}\in\{-1,0,+1\}\}, indicating positive, negative, or absent relations.
+Appendix A Illustrative Example
+Figure 5 illustrates how SpaM differs from standard GNNs for a target node 00 in a noisy, heterophilic graph. In a conventional GNN, the hidden representation of node 00 is updated by aggregating messages from all observed neighbors in AobsA_{\text{obs}} (left panel). Under the assumption that edges are equally trustworthy and homophilic, messages from neighbors belonging to different classes or spurious connections (e.g., nodes 1∼51\sim 5) are aggregated together, which can obscure the contribution of truly informative neighbors and result in an incorrect prediction for node 00.
+Instead, SpaM models structural uncertainty and signed relations before message passing (right panel). Given (Aobs,X,Yℒ)(A_{\text{obs}},X,Y_{\mathcal{L}}), the encoder described in §4.1 produces a posterior distribution over signed adjacencies qϕ​(Z)q_{\phi}(Z), assigning each edge (0,j)(0,j) to one of three states: positive (+1)(+1), negative (−1)(-1), or absent (0)(0). These stochastic edge states reflect uncertainty in both the existence and polarity of relations: positive edges correspond to neighbors that are likely to support node 00, negative edges to neighbors providing contrasting information, and edges assigned state 00 are excluded from the local neighborhood.
+Conditioned on a sampled signed adjacency ZZ, the sparse signed layer solves the local sparse coding problem in Eq. 12 for node 00, producing coefficients α0​j\alpha_{0j}. Only a small subset of neighbors receives nonzero coefficients (solid circles), while others are filtered out (dashed circles), resulting in a data-driven sparse neighborhood. Neighbors with positive sign and large coefficients (e.g., nodes 66 and 77) contribute strongly to the update, whereas uncertain or antagonistic neighbors either receive small coefficients or are assigned z0​j=0z_{0j}=0, effectively limiting their influence. Stacking such layers and marginalizing over multiple samples Z(k)∼qϕZ^{(k)}\sim q_{\phi} as in Eq. 6 yields a sparse Bayesian message passing network that mitigates the effect of noisy and heterophilic edges while retaining informative relational signals.
+Appendix B Comparative Analysis
+In this section, we discuss how SpaM relates to the principal model families summarized in Table 3. We organize the discussion by model family and focus on two aspects: (i) how edges and propagation are parameterized, and (ii) how interference and noise are handled.
+B.1 Homophily GNNs
+Classical homophily-based GNNs such as GCN Kipf and Welling [2017], GAT Veličković et al. [2018], GraphSAGE Hamilton et al. [2017], JKNet Chen et al. [2020], DropEdge Rong et al. [2019], and GCNII Chen et al. [2020] operate on a fixed scalar adjacency and assume that neighboring nodes tend to share labels. This assumption is reflected in scalar or attention-weighted edge operators and an implicit low-pass filtering behavior. Although residual or skip connections are introduced in models such as JKNet and GCNII, the underlying graph is still treated as reliable and purely supportive: edges are either used uniformly or softly down-weighted, but not differentiated by their semantic role. As a result, these models do not distinguish between supporting and harmful neighbors, nor do they represent uncertainty over the adjacency itself.
+Key differences.
+SpaM differs from this family in several respects. Rather than operating on a fixed scalar adjacency, it maintains a posterior over signed edges and samples latent signed graphs, allowing edges to play supporting or opposing roles during propagation. In addition, the sparse coding step selects a limited subset of neighbors that best reconstruct the target representation, which constrains message mixing and alleviates oversmoothing as depth increases. Finally, SpaM explicitly represents structural uncertainty through Monte Carlo sampling of the signed adjacency, whereas homophily-based GNNs optimize a single point estimate on a fixed graph. These differences make SpaM better suited to settings with noisy or heterophilic connectivity, where treating all edges as uniformly supportive can be problematic.
+|
+Model family
+|
+Method
+|
+Edge operators
+|
+Spectrum
+|
+Interference
+|
+Limitation
+|
+Homophily
+GNNs
+|
+GCN
+|
+Scalar adjacency
+|
+Implicit low-pass
+|
+None
+|
+Oversmoothing
+|
+|
+GAT
+|
+Learned attention
+|
+Implicit
+|
+None
+|
+No heterophily modeling
+|
+|
+GraphSAGE
+|
+Sampling-based
+|
+None
+|
+None
+|
+Limited spectral control
+|
+|
+JKNet
+|
+Skip connections
+|
+Implicit
+|
+None
+|
+Oversmoothing persists
+|
+|
+DropEdge
+|
+Edge dropout
+|
+Implicit
+|
+None
+|
+Stability issues
+|
+|
+GCNII
+|
+Residual
+|
+Flexible low-pass
+|
+None
+|
+Complexity increases
+|
+Heterophily
+GNNs
+|
+H2GCN
+|
+Decoupled features
+|
+High-frequency
+|
+Partial
+|
+Heuristic interference
+|
+|
+FAGCN
+|
+Signed filters
+|
+Adaptive spectral
+|
+Partial
+|
+No phase modeling
+|
+|
+ACM-GCN
+|
+Adaptive mixing
+|
+Multi-hop
+|
+Partial
+|
+Sensitive to noise
+|
+|
+MixHop
+|
+Hop mixing
+|
+Fixed spectrum
+|
+None
+|
+Limited adaptivity
+|
+|
+GBK-GNN
+|
+Gaussian kernels
+|
+Multi-band
+|
+None
+|
+Heavy tuning
+|
+|
+L2DGCN
+|
+Signed kernel
+|
+High-frequency
+|
+Partial
+|
+Instability on noise
+|
+Uncertainty
+GNNs
+|
+DropEdge
+|
+Stochastic removal
+|
+Implicit
+|
+None
+|
+Random removal
+|
+|
+UnGSL
+|
+Sampling
+|
+Non-spectral
+|
+Partial
+|
+Sign/direction ignored
+|
+|
+SISPDE
+|
+Stochastic operators
+|
+Flexible
+|
+Explicit
+|
+High cost (PDEs)
+|
+Bayesian
+GNNs
+|
+BGCN
+|
+Sampling
+|
+None
+|
+Implicit only
+|
+No structural uncertainty
+|
+|
+BBDE
+|
+Sampling
+|
+Non-spectral
+|
+Partial
+|
+Binary edges only
+|
+|
+SpaM (ours)
+|
+Posterior + sparse
+|
+Non-spectral
+|
+Explicit
+|
+Sampling overhead
+Table 3: Comparison across model families. SpaM uniquely combines (i) Bayesian structural inference over signed edges and (ii) sparse signed message passing, enabling explicit suppression of harmful neighbors under heterophily and noise.
+B.2 Heterophily GNNs
+Heterophily-oriented GNNs such as H2GCN Zhu et al. [2020], FAGCN Bo et al. [2021], ACM-GCN Luan et al. [2022], GBK-GNN Du et al. [2022], and L2DGCN Ding et al. [2025] seek to alleviate the limitations of homophily GNNs by modifying how features are propagated and combined. Many of these methods decouple ego-features and neighbor features, introduce signed or high-frequency filters, or mix information across different hop distances. This is captured by high-frequency or adaptive spectral responses and partial interference handling: they attempt to prevent naive low-pass smoothing from washing out informative signals under heterophily. However, these models still share two structural limitations relative to SpaM. First, the adjacency is essentially deterministic. FAGCN and L2DGCN introduce signed or high-frequency kernels, but the sign pattern is learned at the level of filters, not as a probabilistic structure over edges. Similarly, H2GCN, ACM-GCN, MixHop, and GBK-GNN design different mixing schemes over fixed neighborhoods, but do not explicitly model uncertainty about which edges should be trusted or suppressed. In particular, if a harmful edge is present in the observed adjacency, these methods can at best try to cancel its effect heuristically through learned coefficients or high-frequency filters.
+Key differences.
+By contrast, SpaM directly targets structural uncertainty and interference at the edge level. The structural posterior assigns probabilities to each edge being positive, negative, or inactive, and SpaM samples signed graphs from this posterior. On top of this, the local sparse coding layer selects a compact set of neighbors whose value vectors best reconstruct the target representation and then aggregates positive neighbors and negative neighbors with opposite signs. This dual mechanism leads to explicit interference cancellation: harmful neighbors are both down-weighted via sparsity and assigned negative contributions when the inferred structure indicates heterophily. In addition, SpaM does not rely on a specific spectral profile (low-pass, high-pass, or multi-band); instead, its behavior emerges from the combination of signed adjacency and sparse coding, which is more directly tied to the underlying relational pattern than a fixed spectral filter class.
+B.3 Uncertainty-aware GNNs
+Uncertainty-aware GNNs aim to quantify or propagate uncertainty arising from noisy graph structure, stochastic neighborhood formation, or unstable message passing dynamics. We include three representative approaches: DropEdge Rong et al. [2019], UnGSL Han et al. [2025], and SISPDE Xu and Markovich [2025]. These models incorporate randomness either at the structural level or within the propagation mechanism, enabling robustness in challenging or noise-dominated graph settings.
+Key differences.
+DropEdge introduces stochastic edge removal, implicitly modeling structural uncertainty by perturbing the graph during training. While simple and widely adopted, this approach does not explicitly differentiate harmful edges from informative ones. UnGSL formulates a probabilistic edge-selection process, learning edge-level uncertainty distributions. This enables better handling of ambiguous or noisy neighborhoods, though it does not reason about signed or directional interference. SISPDE employs structure-informed stochastic partial differential equations (SPDEs) to propagate uncertainty throughout the graph. By injecting noise in a principled continuous-time formulation, the model captures both epistemic and aleatoric uncertainty, but incurs significantly higher computational overhead. Compared to these approaches, SpaM explicitly models a posterior over signed adjacency and integrates sparse, sign-aware message passing. This allows SpaM to suppress detrimental neighbors rather than relying solely on stochastic perturbation or continuous noise models.
+B.4 Bayesian GNNs
+Bayesian GNNs represented by BGCN Zhang et al. [2019] and BBDE Hasanzadeh et al. [2020] incorporate uncertainty into graph neural networks but do so in ways that are complementary to SpaM. BGCN places a Bayesian treatment on the GNN parameters, typically via weight sampling or dropout-style approximations, and averages predictions over multiple sampled models. This yields uncertainty estimates over the classifier but assumes that the graph structure itself is fixed and reliable. Consequently, BGCN does not address structural uncertainty: harmful edges, noisy connections, or heterophilic relations are still propagated through the network in the same way, regardless of the sampled weights. BBDE introduces adaptive sampling over connections and moves closer to the idea of structural uncertainty, but it operates on binary edges and does not distinguish between supporting and opposing relations. As shown in the table, BBDE is summarized as using sampling-based, non-spectral operators with partial interference handling limited to binary edge presence or absence. BBDE can decide whether an edge exists in a sampled graph, but it cannot represent that an edge is consistently heterophilic and should contribute with an opposite sign.
+Key differences.
+SpaM extends this Bayesian line of work in two directions. First, it models a posterior over signed adjacency, assigning probability mass not only to edge existence but also to its polarity (positive, negative, or absent). This captures a richer form of structural uncertainty that explicitly accounts for heterophily and antagonistic relations. Second, SpaM couples this posterior with a sparse coding-based message passing layer: for each sampled signed graph, it solves a local sparse reconstruction problem to obtain coefficients that implicitly select informative neighbors and suppress noisy ones. Interference is then handled explicitly by aggregating positive neighbors and subtracting the contributions of negative neighbors scaled by their coefficients. The cost of this expressiveness is sampling overhead, but it provides a unified treatment of structural uncertainty, signed relations, and sparse aggregation that is not available in existing Bayesian GNNs.
+Appendix C Implementation, Time Complexity, and Algorithmic Details
+C.1 Implementation Details
+We implement the structural encoder using a two-layer GNNs, followed by an MLP decoder that outputs edge-type logits for each observed edge (i,j)∈ℰobs(i,j)\in\mathcal{E}_{\mathrm{obs}}. During training, the categorical distribution over {−1,0,+1}\{-1,0,+1\} is sampled using the Gumbel-softmax relaxation, ensuring differentiability of the structural posterior. For the sparse signed message passing layers, we replace the exact LASSO solver with a lightweight learned module consisting of a small MLP with ℓ1\ell_{1} regularization that outputs an approximate α^i\hat{\alpha}_{i} from (ti,Vi)(t_{i},V_{i}). All linear maps (Wv,Wt,Wo,WcW_{v},W_{t},W_{o},W_{c}) are learned end-to-end. We apply layer normalization and dropout between SpaM layers for stability. For classification, the final hidden representations are fed into a linear layer followed by softmax. During inference, we draw a small number of structural samples (typically K=5K=5-1010) and average the predicted distributions; this provides a practical approximation to posterior marginalization. We train using Adam with learning rate decay, early stopping on validation accuracy, and optional gradient clipping. Hyperparameters λ\lambda, λsp=0.01\lambda_{\mathrm{sp}}=0.01, and λst=0.1\lambda_{\mathrm{st}}=0.1 in Eq. 25 are retrieved via grid search, while γ\gamma in the signed aggregation rule is fixed to a small constant (e.g., γ=1\gamma=1) unless stated otherwise.
+C.2 Time Complexity
+The computational complexity per SpaM layer is dominated by (i) forming the local dictionaries ViV_{i}, (ii) running the approximate sparse-coding module for each node, and (iii) performing signed aggregation. Let dd denote the hidden dimension, m=|ℰobs|m=|\mathcal{E}_{\mathrm{obs}}| the number of observed edges, and d¯\bar{d} the average node degree.
+•
+Sparse coding cost. The approximate LASSO module operates on a dictionary of size dval×d¯d_{\text{val}}\times\bar{d} for each node. The cost per node is O⁡(dval​d¯)O(d_{\text{val}}\bar{d}), yielding O⁡(n​dval​d¯)O(nd_{\text{val}}\bar{d}) per layer.
+•
+Signed aggregation. Aggregation requires weighted sums over positive and negative neighbors, costing O⁡(m​dval)O(md_{\text{val}}) per layer.
+•
+Structural posterior sampling. Sampling Z(k)Z^{(k)} from qϕq_{\phi} is O⁡(m)O(m) per sample. Repeating this KK times contributes O⁡(K​m)O(Km) overhead.
+Overall complexity.
+For an LL-layer network, the total cost per epoch is
+|
+| O⁡(K⋅L⋅(n​dval​d¯+m​dval)),O\left(K\cdot L\cdot(nd_{\text{val}}\bar{d}+md_{\text{val}})\right),
+|
+| (37)
+which is linear in the number of edges and scales linearly with the number of structural samples KK. In practice, choosing a small KK (e.g., 55) provides an effective compromise between computational budget and predictive robustness.
+C.3 Overall Algorithm
+Algorithm 1  SpaM: Sparse Bayesian Message Passing (one training epoch)
+0:
+𝒢obs\mathcal{G}_{\mathrm{obs}}, AobsA_{\mathrm{obs}}, XX, YℒY_{\mathcal{L}}, prior p⁡(Z)p(Z); hyperparameters L,K,λ,λsp,λstL,K,\lambda,\lambda_{\mathrm{sp}},\lambda_{\mathrm{st}}, learning rate η\eta
+0:
+Updated parameters (θ,ϕ)(\theta,\phi)
+1:
+Structural encoder:
+2:
+Hϕ←GCNϕ​(Aobs,X,Yℒ)H_{\phi}\leftarrow\mathrm{GCN}_{\phi}(A_{\mathrm{obs}},X,Y_{\mathcal{L}})\qquad *GCN: Graph Convolutional Network Kipf and Welling [2017]
+3:
+for all (i,j)∈ℰobs(i,j)\in\mathcal{E}_{\mathrm{obs}} do
+4:
+gi​j←MLPϕ([hϕ,i∥hϕ,j])g_{ij}\leftarrow\mathrm{MLP}_{\phi}([h_{\phi,i}\|h_{\phi,j}])
+5:
+πi​js←softmaxs​(gi​j)\pi_{ij}^{s}\leftarrow\mathrm{softmax}_{s}(g_{ij}) for s∈{−1,0,+1}s\in\{-1,0,+1\}
+6:
+end for
+7:
+Initialize ℒcls←0\mathcal{L}_{\mathrm{cls}}\leftarrow 0, ℒsp←0\mathcal{L}_{\mathrm{sp}}\leftarrow 0
+8:
+for k=1k=1 to KK do
+9:
+Sample Z(k)Z^{(k)} using πi​js\pi_{ij}^{s} (Gumbel-softmax in practice)
+10:
+Forward pass:
+11:
+H(0)←XH^{(0)}\leftarrow X
+12:
+for ℓ=0\ell=0 to L−1L-1 do
+13:
+V←H(ℓ)​WvV\leftarrow H^{(\ell)}W_{v}
+14:
+for all i∈𝒱i\in\mathcal{V} do
+15:
+Form ViV_{i} using neighbors in Z(k)Z^{(k)}
+16:
+ti←Wt​hit_{i}\leftarrow W_{t}h_{i}
+17:
+αi(k)←SparseCoder​(ti,Vi)\alpha_{i}^{(k)}\leftarrow\textsc{SparseCoder}(t_{i},V_{i})
+18:
+hi′←h_{i}^{\prime}\leftarrow signed aggregation using αi(k)\alpha_{i}^{(k)} and Z(k)Z^{(k)}
+19:
+end for
+20:
+H(ℓ+1)←σ⁡(H′)H^{(\ell+1)}\leftarrow\sigma(H^{\prime})
+21:
+end for
+22:
+Classifier:
+23:
+for all i∈𝒱i\in\mathcal{V} do
+24:
+pθ(k)​(yi)←softmax⁡(Wc​hi′+c)p_{\theta}^{(k)}(y_{i})\leftarrow\mathrm{softmax}(W_{c}h_{i}^{\prime}+c)
+25:
+end for
+26:
+Accumulate losses:
+27:
+ℒcls+=−∑i∈ℒlogpθ(k)(yi),ℒsp+=1n∑i∥αi(k)∥1\mathcal{L}_{\mathrm{cls}}\mathrel{+}=-\sum_{i\in\mathcal{L}}\log p_{\theta}^{(k)}(y_{i}),\quad\mathcal{L}_{\mathrm{sp}}\mathrel{+}=\frac{1}{n}\sum_{i}\|\alpha_{i}^{(k)}\|_{1}
+28:
+end for
+29:
+ℒcls←ℒcls/K,ℒsp←ℒsp/K\mathcal{L}_{\mathrm{cls}}\leftarrow\mathcal{L}_{\mathrm{cls}}/K,\quad\mathcal{L}_{\mathrm{sp}}\leftarrow\mathcal{L}_{\mathrm{sp}}/K
+30:
+Structural loss:
+31:
+ℒstruct←KL(qϕ(Z)∥p(Z))−𝔼qϕ[logp(Aobs∣Z)]\mathcal{L}_{\mathrm{struct}}\leftarrow\mathrm{KL}(q_{\phi}(Z)\|p(Z))-\mathbb{E}_{q_{\phi}}[\log p(A_{\mathrm{obs}}\mid Z)]
+32:
+Total loss:
+ℒtotal=1|ℒ|​ℒcls+λsp​ℒsp+λst​ℒstruct\mathcal{L}_{\mathrm{total}}=\frac{1}{|\mathcal{L}|}\mathcal{L}_{\mathrm{cls}}+\lambda_{\mathrm{sp}}\mathcal{L}_{\mathrm{sp}}+\lambda_{\mathrm{st}}\mathcal{L}_{\mathrm{struct}}
+33:
+Update parameters:
+34:
+(θ,ϕ)←OptimizerStep​((θ,ϕ),∇ℒtotal,η)(\theta,\phi)\leftarrow\textsc{OptimizerStep}\big((\theta,\phi),\nabla\mathcal{L}_{\mathrm{total}},\eta\big)
+Appendix D Deeper Theoretical Analysis
+D.1 Proof of Theorem 5.1
+For notational brevity, write ℐ=(X,Aobs,Yℒ)\mathcal{I}=(X,A_{\text{obs}},Y_{\mathcal{L}}) for the observed information relevant to structure, and denote the true structural posterior and its approximation by p⁡(Z∣ℐ)p(Z\mid\mathcal{I}) and qϕ​(Z∣ℐ)q_{\phi}(Z\mid\mathcal{I}). For a fixed choice of parameters θ\theta, define the oracle predictor and our approximate predictor as
+|
+| p~θ​(yi∣ℐ)\displaystyle\tilde{p}_{\theta}(y_{i}\mid\mathcal{I})
+| =𝔼Z∼p(⋅∣ℐ)[pθ(yi∣X,Z)],\displaystyle=\mathbb{E}_{Z\sim p(\cdot\mid\mathcal{I})}\big[p_{\theta}(y_{i}\mid X,Z)\big],
+|
+| (38)
+|
+| p^θ​(yi∣ℐ)\displaystyle\hat{p}_{\theta}(y_{i}\mid\mathcal{I})
+| =𝔼Z∼qϕ(⋅∣ℐ)[pθ(yi∣X,Z)].\displaystyle=\mathbb{E}_{Z\sim q_{\phi}(\cdot\mid\mathcal{I})}\big[p_{\theta}(y_{i}\mid X,Z)\big].
+|
+| (39)
+By the definition of the risk, we can get
+|
+| R(p^θ)−R(p~θ)=𝔼(X,Aobs,Yℒ,Yi)[ℓ(Yi,p^θ(⋅∣ℐ))−ℓ(Yi,p~θ(⋅∣ℐ))].R(\hat{p}_{\theta})-R(\tilde{p}_{\theta})=\mathbb{E}_{(X,A_{\text{obs}},Y_{\mathcal{L}},Y_{i})}\Big[\ell\big(Y_{i},\hat{p}_{\theta}(\cdot\mid\mathcal{I})\big)-\ell\big(Y_{i},\tilde{p}_{\theta}(\cdot\mid\mathcal{I})\big)\Big].
+|
+| (40)
+Using the LL-Lipschitz property of ℓ\ell in its second argument with respect to ℓ1\ell_{1} distance, we obtain the following inequality:
+|
+| |ℓ(Yi,p^θ(⋅∣ℐ))−ℓ(Yi,p~θ(⋅∣ℐ))|≤L∥p^θ(⋅∣ℐ)−p~θ(⋅∣ℐ)∥1.\big|\ell\big(Y_{i},\hat{p}_{\theta}(\cdot\mid\mathcal{I})\big)-\ell\big(Y_{i},\tilde{p}_{\theta}(\cdot\mid\mathcal{I})\big)\big|\leq L\big\|\hat{p}_{\theta}(\cdot\mid\mathcal{I})-\tilde{p}_{\theta}(\cdot\mid\mathcal{I})\big\|_{1}.
+|
+| (41)
+Therefore,
+|
+| R(p^θ)−R(p~θ)≤L𝔼X,Aobs,Yℒ,Yi[∥p^θ(⋅∣ℐ)−p~θ(⋅∣ℐ)∥1].R(\hat{p}_{\theta})-R(\tilde{p}_{\theta})\leq L\mathbb{E}_{X,A_{\text{obs}},Y_{\mathcal{L}},Y_{i}}\Big[\big\|\hat{p}_{\theta}(\cdot\mid\mathcal{I})-\tilde{p}_{\theta}(\cdot\mid\mathcal{I})\big\|_{1}\Big].
+|
+| (42)
+Since the term inside the expectation does not depend on YiY_{i}, we can drop
+the expectation over YiY_{i}:
+|
+| R(p^θ)−R(p~θ)≤L𝔼X,Aobs,Yℒ[∥p^θ(⋅∣ℐ)−p~θ(⋅∣ℐ)∥1].R(\hat{p}_{\theta})-R(\tilde{p}_{\theta})\leq L\mathbb{E}_{X,A_{\text{obs}},Y_{\mathcal{L}}}\Big[\big\|\hat{p}_{\theta}(\cdot\mid\mathcal{I})-\tilde{p}_{\theta}(\cdot\mid\mathcal{I})\big\|_{1}\Big].
+|
+| (43)
+Now, we bound the ℓ1\ell_{1} difference between the two predictive distributions. Fix ℐ\mathcal{I}, then, for each class yy,
+|
+| p^θ​(y∣ℐ)−p~θ​(y∣ℐ)\displaystyle\hat{p}_{\theta}(y\mid\mathcal{I})-\tilde{p}_{\theta}(y\mid\mathcal{I})
+| =∑Zpθ​(y∣X,Z)​(qϕ​(Z∣ℐ)−p⁡(Z∣ℐ)).\displaystyle=\sum_{Z}p_{\theta}(y\mid X,Z)\big(q_{\phi}(Z\mid\mathcal{I})-p(Z\mid\mathcal{I})\big).
+|
+| (44)
+Let g⁡(Z)=qϕ​(Z∣ℐ)−p⁡(Z∣ℐ)g(Z)=q_{\phi}(Z\mid\mathcal{I})-p(Z\mid\mathcal{I}). Then, ∑Zg⁡(Z)=0\sum_{Z}g(Z)=0 and ∑Z|g⁡(Z)|\sum_{Z}|g(Z)| is given by:
+|
+| ∑Z|g(Z)|=∥qϕ(⋅∣ℐ)−p(⋅∣ℐ)∥1.\sum_{Z}|g(Z)|=\|q_{\phi}(\cdot\mid\mathcal{I})-p(\cdot\mid\mathcal{I})\|_{1}.
+|
+| (45)
+By the triangle inequality, we can get
+|
+| |p^θ​(y∣ℐ)−p~θ​(y∣ℐ)|\displaystyle\big|\hat{p}_{\theta}(y\mid\mathcal{I})-\tilde{p}_{\theta}(y\mid\mathcal{I})\big|
+| ≤∑Zpθ​(y∣X,Z)​|g⁡(Z)|.\displaystyle\leq\sum_{Z}p_{\theta}(y\mid X,Z)|g(Z)|.
+|
+| (46)
+Summing over all yy, the substitution becomes:
+|
+| ∥p^θ(⋅∣ℐ)−p~θ(⋅∣ℐ)∥1\displaystyle\big\|\hat{p}_{\theta}(\cdot\mid\mathcal{I})-\tilde{p}_{\theta}(\cdot\mid\mathcal{I})\big\|_{1}
+| =∑y|p^θ​(y∣ℐ)−p~θ​(y∣ℐ)|\displaystyle=\sum_{y}\big|\hat{p}_{\theta}(y\mid\mathcal{I})-\tilde{p}_{\theta}(y\mid\mathcal{I})\big|
+|
+| (47)
+|
+|
+| ≤∑y∑Zpθ​(y∣X,Z)​|g⁡(Z)|\displaystyle\leq\sum_{y}\sum_{Z}p_{\theta}(y\mid X,Z)|g(Z)|
+|
+| (48)
+|
+|
+| =∑Z|g⁡(Z)|​∑ypθ​(y∣X,Z)\displaystyle=\sum_{Z}|g(Z)|\sum_{y}p_{\theta}(y\mid X,Z)
+|
+| (49)
+|
+|
+| =∑Z|g⁡(Z)|\displaystyle=\sum_{Z}|g(Z)|
+|
+| (50)
+|
+|
+| =∥qϕ(⋅∣ℐ)−p(⋅∣ℐ)∥1.\displaystyle=\|q_{\phi}(\cdot\mid\mathcal{I})-p(\cdot\mid\mathcal{I})\|_{1}.
+|
+| (51)
+Substituting into Eq. 43,
+|
+| R⁡(p^θ)−R⁡(p~θ)\displaystyle R(\hat{p}_{\theta})-R(\tilde{p}_{\theta})
+| ≤L𝔼X,Aobs,Yℒ[∥qϕ(⋅∣X,Aobs,Yℒ)−p(⋅∣X,Aobs,Yℒ)∥1].\displaystyle\leq L\mathbb{E}_{X,A_{\text{obs}},Y_{\mathcal{L}}}\Big[\|q_{\phi}(\cdot\mid X,A_{\text{obs}},Y_{\mathcal{L}})-p(\cdot\mid X,A_{\text{obs}},Y_{\mathcal{L}})\|_{1}\Big].
+|
+| (52)
+This proves the desired inequality. ∎
+D.2 Signed Aggregation under Contextual Stochastic Block Models
+We provide a more concrete justification for the signed aggregation rule (Eq. 14) by analyzing SpaM under a Contextual Stochastic Block Model (CSBM). A CSBM jointly models (i) a community structure generating labels, (ii) a signed adjacency encoding homophilic and heterophilic relations, and (iii) node features that correlate with labels. This setting captures the regimes where classical homophilic GNNs fail, and heterophily-aware propagation is essential.
+CSBM formulation.
+Let Yi∈{1,…,C}Y_{i}\in\{1,\dots,C\} denote the community label of node ii. Conditioned on labels, signed edges are generated independently as
+|
+| ℙ⁡(zi​j=+1∣Yi,Yj)\displaystyle\mathbb{P}(z_{ij}=+1\mid Y_{i},Y_{j})
+| =pinif ​Yi=Yj,\displaystyle=p_{\mathrm{in}}\quad\text{if }Y_{i}=Y_{j},
+|
+| (53)
+|
+| ℙ⁡(zi​j=−1∣Yi,Yj)\displaystyle\mathbb{P}(z_{ij}=-1\mid Y_{i},Y_{j})
+| =poutif ​Yi≠Yj,\displaystyle=p_{\mathrm{out}}\quad\text{if }Y_{i}\neq Y_{j},
+|
+| (54)
+with pout>pinp_{\mathrm{out}}>p_{\mathrm{in}} in heterophilic regimes. Node features follow the contextual SBM assumption:
+|
+| xi=μYi+ξi,x_{i}=\mu_{Y_{i}}+\xi_{i},
+|
+| (55)
+where μYi\mu_{Y_{i}} is a cluster mean and ξi\xi_{i} is sub-Gaussian noise. Thus, homophilic neighbors have feature means aligned with xix_{i}, while heterophilic neighbors have feature means pointing toward other clusters.
+Expected signed propagation under CSBM.
+Consider a linearized form of the signed aggregation operator:
+|
+| H=H​Wself+Z+​H​W+−Z−​H​W−,H=HW_{\mathrm{self}}+Z^{+}HW_{+}-Z^{-}HW_{-},
+|
+| (56)
+where Z+Z^{+} and Z−Z^{-} denote the positive and negative components of ZZ. Taking expectations over the CSBM dynamics yields
+|
+| 𝔼⁡[Z+∣Y]=pin​B,𝔼⁡[Z−∣Y]=pout​(J−B),\mathbb{E}[Z^{+}\mid Y]=p_{\mathrm{in}}B,\quad\mathbb{E}[Z^{-}\mid Y]=p_{\mathrm{out}}(J-B),
+|
+| (57)
+where BB is the block-diagonal membership matrix and JJ is the all-ones matrix. Plugging these into Eq. 56 gives the expected update:
+|
+| 𝔼⁡[H∣Y]=H​Wself+pin​B​H​W+−pout​(J−B)​H​W−.\mathbb{E}[H\mid Y]=HW_{\mathrm{self}}+p_{\mathrm{in}}BHW_{+}-p_{\mathrm{out}}(J-B)HW_{-}.
+|
+| (58)
+The key observation is that, under heterophily (pout>pinp_{\mathrm{out}}>p_{\mathrm{in}}), the negative term increases inter-cluster separation: while B​HBH aggregates within-community signals, the (J−B)​H(J-B)H term suppresses or inverts signals from other communities.
+Cluster-separation effect.
+Let mc=𝔼⁡[hi∣Yi=c]m_{c}=\mathbb{E}[h_{i}\mid Y_{i}=c] be the mean embedding for community cc. Taking expectations across nodes yields:
+|
+| mc′\displaystyle m_{c}^{\prime}
+| =mc​Wself+pin​mc​W+−pout​∑c′≠cmc′​W−.\displaystyle=m_{c}W_{\mathrm{self}}+p_{\mathrm{in}}m_{c}W_{+}-p_{\mathrm{out}}\sum_{c^{\prime}\neq c}m_{c^{\prime}}W_{-}.
+|
+| (59)
+Thus, the inter-class difference evolves as:
+|
+| mc′−mc′′\displaystyle m_{c}^{\prime}-m_{c^{\prime}}^{\prime}
+| =(mc−mc′)​(Wself+pin​W++pout​(C−2)​W−).\displaystyle=(m_{c}-m_{c^{\prime}})\Big(W_{\mathrm{self}}+p_{\mathrm{in}}W_{+}+p_{\mathrm{out}}(C-2)W_{-}\Big).
+|
+| (60)
+Under mild conditions on W−⪰0W_{-}\succeq 0, the heterophilic coefficient poutp_{\mathrm{out}} contributes positively to the separation between class means. This is in stark contrast to classical GNNs, where all edges contribute positively, causing mc′−mc′′m_{c}^{\prime}-m_{c^{\prime}}^{\prime} to shrink and ultimately collapse.
+Role of sparse coding.
+The CSBM generative structure also implies that neighbors from different clusters are less aligned with tit_{i} than same-cluster neighbors. Thus, the local sparse coding step tends to assign:
+•
+larger positive coefficients to informative homophilic neighbors,
+•
+near-zero coefficients to noisy or weakly correlated nodes,
+•
+negative-sign aggregation to heterophilic neighbors (after taking Z−Z^{-} into account).
+This yields a data-dependent variant of the ideal CSBM operator in Eq. 58, where only the most informative neighbors contribute to the update.
+Implications.
+Under a CSBM, SpaM’s signed aggregation and sparsity jointly approximate the Bayes-optimal update operator: positive edges reinforce cluster consistency, negative edges expand inter-cluster margins, and sparsity filters out noisy connections. This theoretically explains SpaM’s robustness in highly heterophilic or structure-noisy graphs, where homophilic or purely spectral propagation tends to collapse representations rather than separate them.
+D.3 Consistency of Signed Structural Posterior under CSBM
+We show that under a contextual stochastic block model (CSBM) with identifiable signed edge probabilities, the structural posterior qϕ​(zi​j)q_{\phi}(z_{ij}) converges to the true signed edge probability p⋆​(zi​j)p^{\star}(z_{ij}) as the number of labeled nodes grows. This result justifies the use of Monte Carlo marginalization over ZZ in SpaM.
+Theorem D.1 (Posterior consistency of signed edges).
+Consider a CSBM with CC communities and a signed edge distribution
+|
+| ℙ⁡(zi​j=+1∣Yi,Yj)\displaystyle\mathbb{P}(z_{ij}=+1\mid Y_{i},Y_{j})
+| =pin,\displaystyle=p_{\mathrm{in}},
+|
+| (61)
+|
+| ℙ⁡(zi​j=−1∣Yi,Yj)\displaystyle\mathbb{P}(z_{ij}=-1\mid Y_{i},Y_{j})
+| =pout,\displaystyle=p_{\mathrm{out}},
+|
+| (62)
+with pin≠poutp_{\mathrm{in}}\neq p_{\mathrm{out}}. Assume node features satisfy the contextual model xi=μYi+ξix_{i}=\mu_{Y_{i}}+\xi_{i} with sub-Gaussian noise, and the encoder GNNϕ\mathrm{GNN}_{\phi} is sufficiently expressive. Let qϕ​(zi​j∣Aobs,X,Yℒ)q_{\phi}(z_{ij}\mid A_{\mathrm{obs}},X,Y_{\mathcal{L}}) be trained
+by maximizing the ELBO in Eq. (25). Then, as |ℒ|→∞|\mathcal{L}|\to\infty,
+|
+| qϕ​(zi​j∣Aobs,X,Yℒ)→𝑝p⋆​(zi​j∣Yi,Yj).q_{\phi}(z_{ij}\mid A_{\mathrm{obs}},X,Y_{\mathcal{L}})\xrightarrow{p}p^{\star}(z_{ij}\mid Y_{i},Y_{j}).
+|
+| (63)
+Proof.
+Under the CSBM, the joint likelihood factorizes as
+|
+| p⁡(Aobs,X,Y)=p⁡(Y)​∏i<jp⁡(zi​j∣Yi,Yj)​∏i<jp⁡(Ai​j∣zi​j)​∏ip⁡(xi∣Yi).p(A_{\mathrm{obs}},X,Y)=p(Y)\prod_{i<j}p(z_{ij}\mid Y_{i},Y_{j})\prod_{i<j}p(A_{ij}\mid z_{ij})\prod_{i}p(x_{i}\mid Y_{i}).
+|
+| (64)
+Since xix_{i} are conditionally independent given labels and sub-Gaussian, the posterior p⁡(Y∣X)p(Y\mid X) concentrates exponentially fast on the true labels under standard SBM identifiability assumptions. As |ℒ|→∞|\mathcal{L}|\to\infty, the conditional distribution p⁡(Y𝒰∣X,Yℒ)p(Y_{\mathcal{U}}\mid X,Y_{\mathcal{L}}) converges in probability to a point mass on the true labeling by standard arguments for semi-supervised SBM inference. With labels effectively recovered, the true structural posterior satisfies
+|
+| p⋆​(zi​j∣Aobs,X,Y)∝p⁡(Ai​j∣zi​j)​p​(zi​j∣Yi,Yj),p^{\star}(z_{ij}\mid A_{\mathrm{obs}},X,Y)\propto p(A_{ij}\mid z_{ij})p(z_{ij}\mid Y_{i},Y_{j}),
+|
+| (65)
+which depends only on edge (i,j)(i,j). We claim that SpaM’s ELBO objective satisfies
+|
+| KL(qϕ(zi​j)∥p⋆(zi​j∣Aobs,X,Y))→0\mathrm{KL}\big(q_{\phi}(z_{ij})\|p^{\star}(z_{ij}\mid A_{\mathrm{obs}},X,Y)\big)\to 0
+|
+| (66)
+because maximizing the ELBO is equivalent to minimizing the KL divergence between qϕq_{\phi} and the true posterior, assuming the encoder is expressive enough to represent the posterior family. Thus,
+|
+| qϕ​(zi​j)→𝑝p⋆​(zi​j)q_{\phi}(z_{ij})\xrightarrow{p}p^{\star}(z_{ij})
+|
+| (67)
+for all edges, proving posterior consistency. ∎
+D.4 Signed Aggregation Increases Inter-Cluster Separation
+We formalize the intuition that signed aggregation improves the separability of heterophilic clusters in CSBM by analyzing the expected update operator.
+Theorem D.2 (Signed aggregation enlarges cluster margin).
+Under a CSBM with pout>pinp_{\mathrm{out}}>p_{\mathrm{in}} and linearized update
+|
+| H′=H​Wself+Z+​H​W+−Z−​H​W−,H^{\prime}=HW_{\mathrm{self}}+Z^{+}HW_{+}-Z^{-}HW_{-},
+|
+| (68)
+where mcm_{c} denotes the mean embedding for community cc. Then, the inter-cluster difference evolves as
+|
+| mc′−mc′′=(mc−mc′)​(Wself+pin​W++pout​(C−2)​W−).m_{c}^{\prime}-m_{c^{\prime}}^{\prime}=(m_{c}-m_{c^{\prime}})(W_{\mathrm{self}}+p_{\mathrm{in}}W_{+}+p_{\mathrm{out}}(C-2)W_{-}).
+|
+| (69)
+If W−⪰0W_{-}\succeq 0 and pout>pinp_{\mathrm{out}}>p_{\mathrm{in}}, then
+|
+| ‖mc′−mc′′‖2>‖mc−mc′‖2,\|m_{c}^{\prime}-m_{c^{\prime}}^{\prime}\|_{2}>\|m_{c}-m_{c^{\prime}}\|_{2},
+|
+| (70)
+i.e., signed aggregation increases cluster separation.
+Proof.
+Taking expectation w.r.t. the CSBM edge distribution gives:
+|
+| 𝔼⁡[Z+]\displaystyle\mathbb{E}[Z^{+}]
+| =pin​B,\displaystyle=p_{\mathrm{in}}B,
+|
+| (71)
+|
+| 𝔼⁡[Z−]\displaystyle\mathbb{E}[Z^{-}]
+| =pout​(J−B),\displaystyle=p_{\mathrm{out}}(J-B),
+|
+| (72)
+where BB is a block-diagonal community indicator. Thus,
+|
+| mc′\displaystyle m_{c}^{\prime}
+| =mc​Wself+pin​mc​W+−pout​∑c′≠cmc′​W−.\displaystyle=m_{c}W_{\mathrm{self}}+p_{\mathrm{in}}m_{c}W_{+}-p_{\mathrm{out}}\sum_{c^{\prime}\neq c}m_{c^{\prime}}W_{-}.
+|
+| (73)
+Similarly, for mc′′m_{c^{\prime}}^{\prime}, subtracting yields the claimed expression. For W−⪰0W_{-}\succeq 0, the term involving poutp_{\mathrm{out}} contributes in the direction of increasing ‖mc−mc′‖2\|m_{c}-m_{c^{\prime}}\|_{2} because the heterophilic edges push the embeddings away from other communities. Since pout>pinp_{\mathrm{out}}>p_{\mathrm{in}}, the repulsive effect dominates,
+yielding
+|
+| ‖mc′−mc′′‖>‖mc−mc′‖.\|m_{c}^{\prime}-m_{c^{\prime}}^{\prime}\|>\|m_{c}-m_{c^{\prime}}\|.
+|
+| (74)
+Thus, signed aggregation enlarges cluster margins. ∎
+D.5 Sparse Coding Recovers Informative Neighbors under CSBM
+We show that the local sparse coding step in SpaM identifies homophilic and relevant heterophilic neighbors while suppressing noisy or weakly aligned nodes.
+Theorem D.3 (Support recovery of sparse coding under CSBM).
+Let ti=μYi+ηit_{i}=\mu_{Y_{i}}+\eta_{i} be the target vector for node ii, and let Vi=[vj]j∈𝒩iV_{i}=[v_{j}]_{j\in\mathcal{N}_{i}} contain contextual embeddings of neighbors generated by the CSBM. Let us assume:
+1.
+⟨vj,ti⟩\langle v_{j},t_{i}\rangle is large if Yj=YiY_{j}=Y_{i} (homophilic),
+2.
+⟨vj,ti⟩\langle v_{j},t_{i}\rangle is small or negative if Yj≠YiY_{j}\neq Y_{i} (heterophilic),
+3.
+ViV_{i} satisfies a restricted eigenvalue condition.
+Let αi⋆\alpha_{i}^{\star} be the solution to the LASSO problem
+|
+| αi⋆=arg⁡minα⁡‖ti−Vi​α‖22+λ​‖α‖1.\alpha_{i}^{\star}=\arg\min_{\alpha}\|t_{i}-V_{i}\alpha\|_{2}^{2}+\lambda\|\alpha\|_{1}.
+|
+| (75)
+Then, with probability at least 1−e−c​|𝒩i|1-e^{-c|\mathcal{N}_{i}|},
+|
+| supp⁡(αi⋆)={j:Yj=Yi},\mathrm{supp}(\alpha_{i}^{\star})=\{j:Y_{j}=Y_{i}\},
+|
+| (76)
+i.e., LASSO selects only informative neighbors from the same community.
+Proof.
+Under the CSBM, homophilic neighbors satisfy
+|
+| vj=μYi+ξj,v_{j}=\mu_{Y_{i}}+\xi_{j},
+|
+| (77)
+yielding a large correlation below:
+|
+| |⟨vj,ti⟩|=|⟨μYi+ξj,μYi+ηi⟩|≫0.|\langle v_{j},t_{i}\rangle|=|\langle\mu_{Y_{i}}+\xi_{j},\mu_{Y_{i}}+\eta_{i}\rangle|\gg 0.
+|
+| (78)
+For heterophilic neighbors Yj≠YiY_{j}\neq Y_{i}, we can induce
+|
+| vj\displaystyle v_{j}
+| =μYj+ξj,\displaystyle=\mu_{Y_{j}}+\xi_{j},
+|
+| (79)
+|
+| ⟨vj,ti⟩\displaystyle\langle v_{j},t_{i}\rangle
+| =⟨μYj,μYi⟩+noise.\displaystyle=\langle\mu_{Y_{j}},\mu_{Y_{i}}\rangle+\text{noise}.
+|
+| (80)
+Since the community in SBM-type models is separated, ⟨μYj,μYi⟩\langle\mu_{Y_{j}},\mu_{Y_{i}}\rangle is small or of opposite sign. By classical results on LASSO support recovery, if the minimal correlation among homophilic neighbors exceeds the noise level, and the design ViV_{i} satisfies a restricted eigenvalue condition, the LASSO solution recovers exactly the set of neighbors whose true coefficients are strong predictors of tit_{i}. Thus, with high probability, LASSO selects precisely homophilic neighbors,
+proving the claim. ∎
+Appendix E Datasets and Baselines
+E.1 Datasets
+The details of nine heterophilic benchmarks are introduced below.
+Roman-Empire.
+A synthetic graph introduced in the PyG heterophily suite. Nodes are assigned to classes based on spatial regions, while edges include random perturbations, yielding a highly non-homophilic topology.
+Minesweeper.
+Another synthetic heterophilic dataset designed to break homophily-based message passing. Node labels depend on latent grid-based relations, while edges include noisy distractors.
+Amazon-Ratings.
+A user-item interaction graph where edges connect users who rated similar items. The semantic relation between nodes does not align strongly with node labels, leading to moderate heterophily.
+Chameleon and Squirrel.
+Two Wikipedia hyperlink networks where nodes are pages and edges are hyperlinks. Both datasets are known for their low homophily and noisy long-range dependencies, making them widely used benchmarks for heterophilic GNN research.
+Actor.
+A co-occurrence network in which nodes represent actors and edges connect actors co-listed in Wikipedia pages. The graph exhibits pronounced heterophily, with labels corresponding to fine-grained actor categories.
+Cornell, Texas, Wisconsin.
+The WebKB datasets, representing webpage graphs from university domains Rozemberczki et al. [2019]. These graphs contain extremely low homophily, often exhibiting disassortative mixing patterns. Their small size and unstable structure make them challenging for standard GNNs.
+E.2 Baselines
+To evaluate SpaM comprehensively, we compare it against a broad suite of architectures spanning classical message-passing models, heterophily-oriented GNNs, and advanced spectral or structure-enhanced methods. All baselines below correspond exactly to those appearing in Table 2.
+•
+Classical GNNs:
+We include GCN Kipf and Welling [2017] and GAT Veličković et al. [2018], which form the foundational neighborhood-aggregation paradigms and remain widely used despite their homophily-driven assumptions.
+•
+Heterophily-oriented propagation models:
+This group covers methods specifically designed to mitigate the limitations of standard GNNs on heterophilic graphs. H2GCN Zhu et al. [2020] decouples ego and neighbor information, GPRGNN Chien et al. [2021] learns personalized propagation weights, FAGCN Bo et al. [2021] adaptively balances low- and high-frequency components, and several recent approaches: ACM-GCN Luan et al. [2022], GloGNN Li et al. [2022], Auto-HeG Zheng et al. [2023], PCNet Li et al. [2024], TFE-GNN Duan et al. [2024], and CGNN Zhuo et al. [2025], introduce various mechanisms such as channel mixing, global context, automated architecture design, homophily-consistency filtering, feature-topology decoupling, and contrastive learning.
+•
+Spectral, directional, and structure-enhanced GNNs:
+GCNII Chen et al. [2020] employs residual identity mapping to alleviate over-smoothing, MagNet Zhang et al. [2021] incorporates magnetic Laplacians to encode directional structure, L2DGCN Ding et al. [2025] augments graph topology to reduce degree bias, and DirGNN Rossi et al. [2024] explicitly models directed edges to improve information flow.
+These three categories collectively encompass foundational, heterophily-aware, and structure-refined architectures, offering a comprehensive and balanced comparison landscape for evaluating SpaM.
+Table 4: Statistics of homophilic and heterophilic graphs.
+Datasets
+Cora
+Citeseer
+Pubmed
+Penn94
+arXiv-year
+snap-patents
+Nodes
+2,708
+3,327
+19,717
+41,554
+169,343
+2,923,922
+Edges
+10,558
+9,104
+88,648
+1,362,229
+1,166,243
+13,975,788
+Features
+1,433
+3,703
+500
+5
+128
+128
+Classes
+7
+6
+3
+5
+40
+5
+Table 5: Node classification accuracy (%) on homophilic graphs.
+Datasets
+Cora
+Citeseer
+Pubmed
+𝒢h\mathcal{G}_{h} (Eq. 1)
+0.81
+0.74
+0.80
+GCN Kipf and Welling [2017]
+81.4±0.71
+67.5±0.70
+79.5±0.47
+GAT Veličković et al. [2018]
+82.6±0.55
+68.4±0.83
+79.9±0.45
+H2GCN Zhu et al. [2020]
+80.3±0.52
+68.5±0.76
+78.8±0.37
+GCNII Chen et al. [2020]
+82.2±0.64
+67.8±1.21
+79.4±0.52
+GPRGNN Chien et al. [2021]
+82.0±0.59
+70.1±0.91
+79.4±0.57
+SpaM (ours)
+83.1±0.54
+71.2±0.32
+79.6±0.28
+Appendix F More Experiments
+F.1 Analysis on Homophilic Benchmarks
+In this section, we analyze the behavior of our method on three homophilic benchmarks in Table 4 (Cora, Citeseer, and Pubmed). Since SpaM is primarily designed to handle noisy and heterophilic neighborhood information via structural posterior inference and sparse signed aggregation, it is important to verify that these mechanisms do not harm performance on graphs where homophily is dominant. Table 5 reports the node classification accuracy of SpaM compared with representative positive-message-passing GNNs, including GCN, GAT, H2GCN, GCNII, and GPRGNN. We also report the global homophily ratio 𝒢h\mathcal{G}_{h} (Eq. 1) for each dataset to contextualize the structural properties of the benchmarks. As shown in Table 5, SpaM achieves strong performance on homophilic graphs. In particular, SpaM consistently outperforms all baseline methods on Cora and Citeseer, while achieving comparable accuracy to the best-performing model on Pubmed. These results indicate that modeling signed structural uncertainty does not degrade performance when neighborhood information is largely informative and positively correlated. Instead, the sparse aggregation mechanism in SpaM effectively preserves useful homophilic signals while avoiding unnecessary over-smoothing. Overall, these findings demonstrate that SpaM is not only robust to heterophily and structural noise but also remains competitive on classical homophilic graph benchmarks.
+Table 6: Node classification accuracy (%) on large heterophilic graphs.
+Datasets
+Penn94
+arXiv-year
+snap-patents
+𝒢h\mathcal{G}_{h} (Eq. 1)
+0.046
+0.272
+0.1
+GCN Kipf and Welling [2017]
+81.3±0.73
+44.5±0.58
+43.9±0.42
+GAT Veličković et al. [2018]
+80.6±0.81
+45.0±0.53
+45.2±0.47
+H2GCN Zhu et al. [2020]
+80.4±0.94
+47.6±0.41
+OOM
+GCNII Chen et al. [2020]
+81.8±0.63
+46.1±0.72
+47.5±0.60
+GPRGNN Chien et al. [2021]
+81.1±0.55
+43.9±0.84
+41.7±0.34
+SpaM (ours)
+83.7±0.38
+52.1±0.59
+55.2±0.55
+F.2 SpaM on Large Heterophilic Graphs
+We further evaluate SpaM on large-scale heterophilic graphs to assess its scalability and robustness under challenging structural conditions. As shown in Table 6, all considered datasets exhibit low global homophily ratios, indicating that naive neighborhood aggregation is likely to be unreliable. Across all large-scale benchmarks, SpaM consistently outperforms or matches strong baselines, including deep and propagation-based GNNs. In particular, SpaM achieves clear improvements on arXiv-year and snap-patents, where the graph size and structural heterogeneity pose significant challenges to conventional message-passing methods. Notably, H2GCN encounters out-of-memory (OOM) issues on snap-patents, while SpaM remains memory-efficient and stable. These results highlight two important properties of SpaM. First, the structural posterior inference enables the model to selectively utilize informative neighbors while suppressing noisy or misleading connections, which is crucial in large heterophilic graphs. Second, the sparse signed aggregation mechanism significantly reduces unnecessary message propagation, leading to improved scalability without sacrificing predictive performance. Overall, the results demonstrate that SpaM effectively scales to large graphs and maintains strong performance under severe heterophily and noise. The statistical details of these datasets are shown in Table 4 (Penn94, arXiv-year, and snap-patents).
+Figure 6: Effect of Monte Carlo marginalization on large heterophilic graphs. We describe node classification accuracy (mean ±\pm std) as a function of the number of MC samples KK.
+F.3 Effect of Monte Carlo Marginalization
+We investigate the effect of Monte Carlo (MC) marginalization over structural uncertainty. Instead of relying on a single sampled graph (K=1K=1), SpaM approximates the Bayesian predictive distribution by averaging predictions over multiple samples drawn from the structural posterior. Figure 6 reports the classification accuracy as a function of the number of MC samples KK. Across all datasets, increasing KK consistently improves performance while reducing variance, as evidenced by the shrinking error bars. The largest performance gains are observed when increasing KK from 11 to 44, highlighting the benefit of moving beyond single-sample inference. Notably, the improvements saturate with a small number of samples (typically K=4K=4 or 88), after which additional samples yield marginal gains. This indicates that SpaM achieves a favorable trade-off between predictive accuracy and computational cost.
+(a) Chameleon
+(b) Texas
+Figure 7: Parameter sensitivity analysis (λsp\lambda_{\text{sp}}, λst\lambda_{\text{st}}) in Eq. 25 using Chameleon and Texas datasets
+F.4 Parameter Sensitivity
+We analyze the sensitivity of the proposed objective in Eq. 25 regarding hyperparameters λsp\lambda_{\mathrm{sp}} and λst\lambda_{\mathrm{st}}, which control the strengths of the spatial and structural regularization terms, respectively. Figure 7 reports classification accuracy under different combinations of these parameters on the Texas and Chameleon datasets. For both datasets, the performance exhibits a clear dependence on λsp\lambda_{\mathrm{sp}}. Moderate values of λsp\lambda_{\mathrm{sp}} consistently yield better results than either very small or very large values, indicating that the spatial regularization is beneficial when applied with appropriate strength. In particular, the best performance on both datasets is achieved at λsp=0.01\lambda_{\mathrm{sp}}=0.01. The influence of λst\lambda_{\mathrm{st}} is comparatively smoother. Accuracy generally improves as λst\lambda_{\mathrm{st}} increases from 00 to 0.10.1, after which the gains saturate or slightly degrade. This suggests that incorporating structural information helps stabilize training, while overly strong regularization may limit model flexibility. Overall, the results demonstrate that the proposed method is reasonably robust to the choice of hyperparameters, with a broad region around λsp=0.01\lambda_{\mathrm{sp}}=0.01 and λst=0.1\lambda_{\mathrm{st}}=0.1 producing near-optimal performance across datasets.
+Appendix G Limitations
+While SpaM provides a principled framework for handling structural uncertainty, heterophily, and noisy neighborhoods, several limitations remain.
+Computational overhead.
+The model relies on Monte Carlo sampling of the structural posterior and on solving (or approximating) local sparse coding problems for each node and layer. Although we employ efficient approximations, SpaM is inherently more expensive than message passing on a fixed graph. Scaling SpaM to extremely large graphs or to high-throughput settings may require additional amortization or pruning.
+Dependence on posterior quality.
+The effectiveness of SpaM depends on the expressiveness and calibration of the structural posterior qϕ​(Z∣Aobs,X,Yℒ)q_{\phi}(Z\mid A_{\mathrm{obs}},X,Y_{\mathcal{L}}). If the posterior fails to accurately capture heterophilic or noisy patterns, the sampled signed adjacencies may not provide meaningful guidance for the sparse signed layers. Designing richer inference architectures or incorporating domain-specific priors could further improve robustness.
+Future work.
+We will address these constraints by developing more efficient inference mechanisms, tighter theoretical analyses, and providing broader applicability to large-scale or temporal graph domains.
+Experimental support, please
+view the build logs
+for errors. Generated by
+L
+A
+T
+E
+xml
+.
+Instructions for reporting errors
+We are continuing to improve HTML versions of papers, and your feedback helps enhance accessibility and mobile
+support. To report errors in the HTML that will help us improve conversion and rendering, choose any of the
+methods listed below:
+Click the "Report Issue" (
+) button, located in the page header.
+Tip: You can select the relevant text first, to include it in your report.
+Our team has already identified the following issues. We appreciate your time reviewing and reporting rendering errors we
+may not have found yet. Your efforts will help us improve the HTML versions for all readers, because disability
+should not be a barrier to accessing research. Thank you for your continued support in championing open access for
+all.
+Have a free development cycle? Help support accessibility at arXiv! Our collaborators at LaTeXML maintain a list of packages that need conversion, and welcome developer contributions.
+We gratefully acknowledge support from
+our major funders,
+member institutions, ,
+and all contributors.
+About
+·
+Help
+·
+Contact
+·
+Subscribe
+·
+Copyright
+·
+Privacy
+·
+Accessibility
+·
+Operational Status (opens in new tab)
+Major funding support from

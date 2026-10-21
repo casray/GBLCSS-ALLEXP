@@ -1,0 +1,16 @@
+{
+  "datasets": ["actor", "chameleon_filtered", "squirrel_filtered", "roman", "corafull", "coauthorcs"],
+  "seeds": [0, 1, 2],
+  "conditions": ["clean", "uniform", "pair"],
+  "arms": ["CF_ROOT", "CF_64", "CF_FINE", "PRUNE", "PRUNE_ZERO", "PRUNE_ALL"],
+  "historical_arms": ["CE", "GREET_OLD64", "GREET_B64", "GREET_B256"],
+  "space": "GREET", "min_voters": 16, "delta": 0.1,
+  "fold_seed_offset": 731015,
+  "training": {"hidden": 64, "layers": 2, "dropout": 0.5, "learning_rate": 0.01, "weight_decay": 0.0005, "epochs": 200},
+  "threads": 4,
+  "independent_knn_kmeans_baselines": false,
+  "efficacy_gate_before_students": false,
+  "correctness_gate_before_students": true,
+  "target_signal": {"brier_delta_max": -0.005, "positive_pairs_min": 4, "total_noisy_pairs": 6},
+  "classification_signal": {"mean_delta_pp_min": 0.5, "positive_pairs_min": 4, "clean_harm_pp_max": 0.5}
+}

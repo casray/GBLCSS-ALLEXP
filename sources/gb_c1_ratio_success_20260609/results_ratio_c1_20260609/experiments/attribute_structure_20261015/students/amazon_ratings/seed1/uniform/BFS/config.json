@@ -1,0 +1,31 @@
+{
+  "dataset": "amazon_ratings",
+  "seed": 1,
+  "noise": "uniform",
+  "arm": "BFS",
+  "target_hash": "96ad4b16033ae52c6be1cd422fac62e332ae06b447d38bae7904c77386127b9a",
+  "protocol": {
+    "dataset": "amazon_ratings",
+    "seed": 1,
+    "noise": "uniform",
+    "kind": "uniform",
+    "rate": 0.4,
+    "split_hash": "78200eaaf8333cd0a1bd74f4e12bb3340d5d120a4eaf897f2eb9116aa4f692fe",
+    "noise_hash": "780f694b3531353766d5016e765de188db67e7dc4945eaa487bb8a7a42ed44f6",
+    "data_sha256": "4c3a3e3b9d9f6cba0fede4625a00aad8c5721c1a36ed771367f446763241c7dd",
+    "val_clean": true,
+    "test_clean": true
+  },
+  "primary_metric": "accuracy",
+  "training": {
+    "hidden": 64,
+    "layers": 2,
+    "dropout": 0.5,
+    "learning_rate": 0.01,
+    "weight_decay": 0.0005,
+    "epochs": 200
+  },
+  "device": "cuda",
+  "model_input": "original X only",
+  "checkpoint": "clean validation accuracy"
+}

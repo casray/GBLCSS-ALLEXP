@@ -1,0 +1,444 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>GAGB v2 Target-Only Minival Review Pack</title>
+  <style>
+    :root {
+      --bg: #f5f7fb;
+      --paper: #ffffff;
+      --ink: #1f2937;
+      --muted: #5f6b7a;
+      --line: #d9e0ea;
+      --soft: #eef4fb;
+      --blue: #2457a6;
+      --red: #9f2323;
+      --green: #14633c;
+      --orange: #8a4b00;
+      --code-bg: #101820;
+      --code-ink: #e8edf3;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--ink);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Microsoft YaHei", sans-serif;
+      line-height: 1.65;
+    }
+    main {
+      width: min(1160px, calc(100% - 40px));
+      margin: 32px auto 64px;
+      padding: 38px 46px;
+      background: var(--paper);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      box-shadow: 0 12px 30px rgba(31, 41, 55, 0.08);
+    }
+    h1, h2, h3 { line-height: 1.3; color: #111827; }
+    h1 { margin: 0 0 8px; font-size: 30px; }
+    h2 {
+      margin-top: 36px;
+      padding-top: 20px;
+      border-top: 1px solid var(--line);
+      font-size: 22px;
+    }
+    h3 { margin-top: 24px; font-size: 18px; }
+    p { margin: 10px 0; }
+    ul, ol { margin: 10px 0 10px 24px; padding: 0; }
+    li { margin: 5px 0; }
+    table { width: 100%; border-collapse: collapse; margin: 12px 0 20px; font-size: 14px; }
+    th, td { border: 1px solid var(--line); padding: 8px 10px; text-align: left; vertical-align: top; }
+    th { background: var(--soft); font-weight: 650; }
+    code { font-family: "Cascadia Mono", Consolas, "Courier New", monospace; font-size: 0.94em; }
+    pre {
+      margin: 12px 0 18px;
+      padding: 16px 18px;
+      overflow: auto;
+      background: var(--code-bg);
+      color: var(--code-ink);
+      border-radius: 8px;
+      line-height: 1.45;
+      font-size: 13px;
+    }
+    pre code { color: inherit; font-size: inherit; }
+    .subtitle { color: var(--muted); margin-bottom: 20px; }
+    .box {
+      border-left: 4px solid var(--blue);
+      background: #f2f6fd;
+      padding: 12px 16px;
+      margin: 16px 0;
+    }
+    .fail { border-left-color: var(--red); background: #fff3f3; }
+    .warn { border-left-color: var(--orange); background: #fff8ed; }
+    .ok { border-left-color: var(--green); background: #effaf4; }
+    .small { color: var(--muted); font-size: 13px; }
+    .tag {
+      display: inline-block;
+      padding: 2px 8px;
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      color: var(--muted);
+      background: #fafbfc;
+      font-size: 12px;
+      margin: 0 4px 4px 0;
+    }
+  </style>
+</head>
+<body>
+<main>
+  <h1>GAGB v2 Target-Only Minival Review Pack</h1>
+  <p class="subtitle">给 GPT / 同行审查用：包含下一步 v2 的计划、算法、代码接口、实验结果和当前结论。</p>
+
+  <div class="box fail">
+    <strong>一句话结论：</strong>
+    Target-only v2 没有通过成功标准。它证明了 teacher-aware target pipeline 可以运行，而且 conflict gate 足够保守；
+    但主方法 <code>gagb_qb_conflict_gate</code> 只在 2/4 settings 超过 <code>gb</code> 和 v1 <code>gagb</code>，
+    <code>noise_correction_rate</code> 仍为 0，因此不能作为主方法成立。
+  </div>
+
+  <h2>1. 背景与动机</h2>
+  <p>
+    v1 GAGB 的 fair minival 已经显示：简单的
+    <code>center-based 2-hop graph-aware greedy grouping + noisy-label local smoothing</code>
+    没有稳定证明 GAGB-specific value。它可以构造图感知局部分组，但没有稳定超过
+    ordinary GB、embedding-only greedy、topology-only、GAGB-matched kmeans/top-k 和 alpha-matched shuffled。
+  </p>
+  <p>
+    因此 v2 第一轮不再继续调 <code>lambda_h/lambda_t/tau_add</code>，而是检验一个更具体的失败原因：
+    v1 的 <code>q_B</code> 是否过度依赖 noisy local majority，导致 soft target 只是把局部噪声多数类重新灌回训练节点。
+  </p>
+
+  <h2>2. v2 实验计划</h2>
+  <table>
+    <thead>
+      <tr>
+        <th>模块</th>
+        <th>计划内容</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>固定项</td>
+        <td>不改 GRACE，不改 frozen embedding，不改 GAGB 构球，不接入 view generation。</td>
+      </tr>
+      <tr>
+        <td>核心变化</td>
+        <td>只改 ball-wise soft target，把 GAGB 从局部分组器改成 noise-aware soft label generator。</td>
+      </tr>
+      <tr>
+        <td>Teacher</td>
+        <td>在 frozen embedding 上训练一个 lightweight linear teacher，只用 noisy train labels，不用 clean labels、val labels 或 test labels。</td>
+      </tr>
+      <tr>
+        <td>新增方法</td>
+        <td><code>gagb_qb_pred_mix</code>、<code>gagb_qb_teacher_prior</code>、<code>gagb_qb_conflict_gate</code>。</td>
+      </tr>
+      <tr>
+        <td>新增控制</td>
+        <td><code>topk_gagb_train_matched</code>、<code>topk_gagb_allnode_matched</code>、target-level shuffled sanity。</td>
+      </tr>
+      <tr>
+        <td>主判断方法</td>
+        <td><code>gagb_qb_conflict_gate</code>。</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h2>3. 当前算法流程</h2>
+  <pre><code>Input:
+  frozen GRACE embedding H
+  graph-aware GAGB grouping B
+  noisy train labels y_noisy
+  train / val / test masks
+
+Step 1: train noisy-label-only teacher
+  teacher = LinearClassifier(H -> class)
+  train only on train nodes with y_noisy
+  output all-node teacher_probs
+
+Step 2: for each GAGB ball B
+  q_label_B = noisy label distribution among train nodes in B
+  q_pred_B  = mean teacher_probs among all nodes in B
+
+Step 3: construct q_B
+  pred_mix:
+    q_B = (1 - beta) * q_label_B + beta * q_pred_B
+
+  teacher_prior:
+    q_B = (count_label_B + gamma * q_pred_B) / (n_train_B + gamma)
+
+  conflict_gate:
+    q_mix = (1 - beta) * q_label_B + beta * q_pred_B
+    only smooth node i if:
+      q_mix[noisy_y_i] <= 0.35
+      max(q_mix) >= 0.55
+
+Step 4: train frozen linear classifier
+  target_i = (1 - alpha_i) * one_hot(noisy_y_i) + alpha_i * q_B
+  if conflict gate rejects i:
+    target_i = one_hot(noisy_y_i)</code></pre>
+
+  <h2>4. 三个 v2 方法</h2>
+  <table>
+    <thead>
+      <tr>
+        <th>方法</th>
+        <th>公式 / 规则</th>
+        <th>设计目的</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><code>gagb_qb_pred_mix</code></td>
+        <td><code>q_B = (1-beta) q_label_B + beta q_pred_B</code>，默认 <code>beta=0.5</code></td>
+        <td>直接缓解 noisy local majority，让 teacher prediction 参与球内 soft label。</td>
+      </tr>
+      <tr>
+        <td><code>gagb_qb_teacher_prior</code></td>
+        <td><code>q_B = (count_label_B + gamma q_pred_B) / (n_train_B + gamma)</code>，默认 <code>gamma=2.0</code></td>
+        <td>把 teacher prediction 当 pseudo-count prior，比 pred mix 更保守。</td>
+      </tr>
+      <tr>
+        <td><code>gagb_qb_conflict_gate</code></td>
+        <td>仅当 <code>q_mix[noisy_y_i] <= 0.35</code> 且 <code>max(q_mix) >= 0.55</code> 时才 smoothing</td>
+        <td>主方法。只在局部 soft distribution 明显反对 noisy label 时尝试纠错，避免 clean damage。</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h2>5. 关键代码接口</h2>
+  <h3>5.1 Noisy-label-only teacher</h3>
+  <pre><code class="language-python">def train_noisy_linear_teacher(
+    embeddings: torch.Tensor,
+    noisy_labels: torch.Tensor,
+    train_mask: torch.Tensor,
+    num_classes: int,
+    seed: int,
+    epochs: int = 100,
+    learning_rate: float = 0.01,
+    weight_decay: float = 5e-4,
+    temperature: float = 1.0,
+    device: torch.device | None = None,
+) -> tuple[torch.Tensor, dict]:
+    # Does not accept clean_labels, val_mask, or test_mask.
+    # Returns all-node teacher_probs with shape [num_nodes, num_classes].</code></pre>
+
+  <h3>5.2 Teacher-aware target construction</h3>
+  <pre><code class="language-python">build_method_targets(
+    method="gagb_qb_conflict_gate",
+    embeddings=H,
+    noisy_labels=noisy_labels,
+    train_mask=train_mask,
+    num_classes=num_classes,
+    alpha_max=0.3,
+    gb_grouping=gagb_grouping,
+    teacher_probs=teacher_probs,
+    qb_pred_beta=0.5,
+    qb_teacher_gamma=2.0,
+    conflict_noisy_support_max=0.35,
+    conflict_target_conf_min=0.55,
+)</code></pre>
+
+  <h2>6. 实验设置</h2>
+  <table>
+    <thead>
+      <tr>
+        <th>项目</th>
+        <th>设置</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr><td>Datasets</td><td>Cora, CiteSeer</td></tr>
+      <tr><td>Split</td><td>ratio train 0.2, validation 0.1, split seed 0</td></tr>
+      <tr><td>Noise</td><td>symmetric noise 0.2 and 0.4</td></tr>
+      <tr><td>Seeds</td><td>0, 1, 2, 3, 4</td></tr>
+      <tr><td>Embedding</td><td>frozen GRACE</td></tr>
+      <tr><td>Alpha</td><td>0.3</td></tr>
+      <tr><td>Teacher</td><td>100 epochs, lr 0.01, weight decay 5e-4, temperature 1.0</td></tr>
+    </tbody>
+  </table>
+
+  <h3>实验命令</h3>
+  <pre><code class="language-powershell">cd C:\Users\Admin\Desktop\实验8去噪5.19-\gb_graph_aware_minival_6_1
+
+py -3 scripts\run_gate_experiment.py `
+  --allow-external-python `
+  --python C:\Users\Admin\AppData\Local\Programs\Python\Python312\python.exe `
+  --datasets Cora CiteSeer `
+  --split-mode ratio `
+  --train-ratios 0.2 `
+  --val-ratio 0.1 `
+  --noise-rates 0.2 0.4 `
+  --seeds 0 1 2 3 4 `
+  --mode frozen `
+  --alphas 0.3 `
+  --methods ce global gb gagb gagb_ca_ce emb_only_gagb_local emb_only_gagb_global khop_only kmeans_gagb_matched topk_gagb_train_matched topk_gagb_allnode_matched gagb_shuffled_alpha_matched gagb_qb_pred_mix gagb_qb_teacher_prior gagb_qb_conflict_gate `
+  --save-diagnostics
+
+py -3 scripts\summarize_gate_results.py `
+  --results-root results `
+  --output-dir reports\gagb_v2_target_minival_20260601</code></pre>
+
+  <h2>7. 主要结果</h2>
+  <h3>7.1 <code>gagb_qb_conflict_gate</code> paired delta</h3>
+  <p class="small">表中 delta 为 <code>gagb_qb_conflict_gate - baseline</code>。正数表示 v2 主方法更好。</p>
+  <table>
+    <thead>
+      <tr>
+        <th>Dataset</th>
+        <th>Noise</th>
+        <th>vs gb</th>
+        <th>vs gagb</th>
+        <th>vs khop_only</th>
+        <th>vs shuffled alpha</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr><td>Cora</td><td>0.2</td><td>-0.00011</td><td>-0.00021</td><td>-0.00032</td><td>-0.00042</td></tr>
+      <tr><td>Cora</td><td>0.4</td><td>-0.00169</td><td>+0.00063</td><td>+0.00201</td><td>+0.00327</td></tr>
+      <tr><td>CiteSeer</td><td>0.2</td><td>+0.00747</td><td>+0.00713</td><td>+0.00043</td><td>+0.00816</td></tr>
+      <tr><td>CiteSeer</td><td>0.4</td><td>+0.00034</td><td>-0.00009</td><td>-0.00077</td><td>-0.00043</td></tr>
+    </tbody>
+  </table>
+
+  <h3>7.2 Accuracy / mechanism diagnostics</h3>
+  <table>
+    <thead>
+      <tr>
+        <th>Dataset</th>
+        <th>Noise</th>
+        <th>Method</th>
+        <th>Test Mean</th>
+        <th>Std</th>
+        <th>NCR</th>
+        <th>CDR</th>
+        <th>AUROC</th>
+        <th>Coverage</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr><td>Cora</td><td>0.2</td><td>gagb</td><td>0.81193</td><td>0.00532</td><td>0.0</td><td>0.0</td><td>0.6499</td><td>0.5531</td></tr>
+      <tr><td>Cora</td><td>0.2</td><td>gagb_qb_conflict_gate</td><td>0.81172</td><td>0.00593</td><td>0.0</td><td>0.0</td><td>0.6237</td><td>0.0631</td></tr>
+      <tr><td>Cora</td><td>0.4</td><td>gagb</td><td>0.79504</td><td>0.00617</td><td>0.0</td><td>0.0</td><td>0.6186</td><td>0.5531</td></tr>
+      <tr><td>Cora</td><td>0.4</td><td>gagb_qb_conflict_gate</td><td>0.79567</td><td>0.00787</td><td>0.0</td><td>0.0</td><td>0.5399</td><td>0.0343</td></tr>
+      <tr><td>CiteSeer</td><td>0.2</td><td>gagb</td><td>0.70120</td><td>0.01273</td><td>0.0</td><td>0.0</td><td>0.5670</td><td>0.4216</td></tr>
+      <tr><td>CiteSeer</td><td>0.2</td><td>gagb_qb_conflict_gate</td><td>0.70833</td><td>0.00951</td><td>0.0</td><td>0.0</td><td>0.5738</td><td>0.0547</td></tr>
+      <tr><td>CiteSeer</td><td>0.4</td><td>gagb</td><td>0.69802</td><td>0.00994</td><td>0.0</td><td>0.0</td><td>0.5542</td><td>0.4216</td></tr>
+      <tr><td>CiteSeer</td><td>0.4</td><td>gagb_qb_conflict_gate</td><td>0.69794</td><td>0.00896</td><td>0.0</td><td>0.0</td><td>0.5314</td><td>0.0324</td></tr>
+    </tbody>
+  </table>
+
+  <h2>8. 成功标准检查</h2>
+  <table>
+    <thead>
+      <tr>
+        <th>标准</th>
+        <th>结果</th>
+        <th>判断</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr><td>至少 3/4 settings 超过 <code>gb</code></td><td>2/4</td><td>Fail</td></tr>
+      <tr><td>至少 3/4 settings 超过 v1 <code>gagb</code></td><td>2/4</td><td>Fail</td></tr>
+      <tr><td>至少 2/4 settings 超过 <code>khop_only</code></td><td>2/4</td><td>Pass</td></tr>
+      <tr><td>至少 2/4 settings 超过 <code>gagb_shuffled_alpha_matched</code></td><td>2/4</td><td>Pass</td></tr>
+      <tr><td><code>noise_correction_rate &gt; 0</code> 且高于 v1</td><td>NCR 仍为 0.0</td><td>Fail</td></tr>
+      <tr><td>Clean damage 可控</td><td>CDR 仍为 0.0</td><td>Pass</td></tr>
+    </tbody>
+  </table>
+
+  <div class="box warn">
+    <strong>重要观察：</strong>
+    conflict gate 的覆盖率非常低，只有约 3% 到 6% 的训练节点被修改。它确实避免了 clean damage，
+    但这些修改没有把 noisy nodes 的 target argmax 拉回 clean label，所以 NCR 为 0。
+  </div>
+
+  <h2>9. 当前支持与不支持的结论</h2>
+  <h3>支持</h3>
+  <ul>
+    <li>v2 target pipeline 可运行，并且 teacher 没有 clean-label leakage。</li>
+    <li>teacher-aware target 构造可以接入现有 frozen-GRACE noisy-label gate。</li>
+    <li><code>gagb_qb_conflict_gate</code> 足够保守，clean damage 没有增加。</li>
+    <li>CiteSeer 0.2 上有明确 paired positive signal，值得作为现象保留。</li>
+  </ul>
+
+  <h3>不支持</h3>
+  <ul>
+    <li>Target-only GAGB v2 不能作为主方法。</li>
+    <li>简单把 teacher prediction 混进 <code>q_B</code> 不能解决 noisy-label self-confirmation。</li>
+    <li>当前 conflict gate 没有产生真正的 correction signal。</li>
+    <li>不能写成 GAGB v2 已经稳定优于 ordinary GB 或 v1 GAGB。</li>
+  </ul>
+
+  <h2>10. 希望 GPT 重点审查的问题</h2>
+  <ol>
+    <li>
+      <strong>NCR 为 0 的根因是什么？</strong>
+      是 gate 太保守、teacher 质量不足、<code>q_B</code> 分布仍不够尖锐，还是 NCR 这个诊断定义太严格？
+    </li>
+    <li>
+      <strong>conflict gate 条件是否设计错了？</strong>
+      当前条件只看 <code>q_mix[noisy_y_i]</code> 和 <code>max(q_mix)</code>，没有要求 target top class 与 noisy label 不同后的 margin。
+    </li>
+    <li>
+      <strong>teacher 是否只是复现 noisy labels？</strong>
+      Teacher 只用 noisy train labels 训练，可能没有提供独立纠错信息，只是平滑版 noisy classifier。
+    </li>
+    <li>
+      <strong>是否应该先诊断被 gate 选中的节点？</strong>
+      需要检查 gated nodes 中 noisy node 比例、clean/noisy 分布、target top class、teacher confidence 和 ball purity。
+    </li>
+    <li>
+      <strong>下一步应该转向 ball-quality v2 还是修 target gate？</strong>
+      当前报告建议转向 prediction-consistency-aware ball construction 和显式 <code>Q(B)</code>。
+    </li>
+    <li>
+      <strong>CiteSeer 0.2 的正信号能否解释？</strong>
+      它是 teacher-aware target 的真实收益，还是因为 coverage 变低产生了类似正则/少干预效果？
+    </li>
+  </ol>
+
+  <h2>11. 推荐下一步</h2>
+  <p>
+    不建议继续把 target-only v2 当主线打磨。最小下一步应该是一个诊断实验，而不是直接设计 v3：
+  </p>
+  <pre><code>For gated train nodes:
+  report clean/noisy ratio
+  report target argmax vs noisy label vs clean label
+  report q_mix margin
+  report teacher confidence
+  report ball clean purity and noisy entropy
+
+If gated nodes are mostly clean:
+  gate is selecting the wrong nodes
+
+If gated nodes include noisy nodes but target argmax still noisy:
+  q_B is not correction-capable
+
+If target argmax correct but NCR still 0:
+  current NCR diagnostic or alpha strength needs inspection</code></pre>
+  <p>
+    如果诊断确认当前球无法提供纠错 target，则下一轮应进入 ball-quality v2：
+    引入 prediction consistency、ball-level quality <code>Q(B)</code>，并只允许高质量球参与 correction target。
+  </p>
+
+  <h2>12. 关键文件</h2>
+  <ul>
+    <li><code>src/noisy_label_gb_grace/smoothing/teacher.py</code>：noisy-label-only teacher。</li>
+    <li><code>src/noisy_label_gb_grace/smoothing/targets.py</code>：v2 target construction。</li>
+    <li><code>scripts/run_noisy_classifier.py</code>：teacher 训练、method routing、diagnostics 落盘。</li>
+    <li><code>scripts/run_gate_experiment.py</code>：批量实验 orchestration。</li>
+    <li><code>src/noisy_label_gb_grace/evaluation/summary.py</code>：formal summary 和 paired deltas。</li>
+    <li><code>reports/gagb_v2_target_minival_20260601/gate_summary.csv</code>：聚合指标。</li>
+    <li><code>reports/gagb_v2_target_minival_20260601/gate_paired_deltas.csv</code>：paired delta。</li>
+    <li><code>reports/2026-06-01_gagb_v2_target_minival_result.md</code>：文字版结论。</li>
+  </ul>
+
+  <p class="small">
+    注意：本 HTML 用于审查当前问题，不应作为论文结论直接使用。论文表述必须继续区分事实、解释和未验证假设。
+  </p>
+</main>
+</body>
+</html>

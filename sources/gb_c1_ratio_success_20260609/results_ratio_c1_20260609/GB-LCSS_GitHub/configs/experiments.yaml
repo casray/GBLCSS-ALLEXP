@@ -1,0 +1,96 @@
+# Five paired seeds, unchanged training protocol; each suite generates new results.
+main_datasets: &main [cora, citeseer, corafull, coauthorcs, amazonphoto]
+extra_datasets: &extra [pubmed, amazoncomputers, coraml, attributedwiki, citeseerfull, coauthorphysics]
+noise_settings: &noise [[uniform, 0.2], [uniform, 0.4], [uniform, 0.6], [pair, 0.4], [instance, 0.4]]
+suites:
+  matched:
+    tables: "3, A.1-A.5, B.1"
+    datasets: *main
+    methods: [gblcss, mlp_ce, small_loss, coteaching, jocor, sce, elr, logitclip, gblcss_shuffled]
+    noise: *noise
+  graph_assisted:
+    tables: "4"
+    datasets: *main
+    methods: [gblcss, postel, als, sals, graphmlp, gsdn]
+  soft_targets:
+    tables: "E.1"
+    datasets: *main
+    methods: [gblcss, postel, als, sals]
+    noise: *noise
+  target_controls:
+    tables: "5"
+    datasets: *main
+    methods: [gblcss, mlp_ce, gblcss_shuffled, uniform_smoothing, prior_smoothing]
+  grouping:
+    tables: "6"
+    datasets: *main
+    methods: [gblcss, knn, kmeans]
+  representations:
+    tables: "7"
+    datasets: *main
+    methods: [gblcss, raw_features, propagated_features]
+  distillation:
+    tables: "8"
+    datasets: *main
+    methods: [gblcss, glnn_style, ffg2m, krd, vqgraph, gblcss_distill]
+    noise: [[uniform, 0.4], [uniform, 0.6]]
+  validation:
+    tables: "C.1"
+    datasets: [cora, citeseer, corafull]
+    methods: [gblcss, gblcss_shuffled, mlp_ce, jocor, postel, gsdn]
+    validation: [clean, noisy]
+  leave_one_out:
+    tables: "D.1 (self-vote)"
+    datasets: *main
+    methods: [gblcss, gblcss_self_vote]
+    noise: *noise
+  clean:
+    tables: "D.1 (clean labels)"
+    datasets: *main
+    methods: [gblcss, mlp_ce]
+    noise: [[uniform, 0.0]]
+  extra:
+    tables: "G.2"
+    datasets: *extra
+    methods: [gblcss, mlp_ce, small_loss, coteaching, jocor, sce, elr, logitclip, gblcss_shuffled]
+  citeseerfull:
+    tables: "G.3"
+    datasets: [citeseerfull]
+    methods: [gblcss, mlp_ce, small_loss, coteaching, jocor, sce, elr, logitclip, gblcss_shuffled]
+    noise: *noise
+  sensitivity:
+    tables: "I.1"
+    datasets: *main
+    methods: [gblcss]
+    variants:
+      default: {}
+      beta_0: {beta: 0.0}
+      beta_025: {beta: 0.25}
+      beta_075: {beta: 0.75}
+      beta_1: {beta: 1.0}
+      balls_32: {max_balls: 32}
+      balls_128: {max_balls: 128}
+      votes_5: {min_train_per_ball: 5}
+      votes_10: {min_train_per_ball: 10}
+      size_1: {min_ball_size: 1}
+      size_16: {min_ball_size: 16}
+      size_64: {min_ball_size: 64}
+      delta_001: {split_improvement: 0.01}
+      delta_010: {split_improvement: 0.10}
+  targets:
+    tables: "I.2; Figure 4; Appendix D ties and Appendix I margins"
+    datasets: *main
+    methods: [gblcss]
+    noise: *noise
+    task: targets
+  statistics:
+    tables: "2, G.1"
+    datasets: [cora, citeseer, corafull, coauthorcs, amazonphoto, pubmed, amazoncomputers, coraml, attributedwiki, citeseerfull, coauthorphysics]
+    methods: [statistics]
+    seeds: [0]
+    task: statistics
+  cost:
+    tables: "Figure 5"
+    datasets: *main
+    methods: [granular_ball, exact_knn, kmeans]
+    task: cost

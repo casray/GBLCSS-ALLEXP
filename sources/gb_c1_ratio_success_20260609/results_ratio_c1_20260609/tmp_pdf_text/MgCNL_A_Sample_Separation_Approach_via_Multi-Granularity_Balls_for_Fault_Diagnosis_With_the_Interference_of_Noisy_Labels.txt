@@ -1,0 +1,961 @@
+7748  IEEE TRANSACTIONS ON AUTOMATION SCIENCE AND ENGINEERING, VOL. 22, 2025
+
+        MgCNL: A Sample Separation Approach via
+      Multi-Granularity Balls for Fault Diagnosis With
+
+                the Interference of Noisy Labels
+
+        Fir Dunkin ( ) , Graduate Student Member, IEEE, Xinde Li , Senior Member, IEEE,
+      Heqing Li , Member, IEEE, Guoliang Wu , Chuanfei Hu , Graduate Student Member, IEEE,
+
+                                          and Shuzhi Sam Ge , Fellow, IEEE
+
+   Abstract— The fault diagnosis based on supervised learning                   manufacturing or industrial fault diagnosis who are hampered
+has achieved remarkable results in the intelligent manufacturing,               by the costs associated with sample labeling.
+making it an important guarantee for long-term safe and stable
+operation in modern industry. However, the accuracy heavily                        Note to Practitioners—In modern industry, the cost of man-
+relies on high-quality annotation labels, which are expensive                   ual/expert annotation for high-quality data is is prohibitively
+to obtain, limiting the diagnosis models applicability in many                  expensive, and the data annotated by automatic annotators
+scenarios. Although obtaining automatically annotated samples                   often contains noisy labels that seriously damages the accuracy
+from annotators is a promising solution, the generated dataset                  of models, which makes many data-driven diagnosis models
+is always containing incorrect labels (noisy labels), due to                    constrained by training data and difficult to put into practice,
+perceptual limitations, resulting in low or even invalid the                    posing an urgent challenge to the automation and intelligence
+accuracy of model. With the goal of handling this challenge,                    of the manufacturing industry. To address this challenge, this
+a diagnostic approach based on multi-granularity information                    article proposed a robust training strategy called MgCNL, aimed
+fusion to combat noisy labels, called MgCNL, is proposed, to train              at offsetting the negative impact of noisy labels, in the hope that
+the model with high-accuracy, without knowing the specific                      automatic annotation strategy with lower cost can be more widely
+noise ratio. Specifically, inspired by granular-ball computing,                 applied in model training tasks for industrial practice. MgCNL,
+a confidence evaluation method of labels is designed, so that                   based on multi-granularity information, can effectively select
+samples with high confidence labels can be selected from dataset                high-confidence samples from datasets for supervised learning,
+with noisy labels for supervised learning, thus avoiding the                    even under unknown proportions of noise labels, thus reducing
+negative impact of incorrect labels on model performance.                       the misleading impact of noisy labels on diagnostic models.
+Finally, the efficacy was demonstrated on three datasets using                  As a result, MgCNL possesses the ability to robustly train
+different backbones: MgCNL successfully reduced the adverse                     high-accuracy diagnostic models in data with noisy labels, thus
+impact of noisy labels, achieving significantly better results than             enabling automatic annotators to replace experts in dataset con-
+other advanced methods in various noisy scenarios, which offers a               struction as a more economical and efficient potential technical
+competitive model training strategy for practitioners in intelligent            approach. Meanwhile, MgCNL also brings value to datasets with
+                                                                                uncertain labels, making them applicable without the need to
+  Received 3 April 2024; revised 8 September 2024; accepted 24 September        invest significant human resources to verify label reliability.
+2024. Date of publication 7 October 2024; date of current version 21 March
+2025. This article was recommended for publication by Associate Editor             Index Terms— Label noise, supervised contrastive learning,
+J. Blue and Editor L. Moench upon evaluation of the reviewers’ comments.        granular computing, industrial time series classification.
+This work was supported in part by the National Natural Science Foundation
+of China under Grant 62233003 and Grant 62073072, in part by the Key                                      I. INTRODUCTION
+Projects of Key Research and Development Program of Jiangsu Province
+under Grant BE2020006 and Grant BE2020006-1, and in part by Shenzhen            WITH the gradual opening of the Fourth Industrial
+Science and Technology Program under Grant JCYJ20210324132202005 and                     Revolution, the digitalization, automation, and intelli-
+Grant JCYJ20220818101206014. (Corresponding author: Xinde Li.)                  gence levels of the manufacturing are constantly improving,
+                                                                                and mechanical equipment is becoming increasingly complex.
+  Fir Dunkin and Chuanfei Hu are with the School of Automation, Southeast       Thereby, as a front-end technology for maintaining long-term
+University, Nanjing 210096, China, also with Nanjing Center for Applied         stability of industrial systems, intelligent fault diagnosis plays
+Mathematics, Nanjing 211135, China, and also with the Key Laboratory of         a crucial role in ensuring the reliability and safety of modern
+Measurement and Control of CSE, Ministry of Education, Nanjing 211189,          industrial systems [1]. Although intelligent diagnostic tech-
+China (e-mail: dunkin2fir@ieee.org; chuanfei_hu@ieee.org).                      nologies based on data-driven have achieved significant results,
+                                                                                e.g. Refs. [2], [3], their excellent performance is largely thanks
+  Xinde Li is with the School of Automation, Southeast University, Nanjing      to the training dataset with sufficient high-quality labels [4].
+210096, China, also with Nanjing Center for Applied Mathematics, Nanjing        Simultaneously, building a dataset with high-quality labels is
+211135, China, also with the Key Laboratory of Measurement and Control          expensive in terms of time and cost [5].
+of CSE, Ministry of Education, Nanjing 211189, China, and also with the
+Southeast University Shenzhen Research Institute, Shenzhen 518000, China           To be specific, even for experienced domain experts, label-
+(e-mail: xindeli@seu.edu.cn).                                                   ing is a complex task that makes it difficult to avoid errors [6].
+                                                                                These untrustworthy incorrect labels are called noisy labels,
+  Heqing Li and Guoliang Wu are with the School of Automation,                  since they mislead model as so to damage the generalization,
+Southeast University, Nanjing 210096, China (e-mail: hqli@seu.edu.cn;
+230208677@seu.edu.cn).
+
+  Shuzhi Sam Ge is with the Social Robotics Laboratory, Department of Elec-
+trical and Computer Engineering, Interactive Digital Media Institute, National
+University of Singapore, Singapore 119077 (e-mail: samge@nus.edu.sg).
+
+  This article has supplementary downloadable material available at
+https://doi.org/10.1109/TASE.2024.3469000, provided by the authors.
+
+  Digital Object Identifier 10.1109/TASE.2024.3469000
+
+      1558-3783 © 2024 IEEE. Personal use is permitted, but republication/redistribution requires IEEE permission.
+                          See https://www.ieee.org/publications/rights/index.html for more information.
+
+Authorized licensed use limited to: NANJING UNIVERSITY OF SCIENCE AND TECHNOLOGY. Downloaded on June 24,2026 at 00:54:20 UTC from IEEE Xplore. Restrictions apply.
+DUNKIN et al.: MgCNL: A SAMPLE SEPARATION APPROACH VIA MULTI-GRANULARITY BALLS  7749
+
+Fig. 1. The overview of MgCNL, consisting of supervised contrastive learning and sample selection based on multi-granularity balls, in which all training
+samples are used for contrastive learning, ignoring the information of label, to ensure that sufficient training examples can make the model converge. MgCNL
+evaluates the confidence of label based on the granular ball constructed via the representation generated by each sample, thus dynamically selecting samples
+with high-confidence label without prior noise rate, so as to avoid the misleading of noisy labels on supervised learning.
+
+resulting in low accuracy or even failure of models trained on        Concretely, considering that the existing methods are diffi-
+them in practical applications. Besides, the broad application     cult to accurately estimate the specific noise rate of training
+prospects of non-expert/non-manually annotated dataset, for        data [14], which makes it impossible to set a fixed thresh-
+establishing the datasets automatically labeled via annotator      old to select samples to meet the needs of scenarios with
+or data engine to reduce the annotation cost of high-quality       arbitrary noise rate [9], MgCNL adopts a scheme to dynam-
+labels, have been validated. For example, Meta AI’s SAM            ically set the threshold for selecting samples according to
+generated 1.1B masked labels for 11M images through a              the confidence distribution of all labels (Fig. 1), i.e. sepa-
+data engine [7]. Nonetheless, this strategy is difficult to avoid  ration based on Multi-granularity balls, so as to select as
+the introduction of noisy labels into dataset [4]. Moreover,       many credible samples as possible for supervised learning
+as model can remember information of any label (including          without knowing the specific noise ratio, and prevent insuf-
+noise) during training [8], the interference of noise labels       ficient training samples or unreliable samples from being
+has become a fundamental issue in current intelligent fault        mixed in.
+diagnosis, especially supervised learning strategies that rely
+on modeling label information [4].                                    Thus, the aim of enhancing the generalization of model
+                                                                   and improving the theoretical upper limit of accuracy has
+   Noisy labels impair the generalization of diagnostic algo-      been achieved, which is expected to promote the process of
+rithms, as under the supervision of datasets with noisy labels,    intelligent diagnostic technology from laboratory validation
+incorrectly labeled data can provide misleading information        to practical industrial implementation. To sum up, the main
+when inducing potential representations of instances [9], thus     contributions of our work are summarized as three aspects:
+making the model overfitting. Unfortunately, the mainstream
+regularization technologies (e.g. data augmentation [10] and          1) An effective method using granular balls to estimate
+dropout [11] etc.) cannot completely solve the overfitting                label confidence is proposed, which offers robust support
+caused by noisy labels [12]. Therefore, how to train models               for sample separation without knowing the specific noise
+with high accuracy and good generalization ability on datasets            ratio, thereby mitigating the adverse effects of noisy
+with noisy labels is not only an important research topic in              labels on generalization;
+the field of artificial intelligence [13], including supervised
+learning, but also an inevitable severe challenge in the current      2) Based on confidence, a novel supervised contrastive
+process of industrial manufacturing intelligence.                         learning approach is designed to enhance the fitting
+                                                                          ability, enabling the model to complete training under
+ With the motivation to get promising generalization                      limited supervised samples and counter the interference
+ and accuracy for fault diagnosis models, we pro-                         of noisy labels, which is expected to broaden the appli-
+ poses a supervised contrastive learning approach                         cation prospects of artificial intelligence technology in
+ based on sample separation via multi-granularity                         the manufacturing industry;
+ balls, named MgCNL(Multi-granularity Counter Noisy
+ Labels), which make the model obtain strong repre-                   3) Compared to previous works based on granular ball,
+ sentation ability by contrastive learning, then calculate                which were limited to traditional machine learning and
+ the confidence of each label according to the granular                   low noise tasks(with a noise rate of no more than
+ ball constructed by the corresponding representation,                    30%), this is a successful attempt to combine granular
+ and select the samples with high-confidence label for                    computing with deep learning to solve high noise tasks,
+ supervised learning.                                                     and our experimental results show that in the era of
+                                                                          big data, where deep learning is the main technical
+                                                                          approach, granular computing still maintains exuberant
+                                                                          vitality.
+
+Authorized licensed use limited to: NANJING UNIVERSITY OF SCIENCE AND TECHNOLOGY. Downloaded on June 24,2026 at 00:54:20 UTC from IEEE Xplore. Restrictions apply.
+7750  IEEE TRANSACTIONS ON AUTOMATION SCIENCE AND ENGINEERING, VOL. 22, 2025
+
+                        II. RELATED WORKS                         applications, due to errors in annotation among other reasons,
+                                                                  there exists a noise-affected label function Ln : X → Y.
+A. Fault Diagnosis Approach
+                                                                     Definition 1 (Noisy label): For any sample x ∈ X ,
+   The advent of deep learning-based intelligent diagnostic       if Ln(x) ̸= Lt (x), then Ln(x) is considered a noise label.
+methodologies represents a significant paradigm shift in the
+field of fault diagnosis, particularly for rotating machin-          The challenge of learning with noisy labels has attracted
+ery [15]. These methodologies offer substantial advantages        great attention from researchers around the world [31], and a
+over traditional fault diagnosis techniques, primarily due to     massive amount of research has recently extensively reported
+their superior capability in handling complex and non-linear      on it, including but not limited to estimating noise trans-
+data, enhanced accuracy in fault detection, and their adaptabil-  formation matrix [31], joint semi-supervised [32], selecting
+ity to varying operational conditions [16].                       confidence example [9], designing robust loss function [33],
+                                                                  generating pseudo labels [34], etc. According to the underlying
+   Current research and development in intelligent diagnostic     ideas of corresponding the challenge, these methods can be
+methods predominantly focus on several key directions [17]:       roughly divided into three categories, i.e. label correction, loss
+model lightweighting [18] and portable deployment [19]            modification, and sample separation [12].
+(development of lightweight neural networks that maintain
+high diagnostic accuracy while being deployable on portable          Among them, label correction requires estimating the noise
+devices, e.g. Ref. [20]), fault diagnosis under varying work-     transfer matrix, which is often used in specific tasks, owing
+ing conditions [21] (algorithms capable of diagnosing faults      to the difficulty in estimating the matrix in the scenarios
+under changing operational conditions without prior knowl-        with large number of classes or high noise [31]. Additionally,
+edge of these conditions, i.e. domain adaptation [22] and         the estimation error increases as the number of categories
+domain generalization [23]), identification of unknown fault      increases, which limits the generalization of this type of
+types [24] (diagnostic framework for identifying previously       method [4]. The method of loss modification usually addresses
+unseen fault types on training set [25]), resistance to input     noisy labels through three strategies: loss correction, loss
+signal noise [26] (advancements in signal processing tech-        reweighting, and label refurbishment. However, such methods
+niques have improved the robustness of diagnostic algorithms      can cause error accumulation due to incorrect correction,
+against noise [27]), non-invasive diagnostics [28] that have      especially when involving numerous categories or high noise
+been developed that require minimal modifications to existing     rates [4]. We, therefore, adopt the technology of sample
+machinery, and cloud-edge collaborative optimization based on     separation, to avoid error accumulation caused by incorrect
+federated learning [29] who have facilitated the collaborative    label correction.
+optimization of models across distributed networks, enabling
+more efficient and scalable diagnostic solutions, etc.               Sample separation attempts to filter out noisy samples(or
+                                                                  select clean samples) from the original dataset, via con-
+   Despite these achievements, it is important to recognize       structing a certain criterion for labels [35], and then use a
+that the majority of existing intelligent diagnostic methods      reconstructed clean dataset for supervised learning, to avoid
+rely on the assumption that the training datasets are correctly   misleading. Although sample separation has achieved many
+labeled [4]. However, the high costs associated with dataset      excellent results, filtering noisy labels without knowing a
+annotation and the advent of big data necessitate the develop-    specific noise ratio is prone to imbalanced classification [18]
+ment of automatic labeling paradigms to meet the demands of       or having too few samples available for training [9], which
+intelligent maintenance in the big data era, aiming at reducing   makes the trained model overfitting or unable to converge.
+costs and increasing efficiency, which introduces the challenge   Fortunately, contrastive learning that do not require label
+of noise in the dataset labels due to the limitations of anno-    information can bring excellent latent representations to
+tators, thereby necessitating the development of diagnostic       help models achieve outstanding performance in following
+methods to counter noisy labels [5].                              tasks [36]. Inspired by this phenomenon, under the condition
+                                                                  that it is difficult to estimate the specific noise rate of labels,
+   Ergo, while intelligent diagnostic methods have made           we propose to use contrastive learning to learn robust latent
+remarkable progress and offer considerable benefits over          representations, and use a small number of sample with
+traditional approaches, addressing the challenges related to      high confidence labels, i.e. labels with high probability of
+data labeling and noise remains crucial for further advance-      correctness, for supervised learning.
+ments [30]. Continuous research and innovation, particularly
+in the areas of automatic labeling and noise-resistant learning,  C. Granular Ball Computing
+are essential to fulfill the evolving requirements of industrial
+maintenance in the era of big data and intelligent operation.        Granular ball computing is a simple and efficient multi-
+                                                                  granularity method that uses hyper-ball, a simple geometric
+B. Learning With Noisy Labels                                     structure, consisting only of radius and center parameters,
+                                                                  to completely or partially cover the sample space [37]. In tradi-
+   To facilitate understanding and prevent ambiguity, we first    tional granular ball computing, the center of the granular ball is
+provide a formalized description of noise labels. Let X denote    the center of the samples, and the radius is usually equal to the
+the sample space and Y denote the label space. Then, there        average or maximum distance from the center of all samples
+exists a true label function Lt : X → Y, which maps each          in the granular ball, and use purity (the sample proportion
+sample x ∈ X to its correct label y ∈ Y. However, in practical    of the major category in the granular ball) to measure the
+
+Authorized licensed use limited to: NANJING UNIVERSITY OF SCIENCE AND TECHNOLOGY. Downloaded on June 24,2026 at 00:54:20 UTC from IEEE Xplore. Restrictions apply.
+DUNKIN et al.: MgCNL: A SAMPLE SEPARATION APPROACH VIA MULTI-GRANULARITY BALLS                                                                                 7751
+
+                        TABLE I                                     I only give you a ride, and the wind, snow, and sun are all
+THE SPECIFIC MEANINGS OF MAIN SYMBOLS                               your scenery, not my concern anymore in the future”.
+
+                                                                    C. The Supervised Contrastive Learning of the MgCNL
+
+quality of granular ball. When a granular ball does not meet           Before using the training set D = {(xi , yi ) | i ∈ [1, n]}
+the quality standards, the ball is split into k sub-balls using a   of unknown noise ratio to train framework f (. : θb, θc, θp),
+certain method [38].
+                                                                    MgCNL divides the neural network into three modules: the
+   The traditional granular-ball computing counteracts the          backbone ( f (. : θb)) for outputting representation, the classi-
+interference of noisy label by uniformly correcting the labels      fier ( f (. : θc)) for getting results, Eq. (1), and the projector
+of samples in a granular ball as the main label, which is a         ( f (. : θp)) used only for contrastive learning.
+typical label correction strategy. Thus granular ball computing
+difficult to avoid the limitations of label correction, which            argminF(θb,         θc  )   = min LC E (R, Y)
+makes traditional granular ball of method only suitable for            
+machine learning tasks with fewer categories and lower noise
+ratios. Hence, to avoid the errors, MgCML only uses granular                θb ,θc
+ball as a method for estimating the confidence of label and            
+does not participate in model parameter updates. Moreover,             
+in our work, the granular ball does not cover the sample space,
+but instead measures the unity of representations in the feature          R                           = f (Z, θc) = f ( f (X , θb), θc) (1)
+space.
+                                                                                                           1            n
+                            III. APPROACH                                                             =−                 i =1
+                                                                         LC    E  (R,  Y  )                                   riT  log  yi
+A. Symbols                                                                                                n
+                                                                       
+   For the purpose of facilitating description and preventing
+ambiguity, we have first fixed the specific meanings of main        where, argminF(θb, θc) represents the optimization of network
+symbols in the formula description in Table I.
+                                                                                   θb ,θc
+B. Idea of the MgCNL
+                                                                    parameters θb and θc with the goal of minimizing function
+   The core purposes of MgCNL are: how to train the diagnos-        LC E , while ri is the diagnostic result of the model for the
+tic models to obtain strong representation ability, and how to      input sample xi .
+evaluate labels to ensure high-confidence labels participating
+in supervised learning. To achieve these purposes, MgCNL               Contrastive learning enable models to generate the unified
+consists of two parts: supervised contrastive learning for strong
+representation ability and sample selection based on multi-         representations that converge into clusters according to a cer-
+granularity ball for high-confidence labels. Facing the datasets
+with noise labels, MgCNL warm up model via supervised               tain rule [39]. Based on this performance, we adopt contrastive
+contrastive learning, without considering the presence of noisy
+labels. Subsequently, MgCNL only allows the samples with            learning to get robust representations with certain clustering
+high confidence labels to participate in the supervised learning.
+                                                                    effects, ensuring that the samples in the multi-granularity balls
+   Specifically, all samples are involved in contrastive learning,
+to maximize the robustness of representations as much as            constructed through the representation belong to the same class
+possible without label information. Subsequently, construct the
+multi-granularity balls by representation generated by each         as much as possible, thus possessing the feasibility of estimat-
+sample, to estimate the confidence of corresponding label.
+After estimating the confidence of each sample’s label, select      ing label confidence. Any sample xi is randomly augmented to
+samples with high confidence label according to the dynamic         gain a series of positive instances xi , and N negative examples,
+threshold to complete the training in the supervised learning
+phase (Alg. 1). At this moment, the performance that classi-        x  −  |  x  −  =  Aug(x j ),      j  ∈  [0,    N ],  j  ̸=  i   , have been randomly
+fiers can achieve are not the concern of comparative learning          j        j
+and granular ball computing. We, therefore, summarize the
+concept of MgCNL in a poem: “Journey of millions miles,             selected from the dataset D. Contrastive learning is the process
+                                                                    of optimizing the parameters of f (. : θ ) that map x to the
+
+                                                                    unit hypersphere by minimizing InfoNCE [40] loss. InfoNCE
+                                                                    aims to pull the positive pairs (xi , xi+) from the same sample
+                                                                    together in the feature space, while making the representation
+                                                                    of xi as far away as possible from other negative examples x−j .
+                                                                    Formally, InfoNCE can be approximately decoupled into the
+
+                                                                    two terms of Eq. (2), namely the alignment term that brings
+
+                                                                    the positive pair closer and the uni f or mit y term that pushes
+                                                                    away the negative example, where ι is a scaling factor.
+
+                                                                          Inf oNCE                          exp       f (xi )T f (xi+)
+
+                                                                          = − log                                            ι
+                                                                                     exp
+                                                                                                 f (xi )T f (xi+)           N       exp      f (xi )T f  x  −
+                                                                                                                            j =1                            j
+
+                                                                                                         ι         +                            ι
+
+                                                                                     f (xi )T f  xi+               N            f (xi )T f     x  −        
+                                                                                                                                                   j        
+                                                                                                         + log           exp                                  (2)
+                                                                          ≈−               ι                                                 ι
+
+                                                                                                                   j =1
+
+                                                                                      alignment
+
+                                                                                                                               uniformity
+
+                                                                       According to Eq. (2), although alignment term are expected
+                                                                    to achieve clustering by pulling positive pairs (xi , xi+) together,
+                                                                    negative pairs may inevitably lead to class conflict issues,
+                                                                    thereby damaging clustering performance [39], as uni f or mit y
+                                                                    term require pushing away other samples, regardless of
+                                                                    whether negative instances (x−j ) belong to the same class as
+
+Authorized licensed use limited to: NANJING UNIVERSITY OF SCIENCE AND TECHNOLOGY. Downloaded on June 24,2026 at 00:54:20 UTC from IEEE Xplore. Restrictions apply.
+7752                                                                 IEEE TRANSACTIONS ON AUTOMATION SCIENCE AND ENGINEERING, VOL. 22, 2025
+
+the positive pair. Therefore, to avoid the issue of class con-            symmetrically. After obtaining the pseudo labels for each
+flict, inspired by SimSiam [41], MgCNL adopts a contrastive               granular ball, MgCNL used JSD to evaluate the confidence
+learning paradigm without negative instances Eq. (3).                     (ci ), which is the degree of consistency between the label
+                                                                          of the sample and the pseudo label of the granular ball
+       argminF             θb, θp  = min LC L (X )                       constructed from the representation of the sample. The exper-
+                                                                         imental results in Sec. IV validate that JSD is more suitable
+            θb ,θ p                                                       for label confidence estimation tasks compared to other loss
+                                                                         measurement methods. In this work, for the convenience of
+                                                                         calculation, following [31], we used symmetric Kullback-
+                                                                          Leibler divergence function to construct JSD Eq. (5).
+        LC L  =        1   C S( p1, z2) +  21SCtoSpG( pr2a,dz(1z))  (3)
+        C S(  p,       2                   StopGrad(z)∥2
+                       z)          p
+                           =− ·
+      
+                                 ∥ p∥2 ∥
+      
+
+      
+      
+      
+      
+
+        p  =        f  z, θp  =f    f x˜, θb , θp
+      
+      
+
+      
+
+      
+
+       x1, x2 = Aug(x), Aug(x) and x1 ̸= x2 ̸= x                         
+
+                                                                            ci  =  J S D(yi ,      y¯i )
+                                                                          
+
+   Obviously, without negative examples, Eq. (3) aims to                        1  K  L  D(    yi     yi   +  y¯ i  )     1  K  L D(y¯i        yi      +  y¯i )
+the representation of different randomly augmented samples                      2                          2              2     P (i )                 2
+(xi1, xi2, xi1 ̸= xi2) from a instance (xi ) as consistently as pos-                               ∥                   +                   ∥                     (5)
+sible, to ensure that the representations with similar distances
+in the feature space are likely to belong to the same class.                =
+In addition, considering that without negative instances, the
+model may collapse to achieve the goal of minimizing the                  
+contrastive loss LC L , i.e., any input sample output the same
+representation that keeps LC L at the minimum value of −1,                  K   L D(P       ∥  Q)  =             P(i) log       Q (i )
+MgCNL does not completely split the process of supervised                 
+learning and contrastive learning. But, in an epoch of train-                                                 i
+ing, MgCNL completes an epoch contrastive learning first.                 
+Then, the confidence of all labels is estimated based on the
+constructed multi-granularity balls via representation. Finally,          where, K L D represents the Kullback-Leibler Divergence.
+reliable samples with high-confidence label are selected to
+complete a supervised learning. Supervised learning makes up                 After obtaining the confidence of all labels, calculate the
+for the shortage that the class spacing of contrastive learning           distribution of confidences, C = {ci | i ∈ [1, n]}, and gener-
+is too small after removing negative examples, thanks to the              ate dynamic threshold (τ calculated by Eq. (6) for sample
+natural sparse latent feature distribution. And cycle back and            selecting.
+forth until the end of the training, so this process is called
+supervised contrastive learning.                                                          τ  =  1             n        if τ ∈ [0.3, 0.7]                         (6)
+                                                                                                
+                                                                                                             i ci ,      n
+                                                                                                               1
+                                                                                                   n                     i ci , otherwise
+                                                                                                            ×
+                                                                                                      0.8     n
+                                                                                                
+
+D. Selecting Samples With High Confidence Label                              Due to the increased susceptibility of the feature distribution
+                                                                          knowledge learned by models in high-noise environments
+   In MgCNL, the main basis for estimating confidence of                  to disturbances, a more cautious evaluation of the cur-
+labels is the degree of consistency between the label of each             rent sample’s label confidence through the labels of more
+sample and the similar samples (which are closer in the                   proximate samples is necessitated. Conversely, in low-noise
+feature space). In other words, for each sample, if the label(yi )        environments, it is feasible to incorporate more comprehensive
+matches most of the labels of samples similar to the sample               information from the labels of approximate samples across a
+in latent feature space Eq. (4), the label is correctly annotated         broader range, thereby enabling a more secure analysis of the
+and is non-misleading information that can participate in                 current label’s correctness [5].
+supervised learning, and vice versa.
+                                                                             Accordingly, MgCNL set the adaptive radius to construct
+                                   1 B+1                                 GBs under different noise intensity environments, ensuring
+                                                                          that there is an appropriate amount of samples in each gen-
+                         y¯i  =            j=1, j̸=i y j            (4)  erated GBs to ensure the reliability of the generated pseudo
+                                  B                                       labels. Specifically, in the initial state, B of Eq. (4) is uni-
+                                                                          formly set to Binit (established as 40 for this work), and the τ
+                         z j = f x j , θb , z j ∈ G Bi                   is calculated according to Eq. (6). Subsequently, B is adjusted
+                                                                          based on the τ to ensure that the radius of the GBs generated
+   In specific operations, MgCNL constructs adaptive radius               in the next epoch is as reasonable as possible. Furthermore,
+granular balls in the latent feature space, G Bs =                        to prevent the occurrence of excessively large or small B under
+{G Bi | i ∈ [1, n]}, with the corresponding representation of             certain conditions, a truncation interval has been established,
+each sample, zi = f (xi , θb), as the center of the ball, and each        which ensures that the B, after adjustment based on Eq. (7),
+granular ball includes B + 1 representations. Subsequently, the           always satisfies the condition Bmin ≤ B ≤ Bmax (in this work,
+mean of labels corresponding to all representations outside the           Bmin = 5, Bmax =100). Apparently, since the radii of all balls
+center representation of each granular ball is calculated, as             here are automatically generated and not fixed at the same
+the pseudo label (y¯i ) of the granular ball.                             granularity, the granular ball computing in this work belongs
+                                                                          to the category of multi-granularity balls.
+   Considering that Jensen-Shannon divergence (JSD) does not
+require normalization (value range from 0 to 1) and proba-                                   B  =   Clip[3     ×     Bi ni t  ×  (1  −   τ  )]  Bmax              (7)
+bilistic modeling, and unlike other losses, JSD is designed                                                                                     Bm i n
+
+                                                                          Where, “Clip” is the truncation function. Given an interval,
+                                                                          when the input value is outside the interval, the output is
+                                                                          clipped to the edge of the interval. Otherwise, the input value
+                                                                          is directly output.
+
+Authorized licensed use limited to: NANJING UNIVERSITY OF SCIENCE AND TECHNOLOGY. Downloaded on June 24,2026 at 00:54:20 UTC from IEEE Xplore. Restrictions apply.
+DUNKIN et al.: MgCNL: A SAMPLE SEPARATION APPROACH VIA MULTI-GRANULARITY BALLS                                                   7753
+
+                                                                      Algorithm 1 Training Process Based on MgCNL
+
+                                                                      Input: Epoch, D
+
+                                                                      Random Initialization: θb, θp, θc
+
+                                                                      Output: θb, θc
+
+                                                                      for e in epoch do
+
+                                                                      for (x, y) in D = {(xi , yi )}in=1 do
+                                                                         x1, x2 ← Aug(x), Aug(x)
+
+                                                                      z1, z2 ← f (x1, θb), f (x2, θb)
+
+                                                                      p1, p2 ← f (z1, θp), f (z2, θp)
+
+                                                                      losscontr = CS( p1, z2.detach) + CS( p2, z1.detach)
+
+                                                                      Update θb, θp via losscontr
+
+                                                                      end for
+
+Fig. 2. The schematic diagram of the MgCNL.                           Get Z = {zi |zi = f (xi , θb), for all xi ∈ D}
+
+   Finally, all labels whose confidence value is less than the        Get  G Bs       =     {G  Bi   n
+threshold τ are the label with high-confidence, so that a
+trusted dataset DSL = (x j , y j ) | j ∈ [1, t], c j < τ, t < n can                                 }i =1
+be constructed on the entire dataset D, as the data used for
+supervised learning in the epoch.                                     # ∀zi , z j ∈ G Bi , zk ∈/ G Bi ⇒ |zi − z j | < |zi − zk|
+
+E. Diagnosis Process of MgCNL                                         Get  Y¯   =  {  y¯ i   n     via  Eq.  (4)
+
+   The process of using MgCNL for fault diagnosis practice is                               }i =1
+illustrated in Fig. 2. First, monitoring signals generated during                            n
+the actual operation of industrial equipment are collected.           Get  C    =  {ci             via  Eq.  (5)
+Then, an automatic annotator labels the stored dataset, replac-                             }i =1
+ing manual annotation to reduce labeling costs. Due to the
+absence of expert validation, the dataset contains an unknown         Get τ via Eq. (6)
+proportion of noisy labels. Subsequently, MgCNL evaluates
+the confidence of each label based on GBs, and allows labels          Get Dsl = {(x j , y j )|∀c j < τ }
+that are likely correct to be used in supervised learning, while
+all data participate in contrastive learning, thereby training a      for (x, y) in Dsl do
+diagnostic model with high-accuracy (see Alg. 1). Finally,
+the trained diagnostic model is deployed in the industrial            p ← f ( f (x, θb), θc)
+scenarios, e.g. edge computing devices [20], to automatically
+generate diagnostic results.                                          losssuper = LC E ( p, y)
+
+                                                                      Update θb, θc via losssuper
+
+                                                                      end for
+
+                                                                      end for
+
+   IV. EXPERIMENTAL VERIFICATION AND DISCUSSION                       Fig. 3. The physical drawing of the experimental rig used in constructing
+                                                                      the self-made bearings fault diagnosis dataset.
+A. Experimental Settings
+                                                                         2) Optimization Process: All models use Lamb [42] as the
+   1) Dataset Description: To verify the effectiveness and            optimizer, uniformly warm-up 20 epochs, formally training
+superiority of MgCNL, in this section, we conducted exper-            100 epochs with an initial learning rate of 3 × 10−3 × bs/512
+imental analysis on two publicly available datasets1 and a            (“bs” means inputing the number of samples in a batch) and
+self-made dataset (see Fig. 3), denoted as CWRU, NEPU, and            gradually decreasing to 0 via cosine annealing. In the con-
+SM according to their sources.                                        trastive learning phase, sample augmentation, Aug in Eq. (3),
+                                                                      is achieved by randomly adding Gaussian/Laplacian noise
+   These three datasets all collect vibration signals during          signal to input signal, or zeroing some points of the signal.
+mechanical operation to represent the operating status of             Note: to ensure the reliability of the experimental results,
+the bearings to be diagnosed, and each sample is a one-               all accuracy intervals in this section are the 95% confidence
+dimensional time series data of 1024 consecutive sampling             intervals, C I95(a√ccuracy) = Mean(accuracy) ± 1.96 ×
+points randomly cut from the raw vibration signal. Table II           Std(accuracy)/ N , based on the accuracy calculated on the
+describes more detailed information about the three datasets.         test set after repeated N experiments.
+
+   In this work, all datasets were uniformly divided into test           3) Models: To fully validate the effectiveness of MgCNL,
+and training sets in a ratio of 1:1. Subsequently, consistent         this work used three fault diagnosis models with different
+with [4], [9], [31], the label information in the training set was    architectures as the backbone, namely CLFormer(2022) [26]
+modified in the form of symmetric noise to construct training         based on Transformer, TDMSAE(2023) [43] based on
+set with different intensities of label noise.
+
+   1The raw datasets are available at CWRU Dataset, and NEPU Dataset
+respectively.
+
+Authorized licensed use limited to: NANJING UNIVERSITY OF SCIENCE AND TECHNOLOGY. Downloaded on June 24,2026 at 00:54:20 UTC from IEEE Xplore. Restrictions apply.
+7754                                                                                IEEE TRANSACTIONS ON AUTOMATION SCIENCE AND ENGINEERING, VOL. 22, 2025
+
+                                    TABLE II                                                                                           TABLE III
+            DETAILED INFORMATION OF THREE DATASETS                                            COMPARISON OF EFFECTIVENESS BETWEEN MgCNL AND FIVE OTHER
+
+                                                                                                         METHODS FOR TO NOISY LABEL ON THREE DATASETS.
+                                                                                                                    (THE BACKBONE IS CLFORMER [26])
+
+convolutional network, and the MWSDTN(2024) [15] that is                                                                               TABLE IV
+a recently published latest diagnostic framework, respectively.
+Simultaneously, for fairness, the structure of all models’ pro-                                COMPARISON OF EFFECTIVENESS BETWEEN MgCNL AND FIVE OTHER
+jector, Eq. (8), used in the contrastive learning is completely                                           METHODS FOR TO NOISY LABEL ON THREE DATASETS.
+consistent.                                                                                                           (THE BACKBONE IS TDMSAE [43])
+
+  f (Z  :  θp)  =             FC (Dr opot (P, 0.5))
+
+                   1  ·Clat   ent  →Cl  at   ent
+                   2
+
+
+
+  P     GELU(                                     (Z ))
+
+     =                        FC
+
+
+                    Clat  ent  →    1  ·Clat  ent
+                                    2
+
+                                                                exp       (X −µ)2
+
+                                                            x          − 2σ 2
+
+
+
+
+
+  GELU(x )      =  x  ·  P(X          ≤      x)   =  x   ·             √           dX
+                                                                                       (8)
+                                                                          2π σ
+
+                                                             −∞
+
+Here, “GELU” here is the Gaussian error linear unit
+
+activation function, and GELU(x) ≈ 0.5x(1 + tanh
+√
+  2/π (x    +  0.044715x 3 )             ),        while  “  FC         ” represents the lin-
+
+                                                             Cin →Cout
+
+ear fully connected layer where the input maps the feature
+
+dimension from Cin to Cout .
+
+B. Case I: Effectiveness of MgCNL                                                              the effectiveness of MgCNL and to some extent demonstrates
+                                                                                               the superiority.
+   With the goal of verifying the effectiveness of MgCNL,
+we tested MgCNL and five typical noise label training                                             Apparently, the traditional granular ball computing method,
+strategies on three datasets, including JoCoR(2020) [32],                                      GBs, is completely ineffective after directly embedding deep
+GBs(2021) [37], Sel-CL(2022) [9], TCL(2023) [44], and INL-                                     learning processes to handle high noise tasks, and the accuracy
+SSL(2023) [4]. The experimental results are summarized in                                      achieved is even lower than the baseline without any counter
+Table III to V, where the “Baseline” refers to directly using                                  noise strategies (Average accuracy of “Baseline” to “GBs”:
+cross entropy as the loss function to supervised learning                                      68.49% → 27.12% on CWRU, 62.44% → 27.60% on NEPU,
+without any of anti-noise strategy, and the boldface emphasizes                                and 62.71% → 29.80% on SM). The main reason for the
+the optimal result.                                                                            phenomenon is that deep learning is different from traditional
+                                                                                               machine learning in that the direction of optimizing parameters
+   According to the results in Table III to V, MgCNL achieved                                  is to minimize losses, while GBs processes noisy labels by
+optimal results in the vast majority of cases, and also achieved                               uniformly “correcting” all labels in the same granular ball to
+suboptimal performance very close to the optimal results in                                    the label of granular ball. Thus, as long as there is incorrect
+non optimal situations, with an average accuracy difference of                                 correction in the early stage, in subsequent iterations, this
+less than 1% compared to the optimal results, which validates
+
+Authorized licensed use limited to: NANJING UNIVERSITY OF SCIENCE AND TECHNOLOGY. Downloaded on June 24,2026 at 00:54:20 UTC from IEEE Xplore. Restrictions apply.
+DUNKIN et al.: MgCNL: A SAMPLE SEPARATION APPROACH VIA MULTI-GRANULARITY BALLS  7755
+
+                                         TABLE V                     Sel-CL and INL-SSL, like MgCNL, adopts a supervised
+COMPARISON OF EFFECTIVENESS BETWEEN MgCNL AND FIVE OTHER          contrastive learning with sample separation. The difference
+                                                                  is that Sel-CLL selects confident samples in pairs, that is,
+           METHODS FOR TO NOISY LABEL ON THREE DATASETS.          multiple samples with similar representations and fully consis-
+                       (THE BACKBONE IS MWSDTN [15])              tent labels are used as confident pairs samples to make them
+                                                                  participate in supervised learning. While, INL-SSL introduces
+erroneous information will lead to more labels being corrected    a fitted Gaussian mixture model into co-training to further dis-
+into incorrect labels, further misleading the direction of model  tinguish which labels may be correct and which may be noisy.
+optimization, and continuously amplifying this error like a       Consequently, Sel-CL and INL-SSL have the same issue as co-
+snowball. Unfortunately, it is almost impossible to ensure that   training methods, where once the noise rate is too high, it is
+the model is not misclassified in the early stages of training,   difficult to select a sufficient number of samples because Sel-
+which makes the strategy of rigidly and directly combining        CL and INL-SSL require the dataset to include pairs of similar
+GBs and deep learning impractical. For this reason, we did not    and correctly labeled samples, which is difficult. This further
+adopt the label correction strategy of GBs, but instead used      demonstrates the superiority of MgCNL introducing pseudo
+multi-granularity ball as a reference information for estimating  labels generated by multi-granularity balls to estimate label
+label confidence. Therefore, even if the model generates some     confidence, which allows for a certain number of samples with
+incorrect representations in the early stages of training, they   incorrect labels in the granular ball. The selected threshold, τ
+are only the temporary errors that will be corrected as the       calculated by Eq. (6), is automatically generated based on the
+training progresses.                                              confidence of all labels in the dataset D, so MgCNL allows
+                                                                  partially samples around the selected trusted samples to be
+   JoCoR is an important representative work of co-training       incorrectly annotated, as long as the number of errors is less
+based methods, which has significant performance improve-         than that of most balls, which effectively increases the number
+ment compared to baseline on all three datasets (Average          of confidence samples participating in supervised learning.
+accuracy: 85.92%, improved by 21.38% compared to base-
+line). The theoretical basis for co-training to combat noisy         Similarly, TCL has also introduced contrastive learning to
+labels is to train multiple models simultaneously, and only       avoid the problem of insufficient sample size and difficulty for
+the gradients generated from labels of samples with con-          models to learn sufficient knowledge. Specifically, TCL is a
+sistent/similar prediction results from multiple models are       dual contrastive learning model that injects the predictions of
+used for model optimization during the training process to        the supervised model into a Gaussian mixture model (GMM),
+avoid misleading by noisy labels. But co-training can easily      associates unlabeled latent variables with labeled noise anno-
+prioritize learning simple samples during the training process,   tations, and constructs a GMM on the representation. By using
+leading to class imbalance and damaging model accuracy.           GMM and contrastive learning, learn discriminative repre-
+Therefore, to avoid the decline of model accuracy due to          sentations that are consistent with estimated labels to handle
+insufficient samples, MgCNL first uses comparative learning       noisy labels. Although TCL is undoubtedly successful in terms
+to enhance the model’s understanding of knowledge, and then       of performance, TCL and MgCNL are the only two noise
+uses a small number of samples with high confidence label         label learning methods that have achieved over 90% average
+for supervised learning, similar to transfer learning to reduce   accuracy (91.10% of TCLvs. 92.53% of MgCNL ). Never-
+the dependence of model on sample size. On the other hand,        theless, compared to training a single model, the construction
+in the process of training, MgCNL build a DSL for each epoch,     of dual models requires more computational power, and the
+which makes it impossible to participate in all the supervised    construction of GMM is not as convenient as using GB with
+learning even if some samples with noisy label participate in     only two hyperparameters (radius and center) and judging the
+a certain supervised learning, thus increasing the total number   trustworthiness of sample labels based on the consistency of
+of samples participating in supervised learning in a disguised    surrounding samples, which not only results in TCL having
+way to prevent the scarcity of training samples.                  slightly lower overall accuracy than MgCNL, but also makes
+                                                                  MgCNL more competitive in certain application tasks with
+                                                                  limited computing power.
+
+                                                                  C. Case II: Robustness Analysis
+
+                                                                     With the intention of verifying the robustness of MgCNL
+                                                                  under different noise conditions, we further conducted exper-
+                                                                  iments on more diverse and complex noise modes to test the
+                                                                  performance of MgCNL under input noise interference, as well
+                                                                  as the performance after replacing the type of label noise from
+                                                                  random symmetric noisy labels to asymmetric noisy labels.
+
+                                                                     1) Robustness to Input Signal Noise: To verify the robust-
+                                                                  ness of MgCNL when the input signal is also affected by
+                                                                  noise interference, referring to the robustness analysis of
+                                                                  other intelligent diagnostic methods [19], [20], [28], we added
+                                                                  Gaussian noise of different intensities to the input signal
+
+Authorized licensed use limited to: NANJING UNIVERSITY OF SCIENCE AND TECHNOLOGY. Downloaded on June 24,2026 at 00:54:20 UTC from IEEE Xplore. Restrictions apply.
+7756  IEEE TRANSACTIONS ON AUTOMATION SCIENCE AND ENGINEERING, VOL. 22, 2025
+
+Fig. 4. Comparison of robustness between MgCNL and other learning methods with noisy labels when the input signal is interfered by Gaussian noise.
+
+and calculated the average diagnostic accuracy achieved by           types of faults with a certain degree of similarity and easy
+different noisy label learning strategies on the datasets with       misjudgment, their noisy labels are usually labeled incorrectly
+different ratios of noisy labels, and the results are shown in       with each other rather than being labeled with other categories)
+Fig. 4.                                                              in practice by swapping labels of certain categories.
+
+   Obviously, compared to other methods, MgCNL has                      In the process of preparing specific datasets with noisy
+stronger robustness against input noise interference, which          labels, for the CWRU and SM datasets, labels of faults located
+is reflected in the fact that MgCNL achieves higher average          in the same position but with varying degrees of damage were
+accuracy in any noisy environment. In addition, the slope of         exchanged. Specifically, this exchange involved swapping the
+the other methods in Fig. 4 is significantly higher than that of     labels of faults of the same type with damage extents of
+MgCNL in most cases, indicating that these methods are more          0.2 mm and 0.4 mm, 0.6 mm and 0.8 mm, 7 mil and 14 mil,
+prone to failure under Gaussian noise interference, especially       as well as 21 mil and 28 mil. For the NEPU dataset, labels
+in strong noise environments with a signal-to-noise ratio of         were exchanged between single-point faults and multipoint
+less than 4 dB. For training datasets with fewer noisy labels        compound faults, that is, swapping between I and I&O, O and
+(noise ratio of 20% or 40%), the accuracy of many methods            O&B, and B and B&I.
+is sometimes lower than the baseline.
+                                                                        As shown in Fig. 5, after changing the noise type of the
+   We argue that the primary factor contributing to the              label from random replacement of symmetric noise labels with
+observed phenomenon is the incorporation of contrastive learn-       other category faults to asymmetric noise labels with matching
+ing (see Eq. (3)) into the MgCNL training process, which             category labels, MgCNL still shows better robustness than
+aims to mitigate the potential decline in model performance          other methods (the average diagnostic accuracy is higher than
+due to insufficient training samples following the separation of     other strategies).
+complete samples. By facilitating the model’s acquisition of
+an expanded knowledge of feature distributions, this process            3) Visual Analysis: This subsection uses t-SNE technology
+necessitates the introduction of a certain level of input noise for  to visualize the feature distribution learned by the model under
+data augmentation, which inherently enhances the robustness          different conditions, in order to more intuitively analyze the
+of model to input noise, thereby endowing MgCNL with                 misleading mechanism of noise labels on the model. Fig. 6
+superior robustness.                                                 illustrates the feature distribution learned by the model with
+                                                                     MWSDTN as the backbone via the traditional supervised
+   2) Robustness to Asymmetric Noisy Labels: Considering             learning strategy (“Baseline”) and MgCNL, using the NEPU
+that the noisy labels in the previous experiments were all           dataset (with the least number of fault categories, i.e. easy
+achieved by randomly modifying a certain proportion of               to observe) as the training set, under two different types of
+correct labels to resemble other categories, which belong            noise interference in the high ratio noise environments and no
+to a specific type of noise. Therefore, to further verify the        misleading of noisy labels.
+robustness of MgCNL to noisy labels, this section imitates the
+more common asymmetric label noise [9], [44] (i.e. for two              Without the misguidance of noisy labels (see the first
+                                                                     row of Fig. 6), the “Baseline” learns feature distributions
+
+Authorized licensed use limited to: NANJING UNIVERSITY OF SCIENCE AND TECHNOLOGY. Downloaded on June 24,2026 at 00:54:20 UTC from IEEE Xplore. Restrictions apply.
+DUNKIN et al.: MgCNL: A SAMPLE SEPARATION APPROACH VIA MULTI-GRANULARITY BALLS  7757
+
+Fig. 5. Compared with other noise label learning methods, MgNet has stronger robustness in asymmetric label noise environments. The black dashed line
+here represents the average accuracy of the “Baseline.”
+
+where the distances between some categories are relatively        challenges to the model for precise fault diagnosis. In contrast
+close, yet there remains a significant distinction between        to the confusion observed with the “Baseline”, the feature
+different categories overall. MgCNL further amplifies this        distribution learned by MgCNL maintains a higher level of
+distinction, which enhancement is partly due to MgCNL             distinctiveness, which provides a foundation for MgCNL to
+being a hybrid method that combines supervised learning           train a high-accuracy diagnostic model on a dataset filled with
+with unsupervised contrastive learning, allowing the model to     a large number of asymmetric noisy labels (with a noise rate
+gain more comprehensive knowledge, which facilitates easier       of 40%), achieving a minimum accuracy exceeding 90% (see
+discrimination between different categories of faults by their    Fig. 5), and further substantiates MgCNL’s effectiveness in
+distinguishing features. On the other hand, MgCNL isolates        countering the interference of noisy labels.
+a subset of samples during training that have significant label
+discrepancies compared to nearby samples, which ensures that         Furthermore, the misleading impact of a high proportion
+samples on the distribution’s periphery do not participate in     of symmetric noisy labels on diagnostic models is unde-
+the supervised learning process, enabling the MgCNL-trained       niably critical. As depicted by the “Baseline” in the third
+model to concentrate more on the unique features of each          row of Fig. 6, in the feature space mapped by the model
+category while neglecting some common features that might         post-training, the features of samples from seven categories
+resemble those of other categories.                               coalesce into two larger, mixed clusters. Despite variations
+                                                                  in the approximate distribution ranges of data from different
+   Asymmetric noisy labels can blur the distinctions between      categories within these clusters, this feature distribution nearly
+certain categories, leading to a loss in the model’s ability to   entirely forfeits the capacity to differentiate between fault
+differentiate among these categories. A prominent example         categories. This elucidates why, as indicated in Table III
+supporting this assertion is found in Fig. 6, where, follow-      to V, following an increase in the noise ratio to 80%, the
+ing the introduction of asymmetric noisy labels, the feature      “Baseline” attains an average accuracy fluctuating between 12-
+distribution learned by the “Baseline” for samples belonging      43%, further demonstrating the adverse effects of noisy labels
+to the I and I&O categories nearly overlaps in the same           on model performance. Simultaneously, the feature distribution
+region of the feature space, rendering it challenging to draw a   learned by MgCNL, although unable to maintain the high level
+clear dividing line for separation. Similarly, samples belonging  of distinctiveness seen previously, is still able to delineate
+to the O&B category and those classified as O or B&I              the distribution areas of samples belonging to different cat-
+also exhibit a notable blending in the feature space, posing      egories with relative clarity, which verifies the robustness of
+
+Authorized licensed use limited to: NANJING UNIVERSITY OF SCIENCE AND TECHNOLOGY. Downloaded on June 24,2026 at 00:54:20 UTC from IEEE Xplore. Restrictions apply.
+7758  IEEE TRANSACTIONS ON AUTOMATION SCIENCE AND ENGINEERING, VOL. 22, 2025
+
+                                                        TABLE VI
+                THE IMPACT OF REMOVING DIFFERENT PARTS ON THE PERFORMANCE OF
+
+                  MgCNL UNDER DIFFERENT RATIOS OF NOISY LABEL INTERFERENCE
+
+Fig. 6. Comparison of feature distributions learned by the model (with     directions between two vectors, and the modulus of pseudo
+MWSDTN as the backbone) under label noise interference: A illustration on  labels often differs significantly from that of real labels. There-
+the NEPU dataset.                                                          fore, when estimating confidence using cosine similarity, only
+                                                                           the confidence samples, who has the ability to generate the
+MgCNL against label noise, from the perspective of feature                 granular ball with high purity, can be considered trustworthy,
+distribution.                                                              resulting in insufficient training samples.
+
+D. Case III: Ablation Experiment                                              2) The Role of Contrastive Learning and Multi-Granularity
+                                                                           Balls: To elucidate the synergistic effects among various
+   1) Reasonability of Estimating Confidence via JSD: There                components, Table VI summarizes the average accuracy after
+are various ways to measure the degree of difference between               component ablation across three datasets, employing three dis-
+different labels. Therefore, to verify whether it is reasonable            tinct models as backbones. In Table VI, “Eq. (3) (Replace with
+to estimate the confidence of labels via JSD, we measured                  InfoNCE [40])” denotes the modification of the contrastive
+the impact of using different loss functions in MgCNL to                   learning paradigm designed by MgCNL, which lacks negative
+evaluate the confidence of labels on their final performance,              instances, to a traditional contrastive learning procedure based
+under the experimental setup that are completely consistent                on InfoNCE loss. To assess the role of the adaptive radius,
+with Sec. IV-B, and the results are summarized in Fig. 7.                  the parameter B of Eq. (7), which controls the size of the
+                                                                           GBs’ radius, was fixed at both the maximum (Bmax = 100)
+   According to Fig. 7, the optimal performance of MgCNL                   and minimum values (Bmin = 5) identified in this work.
+was achieved by estimating the confidence via JSD, which
+further validates the superiority and applicability of JSD in the             According to Table VI, a noticeable decline in average accu-
+tasks of counter noisy label. We argue that the reason is the              racy is observed both in scenarios lacking “multi-granularity
+fact that JSD does not require normalization and probabilistic             balls” or in the absence of “contrastive learning (Eq. (3))”,
+modeling, and has symmetry.                                                yet the accuracy in both cases remains above the baseline,
+                                                                           which indicates that while both elements independently con-
+   Due to symmetry, the pseudo label of granular ball and                  tribute to enhancing the robustness to a certain extent, the
+the label of the center ball have equal neutrality, making                 efficacy of MgCNL predominantly stems from their integrated
+JSD more suitable for estimating confidence than KLD (Mean                 application.
+accuracy: 92.53% vs. 87.25%). In addition, the advantage of
+not requiring normalization makes it difficult for both Cross                 Specifically, upon the removal of contrastive learning,
+Entropy and Mean-Squared to achieve performance similar to                 MgCNL exhibits a minor accuracy decline in low noise
+JSD, as this directly affects whether the generated threshold              environments, whereas a significant reduction is noted in high
+τ can select as many confidence samples as possible. Finally,              noise conditions (with accuracy dropping from 97.99% to
+cosine similarity only be determined by the consistency of the             96.09% at the noise rate of 20%, and from 83.11% to 58.32%,
+                                                                           nearly 25%, at the noise rate of 80% ). This observation
+                                                                           validates the initial hypothesis that, although pseudo-labeling
+                                                                           through GBs can facilitate the selection of samples with a
+                                                                           high probability of correct labeling for training, it may lead to
+                                                                           a scarcity of training samples, thereby diminishing accuracy.
+                                                                           Simultaneously, this risk is especially pronounced in high
+                                                                           noise environments due to the exclusion of a large number
+                                                                           of “unreliable” samples.
+
+                                                                              Eliminating “multi-granularity balls” results in a train-
+                                                                           ing process that essentially supplements traditional super-
+                                                                           vised learning (baseline) with a semi-supervised learning
+                                                                           paradigm incorporating self-supervised learning without neg-
+                                                                           ative instances (Eq. (3)). Absent the capability to evaluate the
+                                                                           credibility of each sample label through the construction of
+
+Authorized licensed use limited to: NANJING UNIVERSITY OF SCIENCE AND TECHNOLOGY. Downloaded on June 24,2026 at 00:54:20 UTC from IEEE Xplore. Restrictions apply.
+DUNKIN et al.: MgCNL: A SAMPLE SEPARATION APPROACH VIA MULTI-GRANULARITY BALLS  7759
+
+Fig. 7. The impact of different loss function estimation confidence levels on the performance of MgCNL (the light colored interval represents the fluctuation
+range of accuracy during 20 repeated experiments).
+
+GBs, MgCNL loses its ability to filter samples. Consequently,     require incorporating a broader range of label information
+although contrastive learning to some extent enhances the         to more comprehensively assess the consistency between the
+model’s feature extraction capability, the model still learns     current label and adjacent sample labels.
+non-discriminative feature distribution information due to the
+misleading influence of noisy labels (Fig. 6).                                               V. CONCLUSION
+
+   On the other hand, replacing the designed contrastive learn-      The damage of noisy labels to accuracy has brought
+ing process without negative instances with the more common       unavoidable challenges to that the manufacturing industry
+approach based on InfoNCE loss leads to a more pronounced         embraces the process of intelligence and digitization. We,
+decline in accuracy as the noise rate increases (average accu-    therefore, have developed a novel approach (MgCNL) for
+racy decreases by 1.81%, 3.12%, 7.14%, and 15.54% as the          training models on the dataset with noisy labels. MgCNL
+noise ratio increases from 20% to 80%). This trend parallels      estimates the confidence of all labels by constructing the
+the decline observed when contrastive learning is omitted,        multi-granularity balls based on the representation generated
+suggesting that while traditional contrastive learning methods    by samples during supervised contrastive learning, and selects
+based on negative instances can mitigate the adverse effects of   samples with high confidence label, effectively combating the
+sample scarcity in purified datasets, they introduce the issue    misleading effects of noisy labels. The experimental results
+of class conflict by pushing other samples away in feature        validate the advantages of MgCNL compared to existing meth-
+space, thereby reducing the benefits contrastive learning offers  ods, which presents a promising solution for such challenges.
+to MgCNL.
+                                                                     Although MgCNL has achieved excellent results, the exper-
+   An intriguing observation is that fixing the parameter B,      imental results shown that the effectiveness of MgCNL is
+which controls the radius of GBs, to a constant small value       somewhat dependent on the capacity of model. Therefore, how
+results in accuracy decline in low noise environments (from       to effectively use networks with strong recognition capabilities
+97.99% to 92.29% at the noise rate of 20%), whereas setting       as data engines to enhance the robustness of lightweight
+it to a constant large value leads to accuracy decline in high    models against noisy labels will be a task with engineering
+noise environments (e.g., average accuracy drops from 83.11%      significance, because it is expected to expand the knowledge
+to 75.93% at the noise rate of 80%). This underscores the         of the foundational models to a wider range of IoT practice
+necessity of adjusting the radius of GBs based on the estimated   scenarios in the form of edge computing. On the other hand,
+noise intensity; higher noise environments demand more cau-       after the diagnostic model is deployed, whether MgCNL can
+tious credibility estimation of the current label using nearest   be combined with online learning, self-distillation, or other
+neighbor sample labels, whereas lower noise environments          techniques to continuously enhance the recognition ability of
+
+Authorized licensed use limited to: NANJING UNIVERSITY OF SCIENCE AND TECHNOLOGY. Downloaded on June 24,2026 at 00:54:20 UTC from IEEE Xplore. Restrictions apply.
+7760  IEEE TRANSACTIONS ON AUTOMATION SCIENCE AND ENGINEERING, VOL. 22, 2025
+
+model via the massive unlabeled data from actual industrial                        [20] H. Fang et al., “Empowering intelligent manufacturing with edge
+                                                                                         computing: A portable diagnosis and distance localization approach for
+sites, thus expanding the application of intelligent algorithms                          bearing faults,” Adv. Eng. Informat., vol. 59, Jan. 2024, Art. no. 102246.
+
+to the manufacturing systems, will be a research topic of                          [21] I. Kim et al., “Single domain generalizable and physically interpretable
+                                                                                         bearing fault diagnosis for unseen working conditions,” Exp. Syst. Appl.,
+significant engineering value after solving the challenge of                             vol. 241, May 2024, Art. no. 122455.
+
+noisy labels, since it is expected to make intelligent diagnostic                  [22] Q. Qian, J. Luo, and Y. Qin, “Adaptive intermediate class-wise dis-
+                                                                                         tribution alignment: A universal domain adaptation and generalization
+algorithms more scalable and cost-effective to deploy.                                   method for machine fault diagnosis,” IEEE Trans. Neural Netw. Learn.
+                                                                                         Syst., early access, Mar. 21, 2024, doi: 10.1109/TNNLS.2024.3376449.
+                             REFERENCES
+                                                                                   [23] Y. Zhu, Y. Zi, J. Li, and J. Xu, “PhysiCausalNet: A causal- and
+ [1] S. Yan, W. Sun, and Y. Xia, “A joint fault-tolerant and fault diagnosis             physics-driven domain generalization network for cross-machine fault
+      strategy for multiple actuator faults of full-vehicle active suspension            diagnosis of unseen domain,” IEEE Trans. Ind. Informat., vol. 20, no. 6,
+      systems,” IEEE Trans. Autom. Sci. Eng., early access, Mar. 5, 2024,                pp. 8488–8498, Jun. 2024.
+      doi: 10.1109/TASE.2024.3372626.
+                                                                                   [24] H. Fang, H. Liu, X. Wang, J. Deng, and J. An, “The method based
+ [2] L. Jiang, H. Zhang, J. Liu, X. Shen, and H. Xu, “Mutual supervision of              on clustering for unknown failure diagnosis of rolling bearings,” IEEE
+      MFL heterogeneous signals for insufficient sample defect detection on              Trans. Instrum. Meas., vol. 72, pp. 1–8, 2023.
+      pipeline safety operation,” IEEE Trans. Autom. Sci. Eng., early access,
+      Mar. 4, 2024, doi: 10.1109/TASE.2024.3369659.                                [25] Y. Feng et al., “Integrating misidentification and OOD detection for
+                                                                                         reliable fault diagnosis of high-speed train bogie,” IEEE Trans. Intell.
+ [3] W. Zhou, J. Yang, W. Yan, and M. Fang, “RDNet-KD: Recursive                         Transp. Syst., vol. 25, no. 9, pp. 11935–11945, Sep. 2024.
+      encoder, bimodal screening fusion, and knowledge distillation network
+      for rail defect detection,” IEEE Trans. Autom. Sci. Eng., early access,      [26] H. Fang et al., “CLFormer: A lightweight transformer based on convo-
+      Mar. 13, 2024, doi: 10.1109/TASE.2024.3374387.                                     lutional embedding and linear self-attention with strong robustness for
+                                                                                         bearing fault diagnosis under limited sample conditions,” IEEE Trans.
+ [4] C. Cheng, X. Liu, B. Zhou, and Y. Yuan, “Intelligent fault diagno-                  Instrum. Meas., vol. 71, pp. 1–8, 2022.
+      sis with noisy labels via semisupervised learning on industrial time
+      series,” IEEE Trans. Ind. Informat., vol. 19, no. 6, pp. 7724–7732,          [27] H. Wang, W. Luo, Z. Liu, J. Zhang, and M. Zuo, “Fourier feature
+      Jun. 2023.                                                                         refiner network with soft thresholding for machinery fault diagnosis
+                                                                                         under highly noisy conditions,” IEEE Internet Things J., vol. 11, no. 13,
+ [5] F. Dunkin et al., “Like draws to like: A multi-granularity ball-intra               pp. 22880–22891, Jul. 2024.
+      fusion approach for fault diagnosis models to resists misleading by noisy
+      labels,” Adv. Eng. Informat., vol. 60, Apr. 2024, Art. no. 102425.           [28] J. Deng et al., “MgNet: A fault diagnosis approach for multi-bearing
+                                                                                         system based on auxiliary bearing and multi-granularity informa-
+ [6] X. Li, F. Dunkin, and J. Dezert, “Multi-source information                          tion fusion,” Mech. Syst. Signal Process., vol. 193, Jun. 2023,
+      fusion: Progress and future,” Chin. J. Aeronaut., vol. 37, no. 7,                  Art. no. 110253.
+      pp. 24–58, Jul. 2024. [Online]. Available: https://www.sciencedirect.
+      com/science/article/pii/S1000936123004247                                    [29] H. Lu, A. Thelen, O. Fink, C. Hu, and S. Laflamme, “Federated learning
+                                                                                         with uncertainty-based client clustering for fleet-wide fault diagnosis,”
+ [7] A. Kirillov et al., “Segment anything,” in Proc. IEEE/CVF Int. Conf.                Mech. Syst. Signal Process., vol. 210, Mar. 2024, Art. no. 111068.
+      Comput. Vis., Oct. 2023, pp. 4015–4026.
+                                                                                   [30] B. Yang, Y. Lei, X. Li, N. Li, and A. K. Nandi, “Label recovery and
+ [8] C. Hu, C. Zhao, H. Shao, J. Deng, and Y. Wang, “TMFF: Trustworthy                   trajectory designable network for transfer fault diagnosis of machines
+      multi-focus fusion framework for multi-label sewer defect classification           with incorrect annotation,” IEEE/CAA J. Autom. Sinica, vol. 11, no. 4,
+      in sewer inspection videos,” IEEE Trans. Circuits Syst. Video Technol.,            pp. 932–945, Apr. 2024.
+      early access, Jul. 25, 2024, doi: 10.1109/TCSVT.2024.3433415.
+                                                                                   [31] N. Karim et al., “UNICON: Combating label noise through uniform
+ [9] S. Li, X. Xia, S. Ge, and T. Liu, “Selective-supervised contrastive                 selection and contrastive learning,” in Proc. IEEE/CVF Conf. Comput.
+      learning with noisy labels,” in Proc. IEEE/CVF Conf. Comput. Vis.                  Vis. Pattern Recognit., Jun. 2022, pp. 9676–9686.
+      Pattern Recognit. (CVPR), Jun. 2022, pp. 316–325.
+                                                                                   [32] H. Wei, L. Feng, X. Chen, and B. An, “Combating noisy labels by
+[10] H. Yu et al., “A multi-stage data augmentation and AD-ResNet-based                  agreement: A joint training method with co-regularization,” in Proc.
+      method for EPB utilization factor prediction,” Autom. Construction,                IEEE/CVF Conf. Comput. Vis. Pattern Recognit. (CVPR), Jun. 2020,
+      vol. 147, Mar. 2023, Art. no. 104734.                                              pp. 13726–13735.
+
+[11] R. K. Yadav and S. Verma, “Semi-supervised learning with dropouts,”           [33] H. Cheng, Z. Zhu, X. Li, Y. Gong, X. Sun, and Y. Liu, “Learning
+      Exp. Syst. Appl., vol. 215, Apr. 2023, Art. no. 119235.                            with instance-dependent label noise: A sample sieve approach,” in
+                                                                                         Proc. Int. Conf. Learn. Represent., 2021, pp. 1–27. [Online]. Available:
+[12] H. Song, M. Kim, D. Park, Y. Shin, and J.-G. Lee, “Learning from noisy              https://par.nsf.gov/biblio/10282447
+      labels with deep neural networks: A survey,” IEEE Trans. Neural Netw.
+      Learn. Syst., vol. 34, no. 11, pp. 8135–8153, Nov. 2023.                     [34] S. Li, T. Liu, J. Tan, D. Zeng, and S. Ge, “Trustable co-label learning
+                                                                                         from multiple noisy annotators,” IEEE Trans. Multimedia, vol. 25,
+[13] D. Okamura, R. Harakawa, and M. Iwahashi, “LCNME: Label correction                  pp. 1045–1057, 2023.
+      using network prediction based on memorization effects for cross-modal
+      retrieval with noisy labels,” IEEE Trans. Circuits Syst. Video Technol.,     [35] J. Li, R. Socher, and S. C. Hoi, “DivideMix: Learning with noisy labels
+      vol. 34, no. 1, pp. 590–602, Jan. 2024.                                            as semi-supervised learning,” in Proc. Int. Conf. Learn. Represent., 2020,
+                                                                                         pp. 1–14.
+[14] B. Han et al., “SIGUA: Forgetting may make learning with noisy
+      labels more robust,” in Proc. Int. Conf. Mach. Learn. (ICML), 2020,          [36] T. Chen, S. Kornblith, K. Swersky, M. Norouzi, and G. E. Hinton, “Big
+      pp. 4006–4016.                                                                     self-supervised models are strong semi-supervised learners,” in Proc.
+                                                                                         Adv. Neural Inf. Process. Syst., vol. 33, 2020, pp. 22243–22255.
+[15] Q. Gao, T. Huang, K. Zhao, H. Shao, and B. Jin, “Multi-source
+      weighted source-free domain transfer method for rotating machinery           [37] S. Xia, Y. Zheng, G. Wang, P. He, H. Li, and Z. Chen, “Random
+      fault diagnosis,” Exp. Syst. Appl., vol. 237, Mar. 2024, Art. no. 121585.          space division sampling for label-noisy classification or imbalanced
+                                                                                         classification,” IEEE Trans. Cybern., vol. 52, no. 10, pp. 10444–10457,
+[16] A. G. Nath, S. S. Udmale, and S. K. Singh, “Role of artificial intelligence         Oct. 2022.
+      in rotor fault diagnosis: A comprehensive review,” Artif. Intell. Rev.,
+      vol. 54, no. 4, pp. 2609–2668, Apr. 2021.                                    [38] D. Xia, G. Wang, Q. Zhang, J. Yang, and S. Xia, “Three-way approxi-
+                                                                                         mations fusion with granular-ball computing to guide multi-granularity
+[17] V. Singh, P. Gangsar, R. Porwal, and A. Atulkar, “Artificial intelli-               fuzzy entropy for feature selection,” IEEE Trans. Fuzzy Syst., early
+      gence application in fault diagnostics of rotating industrial machines:            access, Aug. 21, 2024, doi: 10.1109/TFUZZ.2024.3436086.
+      A state-of-the-art review,” J. Intell. Manuf., vol. 34, no. 3, pp. 931–960,
+      Mar. 2023.                                                                   [39] Z. Huang, J. Chen, J. Zhang, and H. Shan, “Learning representation for
+                                                                                         clustering via prototype scattering and positive sampling,” IEEE Trans.
+[18] J. Deng, W. Jiang, Y. Zhang, G. Wang, S. Li, and H. Fang, “HS-KDNet:                Pattern Anal. Mach. Intell., vol. 45, no. 6, pp. 7509–7524, Jun. 2023.
+      A lightweight network based on hierarchical-split block and knowledge
+      distillation for fault diagnosis with extremely imbalanced data,” IEEE       [40] A. v. d. Oord, Y. Li, and O. Vinyals, “Representation learning with
+      Trans. Instrum. Meas., vol. 70, pp. 1–9, 2021.                                     contrastive predictive coding,” 2018, arXiv:1807.03748.
+
+[19] H. Fang, J. An, H. Liu, J. Xiang, B. Zhao, and F. Dunkin, “A                  [41] X. Chen and K. He, “Exploring simple Siamese representation learning,”
+      lightweight transformer with strong robustness application in portable             in Proc. IEEE Comput. Soc. Conf. Comput. Vision Pattern Recognit.,
+      bearing fault diagnosis,” IEEE Sensors J., vol. 23, no. 9, pp. 9649–9657,          Jun. 2021, pp. 15750–15758.
+      May 2023.
+
+Authorized licensed use limited to: NANJING UNIVERSITY OF SCIENCE AND TECHNOLOGY. Downloaded on June 24,2026 at 00:54:20 UTC from IEEE Xplore. Restrictions apply.
+DUNKIN et al.: MgCNL: A SAMPLE SEPARATION APPROACH VIA MULTI-GRANULARITY BALLS           7761
+
+[42] Y. You et al., “Large batch optimization for deep learning:                                                        Heqing Li (Member, IEEE) received the M.S.
+      Training BERT in 76 minutes,” in Proc. Int. Conf.                                                                 degree from the College of Engineering, Nanjing
+      Learn. Represent., 2020, pp. 1–38. [Online]. Available:                                                           Agriculture University, Nanjing, China, in 2020.
+      https://openreview.net/forum?id=Syx4wnEtvH                                                                        He is currently pursuing the Ph.D. degree with the
+                                                                                                                        School of Cyber Science and Engineering, Southeast
+[43] S. Yu, M. Wang, S. Pang, L. Song, X. Zhai, and Y. Zhao, “TDM-                                                      University, Nanjing. His research interests include
+      SAE: A transferable decoupling multi-scale autoencoder for mechanical                                             information fusion, unmanned system security, trust-
+      fault diagnosis,” Mech. Syst. Signal Process., vol. 185, Feb. 2023,                                               worthy computing, intelligent robots, and pattern
+      Art. no. 109789.                                                                                                  recognition.
+
+[44] Z. Huang, J. Zhang, and H. Shan, “Twin contrastive learning with                                                   Guoliang Wu received the B.E. degree from the
+      noisy labels,” in Proc. IEEE/CVF Conf. Comput. Vis. Pattern Recognit.                                             School of Information Science and Technology,
+      (CVPR), Jun. 2023, pp. 11661–11670.                                                                               Beijing University of Chemical Technology, Beijing,
+                                                                                                                        China, in 2020. Currently, he is pursuing the Ph.D.
+                               Fir Dunkin (Graduate Student Member, IEEE)                                               degree with the School of Automation, Southeast
+                               received the M.E. degree from the School of                                              University, Nanjing, China.
+                               Automation Engineering, Northeast Electric Power
+                               University, Jilin, China, in 2022. Currently, he is pur-                                   His current research interests include multi-
+                               suing the Ph.D. degree with Southeast University.                                        granular information fusion, intelligent games, neu-
+                                                                                                                        ral networks, and pattern recognition.
+                                 His research interests include information fusion,
+                               mechatronics, and uncertainty reasoning. Mean-                                           Chuanfei Hu (Graduate Student Member, IEEE)
+                               while, he has published over 20 peer-reviewed                                            received the M.S. degree from the School of Optical-
+                               articles, including multiple ESI Highly Cited papers                                     Electrical and Computer Engineering, University of
+                               and submitted over 50 peer-reviewed results as                                           Shanghai for Science and Technology, Shanghai,
+                               a reviewer for journals, including IEEE TRANS-                                           China, in 2021. He is currently pursuing the Ph.D.
+ACTIONS ON FUZZY SYSTEMS, IEEE TRANSACTIONS ON INDUSTRIAL                                                               degree in electronic information engineering with
+INFORMATICS, IEEE TRANSACTIONS ON CIRCUITS AND SYSTEMS FOR                                                              the School of Automation, Southeast University,
+VIDEO TECHNOLOGY, IEEE/ASME TRANSACTIONS ON MECHATRONICS,                                                               Nanjing, China.
+IEEE TRANSACTIONS ON INSTRUMENTATION AND MEASUREMENT, Inf-
+Fus, MSSP, PR, NeuNet, ESWA, KBS, and EAAI.                                                                               His research interests include deep learning, indus-
+                                                                                                                        trial inspection, attribute learning, and affective
+                               Xinde Li (Senior Member, IEEE) received the                                              computing.
+                               Ph.D. degree in control theory and control engineer-
+                               ing from the Department of Control Science and                                           Shuzhi Sam Ge (Fellow, IEEE) is currently a
+                               Engineering, Huazhong University of Science and                                          Professor with the Department of Electrical and
+                               Technology, Wuhan, China, in 2007.                                                       Computer Engineering and a PI Member with
+                                                                                                                        the Institute for Functional Intelligent Materials,
+                                 After that, he joined the School of Automation,                                        National University of Singapore. He is the Founder
+                               Southeast University, Nanjing, China, where he is                                        of the Institute for Future (IFF), Qingdao University,
+                               currently a Professor. He was an Academician with                                        China. He has (co)-authored nine books, and over
+                               the Russian Academy of Natural Sciences and a                                            800 international journal and conference papers,
+                               cover person of Scientific Chinese in 2021 and a                                         with a high H-index (110) and citations (58,000).
+                               fellow of the Institution of Engineering and Tech-                                       His research interests include robotics, intelligent
+nology in 2022. He was the principal of about 50 projects, including key and                                            systems, and intelligent materials. He is a fellow
+major projects of NSFC. He published more than 100 articles, five books, and             of SAEng, IFAC, IET, and CAA. He serves as the President-Elect of the
+won 32 national invention patents. His research interests include intelligent            Asian Control Association from 2022 to 2024, an IFAC Executive Officer as
+robots, unmanned systems, human–machine interaction, computer vision, and                a Council Member from 2023 to 2026, and a Steering Committee Chair of the
+information fusion. He won many prizes, including the global award for                   International Conference on Social Robotics. He served as the Vice President
+outstanding scientist in artificial intelligence and robotics, the Asia award for        of the Technical Activities and Membership Activities from 2009 to 2012,
+outstanding researcher, and the gold award in Geneva international invention.            a Member of the Board of Governors from 2007 to 2009, and the Chair of
+He was also an Associate Editor of several reputative international journals,            the Technical Committee on Intelligent Control of the IEEE Control Systems
+i.e., IEEE TRANSACTIONS ON FUZZY SYSTEMS and Journal of Systems                          Society from 2005 to 2008. He was a recipient of many awards, including the
+Engineering and Electronics. He was the Vice Director of the Intelligent                 National Technology Award in Singapore, the IEEE Control Systems Society
+Robot Committee of the Chinese Association for Artificial Intelligence in                Distinguished Member Award, the AI Grand Challenge Award from AI SG.
+2017, the Vice Director of the Intelligent Products and Industry Working
+Committee of the Chinese Association for Artificial Intelligence in 2019, and
+the Vice Director of the Intelligent Manufacturing Systems and Technology
+Professional Committee of Chinese Association of Automation in 2022.
+
+Authorized licensed use limited to: NANJING UNIVERSITY OF SCIENCE AND TECHNOLOGY. Downloaded on June 24,2026 at 00:54:20 UTC from IEEE Xplore. Restrictions apply.
+

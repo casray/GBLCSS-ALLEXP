@@ -1,0 +1,108 @@
+{
+  "variants": [
+    {
+      "variant": "baseline",
+      "changed": {},
+      "initial": {
+        "valid": 0.5194542698332492,
+        "predicted_classes": 69,
+        "majority_fraction": 0.05709954351186752
+      },
+      "best": {
+        "epoch": 4,
+        "val": 0.18696311268317334
+      },
+      "final": {
+        "valid": 0.05053057099545225,
+        "predicted_classes": 1,
+        "majority_fraction": 1.0
+      },
+      "test_labels_read": false,
+      "teacher_retrained": false,
+      "student_epochs": 20
+    },
+    {
+      "variant": "de_weight_zero",
+      "changed": {
+        "DE_regularization_rate": 0.0
+      },
+      "initial": {
+        "valid": 0.5194542698332492,
+        "predicted_classes": 69,
+        "majority_fraction": 0.05709954351186752
+      },
+      "best": {
+        "epoch": 14,
+        "val": 0.25922182920667003
+      },
+      "final": {
+        "valid": 0.24557857503789796,
+        "predicted_classes": 16,
+        "majority_fraction": 0.19909045100212097
+      },
+      "test_labels_read": false,
+      "teacher_retrained": false,
+      "student_epochs": 20
+    },
+    {
+      "variant": "dropout_zero",
+      "changed": {
+        "dropout": 0.0
+      },
+      "initial": {
+        "valid": 0.5194542698332492,
+        "predicted_classes": 69,
+        "majority_fraction": 0.05709954351186752
+      },
+      "best": {
+        "epoch": 11,
+        "val": 0.5411824153612936
+      },
+      "final": {
+        "valid": 0.5209701869631127,
+        "predicted_classes": 44,
+        "majority_fraction": 0.0783223882317543
+      },
+      "test_labels_read": false,
+      "teacher_retrained": false,
+      "student_epochs": 20
+    }
+  ],
+  "teacher_validation": 0.6114199090449722,
+  "gradient": {
+    "mode": "eval, full graph, at saved epoch-4 student; no dropout sampling",
+    "kl": 0.9405551552772522,
+    "de": 1.4946775436401367,
+    "kd_grad_norm": 0.17749114334583282,
+    "de_grad_norm": 5.9641032218933105,
+    "gradient_cosine": -0.3440305292606354,
+    "log_de_ratios": [
+      -1.5706770420074463,
+      -1.0490012168884277,
+      -0.9956537485122681,
+      -1.2139993906021118
+    ],
+    "relu_stages": [
+      {
+        "layer": 0,
+        "zero_fraction": 0.8429266214370728,
+        "dead_channels": 5,
+        "width": 64
+      },
+      {
+        "layer": 1,
+        "zero_fraction": 0.8998351693153381,
+        "dead_channels": 6,
+        "width": 64
+      },
+      {
+        "layer": 2,
+        "zero_fraction": 0.831473708152771,
+        "dead_channels": 9,
+        "width": 64
+      }
+    ]
+  },
+  "baseline_prefix_matches": true,
+  "test_labels_read": false
+}

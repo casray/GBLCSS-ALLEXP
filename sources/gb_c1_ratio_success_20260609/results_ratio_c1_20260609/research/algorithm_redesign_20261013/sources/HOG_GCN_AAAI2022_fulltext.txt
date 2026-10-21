@@ -1,0 +1,1047 @@
+--- PDF page 1 ---
+Powerful Graph Convolutional Networks with Adaptive Propagation Mechanism
+for Homophily and Heterophily
+Tao Wang1,†, Di Jin1,†, Rui Wang1, Dongxiao He1,* , Yuxiao Huang2
+1 College of Intelligence and Computing, Tianjin University, Tianjin, China
+2 Data Scienc, George Washington University, Washington, D.C., USA
+{2019216113, jindi, wr1895, hedongxiao}@tju.edu.cn, yuxiaohuang@gwu.edu
+Abstract
+Graph Convolutional Networks (GCNs) have been widely
+applied in various ﬁelds due to their signiﬁcant power on
+processing graph-structured data. Typical GCN and its vari-
+ants work under a homophily assumption (i.e., nodes with
+same class are prone to connect to each other), while ignor-
+ing the heterophily which exists in many real-world networks
+(i.e., nodes with different classes tend to form edges). Ex-
+isting methods deal with heterophily by mainly aggregating
+higher-order neighborhoods or combing the immediate rep-
+resentations, which leads to noise and irrelevant information
+in the result. But these methods did not change the propaga-
+tion mechanism which works under homophily assumption
+(that is a fundamental part of GCNs). This makes it difﬁ-
+cult to distinguish the representation of nodes from differ-
+ent classes. To address this problem, in this paper we de-
+sign a novel propagation mechanism, which can automati-
+cally change the propagation and aggregation process accord-
+ing to homophily or heterophily between node pairs. To adap-
+tively learn the propagation process, we introduce two mea-
+surements of homophily degree between node pairs, which
+is learned based on topological and attribute information, re-
+spectively. Then we incorporate the learnable homophily de-
+gree into the graph convolution framework, which is trained
+in an end-to-end schema, enabling it to go beyond the as-
+sumption of homophily. More importantly, we theoretically
+prove that our model can constrain the similarity of represen-
+tations between nodes according to their homophily degree.
+Experiments on seven real-world datasets demonstrate that
+this new approach outperforms the state-of-the-art methods
+under heterophily or low homophily, and gains competitive
+performance under homophily.
+Introduction
+Networks (such as social networks, citation networks, bio-
+logical networks and trafﬁc networks) are ubiquitous struc-
+tures that can model relational data. Network analysis (Wang
+et al. 2016, 2019; Cao et al. 2021; Jin et al. 2021b; He
+et al. 2021) has been a hot research topic for decades and
+has been widely used in many scientiﬁc ﬁelds such as com-
+puter science, social science, biology and physics (Li and
+†Both authors contributed equally to this research
+*Corresponding author
+Copyright © 2022, Association for the Advancement of Artiﬁcial
+Intelligence (www.aaai.org). All rights reserved.
+Goldwasser 2019; Yan et al. 2019). Recently, graph convo-
+lutional network (GCN) (Kipf and Welling 2017), which ex-
+hibits signiﬁcant power on processing graph-structured data,
+has gained great success and already been adapted in various
+network analysis tasks, including node classiﬁcation, com-
+munity detection, anomaly detection and recommender sys-
+tem (Tang, Aggarwal, and Liu 2016; Tian et al. 2014; Gao,
+Denoyer, and Gallinari 2011; Gong et al. 2019; Yu and Han
+2014; Jin et al. 2021a).
+Although many GCN-based methods have been proposed
+in recent years, such as GraphSage (Hamilton, Ying, and
+Leskovec 2017), GAT (Velickovic et al. 2018), MixHop
+(Abu-El-Haija et al. 2019), and HIN (Xu et al. 2019),
+they implicitly assume that most connected nodes are from
+the same class or with similar attributes, which is typi-
+cally called the homophily of network structure. GCN-based
+methods reﬂect the homophily assumption by feature prop-
+agation and aggregation within graph neighborhoods. And
+these methods have shown satisfactory performance in many
+downstream tasks on network with homophily. However, in
+real world, there are also many networks where most con-
+nected nodes are from different classes, which is called het-
+erophily or low homophily. For example, in dating networks,
+most people tend to connect with people of the opposite gen-
+der. In protein networks, different types of amino are more
+likely to connect with each other. Under heterophily or low
+homophily, these methods suffer from poor performance,
+as the propagation mechanism within graph neighborhoods,
+which is the most fundamental part of GCN, is problematic
+and will mix irrelevant information from different classes.
+Therefore, existing GCN-based methods cannot adapt to the
+scenario of heterophily or low homophily.
+Recently, some efforts have been dedicated to general-
+izing GCN to heterophilic networks. For example, Geom-
+GCN (Pei et al. 2020) proposes a novel geometric aggre-
+gation scheme which aggregates immediate neighborhoods
+and distant nodes that have a certain similarity with the tar-
+get node in a continuous space. H2GCN (Zhu et al. 2020)
+applies some key designs, such as higher-order neighbor-
+hoods aggregation and combination of intermediate repre-
+sentations, to boost learning from graph with heterophily.
+GPR-GNN (Chien et al. 2021) deals with heterophily and
+oversmoothing by combining each step of feature propaga-
+tion with a learnable weight. GGCN (Yan et al. 2021) al-
+The Thirty-Sixth AAAI Conference on Artificial Intelligence (AAAI-22)
+4210
+
+--- PDF page 2 ---
+lows negative message propagation between graph neigh-
+borhoods based on the similarity of representations in order
+to decouple the heterophily and oversmoothing problems.
+CPGNN (Zhu et al. 2021) incorporates an interpretable com-
+patibility matrix for modeling the heterophily or homophily
+level in graphs, enabling it to go beyond the assumption of
+strong homophily. However, these methods suffer from seri-
+ous problems. They coarsely aggregate higher-order (distant
+neighbors), or combine the intermediate representations, to
+deal with heterophily. While doing so can fuse effective in-
+formation to some extent, it will also result in introducing
+noise and irrelevant information that inﬂuence negatively
+the prediction of downstream tasks. Most importantly, these
+methods do not change the propagation mechanism which
+is the essential part of GCN and is problematic under het-
+erophily. This also make the representation of nodes from
+different classes mixed and indistinguishable.
+To solve this problem, we focus on designing an adap-
+tive propagation mechanism for both heterophilic and ho-
+mophilic networks, and giving a new HOmophily-Guided
+Graph Convolutional Network called HOG-GCN. In this
+new approach, we introduce a homophily degree matrix into
+the graph convolution framework, which is used to model
+the homophily and heterophily of networks and further con-
+duct the propagation process. This homophily degree matrix
+can be learned from the attribute and topology information
+via extracting class-aware information during the propaga-
+tion process. As a result, the new graph convolution frame-
+work can automatically change the feature propagation pro-
+cess via modeling the homophily degree between node pairs
+using homophily degree matrix. The learning process of ho-
+mophily degree matrix and the feature propagation process
+are trained jointly in an end-to-end fashion. Finally, we the-
+oretically prove that the adaptive propagation process can
+constrain the similarity of representations between nodes ac-
+cording to homophily degree.
+Preliminaries
+We ﬁrst give the notations and problem descriptions, then
+give the deﬁnition of homophily ratio.
+Notations and Problem Descriptions
+Given an undirected, unweighted and attributed network
+G = (V, E, X), where V = {v1, v2, ..., vn} is a set of n
+nodes, E = {eij} ⊆V ×V is a set of edges, and X ∈Rn×f
+is a set of node attributes, where m represents the number
+of attributes. The i-th row of X represents the attributes of
+node vi. The topological structure of G is represented by
+an adjacency matrix A = [aij] ∈Rn×n, where aij = 1 if
+nodes vi and vj are connected, or aij = 0 otherwise. We
+focus on the semi-supervised node classiﬁcation task in this
+paper. This is, assume each node belongs to one out of C
+classes and we have known the labels of a set of nodes VL
+with |VL| ≪n. Each node vi ∈VL is assigned to a label
+yi ∈L = {1, 2, ...C}. The objective of node classiﬁcation
+task is to predict the labels of V \VL.
+Deﬁnition 1. Homophily Ratio. Given a network G =
+(V, E, X), the homophily ratio h = |{(u,v):(u,v)∈E∧yu=yv}|
+|E|
+is the fraction of edges which connect nodes that have the
+same class, i.e., intra-class edges.
+The homophily ratio h measures the overall homophily
+level in the graph and thus we have h ∈[0, 1]. To be speciﬁc,
+graphs with h closer to 1 tend to have more edges connecting
+nodes within the same class, or say stronger homophily; on
+the other hand, graphs with h closer to 0 tend to have more
+edges connecting nodes in different classes, or say a stronger
+heterophily.
+The Framework
+We ﬁrst give a brief overview of our approach, and then in-
+troduce the proposed new method in speciﬁc including de-
+tailed descriptions of each component.
+Overview
+To let the propagation mechanism of GCN essentially suit-
+able for both homophily and heterophily, we propose a novel
+homophily-guided graph convolution framework that can
+automatically learn the propagation process according to
+the homophily degree between node pairs, which is called
+HOG-GCN. In speciﬁc, we incorporate a homophily de-
+gree matrix into the graph convolution framework for mod-
+eling the homophily and heterophily and further use it to
+adaptively change the propagation process between neigh-
+borhoods. The whole structure of the proposed approach is
+shown in Fig. 1, which consists of two components: ho-
+mophily degree matrix estimation and homophily-guided
+propagation. The homophily degree matrix is learned from
+the attribute and topology information during the propaga-
+tion process, which is further used to conduct the feature
+propagation between neighborhoods. In return, the propaga-
+tion process can help learn better homophily degree matrix
+through downstream semi-supervised task. Therefore, these
+two components can be enhanced by each other and trained
+jointly. For the homophily degree matrix, we extract class-
+aware information from node attributes and network topol-
+ogy, respectively, and then deﬁne the whole homophily de-
+gree based on these two types of information. From the per-
+spective of attributes, we leverage multi-layer perceptron to
+extract class-aware information, since node attributes are not
+constrained by heterophily. Then, the homophily degree in
+attribute space can be further calculated. From the perspec-
+tive of network topology, since it exhibits different degrees
+of heterophily, we consider making full use of the available
+label information to capture homophily degree in topology
+space. To this end, we propose a generalized label propaga-
+tion technique with a learnable weight matrix, which can
+reﬂect homophily degree between node pairs in topology
+space. The intuition is that the inﬂuence between intra-class
+labels is greater than that between inter-class labels. For the
+homophily-guided propagation, we introduce the homophily
+degree matrix into the propagation process which can reveal
+the underlying distribution of homophily or heterophily in
+networks, enabling the framework to adaptively change the
+feature propagation weights according to homophily degree
+between neighborhoods.
+4211
+
+--- PDF page 3 ---
+Figure 1: The structure of HOG-GCN, which consists of two components, including (a) homophily degree matrix estimation
+and (b) homophily-guided propagation.
+Homophily Degree Matrix Estimation
+To adaptively change the propagation process for homophily
+and heterophily, we learn the homophily degree between
+node pairs during the propagation process. The homophily
+degree describes the extent to which two nodes belong to
+the same class. However, it is difﬁcult to calculate the ho-
+mophily degree directly from node labels, since only part
+of label information is available under the semi-supervised
+task. To this end, we consider estimating the homophily de-
+gree between node pairs from attribute space and topology
+space, respectively, and then combine them with adjustable
+parameters.
+On one hand, from the perspective of attribute space, we
+apply graph-agnostic multi-layer perceptron (MLP) to ex-
+tract class-aware information from original node attributes.
+The l-th layer of MLP is deﬁned as:
+Z(l)
+m = σ(Z(l−1)
+m
+W (l)
+m )
+(1)
+where Z(0)
+m
+= X, W (l)
+m is the learnable weight matrix for
+MLP, and σ the activation function. Denote the output of
+the ﬁnal layer of MLP as Zm, then we can obtain the soft
+assignment matrix B ∈Rn×C as follows :
+B = softmax(Zm)
+(2)
+Each element Bic denotes the probability that node vi be-
+longs to class c. Let all parameters of MLP be Θm , then the
+optimal Θ∗
+m is obtained by minimizing the following loss of
+predicted labels by MLP:
+Θ∗
+m = argmin
+Θm
+Lmlp = argmin
+Θm
+1
+|VL|
+X
+va∈VL
+J(ˆbmlp
+a
+, ya)
+(3)
+where ˆbmlp
+a
+is the predicted labels of va by MLP. Since soft
+assignment matrix B is learned under the guidance of semi-
+supervised classiﬁcation, it can capture class-aware informa-
+tion in attribute space. Then based on the matrix B we can
+calculate the extent that two nodes belong to the same class,
+called homophily degree matrix, which is deﬁned as:
+S = BBT
+(4)
+where Sij = bibT
+j denotes the extent to which node vi and
+node vj belong to the same class.
+It is worth noting that the homophily degree matrix S is
+estimated based on original node attributes, which are not
+constrained by the heterophily of networks. Therefore, it
+also holds in networks with heterophily or low homophily.
+On the other hand, from the perspective of topology
+space, network topology contains many useful information
+even if it exhibits strong heterophily. However, it is also dif-
+ﬁcult to estimate the homophily degree directly based on the
+topology, as we may not know the distribution of heterophily
+of network in advance. To address this problem, we further
+apply label propagation technique to estimate the homophily
+degree matrix in topology space.
+The classic label propagation typically assumes that two
+connected nodes are more likely to have the same class, and
+thus propagates labels iteratively between neighborhoods.
+Let Y (l) = [y(l)
+1 , y(l)
+2 , ..., y(l)
+n ]T ∈Rn×C denotes the soft la-
+bel matrix in iteration l > 0, where y(l)
+i
+represents predicted
+label distribution for node vi in iteration l. When l = 0,
+the initial label matrix Y (0) is initialized by the labels of
+training data, i.e., Y (0) = [y(0)
+1 , y(0)
+2 , ..., y(0)
+n ]T , which con-
+sists of one-hot label indicator vectors y(0)
+i
+for vi ∈VL or
+zero vectors otherwise (i.e., unlabeled nodes). Then the label
+propagation in iteration l is deﬁned as follows:
+Y (l) = D−1AY (l−1),
+y(l)
+i
+= y(0)
+i
+, ∀vi ∈VL
+(5)
+4212
+
+--- PDF page 4 ---
+where D is the degree matrix with entries Dii = P
+j Aij.
+In this equation, all nodes propagate labels to their direct
+neighborhoods ﬁrst, and then the labels of all labeled nodes
+are reset to their initial labels.
+However, classic label propagation technique aims to cap-
+ture the assumption of homophily, which can not adapt
+to networks with heterophily directly. To capture the ho-
+mophily degree between node pairs, we generalize classic
+label propagation with a learnable weight matrix, which is
+trained under the guidance of labeled data. The key intuition
+is that the inﬂuence between intra-class label is greater than
+that between inter-class label. Thus the learned weight ma-
+trix can be used to represent the extent to which two nodes
+belong to same class. Since networks exhibit different de-
+grees of heterophily, we perform label propagation over k-
+order structure of network to capture more homophilic nodes
+(e.g., k = 2). The k-order structure is deﬁned as:
+Ak = A + A2 + ... + Ak
+(6)
+Then the generalized label propagation in iteration l is de-
+ﬁned as:
+Y (l) = D−1
+k (Ak ⊙T)Y (l−1)
+(7)
+where D−1
+k
+is the diagonal degree matrix for matrix Ak ⊙T.
+In the equation above, all nodes propagate labels to their k-
+order neighborhoods according the learnable edge weights.
+Then we can learn the optimal edge weights T ∗by minimiz-
+ing the loss of predicted labels by generalized label propa-
+gation:
+T ∗= argmin
+T
+Llp = argmin
+T
+1
+|VL|
+X
+va∈VL
+J(ˆylp
+a , ya)
+(8)
+where J is the cross-entropy loss, ˆylp
+a and ya are the pre-
+dicted label distribution of va by generalized label propaga-
+tion and the true one-hot label of va, respectively. Note that
+we do not add to or remove edges from graphs, but only
+learn the weights of existing k-order neighborhoods. The
+optimal T ∗maximizes the probability that each node is cor-
+rectly classiﬁed by generalized label propagation, thus also
+increases the intra-class inﬂuence. This reﬂects the extent
+to which two nodes belongs to the same class. In order to
+form an end-to-end pattern, here we take the weight matrix
+T as the homophily degree matrix estimated from topology
+space.
+At last, to make the model more effective and robust, we
+combine the hompily degree matrix estimated from attribute
+space and topology space with adjustable parameters as fol-
+lows:
+H = αS + βT
+(9)
+where α and β are hyper-parameters. Also of note, matrix
+S contains homophily degree between any node pairs while
+T learns homophily degree within k-order neighborhoods.
+It does not inﬂuence the performance, as we will ﬁlter the
+entries that do not involve in propagation process.
+Homophily-guided Propagation
+The core of our approach is adaptively learning the propaga-
+tion process for homophily and heterophily. The homophily
+degree matrix which represents the extent to which two
+nodes belong to the same class can reﬂect the underlying
+distribution of homophily or heterophily of networks. There-
+fore, we incorporate the learnable homophily degree matrix
+into graph convolution framework to automatically change
+the propagation weights between neighborhoods according
+to homophily degree. To be speciﬁc, during the propaga-
+tion process, we aim to increase the feature inﬂuence be-
+tween underlying intra-class nodes and reducing feature in-
+ﬂuence between underlying inter-class nodes according to
+the homophily degree matrix. To achieve this, we assign dif-
+ferent weights to different neighborhoods according to the
+homophily degree, which can distinguish the homophily or
+heterophily between neighborhoods. Similarly, as we may
+not know the underlying distribution of heterophily in ad-
+vance, we perform feature propagation over the k-order
+neighborhoods, to capture more homophilic nodes. In ad-
+dition, we deal with ego-representation and neighborhood-
+representation separately to preserve more personalized in-
+formation. Then, the feature propagation process of the pro-
+posed method HOG-GCN in iteration l is given by:
+Z(l) = σ(µZ(l−1)W (l)
+e
++ ξ ˆD−1Ak ⊙HZ(l−1)W (l)
+n ) (10)
+where µ and ξ denote the weights of ego-representation and
+neighborhood-representation respectively, ˆD is the diagonal
+degree matrix, Z(0) = X is the original node attributes. σ is
+the activation function.
+Also of note, our proposed graph convolution frame-
+work can be taken as learning proper attention weights. The
+most signiﬁcant difference between our approach and those
+feature-based attention methods is that, the attention weights
+are learned based on feature similarity alone, while our pro-
+posed method measures the edge weights according to the
+underlying homophily degree, which is more task-oriented.
+In addition, it is often believed that the 2-hop neighborhoods
+of a node v is always homophily-dominant in expectation
+(Zhu et al. 2020). So, we also set k = 2 in this work since
+it yields best performance in experiments and has relatively
+lower complexity meanwhile.
+Optimization Objective
+The whole framework consists of two components: ho-
+mophily degree matrix estimation and homophily-guided
+propagation. The ﬁrst component contains MLP and the gen-
+eralized label propagation. The objective functions of MLP
+and generalized label propagation are give by Eq. (3) and Eq.
+(8). In the second component, we incorporate the homophily
+degree matrix into the graph convolution framework. Denote
+all parameters of graph convolution operation as Θg, then
+we can get the optimal Θ∗
+g according the ﬁnal output Z of
+HOG-GCN:
+R = softmax(Z)
+Θ∗
+g = argminLgcn = argmin
+Θg
+1
+|VL|
+X
+va∈VL
+J(rgcn
+a
+, ya) (11)
+In this model, the homophily degree matrix is learned from
+attribute and topology information during the propagation
+process and further used to conduct feature propagation. In
+4213
+
+--- PDF page 5 ---
+return, the propagation process can help learn better ho-
+mophily degree matrix. That is, these two components are
+enhanced by each other. Therefore, we combine these ob-
+jectives to train the whole process in an end-to-end fashion
+as:
+Θ∗
+g, Θ∗
+m, T ∗= argmin
+Θg,Θm,T
+Lgcn + λLmlp + γLlp
+(12)
+where λ, γ are balance hyper-parameters. In this way, the
+feature propagation process is guided by current homophily
+degree matrix, and the result of propagation can conduct
+the learning of homophily degree matrix through semi-
+supervised classiﬁcation.
+Theoretical Analysis
+In this section we prove that our new approach can con-
+strain the similarity of representations between nodes within
+k-order neighborhoods according to homophily degree be-
+tween them. In other words, nodes with higher homophily
+degree have more similar representation (Theorem 1).
+Theorem 1. Denote the output of HOG-GCN as Z, then its
+propagation process can be taken as the minimization of the
+objective:
+O = 1
+2
+X
+vi∈V
+X
+vj∈Nk(vi)
+Hij∥Zi −Zj∥2
+(13)
+where Nk(vi) denotes the k-order neighborhoods of node
+vi, Zi and Zj are representations for node vi and vj respec-
+tively.
+Proof: We can rewrite the above equation as:
+O =1
+2
+X
+vi∈V
+X
+vj∈Nk(vi)
+Hij∥Zi −Zj∥2
+= tr(ZT ( ˆD −Ak ⊙H)Z)
+(14)
+where ˆD is the degree matrix for Ak ⊙H. By setting deriva-
+tive of Eq. (14) with respect to Z to zero (assume H is a
+symmetric matrix), we have:
+∂O
+∂Z =2( ˆD −Ak ⊙H)Z = 0
+⇓
+Z = ˆD−1(Ak ⊙H)Z
+(15)
+Then, it can be explained as a limit distribution where
+Zlimit = ˆD−1(Ak ⊙H)Zlimit
+(16)
+We use the following iterative form to approximate the limit
+with l →∞:
+Z(l) = ˆD−1(Ak ⊙H)Z(l−1)
+(17)
+When ignoring the non-linear transformation and initialize
+Z(0) = XW, we have:
+Z(l) = ˆD−1(Ak ⊙H)Z(l−1)
+=[ ˆD−1(Ak ⊙H)]2Z(l−2)
+=[ ˆD−1(Ak ⊙H)]lZ(0)
+=[ ˆD−1(Ak ⊙H)]lXW
+(18)
+which corresponds to the propagation process of HOG-
+GCN.
+Experiments
+We ﬁrst give the experimental setup, then compare our
+model HOG-GCN with the state-of-the-art methods on
+transductive node classiﬁcation and visualization. Last, we
+give the parameter analysis and homophily degree matrix
+analysis.
+Experimental Setup
+Datasets. We evaluate the performance of the proposed
+HOG-GCN and existing methods on seven real-world
+datasets. To demonstrate that HOG-GCN can adaptively
+learn propagation mechanism for both homophily and
+heterophily, we use four heterophilic networks and three
+homophilic networks for evaluation. The heterophilic
+networks include three web page datasets, Cornell, Texas
+and Wisconsin (Pei et al. 2020), and a ﬁlm industry dataset
+Film (Tang et al. 2009). The homophilic networks include
+Cora, Citeseer and Pubmed which are all citation networks
+(Sen et al. 2008; Namata et al. 2012). The detailed statistics
+of these datasets is summarized in Table 1, where H.R.
+represents the homophily ratio of networks.
+Baselines. We compare our proposed approach HOG-GCN
+with the following baselines: (1) MLP, which only uses at-
+tribute information; (2) DeepWalk (Perozzi, Al-Rfou, and
+Skiena 2014), which uses network topology information
+alone through random walks; (3) traditional GNN models :
+GCN (Kipf and Welling 2017) and GAT (Velickovic et al.
+2018), which work under the assumption of homophily;
+and (4) GNN models tackling heterophily: Geom-GCN (Pei
+et al. 2020), H2GCN (Zhu et al. 2020), CPGNN (Zhu et al.
+2021), GPR-GNN (Chien et al. 2021) and AM-GCN (Wang
+et al. 2020). Particularly, as CPGNN has four different vari-
+ants, we choose the best two for comparison.
+Parameter Setup. For all datasets, we generate 10 random
+splits for training, validation and test. For each split we se-
+lect 48% of nodes in each class to form the training set, 32%
+of nodes for the validation set and the remaining as the test
+set. For a fair comparison, all methods share the same 10
+random splits. All the parameters of the baseline methods
+were set as what were used by their authors. In our approach
+HOG-GCN, for the homophily degree matrix estimation, we
+use a two-layer MLP with 512 units in the hidden layer. For
+the homophily-guided propagation, we use two-layer graph
+convolution operation with 256 units in the hidden layer. We
+set α to 1 and β to 0.1, and set both γ and µ to 1. We adopt
+Adam optimizer (Kingma and Ba 2015) and the default ini-
+tialization in pytorch.
+Datasets
+Texa.
+Wisc.
+Corn.
+Film
+Cora
+Cite.
+Pubm.
+Nodes
+183
+251
+183
+7600
+2708
+3327
+19717
+Edges
+309
+499
+295
+33544
+5429
+4732
+44338
+Features
+1703
+1703
+1703
+931
+1433
+3703
+500
+Classes
+5
+5
+5
+5
+7
+6
+3
+H.R.
+0.09
+0.19
+0.30
+0.22
+0.81
+0.74
+0.80
+Table 1: Statistics of datasets
+4214
+
+--- PDF page 6 ---
+Datasets
+Texas
+Wisconsin
+Cornell
+Film
+Cora
+Citeseer
+Pubmed
+Avg
+Acc
+Avg
+Rank
+GCN
+54.05±4.36
+50.39±7.55
+53.78±8.59
+28.78±1.48
+86.48±1.43
+73.58±1.37
+87.34±0.65
+62.06
+8.71
+MLP
+81.08±4.83
+85.49±3.53
+83.24±7.03
+36.58±1.44
+71.29±1.60
+66.96±2.61
+86.48±0.63
+73.02
+5.86
+GAT
+57.30±3.38
+54.31±5.62
+54.59±7.33
+28.99±1.44
+87.16±1.17
+75.64±1.95
+85.25±0.60
+63.32
+7.29
+DeepWalk
+49.19±3.38
+53.51±5.10
+44.12±9.12
+23.74±0.56
+80.08±1.84
+53.59±2.63
+81.14±0.54
+55.05
+10.71
+H2GCN
+79.73±7.27
+82.55±4.33
+78.38±4.35
+36.71±1.41
+86.48±1.63
+75.56±2.18
+88.77±0.65
+75.45
+4.14
+CPGNN-MLP
+79.73±6.54
+84.53±6.48
+73.51±6.02
+36.73±1.03
+84.57±1.59
+72.10±2.70
+87.67±0.72
+74.12
+5.43
+CPGNN-Cheby
+74.32±7.38
+81.76±6.74
+63.51±5.83
+35.51±1.85
+87.18±1.13
+75.52±1.84
+89.08±0.67
+72.41
+4.71
+GPR-GNN
+84.59±4.37
+83.92±3.14
+82.97±5.68
+36.47±1.38
+86.70±1.03
+75.12±1.98
+87.38±0.63
+76.74
+4.29
+AM-GCN
+78.38±7.25
+81.76±4.96
+78.38±4.98
+33.60±1.17
+86.66±1.36
+76.01±1.90
+86.78±0.60
+74.51
+5.43
+Geom-GCN
+66.22±6.65
+62.55±5.22
+55.68±8.04
+32.39±1.49
+84.91±1.12
+73.16±1.92
+88.41±0.63
+66.19
+7.43
+HOG-GCN
+85.17±4.40
+86.67±3.36
+84.32±4.32
+36.82±0.84
+87.04±1.10
+76.15±1.88
+88.79±0.40
+77.85
+1.43
+Table 2: Classiﬁcation results with mean value and standard deviation. The best result is bold and the second best is underlined.
+(a) GCN
+(b) H2GCN
+(c) CPGNN
+(d) GPRGNN
+(e) HOG-GCN
+Figure 2: Visualization results on Citeseer dataset
+Node Classiﬁcation
+The node classiﬁcation results are reported in Table 2. We
+use mean accuracy as the evaluation metric along with the
+standard deviation of 10 splits. We have the following ob-
+servations.
+• Our approach HOG-GCN outperforms all the other
+methods compared on all of the four heterophilic net-
+works, i.e., Texas, Cornell, Wisconsin and Film. It
+demonstrates the importance of incorporating and learn-
+ing the homophily degree matrix into graph convolution
+framework for automatically changing the propagation
+process. To be speciﬁc, HOG-GCN signiﬁcantly outper-
+forms the traditional GNN models, i.e., GCN and GAT,
+by 26.49% and 24.47% on average, since they cannot
+generalize to the scenario of heterophily (and are even
+defeated by MLP which only uses attributes). Compared
+with methods that focus on tackling heterophily, such
+as H2GCN, Geom-GCN, CPGNN and GPR-GNN, our
+HOG-GCN also achieves an improvement between 3.9%
+and 19.03% in terms of mean accuracy. These results
+demonstrate the effectiveness of HOG-GCN in the sce-
+nario of heterophily.
+• On homophilic networks (i.e., Cora, Citeseer, Pubmed),
+the proposed HOG-GCN performs better or comparable
+to the baselines. To be speciﬁc, HOG-GCN performs best
+on Citeseer, and achieves the second best on Pubmed.
+Notably, HOG-GCN outperforms GCN and GAT which
+have an implicit assumption of strong homophily on
+these three homophilic networks by 1.52% and 0.98% on
+average. These results demonstrate that our method has
+the best performance in the scenario of heterophily while
+maintaining comparable or better performance in the sce-
+nario of homophily, and further validate the effectiveness
+and robustness of the proposed approach.
+(a) Heterophilic networks
+(b) Homophilic networks
+Figure 3: Analysis results of order k
+Visualization
+For intuitively illustrating that our approach can gain better
+results, we use t-SNE (Hinton 2008), which can project the
+learned node representations onto a two-dimensional space,
+to visualize the derived representations. Fig. 2 shows the vi-
+sualization results of GCN, H2GCN, CPGNN, GPR-GNN
+and our proposed HOG-GCN on Citeseer dataset as an il-
+lustrative example, where nodes with same color have same
+class label. As shown, the visualization results of GCN and
+CPGNN are less satisfactory in this case, since points with
+same color are dispersed and some points with different
+color are mixed with each other. The results of GPR-GNN
+and H2GCN are relatively better but the borders between
+different classes are still not so clear. Obviously, the visual-
+ization of our HOG-GCN performs much better, where the
+representations have the highest intra-class similarity and
+form more discernible clusters. The results of visualization
+4215
+
+--- PDF page 7 ---
+(a) Texas
+(b) Cora
+Figure 4: Analysis results of weight α and β
+validate that our proposed method can gain better result, and
+demonstrate the effectiveness of our theoretical analysis.
+Parameter Analysis
+We also investigate the sensitivity of parameters in HOG-
+GCN. We take Texas, Cornell, Cora, Citeseer as examples,
+where Texas and Cornell exhibit heterophily while Cora and
+Citeseer exhibit homophily.
+Analysis of order k. In our proposed method, we conduct
+generalized label propagation and homophily-guided fea-
+ture propagation over the network topology within k-order
+neighborhoods, since we may not know the distribution of
+heterophily of network. Here, we vary the order k from 1 to
+6 and report the classiﬁcation results. The results are shown
+in Fig. 3. As shown, results on Texas and Cornell have a
+signiﬁcant improvement when k = 2 than k = 1. While on
+Cora and Citeseer, the method only has a slight improvement
+when k = 2 than k = 1, and the accuracy drops as increas-
+ing k from 2 to 6. Based on these results, we conclude that on
+heterophilic networks where most directly connected nodes
+are from different classes, we often need a proper recep-
+tive ﬁeld to capture enough intra-class information; while
+on homophilic networks where most connected nodes are
+from the same class, direct neighborhoods may be enough
+to provide intra-class information. For both homophilic and
+heterophilic networks, aggregating much information from
+higher-order neighborhoods will mix much noise and irre-
+lated information that will negatively inﬂuence the predic-
+tion of nodes.
+Analysis of weights α and β. In our model, α and β repre-
+sent the weight of homophily degree matrix estimated from
+attribute space and topology, respectively. Here we investi-
+gate the inﬂuence of α and β on node classiﬁcation by vary-
+ing them from 0 to 1. The results are shown in Fig. 4. On
+Texas dataset, the performance is relatively poor when ig-
+noring attribute information or topology information (i.e., α
+is 0 or β is 0). The method performs best when α is 0.4 and
+β is 0.6, demonstrating that combining attribute information
+and topology information can learn better homophily de-
+gree matrix and further obtain better performance. On Cora
+dataset, the performance is relatively stable, demonstrating
+that homophilic networks may not need ﬁne-grained guid-
+ance during the propagation process. The results demon-
+strate the importance of combining node attributes and net-
+work topology in the estimation of homophily degree ma-
+trix, and further validate the effectiveness and robustness of
+(a) Texas
+(b) Cora
+Figure 5: Analysis results of homophily degree distribution
+the proposed approach.
+Homophily Degree Matrix Analysis
+In the proposed graph convolution framework, we incor-
+porate a learnable homophily degree matrix, which can re-
+ﬂect the homophily or heterophily of networks, to adaptively
+change the propagation process. Therefore, in order to in-
+vestigate whether the homophily degree matrix learned by
+our proposed model are meaningful, here we analyze the
+homophily degree distribution on homophilic edges (i.e.,
+two nodes with same class) and heterophilic edges (i.e.,
+two nodes with different classes) within 2-order neighbor-
+hoods, respectively. Fig. 5 shows the analysis results on a
+heterophilic network Texas and a homophilc network Cora.
+As shown, for both homophilc and heterophilic networks,
+our approach can adaptively learn higher homophily degree
+between node with the same class, and lower homophily de-
+gree between nodes with different classes. During the fea-
+ture propagation process, the homophilic edges are given
+greater weights while the heterophilic edges are given
+smaller weights according to homophily degree matrix. The
+results demonstrate that our approach can adaptively learn
+different propagation process for both homophily and het-
+erophily, enabling it to go beyond the strong assumption of
+homophily.
+Conclusion
+In this paper, we propose a novel homophily-guided graph
+convolution network which can be universally suitable for
+both homophilic and heterophilic networks. In speciﬁc, we
+incorporate a learnable homophily degree matrix into graph
+convolution framework for modeling the homophily and
+heterophily of networks and further adaptively changing
+the propagation process according to homophily degree be-
+tween node pairs. The homophily degree matrix is learned
+from attribute and topology information via extracting class-
+aware information, which can conduct the propagation pro-
+cess. In return, the result of propagation process can further
+help learn homophily degree matrix through downstream
+semi-supervised tasks. These two process can be enhanced
+by each other and trained jointly. Experiments on seven real-
+world datasets demonstrate that the proposed new approach
+outperforms existing methods under heterophily, while gains
+competitive performance under homophily.
+4216
+
+--- PDF page 8 ---
+Acknowledgments
+This work is supported by the National Natural Science
+Foundation of China (61876128, 61772361) and the George
+Washington University Facilitating Fund (UFF) FY21.
+References
+Abu-El-Haija, S.; Perozzi, B.; Kapoor, A.; Alipourfard, N.;
+Lerman, K.; Harutyunyan, H.; Steeg, G. V.; and Galstyan,
+A. 2019. MixHop: Higher-order graph convolutional archi-
+tectures via sparsiﬁed neighborhood mixing. In Proceedings
+of the 36th International Conference on Machine Learning,
+21–29.
+Cao, Z.; Xu, Q.; Yang, Z.; Cao, X.; and Huang, Q. 2021.
+Dual quaternion knowledge graph embeddings.
+In Pro-
+ceedings of the AAAI Conference on Artiﬁcial Intelligence,
+6894–6902.
+Chien, E.; Peng, J.; Li, P.; and Milenkovic, O. 2021. Adap-
+tive universal generalized pagerank graph neural network. In
+Proceeding of the 9th International Conference on Learning
+Representations.
+Gao, S.; Denoyer, L.; and Gallinari, P. 2011. Temporal link
+prediction by integrating content and structure information.
+In International Conference on Information and Knowledge
+Management, 1169–1174.
+Gong, D.; Liu, L.; Le, V.; Saha, B.; Mansour, M. R.;
+Venkatesh, S.; and van den Hengel, A. 2019. Memorizing
+normality to detect anomaly: Memory-augmented deep au-
+toencoder for unsupervised anomaly detection. In Proceed-
+ings of the 2019 International Conference on Computer Vi-
+sion, 1705–1714.
+Hamilton, W. L.; Ying, Z.; and Leskovec, J. 2017. Induc-
+tive representation learning on large graphs. In Advances in
+Neural Information Processing Systems 30, 1024–1034.
+He, D.; Wang, T.; Zhai, L.; Jin, D.; Yang, L.; Huang,
+Y.; Feng, Z.; and Yu, P. S. 2021.
+Adversarial rep-
+resentation mechanism learning for network embedding.
+IEEE Transactions on Knowledge and Data Engineering,
+https://doi.org/10.1109/TKDE.2021.3103193.
+Hinton, G. E. 2008. Visualizing high-dimensional data using
+t-sne. Vigiliae Christianae, 9: 2579–2605.
+Jin, D.; Huo, C.; Liang, C.; and Yang, L. 2021a. Hetero-
+geneous graph neural network via attribute completion. In
+Proceedings of the Web Conference, 391–400.
+Jin, D.; Yu, Z.; Jiao, P.; Pan, S.; Yu, P. S.; and Zhang,
+W. 2021b.
+A survey of community detection ap-
+proaches: From statistical modeling to deep learning.
+IEEE Transactions on Knowledge and Data Engineering,
+https://doi.org/10.1109/TKDE.2021.3104155.
+Kingma, D. P.; and Ba, J. 2015.
+Adam: A Method for
+stochastic optimization. In Proceedings of the 3rd Interna-
+tional Conference on Learning Representations.
+Kipf, T. N.; and Welling, M. 2017. Semi-supervised classi-
+ﬁcation with graph convolutional networks. In Proceeding
+of the 5th International Conference on Learning Represen-
+tations.
+Li, C.; and Goldwasser, D. 2019. Encoding social informa-
+tion with graph convolutional networks for political perspec-
+tive detection in news media. In Proceedings of the 57th
+Conference of the Association for Computational Linguis-
+tics, 2594–2604.
+Namata, G. M.; London, B.; Getoor, L.; and Huang, B. 2012.
+Query-driven active surveying for collective classiﬁcation.
+In Workshop on Mining and Learning with Graphs (MLG).
+Pei, H.; Wei, B.; Chang, K. C.; Lei, Y.; and Yang, B. 2020.
+Geom-GCN: Geometric graph convolutional networks. In
+Proceeding of the 8th International Conference on Learning
+Representations.
+Perozzi, B.; Al-Rfou, R.; and Skiena, S. 2014. DeepWalk:
+Online learning of social representations. In Proceedings of
+the 20th ACM SIGKDD International Conference on Knowl-
+edge Discovery & Data Mining, 701–710.
+Sen, P.; Namata, G.; Bilgic, M.; Getoor, L.; Gallagher, B.;
+and Eliassi-Rad, T. 2008. Collective classiﬁcation in net-
+work data. AI Magazine., 29(3): 93–106.
+Tang, J.; Aggarwal, C. C.; and Liu, H. 2016. Node classiﬁ-
+cation in signed social networks. In Proceedings of the 2016
+SIAM International Conference on Data Mining, 54–62.
+Tang, J.; Sun, J.; Wang, C.; and Yang, Z. 2009. Social in-
+ﬂuence analysis in large-scale networks. In Proceedings of
+the 15th ACM SIGKDD International Conference on Knowl-
+edge Discovery & Data Mining, 807–816.
+Tian, F.; Gao, B.; Cui, Q.; Chen, E.; and Liu, T. 2014. Learn-
+ing deep representations for graph clustering. In Proceed-
+ings of the 28th AAAI Conference on Artiﬁcial Intelligence,
+1293–1299.
+Velickovic, P.; Cucurull, G.; Casanova, A.; Romero, A.; Li`o,
+P.; and Bengio, Y. 2018. Graph attention networks. In Pro-
+ceeding of the 6th International Conference on Learning
+Representations.
+Wang, C.; Wang, H.; Zhou, C.; Li, J.; and Gao, H. 2019.
+ECOQUG: An effective ensemble community scoring func-
+tion. In Proceedings of the 35th International Conference
+on Data Engineering, 1702–1705.
+Wang, X.; Zhu, M.; Bo, D.; Cui, P.; Shi, C.; and Pei, J. 2020.
+AM-GCN: Adaptive multi-channel graph convolutional net-
+works. In Proceedings of the 26th ACM SIGKDD Interna-
+tional Conference on Knowledge Discovery & Data Mining,
+1243–1253.
+Wang, Z.; Wang, C.; Pei, J.; Ye, X.; and Yu, P. S. 2016.
+Causality based propagation history ranking in social net-
+works. In Proceedings of the 25th International Joint Con-
+ference on Artiﬁcial Intelligence, 3917–3923.
+Xu, K.; Hu, W.; Leskovec, J.; and Jegelka, S. 2019. How
+powerful are graph neural networks? In Proceedings of the
+7th International Conference on Learning Representations.
+Yan, Y.; Hashemi, M.; Swersky, K.; Yang, Y.; and Koutra,
+D. 2021. Two sides of the same coin: Heterophily and over-
+smoothing in graph convolutional neural networks. arXiv
+preprint arXiv:2102.06462.
+Yan, Y.; Zhu, J.; Duda, M.; Solarz, E.; Sripada, C. S.; and
+Koutra, D. 2019. GroupINN: Grouping-based interpretable
+4217
+
+--- PDF page 9 ---
+neural network for classiﬁcation of limited, noisy brain data.
+In Proceedings of the 25th ACM SIGKDD International
+Conference on Knowledge Discovery & Data Mining, 772–
+782.
+Yu, X.; and Han, J. 2014. Personalized entity recommen-
+dation: A heterogeneous information network approach. In
+Proceedings of the 7th ACM International Conference on
+Web Search and Data Mining, 283–292.
+Zhu, J.; Rossi, R. A.; Rao, A. B.; Mai, T.; Lipka, N.; Ahmed,
+N. K.; and Koutra, D. 2021. Graph neural networks with
+heterophily. In Proceedings of the 35th AAAI Conference on
+Artiﬁcial Intelligence.
+Zhu, J.; Yan, Y.; Zhao, L.; Heimann, M.; Akoglu, L.; and
+Koutra, D. 2020. Beyond homophily in graph neural net-
+works: Current limitations and effective designs.
+In Ad-
+vances in Neural Information Processing Systems 33.
+4218

@@ -1,0 +1,850 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>OrginGB-GCN: Ordinary Granular Ball GCN for Noisy-Label Graph Learning</title>
+  <style>
+    :root {
+      --bg: #f7f8fb;
+      --paper: #ffffff;
+      --ink: #172033;
+      --muted: #5c667a;
+      --line: #d9dee8;
+      --accent: #1f6feb;
+      --accent-soft: #eaf2ff;
+      --warn: #9a6700;
+      --warn-soft: #fff7df;
+      --bad: #b42318;
+      --bad-soft: #fff1f0;
+      --good: #1a7f37;
+      --good-soft: #ecfdf3;
+      --code: #f3f5f8;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--ink);
+      font-family: "Microsoft YaHei", "Segoe UI", Arial, sans-serif;
+      line-height: 1.72;
+    }
+
+    .page {
+      max-width: 1120px;
+      margin: 0 auto;
+      padding: 36px 24px 64px;
+    }
+
+    header {
+      background: var(--paper);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 28px 32px;
+      margin-bottom: 20px;
+    }
+
+    h1 {
+      margin: 0 0 8px;
+      font-size: 30px;
+      line-height: 1.25;
+      letter-spacing: 0;
+    }
+
+    .subtitle {
+      margin: 0;
+      color: var(--muted);
+      font-size: 15px;
+    }
+
+    .meta {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 10px;
+      margin-top: 18px;
+      color: var(--muted);
+      font-size: 14px;
+    }
+
+    main {
+      display: grid;
+      grid-template-columns: 260px minmax(0, 1fr);
+      gap: 20px;
+      align-items: start;
+    }
+
+    nav {
+      position: sticky;
+      top: 16px;
+      background: var(--paper);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 16px;
+    }
+
+    nav strong {
+      display: block;
+      margin-bottom: 8px;
+      font-size: 14px;
+    }
+
+    nav a {
+      display: block;
+      padding: 5px 0;
+      color: var(--accent);
+      text-decoration: none;
+      font-size: 13px;
+    }
+
+    section {
+      background: var(--paper);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 24px 28px;
+      margin-bottom: 20px;
+    }
+
+    h2 {
+      margin: 0 0 14px;
+      font-size: 22px;
+      line-height: 1.35;
+      letter-spacing: 0;
+    }
+
+    h3 {
+      margin: 22px 0 8px;
+      font-size: 17px;
+      line-height: 1.4;
+      letter-spacing: 0;
+    }
+
+    p {
+      margin: 10px 0;
+    }
+
+    ul, ol {
+      margin: 10px 0 10px 22px;
+      padding: 0;
+    }
+
+    li {
+      margin: 5px 0;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 14px 0;
+      font-size: 14px;
+    }
+
+    th, td {
+      border: 1px solid var(--line);
+      padding: 9px 10px;
+      vertical-align: top;
+      text-align: left;
+    }
+
+    th {
+      background: #f2f5fa;
+      font-weight: 600;
+    }
+
+    code {
+      background: var(--code);
+      border-radius: 4px;
+      padding: 1px 5px;
+      font-family: Consolas, "Courier New", monospace;
+      font-size: 0.95em;
+    }
+
+    pre {
+      background: var(--code);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 14px 16px;
+      overflow-x: auto;
+      line-height: 1.5;
+      font-size: 13px;
+    }
+
+    pre code {
+      padding: 0;
+      background: transparent;
+    }
+
+    .callout {
+      border: 1px solid var(--line);
+      border-left: 4px solid var(--accent);
+      background: var(--accent-soft);
+      border-radius: 8px;
+      padding: 12px 14px;
+      margin: 14px 0;
+    }
+
+    .warning {
+      border-left-color: var(--warn);
+      background: var(--warn-soft);
+    }
+
+    .danger {
+      border-left-color: var(--bad);
+      background: var(--bad-soft);
+    }
+
+    .success {
+      border-left-color: var(--good);
+      background: var(--good-soft);
+    }
+
+    .formula {
+      display: block;
+      background: #fbfcff;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 12px 14px;
+      margin: 12px 0;
+      overflow-x: auto;
+      font-family: "Cambria Math", "Times New Roman", serif;
+    }
+
+    .tag {
+      display: inline-block;
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      padding: 1px 8px;
+      margin-right: 6px;
+      color: var(--muted);
+      background: #fbfcff;
+      font-size: 12px;
+    }
+
+    @media (max-width: 900px) {
+      main {
+        grid-template-columns: 1fr;
+      }
+
+      nav {
+        position: static;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <header>
+      <h1>OrginGB-GCN</h1>
+      <p class="subtitle">第一版普通粒球模块：Ordinary Granular Ball + GCN，用于图标签噪声鲁棒节点分类。</p>
+      <div class="meta">
+        <div><strong>设计日期：</strong>2026-06-03</div>
+        <div><strong>实验框架：</strong>NoisyGL + GCN</div>
+        <div><strong>第一批数据集：</strong>Cora, CiteSeer, PubMed</div>
+        <div><strong>核心定位：</strong>soft denoising prior, not hard label</div>
+      </div>
+    </header>
+
+    <main>
+      <nav>
+        <strong>目录</strong>
+        <a href="#summary">0. 一句话结论</a>
+        <a href="#context">1. 前因后果</a>
+        <a href="#baseline">2. Baseline 状态</a>
+        <a href="#lessons">3. 经验约束</a>
+        <a href="#goal">4. 本轮目标</a>
+        <a href="#method">5. 算法设计</a>
+        <a href="#quality">6. 粒球质量与置信度</a>
+        <a href="#training">7. 训练流程</a>
+        <a href="#controls">8. 对照与消融</a>
+        <a href="#experiments">9. 实验设置</a>
+        <a href="#metrics">10. 指标与诊断</a>
+        <a href="#criteria">11. 成功/失败标准</a>
+        <a href="#risks">12. 风险边界</a>
+        <a href="#implementation">13. 实现建议</a>
+        <a href="#claim">14. 论文表述边界</a>
+      </nav>
+
+      <div>
+        <section id="summary">
+          <h2>0. 一句话结论</h2>
+          <div class="callout success">
+            <strong>OrginGB-GCN 的第一版应做成“静态普通粒球 + 软标签修正 + 轻量样本降权”。</strong>
+            它只把普通粒球作为弱去噪先验，不把同球节点当成同类，不直接替换 noisy label，不改图结构，不改数据划分，不接入复杂 GAGB。
+          </div>
+          <p>
+            这个版本的目的不是立刻形成最终论文方法，而是回答一个最小问题：
+            <strong>在普通 GCN 的图标签噪声训练中，ordinary granular ball 是否能提供比普通 noisy-label CE 更好的局部去噪信号。</strong>
+          </p>
+        </section>
+
+        <section id="context">
+          <h2>1. 前因后果</h2>
+          <h3>1.1 为什么先不继续 GAGB</h3>
+          <p>
+            之前的 GAGB 方向已经暴露出几个问题：机制复杂、target 更新强度敏感、Cora 0.4 下会出现间接分类边界移动，并且很多收益很难和随机分组、kmeans、top-k local smoothing 区分开。
+            所以当前不适合继续在 GAGB 上叠公式，而应该先回到一个更干净的问题：普通粒球本身在标签噪声任务里有没有价值。
+          </p>
+          <h3>1.2 为什么选择普通 GCN 做宿主</h3>
+          <p>
+            当前 NoisyGL 中的 GCN 是最基础、最清晰的监督 baseline。它的训练逻辑是：在 noisy train labels 上做 cross entropy，validation 用 NoisyGL 默认流程，test 用 clean label 评估。
+            因此它非常适合做第一版宿主：如果粒球模块连 GCN 都不能稳定改善，就不应该过早接入 RNCGLN、RTGNN 或 UnionNet 这类复杂鲁棒方法。
+          </p>
+          <h3>1.3 为什么是 ordinary GB，而不是 graph-aware GB</h3>
+          <p>
+            graph-aware GB 是更强但更复杂的第二阶段方向，需要引入拓扑邻近、预测一致性、PPR 或 K-hop 结构。当前用户明确提出“加入普通粒球模块”，所以第一版必须保持普通粒球定义：只在 embedding 空间构球，只用中心、半径、球大小、平均距离等普通粒球统计量。
+          </p>
+        </section>
+
+        <section id="baseline">
+          <h2>2. 当前 Baseline 状态</h2>
+          <p>现有 NoisyGL baseline 已经足够支撑本轮方法设计：</p>
+          <table>
+            <thead>
+              <tr>
+                <th>数据集</th>
+                <th>当前主 baseline</th>
+                <th>关键边界</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>Cora</td>
+                <td>GCN + RNCGLN</td>
+                <td>Cora uniform 0.4 上 RNCGLN 明显强于 GCN，是第一批高价值验证点。</td>
+              </tr>
+              <tr>
+                <td>CiteSeer</td>
+                <td>GCN + RNCGLN</td>
+                <td>CiteSeer uniform 0.2 上 RNCGLN 强于 GCN，适合验证中噪声条件下普通 GB 是否有效。</td>
+              </tr>
+              <tr>
+                <td>PubMed</td>
+                <td>GCN</td>
+                <td>RNCGLN 默认实现因 dense NxN 相似度矩阵在 PubMed 上 OOM；UnionNet/Forward/Backward 未稳定强于 GCN。</td>
+              </tr>
+            </tbody>
+          </table>
+          <div class="callout warning">
+            本方法第一版在 Cora/CiteSeer 上不能只和 GCN 比，还要观察是否缩小与 RNCGLN 的差距；PubMed 上则以 GCN 为主 baseline。
+          </div>
+        </section>
+
+        <section id="lessons">
+          <h2>3. 来自经验文档的硬约束</h2>
+          <table>
+            <thead>
+              <tr>
+                <th>历史教训</th>
+                <th>对 OrginGB-GCN 的约束</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>same-ball membership 不能等价于语义标签。</td>
+                <td>不做 hard relabel，不做同球 hard positive，不直接替换 noisy label。</td>
+              </tr>
+              <tr>
+                <td>严格 GB local smoothing 在 Cora 有局部信号，但 CiteSeer 不稳定。</td>
+                <td>必须同时跑 Cora、CiteSeer、PubMed；不能用单数据集结果做结论。</td>
+              </tr>
+              <tr>
+                <td>target 更新太弱会 NCR=0，太强会引发边界移动。</td>
+                <td>第一版用受控的 soft target mixing，并记录 NCR/CDR/changed ratio。</td>
+              </tr>
+              <tr>
+                <td>随机分组、kmeans、top-k 常能解释一部分收益。</td>
+                <td>必须加入 size-matched random ball 或 shuffled ball 控制。</td>
+              </tr>
+              <tr>
+                <td>hard compactness、prototype pulling、view generation 修改反复不稳。</td>
+                <td>第一版只改监督 loss，不改 GCN 结构、不改图增强、不加中心拉近。</td>
+              </tr>
+              <tr>
+                <td>小于 std 的提升不能作为论文结论。</td>
+                <td>所有结果必须 5 seeds，报告 mean/std 和 paired delta。</td>
+              </tr>
+            </tbody>
+          </table>
+        </section>
+
+        <section id="goal">
+          <h2>4. 本轮研究目标</h2>
+          <h3>4.1 研究假设</h3>
+          <p>
+            在带 uniform label noise 的节点分类中，GCN warmup 后的 hidden embedding 空间可能已经形成一定局部语义结构。
+            普通粒球可以把这些局部区域压缩成软的局部标签分布和节点置信度，从而降低错误 noisy label 对训练的影响。
+          </p>
+          <h3>4.2 粒球扮演的角色</h3>
+          <p>
+            粒球只扮演三个弱角色：
+          </p>
+          <ul>
+            <li><strong>local region unit</strong>：描述 embedding 空间中的局部节点集合。</li>
+            <li><strong>soft target generator</strong>：生成球级软标签 <code>q_B</code>。</li>
+            <li><strong>confidence signal</strong>：决定节点 target mixing 和 loss weight 的强度。</li>
+          </ul>
+          <h3>4.3 非目标</h3>
+          <ul>
+            <li>不证明普通粒球一定是语义聚类。</li>
+            <li>不声称 same-ball 节点同类。</li>
+            <li>不追求第一版超过所有鲁棒 baseline。</li>
+            <li>不把 PubMed 上超过 GCN 的小幅波动写成显著结果。</li>
+          </ul>
+        </section>
+
+        <section id="method">
+          <h2>5. 算法设计</h2>
+          <h3>5.1 输入与输出</h3>
+          <p>输入：</p>
+          <ul>
+            <li>图 <code>G=(A,X)</code>。</li>
+            <li>训练集 noisy labels <code>y_tilde</code>。</li>
+            <li>普通 GCN encoder/classifier。</li>
+            <li>NoisyGL 默认 train/validation/test split。</li>
+          </ul>
+          <p>输出：</p>
+          <ul>
+            <li>训练后的 GCN 分类器。</li>
+            <li>每个 train node 的 soft target <code>target_i</code>。</li>
+            <li>每个 train node 的样本权重 <code>weight_i</code>。</li>
+            <li>粒球诊断：球数量、大小、半径、覆盖率、NCR、CDR 等。</li>
+          </ul>
+
+          <h3>5.2 Warmup GCN</h3>
+          <p>
+            先使用原始 noisy labels 训练普通 GCN 若干 epoch，例如 <code>E_warm=30</code>。
+            这一步只为了得到一个比 raw feature 更贴近任务的 hidden embedding 空间。
+          </p>
+          <div class="formula">
+            L_warm = CE(f_theta(A, X)[train], y_tilde[train])
+          </div>
+
+          <h3>5.3 普通粒球构造</h3>
+          <p>
+            从 GCN 的倒数第二层取 hidden representation <code>H</code>，对每个节点表示做 L2 normalization。
+            然后在 <code>H</code> 空间构造 ordinary granular balls。构球过程只依赖 embedding，不依赖标签。
+          </p>
+          <p>每个球记录：</p>
+          <ul>
+            <li><code>B</code>：球内节点集合。</li>
+            <li><code>c_B</code>：球中心向量。</li>
+            <li><code>r_B</code>：球半径，建议用球内到中心的最大 cosine/angular distance。</li>
+            <li><code>ad_B</code>：average distance，球内到中心的平均距离。</li>
+            <li><code>|B|</code>：球大小。</li>
+            <li><code>T_B</code>：球内属于 train mask 的节点集合。</li>
+          </ul>
+
+          <h3>5.4 球级软标签 q_B</h3>
+          <p>
+            对球 <code>B</code>，计算两个分布：
+          </p>
+          <ul>
+            <li><code>pbar_B</code>：warmup GCN 在球内节点上的平均预测分布。</li>
+            <li><code>yhat_B</code>：球内 train nodes 的 noisy label empirical distribution，加全局 prior 平滑。</li>
+          </ul>
+          <div class="formula">
+            q_B = normalize((1 - eta_B) * pbar_B + eta_B * yhat_B)
+          </div>
+          <p>
+            其中 <code>eta_B</code> 由球质量和球内 train label 覆盖率控制。低质量球、train nodes 太少的球，更多依赖 <code>pbar_B</code>，少依赖 noisy local majority。
+          </p>
+
+          <h3>5.5 节点 soft target</h3>
+          <p>
+            对训练节点 <code>i</code>，假设它属于球 <code>B(i)</code>。如果球级分布与 noisy label 冲突，并且球质量足够高，就把训练目标轻微混向 <code>q_B</code>。
+          </p>
+          <div class="formula">
+            target_i = (1 - alpha_i) * onehot(y_tilde_i) + alpha_i * q_B
+          </div>
+          <p>
+            第一版建议 <code>alpha_i</code> 不超过 <code>0.5</code>。这比 GAGB 中强替换更安全，也比过小 alpha 更容易产生可测 NCR。
+          </p>
+
+          <h3>5.6 样本权重</h3>
+          <p>
+            对冲突且低置信节点，适度降低其 loss 权重，避免错误标签主导训练。
+          </p>
+          <div class="formula">
+            weight_i = 1 - gamma * alpha_i, 其中 gamma 建议先取 0.5
+          </div>
+          <p>
+            这意味着被粒球强烈怀疑的节点，不会被完全删除，只是降低训练强度。
+          </p>
+
+          <h3>5.7 最终训练损失</h3>
+          <div class="formula">
+            L = mean_i weight_i * CE_soft(logits_i, target_i), i in train_mask
+          </div>
+          <p>
+            这里 <code>CE_soft</code> 是 soft-label cross entropy。
+            验证和测试逻辑保持 NoisyGL 原样，不用 soft labels 评估。
+          </p>
+        </section>
+
+        <section id="quality">
+          <h2>6. 粒球质量与置信度</h2>
+          <h3>6.1 球质量 Q(B)</h3>
+          <p>
+            第一版只使用 ordinary GB 的无标签质量，不引入图拓扑项。
+          </p>
+          <div class="formula">
+            Q(B) = size_gate(B) * compact_gate(B)
+          </div>
+          <p>建议定义：</p>
+          <ul>
+            <li><code>size_gate(B)</code>：球大小过小则降权，避免 1-2 个节点形成伪高质量球。</li>
+            <li><code>compact_gate(B)</code>：基于 <code>ad_B</code> 或半径的归一化紧凑度。</li>
+          </ul>
+          <pre><code>size_gate = 1 - exp(-(max(|B|-1, 0) / m0))
+compact_gate = exp(-ad_B / tau_ad)
+Q_B = clip(size_gate * compact_gate, 0, 1)</code></pre>
+
+          <h3>6.2 alpha_i</h3>
+          <p>
+            <code>alpha_i</code> 应该由三个因素共同决定：
+          </p>
+          <ul>
+            <li>球质量 <code>Q_B</code>。</li>
+            <li>节点到球中心的接近程度。</li>
+            <li>球级分布对 noisy label 的冲突程度。</li>
+          </ul>
+          <pre><code>conf_i = Q_B * exp(-dist(h_i, c_B) / tau_node)
+conflict_i = max(0, max(q_B) - q_B[noisy_y_i])
+alpha_i = alpha_max * conf_i * conflict_i</code></pre>
+          <p>
+            第一版推荐 <code>alpha_max=0.5</code>，后续只在 smoke test 显示 target 过弱或过强时再微调。
+          </p>
+
+          <h3>6.3 低覆盖球处理</h3>
+          <p>
+            如果球内 train nodes 太少，不能可靠估计局部 noisy label 分布。第一版建议：
+          </p>
+          <ul>
+            <li><code>|T_B| &lt; 2</code>：不启用 target mixing，<code>alpha_i=0</code>。</li>
+            <li><code>2 <= |T_B| &lt; 4</code>：降低 <code>eta_B</code>。</li>
+            <li><code>|T_B| >= 4</code>：正常计算 <code>q_B</code>。</li>
+          </ul>
+        </section>
+
+        <section id="training">
+          <h2>7. 训练流程</h2>
+          <pre><code>Input:
+  G=(A, X)
+  noisy train labels y_tilde
+  train/val/test masks
+  GCN config from NoisyGL
+
+Stage 1: Warmup
+  Train ordinary GCN for E_warm epochs using noisy CE.
+  Save hidden embedding H and prediction P.
+
+Stage 2: Build ordinary granular balls
+  Normalize H.
+  Build ordinary embedding-space balls.
+  Compute center, radius, average distance, size, Q(B).
+  Compute q_B from warmup prediction and noisy train-label distribution.
+  Compute target_i and weight_i for train nodes.
+
+Stage 3: Final training
+  Reinitialize GCN or continue from warmup.
+  Train with weighted soft-label CE.
+  Keep validation/test protocol unchanged.
+
+Stage 4: Diagnostics
+  Save test accuracy, NCR, CDR, changed ratio, ball stats.
+  Compare against GCN and random-size-matched control.</code></pre>
+          <div class="callout">
+            第一版建议先采用静态粒球：warmup 后构球一次，后续训练不刷新。动态刷新会引入 assignment churn，需要单独诊断，不适合作为 v1 默认。
+          </div>
+        </section>
+
+        <section id="controls">
+          <h2>8. 必做对照与消融</h2>
+          <table>
+            <thead>
+              <tr>
+                <th>方法</th>
+                <th>说明</th>
+                <th>目的</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><code>gcn</code></td>
+                <td>NoisyGL 原始 GCN。</td>
+                <td>基础参照。</td>
+              </tr>
+              <tr>
+                <td><code>orgingb_gcn</code></td>
+                <td>普通粒球 + soft target + sample weight。</td>
+                <td>主实验方法。</td>
+              </tr>
+              <tr>
+                <td><code>random_size_matched_gcn</code></td>
+                <td>保留真实粒球的 size distribution，但随机分配节点。</td>
+                <td>排除“只是分组/球大小正则”带来的收益。</td>
+              </tr>
+              <tr>
+                <td><code>shuffled_ball_gcn</code></td>
+                <td>打乱真实粒球 assignment。</td>
+                <td>检查真实 membership 是否有额外价值。</td>
+              </tr>
+              <tr>
+                <td><code>pred_only_gcn</code></td>
+                <td><code>eta_B=0</code>，只用 warmup prediction。</td>
+                <td>检查粒球 noisy label distribution 是否真的有帮助。</td>
+              </tr>
+              <tr>
+                <td><code>label_only_gcn</code></td>
+                <td>主要使用球内 noisy label distribution。</td>
+                <td>检查是否退化成危险的 local majority smoothing。</td>
+              </tr>
+            </tbody>
+          </table>
+          <div class="callout warning">
+            最小第一轮至少要有 <code>gcn</code>、<code>orgingb_gcn</code>、<code>random_size_matched_gcn</code>。如果没有随机大小匹配对照，不能声称收益来自粒球结构。
+          </div>
+        </section>
+
+        <section id="experiments">
+          <h2>9. 第一批实验设置</h2>
+          <p>用户指定的第一批实验点是合理的：</p>
+          <table>
+            <thead>
+              <tr>
+                <th>数据集</th>
+                <th>噪声类型</th>
+                <th>噪声率</th>
+                <th>为什么选</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>Cora</td>
+                <td>uniform</td>
+                <td>0.4</td>
+                <td>GCN 与 RNCGLN 差距明显，是检验去噪能力的首选高噪声点。</td>
+              </tr>
+              <tr>
+                <td>CiteSeer</td>
+                <td>uniform</td>
+                <td>0.2</td>
+                <td>中等噪声下 RNCGLN 强于 GCN，用来判断普通 GB 是否只在高噪声有效。</td>
+              </tr>
+              <tr>
+                <td>PubMed</td>
+                <td>uniform</td>
+                <td>0.4</td>
+                <td>RNCGLN 默认实现 OOM，因此检验 OrginGB-GCN 是否能在大图上超过 GCN。</td>
+              </tr>
+            </tbody>
+          </table>
+
+          <h3>9.1 推荐运行顺序</h3>
+          <ol>
+            <li>先跑 <code>Cora uniform 0.4 seed=3000</code> smoke test。</li>
+            <li>检查是否 NaN、是否显著拖慢、<code>target_changed_ratio</code> 是否合理。</li>
+            <li>如果 smoke test 通过，三组实验都跑 5 seeds：<code>3000-3004</code>。</li>
+            <li>只在三组结果显示正信号后，再考虑 pair noise 或更多噪声率。</li>
+          </ol>
+
+          <h3>9.2 推荐配置初值</h3>
+          <table>
+            <thead>
+              <tr>
+                <th>参数</th>
+                <th>建议初值</th>
+                <th>说明</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><code>E_warm</code></td>
+                <td>30</td>
+                <td>足够形成初步 hidden space，不让 warmup 过度记忆噪声。</td>
+              </tr>
+              <tr>
+                <td><code>alpha_max</code></td>
+                <td>0.5</td>
+                <td>避免强替换，同时允许 target argmax 有机会改变。</td>
+              </tr>
+              <tr>
+                <td><code>gamma</code></td>
+                <td>0.5</td>
+                <td>样本降权强度。</td>
+              </tr>
+              <tr>
+                <td><code>min_train_per_ball</code></td>
+                <td>2 或 3</td>
+                <td>避免低覆盖球误导。</td>
+              </tr>
+              <tr>
+                <td><code>ball_refresh</code></td>
+                <td>off</td>
+                <td>第一版静态构球。</td>
+              </tr>
+            </tbody>
+          </table>
+        </section>
+
+        <section id="metrics">
+          <h2>10. 指标与诊断</h2>
+          <h3>10.1 性能指标</h3>
+          <ul>
+            <li><code>test_acc_mean</code> / <code>test_acc_std</code>：5 seeds test accuracy。</li>
+            <li><code>paired_delta_vs_gcn</code>：同 seed 下相对 GCN 的差值。</li>
+            <li><code>paired_delta_vs_random</code>：同 seed 下相对随机大小匹配分组的差值。</li>
+          </ul>
+
+          <h3>10.2 去噪指标</h3>
+          <ul>
+            <li><code>NCR</code>：Noise Correction Rate。被污染 train nodes 中，target argmax 修正为 clean label 的比例。clean label 只用于诊断。</li>
+            <li><code>CDR</code>：Clean Damage Rate。原本干净 train nodes 中，target argmax 被改错的比例。</li>
+            <li><code>changed_ratio</code>：target argmax 或 target distribution 发生明显变化的训练节点比例。</li>
+            <li><code>AUROC</code>：用 suspicion score 区分 noisy/clean train nodes 的能力。</li>
+          </ul>
+
+          <h3>10.3 粒球诊断</h3>
+          <ul>
+            <li><code>num_balls</code></li>
+            <li><code>mean_ball_size</code></li>
+            <li><code>max_ball_size</code></li>
+            <li><code>singleton_ratio</code></li>
+            <li><code>mean_radius</code></li>
+            <li><code>mean_average_distance</code></li>
+            <li><code>effective_train_coverage</code></li>
+            <li><code>mean_Q_B</code></li>
+          </ul>
+
+          <h3>10.4 suspicion score</h3>
+          <p>建议第一版使用：</p>
+          <div class="formula">
+            u_i = 1 - conf_i * q_B[y_tilde_i]
+          </div>
+          <p>
+            <code>u_i</code> 越高，说明球级 soft target 越不支持该节点 noisy label，且节点本身越不可靠。
+          </p>
+        </section>
+
+        <section id="criteria">
+          <h2>11. 成功标准与失败标准</h2>
+          <h3>11.1 Smoke test 通过标准</h3>
+          <ul>
+            <li>训练不 NaN，不 OOM。</li>
+            <li><code>target_changed_ratio</code> 不为 0，也不能异常大；初步建议 1%-30% 区间内再细看。</li>
+            <li><code>NCR > 0</code>，且 <code>CDR</code> 不明显升高。</li>
+            <li>Cora uniform 0.4 seed=3000 不显著低于 GCN。</li>
+          </ul>
+
+          <h3>11.2 第一批 5-seed 成功标准</h3>
+          <ul>
+            <li>至少两个设置的 5-seed mean 高于 GCN。</li>
+            <li>至少两个设置的 paired delta 多数 seed 为正。</li>
+            <li>真实 ordinary GB 必须优于 random-size-matched 控制，否则不能说是粒球贡献。</li>
+            <li>Cora/CiteSeer 至少缩小与 RNCGLN 的差距，最好在某个设置接近 RNCGLN。</li>
+            <li>PubMed 上若只比 GCN 高一点，必须结合 std 和 paired seeds 谨慎解释。</li>
+          </ul>
+
+          <h3>11.3 失败标准</h3>
+          <ul>
+            <li>三组中只有 Cora 有收益，CiteSeer/PubMed 没有。</li>
+            <li>random-size-matched 和真实 GB 表现接近或更好。</li>
+            <li>NCR 为 0，说明机制没有实际纠错。</li>
+            <li>CDR 明显升高，说明误伤干净标签。</li>
+            <li>提升小于 std 且 paired seeds 不稳定。</li>
+            <li>需要大量调参才能在单点超过 GCN。</li>
+          </ul>
+        </section>
+
+        <section id="risks">
+          <h2>12. 风险边界</h2>
+          <div class="callout danger">
+            <strong>最大风险：</strong>把普通局部分组、teacher smoothing 或额外正则的收益误写成“粒球语义结构有效”。
+          </div>
+          <h3>12.1 机制风险</h3>
+          <ul>
+            <li>普通 GB 只看 embedding 距离，可能不能区分边界节点和真正同类节点。</li>
+            <li>球内 noisy label distribution 可能被噪声 majority 污染。</li>
+            <li>GCN warmup 本身可能已经过拟合 noisy labels，导致 <code>pbar_B</code> 自确认。</li>
+            <li>target mixing 会改变分类边界，即使 CDR 低，也可能间接伤害测试类。</li>
+          </ul>
+
+          <h3>12.2 结果解释风险</h3>
+          <ul>
+            <li>单 seed 不能作为结论。</li>
+            <li>只赢 GCN 但不赢 random-size-matched，不能证明 GB 有独立价值。</li>
+            <li>只在 PubMed 超过 GCN 一点，可能只是 GCN 方差。</li>
+            <li>如果 CiteSeer 不稳，不能写跨数据集稳定。</li>
+          </ul>
+        </section>
+
+        <section id="implementation">
+          <h2>13. NoisyGL 实现建议</h2>
+          <h3>13.1 推荐文件组织</h3>
+          <pre><code>external/NoisyGL/
+  predictor/
+    OrginGB_GCN_Predictor.py
+  predictor/module/
+    GNNs.py                 # 如需支持 return_hidden，可小改 GCN
+  utils/
+    ordinary_gb.py          # 普通粒球构造、质量、随机控制
+    soft_targets.py         # q_B, alpha_i, weight_i
+  config/orgingb_gcn/
+    orgingb_gcn_cora.yaml
+    orgingb_gcn_citeseer.yaml
+    orgingb_gcn_pubmed.yaml</code></pre>
+
+          <h3>13.2 最小代码改动原则</h3>
+          <ul>
+            <li>不要改 NoisyGL 的数据加载和噪声注入。</li>
+            <li>不要改 split。</li>
+            <li>新增 predictor，而不是直接覆盖原始 GCN。</li>
+            <li>GB 逻辑放进独立 utils，便于之后复用到 graph-aware GB。</li>
+            <li>所有新增配置必须保存到 YAML 和 raw log。</li>
+          </ul>
+
+          <h3>13.3 GCN hidden embedding</h3>
+          <p>
+            当前 NoisyGL 的 <code>GCN.forward()</code> 只返回 logits。实现 OrginGB-GCN 时建议增加一个可选接口：
+          </p>
+          <pre><code>logits, hidden = model.forward_with_hidden(features, adj)</code></pre>
+          <p>
+            或者在新的 predictor 中复制一段前向逻辑拿到倒数第二层输出。推荐前者，因为更清晰、可复用，也不会改变默认 <code>forward()</code> 行为。
+          </p>
+        </section>
+
+        <section id="claim">
+          <h2>14. 论文表述边界</h2>
+          <h3>14.1 可以说的</h3>
+          <ul>
+            <li>普通粒球被设计为一种低侵入的局部软去噪先验。</li>
+            <li>该方法不依赖 clean labels 构球或训练。</li>
+            <li>该方法通过球级 soft target 和节点级 confidence 减弱疑似 noisy labels 的训练影响。</li>
+            <li>如果实验成功，可以说 ordinary GB 在部分 uniform label noise 设置下提供了有效辅助信号。</li>
+          </ul>
+
+          <h3>14.2 不能说的</h3>
+          <ul>
+            <li>不能说同球节点一定同类。</li>
+            <li>不能说普通 GB 已经证明为图语义粒球。</li>
+            <li>不能说超过 GCN 就一定超过鲁棒 baseline。</li>
+            <li>不能说 PubMed 上击败 RNCGLN，因为 RNCGLN 默认实现没有跑通 PubMed。</li>
+            <li>不能把小于 std 的提升写成显著改进。</li>
+          </ul>
+
+          <h3>14.3 推荐保守 claim</h3>
+          <div class="callout">
+            We introduce an ordinary granular-ball assisted GCN for noisy-label node classification. The method uses embedding-space granular balls as conservative local denoising priors, producing ball-level soft targets and node-level confidence weights without treating same-ball membership as hard semantic labels.
+          </div>
+          <p>
+            中文表述可以写成：本文提出一个普通粒球辅助的 GCN 标签噪声鲁棒训练模块，将 embedding 空间中的粒球作为保守局部去噪先验，用于生成球级软标签和节点级置信权重，而不是把同球关系作为硬语义标签。
+          </p>
+        </section>
+      </div>
+    </main>
+  </div>
+</body>
+</html>

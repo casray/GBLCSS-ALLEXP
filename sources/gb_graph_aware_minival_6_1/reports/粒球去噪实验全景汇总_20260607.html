@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>粒球去噪实验全景汇总 (2026-06-05 → 06-07)</title>
+<style>
+  :root{
+    --bg:#0f1117; --card:#181b24; --line:#2a2f3c; --txt:#e6e8ee; --mut:#9aa3b2;
+    --ok:#3fb950; --bad:#f85149; --warn:#d29922; --info:#58a6ff; --accent:#bc8cff;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--txt);font:14px/1.6 -apple-system,"Segoe UI",Roboto,"Microsoft YaHei",sans-serif;padding:28px}
+  h1{font-size:24px;margin:0 0 4px}
+  h2{font-size:18px;margin:34px 0 12px;border-left:4px solid var(--accent);padding-left:10px}
+  .sub{color:var(--mut);margin:0 0 18px}
+  .legend{display:flex;flex-wrap:wrap;gap:14px;margin:14px 0 24px;font-size:12.5px;color:var(--mut)}
+  .pill{display:inline-block;padding:1px 8px;border-radius:10px;font-size:11.5px;font-weight:600;white-space:nowrap}
+  .p-fail{background:rgba(248,81,73,.15);color:var(--bad);border:1px solid rgba(248,81,73,.4)}
+  .p-pass{background:rgba(63,185,80,.15);color:var(--ok);border:1px solid rgba(63,185,80,.4)}
+  .p-stop{background:rgba(210,153,34,.15);color:var(--warn);border:1px solid rgba(210,153,34,.4)}
+  .p-info{background:rgba(88,166,255,.13);color:var(--info);border:1px solid rgba(88,166,255,.4)}
+  table{width:100%;border-collapse:collapse;background:var(--card);border:1px solid var(--line);border-radius:8px;overflow:hidden;margin-bottom:10px}
+  th,td{padding:10px 12px;text-align:left;vertical-align:top;border-bottom:1px solid var(--line);font-size:13px}
+  th{background:#1f2330;color:#cdd3df;font-weight:600;position:sticky;top:0}
+  tr:last-child td{border-bottom:none}
+  td.num{font-variant-numeric:tabular-nums;white-space:nowrap}
+  .win{color:var(--ok);font-weight:600}
+  .lose{color:var(--bad);font-weight:600}
+  .tie{color:var(--warn);font-weight:600}
+  code{background:#0b0d12;border:1px solid var(--line);border-radius:4px;padding:1px 5px;font-size:12px;color:#d6b3ff}
+  .small{font-size:12px;color:var(--mut)}
+  .stepid{font-weight:700;color:var(--accent)}
+  .chain{background:var(--card);border:1px solid var(--line);border-radius:8px;padding:16px 20px;margin:18px 0}
+  .chain ol{margin:6px 0;padding-left:22px}
+  .chain li{margin:4px 0}
+  .guard{background:#13161e;border:1px dashed var(--line);border-radius:8px;padding:14px 18px;margin:12px 0;font-size:13px}
+  .footer{color:var(--mut);font-size:12px;margin-top:30px;border-top:1px solid var(--line);padding-top:14px}
+  .key{color:var(--accent);font-weight:600}
+  .col-narrow{width:78px}
+  .verdict-cell{font-weight:600}
+</style>
+</head>
+<body>
+
+<h1>粒球（Granular Ball）去噪实验全景汇总</h1>
+<p class="sub">任务：noisy-label 鲁棒节点分类（Cora/CiteSeer，frozen GRACE）｜ 时间：2026-06-05 → 06-07 ｜ 对应经验文档 <code>02_experiment_history_and_lessons.md</code> §12.1–§12.9</p>
+
+<div class="legend">
+  <span><span class="pill p-pass">成立/通过</span> 现象稳健或门通过</span>
+  <span><span class="pill p-fail">不成立/失败</span> 预注册门未过</span>
+  <span><span class="pill p-stop">早停/降级</span> 触发停止规则</span>
+  <span><span class="pill p-info">诊断</span> 仅测量、非方法</span>
+  <span>所有 test = <code>test_acc_at_best_val</code>；clean label 仅用于评估/诊断，绝不进构球/选择/损失/目标</span>
+</div>
+
+<!-- ============ 一句话主线 ============ -->
+<div class="chain">
+  <b>一句话主线（读这一段就够）：</b>
+  课题方向从「图感知粒球」转向「对比表示上的 reliable 粒球去噪」。随后用一连串严格的预注册实验逐一证明：
+  <span class="key">在「保持 GRACE 表示稳定」的前提下，粒球结构相对最朴素的 kNN 共识没有任何可证的独立增量</span>——
+  图感知球、reliable 互惠-kNN 球、density 球、最小弱 encoder-coupling 全部无首信号。
+  唯一稳健的是「<span class="key">局部一致性可靠性信号 + commit-style 样本选择</span>」，但这与「球」本身无关。
+  保留粒球作主角只剩「球损失主导的强耦合训练」（CGBC/GBmooer 路线，工程大、与项目 frozen 稳定经验相悖）。
+</div>
+
+<!-- ============ 实验时间线总表 ============ -->
+<h2>一、实验时间线总表（每一步：思想 / 做法 / 关键结果 / 结论）</h2>
+<table>
+  <thead>
+    <tr>
+      <th class="col-narrow">编号</th>
+      <th>算法思想（为什么做）</th>
+      <th>做法（怎么做）</th>
+      <th>关键结果（真实数字）</th>
+      <th>结论 / 判定</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><span class="stepid">§12.1</span><br><span class="small">DCGB 诊断</span></td>
+      <td>导师 idea：图感知粒球（特征+拓扑）是否比纯特征球更好？验证拓扑增量。</td>
+      <td>Cora/CiteSeer × noise 0.2/0.4 × 5 seed；比较 <code>dcgb</code>（特征+拓扑）vs <code>dcgb_emb_only</code>（纯特征互惠-kNN）的球质量。</td>
+      <td class="num">拓扑增量 <code>dcgb − emb_only</code>：purity ±0.002、AUROC ±0.001（全 8 条件 ≈0）。</td>
+      <td><span class="pill p-fail">图感知球不作主创新</span><br><span class="small">同配引文图上拓扑被特征/GRACE 吸收，冗余。</span></td>
+    </tr>
+    <tr>
+      <td><span class="stepid">§12.1</span><br><span class="small">raw-vs-GRACE</span></td>
+      <td>互惠-kNN 构球本身是不是稳定正信号（与表示无关）？</td>
+      <td>raw 特征 vs GRACE 上对比 ordinary GB vs 互惠-kNN 球的 purity/AUROC。</td>
+      <td class="num">raw 上 ordinary GB purity 崩塌（Cora 0.303 / CiteSeer 0.210）；互惠-kNN 恢复到 0.78–0.84；GRACE 上 dcgb purity 0.89 / AUROC 0.79。</td>
+      <td><span class="pill p-pass">互惠-kNN 构球=稳定正信号</span><br><span class="small">可靠性来自构球方式，与表示空间/拓扑无关。</span></td>
+    </tr>
+    <tr>
+      <td><span class="stepid">§12.3-4</span><br><span class="small">S1 (NoisyGL)</span></td>
+      <td>在监督 GCN hidden 上构 reliable 球 + 保守重加权，能否去噪？</td>
+      <td>NoisyGL GCN 宿主，Cora uniform 0.4 seed3000 单 seed smoke；含 no-ball/random 对照（修了 config 覆盖 bug）。</td>
+      <td class="num">reliable-GB test 0.705 = GCN 0.705，<code>best_phase=warmup</code>；gated precision 0.50 = 有效 no-ball 0.50。</td>
+      <td><span class="pill p-stop">S1 no-go</span><br><span class="small">工作假设：GCN epoch6 见顶记忆噪声→瓶颈在监督表示，转 label-free 对比表示。</span></td>
+    </tr>
+    <tr>
+      <td><span class="stepid">§12.4</span><br><span class="small">S2a Phase1 + headroom</span></td>
+      <td>把同一套 reliable 球搬到 frozen GRACE + 软目标/重加权，能否涨点？先测有没有油水。</td>
+      <td>Cora symm 0.4 seed0；<code>ce/gb/dcgb_emb_only/qsafe/topk/shuffled</code>；clean-oracle 测 headroom。</td>
+      <td class="num">headroom = oracle 0.8221 − noisy-CE 0.7878 = <b>3.43pp</b>（有油水）。但 dcgb 0.7941 = shuffled 0.7941，&lt; gb 0.7962；NCR 多为 0。</td>
+      <td><span class="pill p-fail">软目标链路未过</span><br><span class="small">有 headroom 但「球→下游」转化失败；soft-target 不提交决策。</span></td>
+    </tr>
+    <tr>
+      <td><span class="stepid">§12.5</span><br><span class="small">S2-redesign-v1</span></td>
+      <td>换「提交式」机制：commit-style 样本选择（small-loss × 球可靠性），替换软目标。</td>
+      <td>seed0；每 epoch 选 top-k 信任节点，固定 schedule；方法+6 对照同 schedule，仅 rel 来源不同。</td>
+      <td class="num">seed0 上 sel_dcgb 0.779 碾压 no-ball/shuffled/random（0.66–0.68）；但 sel_gb 0.809 &gt; sel_dcgb &gt; gb_soft。</td>
+      <td><span class="pill p-fail">预注册门未过</span><br><span class="small">commit 机制让球信号转化了（机制对）；但 seed0 出现「gb&gt;dcgb」倒挂，记为待验证假设。</span></td>
+    </tr>
+    <tr>
+      <td><span class="stepid">§12.6</span><br><span class="small">S3 Phase1</span></td>
+      <td>seed0 的「sel_gb &gt; sel_dcgb」倒挂是真的吗？先多 seed 证伪再投入机制解释。</td>
+      <td>Cora symm 0.4 × <b>5 seed</b>；预注册 A/B/C 机械判定。</td>
+      <td class="num">A（gb&gt;dcgb）1/5、mean −3.00pp；B（gb&gt;gb_soft）2/5；C（dcgb&gt;对照）5/5/5。均值 dcgb 0.8002 &gt; topk 0.7969 &gt; gb 0.7702。</td>
+      <td><span class="pill p-stop">seed0 倒挂被证伪</span><br><span class="pill p-pass">C 成立</span><br><span class="small">reliable 球才是稳的；commit-selection+球稳健。</span></td>
+    </tr>
+    <tr>
+      <td><span class="stepid">§12.7</span><br><span class="small">S3 Q2（主线生死）</span></td>
+      <td>球结构相对纯 kNN 共识到底多提供了什么？（审稿人会问：粒球=kNN consensus 包装？）</td>
+      <td>复用 5-seed 数据，paired 比较 <code>dcgb</code> vs <code>topk</code>（k 匹配球大小、同覆盖 0.6）。</td>
+      <td class="num">dcgb−topk test +0.327pp、std 1.03pp、<b>t≈0.71 不显著</b>；sel-precision 0/5 输、noise-recall 0/5 输。</td>
+      <td><span class="pill p-stop">命中降级档</span><br><span class="small">显式建球相对 kNN 共识无可证独立增量。</span></td>
+    </tr>
+    <tr>
+      <td><span class="stepid">§12.8</span><br><span class="small">S3 Phase1c（density）</span></td>
+      <td>借 GBmooer：球级密度结构（kNN 共识表达不了）能否拉开 kNN 共识？（先验证角距离=恒等，避免无效实验）</td>
+      <td>新 density 信号 = density(B)×compactness(i,B)×noisy_consensus(B)；5 seed；配 shuffled/random matched。</td>
+      <td class="num">density 0.7714 &lt; topk 0.7969 &lt; dcgb 0.8002；density&gt;topk 1/5、mean −2.56pp；sel-prec/recall 全面更差。density 赢自身 shuffled/random（+5.97/+3.02pp）。</td>
+      <td><span class="pill p-fail">预注册否定</span><br><span class="small">球级密度结构被 kNN 共识覆盖且更差；frozen-space「改球」穷尽=没救。</span></td>
+    </tr>
+    <tr>
+      <td><span class="stepid">§12.9</span><br><span class="small">S3 Phase2（encoder coupling）</span></td>
+      <td>读 CGBC/GBmooer 原文→根因是「表示为球而生+球反馈进 encoder」。最小弱耦合：让表示被球塑造。</td>
+      <td>GRACE init 全 encoder 小 lr 微调 <code>L=L_sup+λ_cl·L_GRACE+λ_gb·L_ball</code>（λ 固定不调）；中间诊断早停门：球质量是否变好。</td>
+      <td class="num">coupled-dcgb purity 0.8856 / AUROC 0.8885 vs frozen 0.8893/0.8920（−0.37/−0.35pp）；<b>coupled = baseline purity ±0.00</b>。log：L_GRACE≈6.84 ≫ intra 0.02/inter 0.2。</td>
+      <td><span class="pill p-stop">早停（球质量未改善）</span><br><span class="small">球损失被对比损失淹没；最小弱耦合无效（不否定强耦合）。</span></td>
+    </tr>
+  </tbody>
+</table>
+
+<!-- ============ 关键对比数据（5 seed 均值） ============ -->
+<h2>二、核心对比：commit-style 选择下各信号的 5-seed 均值（Cora symm 0.4）</h2>
+<p class="small">同一 commit-style selection 机制（固定 schedule W20/ramp20/ρ=0.6），唯一差别是可靠性信号 <code>rel</code> 的来源。这是判定「球 vs kNN 共识」的核心证据表。</p>
+<table>
+  <thead>
+    <tr><th>信号</th><th>rel 来源</th><th class="num">test</th><th class="num">selection precision</th><th class="num">noise-excl recall</th><th>角色</th></tr>
+  </thead>
+  <tbody>
+    <tr><td>sel_clean_oracle</td><td>noisy==clean（上限）</td><td class="num">0.8143</td><td class="num">1.0000</td><td class="num">1.0000</td><td><span class="pill p-info">诊断上限</span></td></tr>
+    <tr><td><b>sel_dcgb_emb</b></td><td>互惠-kNN reliable 球</td><td class="num win">0.8002</td><td class="num">0.9040</td><td class="num">0.8562</td><td>球（候选主角）</td></tr>
+    <tr><td>sel_topk_matched</td><td>纯 kNN 共识（无球）</td><td class="num">0.7969</td><td class="num win">0.9225</td><td class="num win">0.8839</td><td>对照：朴素局部一致性</td></tr>
+    <tr><td>sel_density_gb</td><td>球级密度结构</td><td class="num lose">0.7714</td><td class="num">0.8070</td><td class="num">0.6654</td><td>球（GBmooer 式）</td></tr>
+    <tr><td>sel_gb</td><td>ordinary GB 共识</td><td class="num">0.7702</td><td class="num">0.8002</td><td class="num">0.5889</td><td>对照（seed0 曾误判为更优）</td></tr>
+    <tr><td>sel_random_density_matched</td><td>打乱球（随机）</td><td class="num">0.7412</td><td class="num">0.7509</td><td class="num">0.5088</td><td>对照：破坏结构</td></tr>
+    <tr><td>sel_shuffled_density_matched</td><td>打乱球（shuffle）</td><td class="num">0.7117</td><td class="num">0.6855</td><td class="num">0.3032</td><td>对照：破坏结构</td></tr>
+    <tr><td>sel_noball</td><td>仅 loss（无任何球/共识）</td><td class="num lose">0.7082</td><td class="num">0.6886</td><td class="num">0.3207</td><td>对照：纯 small-loss</td></tr>
+  </tbody>
+</table>
+<p class="small">
+<span class="key">读法：</span>
+① <code>dcgb 0.8002 ≈ topk 0.7969</code>（差 0.33pp，t≈0.71 不显著），而 <code>topk</code> 的 selection-precision/noise-recall 反而更高 → <b>球 ≈ kNN 共识</b>。
+② 所有「有结构」的信号（dcgb/topk）都远超「破坏结构」的 shuffled/random/noball（差 8–9pp）→ <b>局部一致性结构有用，但「球」不是其中的独立成分</b>。
+③ density、gb 都不如 topk → 更复杂的球设计没带来增量。
+</p>
+
+<!-- ============ 三、机制结论 ============ -->
+<h2>三、贯穿全程的机制结论（为什么粒球在 frozen 表示上不转化）</h2>
+<table>
+  <thead><tr><th class="col-narrow">主题</th><th>结论</th><th>证据</th></tr></thead>
+  <tbody>
+    <tr><td>表示 vs 球</td><td>frozen GRACE 不是「为球而生」的表示；球的几何与分类器学的是同一套，信息冗余 → 任何球结构退化成局部 kNN 共识。</td><td class="small">§12.7 dcgb≈topk；§12.8 density&lt;topk</td></tr>
+    <tr><td>转化环节</td><td>瓶颈不在球质量/去噪公式/时机，而在「转化」：软目标不提交决策（NCR≈0），commit-style 选择能转化但转化的是「局部一致性」不是「球」。</td><td class="small">§12.4 headroom 3.43pp 但 dcgb=shuffled；§12.5 commit 机制生效</td></tr>
+    <tr><td>group-purity 的误导</td><td>group 级 clean-purity 分不出 gb 与 dcgb（0.892 vs 0.893），但 node 级 selection precision 区分得出 → 球质量指标会骗人。</td><td class="small">§12.7</td></tr>
+    <tr><td>弱耦合不足</td><td>最小弱耦合中球损失被 L_GRACE 量级淹没（0.02 vs 6.84），球质量零改善；coupled=baseline。</td><td class="small">§12.9</td></tr>
+    <tr><td>CGBC/GBmooer 为何有效</td><td>它们球损失是<b>一等主导损失</b>（CGBC <code>L=L_clustering+L_SCE</code>、GBmooer 超球对比专为球可分），表示被球塑造，代价是放弃 frozen 稳定性、接近从头训。任务也非图节点（合约/文本，i.i.d. 样本）。</td><td class="small">原文核对 2603.27734v1 / ssrn-6022343</td></tr>
+  </tbody>
+</table>
+
+<!-- ============ 四、护栏 ============ -->
+<h2>四、全程严守的科研护栏（这也是结论可信的原因）</h2>
+<div class="guard">
+  ① clean label 只用于评估/诊断，绝不进构球/可疑度/门控/权重/教师/目标/损失（已单测）。<br>
+  ② 不做 hard same-ball positive、不做 GB view generation、不做 prototype/center pulling。<br>
+  ③ 每个 claim 必须带 no-ball + random/shuffled size-matched 对照，且同覆盖、同 schedule。<br>
+  ④ 不 threshold/formula-shopping（不为过线调 alpha/gate/top_ratio/λ/schedule）。<br>
+  ⑤ 不从单 seed、不从 within-std 判成功；倒挂/涨点先多 seed 证伪再投入机制解释（§12.5→§12.6 即活例）。<br>
+  ⑥ 两条 protocol 不混报：minival（ratio-split / symmetric / seed 0–4）≠ NoisyGL（uniform+pair / seed 3000–3004）。<br>
+  ⑦ 每步先 seed0 冒烟/中间诊断早停，通过才扩 5 seed。
+</div>
+
+<!-- ============ 五、当前岔路 ============ -->
+<h2>五、当前位置与两条可选方向（待你决策）</h2>
+<table>
+  <thead><tr><th class="col-narrow">方向</th><th>内容</th><th>风险 / 评估</th></tr></thead>
+  <tbody>
+    <tr>
+      <td class="verdict-cell">方向 1<br><span class="pill p-stop">高风险</span></td>
+      <td><b>强耦合 / 球损失主导训练</b>：真正复刻 CGBC/GBmooer，让球的 intra/inter/聚类损失成为主导项，允许表示大幅偏离 GRACE。粒球翻身唯一剩下的技术机会。</td>
+      <td class="small">工程量最大、最不稳；放弃项目最稳的 frozen 基础；图节点同配性可能仍是额外阻力。先验不乐观。需严格预注册 + 硬止损。</td>
+    </tr>
+    <tr>
+      <td class="verdict-cell">方向 2<br><span class="pill p-pass">证据支持</span></td>
+      <td><b>诚实主线</b>：「局部一致性可靠性信号 + commit-style 选择」为方法主体（Phase1 的 C 满分本身站得住），粒球为一种实现；外加一条「为何 frozen 表示下球结构不转化 / 弱耦合不足 / 需球损失主导」的负结果机制分析。</td>
+      <td class="small">所有证据支持；对「研究粒球」的课题组而言是诚实且可发表的机制贡献；不是放弃粒球，是把它放到证据支持的位置。</td>
+    </tr>
+  </tbody>
+</table>
+<p class="small">Claude 的诚实建议：倾向<b>方向 2</b>——「frozen + 改球/弱耦合」这条路已被 8–9 个严格实验走到头；方向 1 是孤注一掷。但若导师坚持粒球为头号卖点，方向 1 也可做，会带硬止损。</p>
+
+<div class="footer">
+  生成于 2026-06-07 ｜ 数据来源：<code>reports/dcgb_v2_8_*</code>、<code>reports/s2a_plan_20260607/*</code>、<code>reports/s3_phase1_20260607/*</code>、<code>reports/s3_phase1c_density_20260607/*</code>、<code>reports/s3_phase2_coupling_20260607/*</code>、<code>02_experiment_history_and_lessons.md §12</code>。
+  全部 test = test_acc_at_best_val；所有数字直接引自对应 CSV/报告，非记忆。
+</div>
+
+</body>
+</html>

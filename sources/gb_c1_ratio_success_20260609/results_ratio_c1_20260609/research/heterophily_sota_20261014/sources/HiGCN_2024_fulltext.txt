@@ -1,0 +1,1831 @@
+
+--- PDF PAGE 1 ---
+Higher-Order Graph Convolutional Network with Flower-Petals Laplacians
+on Simplicial Complexes
+Yiming Huang1,2,*, Yujie Zeng1,2,*, Qiang Wu3,†, Linyuan L¨u4,1,2,†
+1Yangtze Delta Region Institute (Huzhou), University of Electronic Science and Technology of China
+2 Institute of Fundamental and Frontier Sciences, University of Electronic Science and Technology of China
+3 Research Institute of Electronic Science and Technology, University of Electronic Science and Technology of China
+4School of Cyber Science and Technology, University of Science and Technology of China
+{yiming huang, yujie zeng}@std.uestc.edu.cn, {qiang.wu, linyuan.lv}@uestc.edu.cn
+Abstract
+Despite the recent successes of vanilla Graph Neural Net-
+works (GNNs) on various tasks, their foundation on pair-
+wise networks inherently limits their capacity to discern la-
+tent higher-order interactions in complex systems. To bridge
+this capability gap, we propose a novel approach exploiting
+the rich mathematical theory of simplicial complexes (SCs)
+- a robust tool for modeling higher-order interactions. Cur-
+rent SC-based GNNs are burdened by high complexity and
+rigidity, and quantifying higher-order interaction strengths re-
+mains challenging. Innovatively, we present a higher-order
+Flower-Petals (FP) model, incorporating FP Laplacians into
+SCs. Further, we introduce a Higher-order Graph Convolu-
+tional Network (HiGCN) grounded in FP Laplacians, capa-
+ble of discerning intrinsic features across varying topologi-
+cal scales. By employing learnable graph filters, a parame-
+ter group within each FP Laplacian domain, we can identify
+diverse patterns where the filters’ weights serve as a quan-
+tifiable measure of higher-order interaction strengths. The
+theoretical underpinnings of HiGCN’s advanced expressive-
+ness are rigorously demonstrated. Additionally, our empirical
+investigations reveal that the proposed model accomplishes
+state-of-the-art performance on a range of graph tasks and
+provides a scalable and flexible solution to explore higher-
+order interactions in graphs. Codes and datasets are available
+at https://github.com/Yiminghh/HiGCN.
+1 Introduction
+Graphs are ubiquitous in representing irregular relations
+in various scenarios. However, they are inherently con-
+strained to modeling pairwise interactions exclusively (Bat-
+tiston et al. 2020). Many empirical systems display group
+interactions, going beyond pairwise connections, such as
+social systems (Centola 2010), neuronal networks (Gan-
+mor, Segev, and Schneidman 2011), and ecological networks
+(Grilli et al. 2017). However, such higher-order interactions
+can hardly be modeled or approximated by pairwise graphs.
+In addition, it is still elusive how to quantify the higher-order
+interaction strength, although many studies have demon-
+strated its existence (Battiston et al. 2021).
+*These authors contributed equally.
+†Corresponding author.
+Copyright © 2024, Association for the Advancement of Artificial
+Intelligence (www.aaai.org). All rights reserved.
+Graph neural networks (GNNs) can exploit the features
+and topology of graphs simultaneously, thereby triggering
+a wide-spreading research interest and endeavor in vari-
+ous graph learning tasks such as recommender systems and
+new drug discovery. In particular, spectral GNNs have been
+widely recognized for their rigorous mathematical theory.
+Nevertheless, pairwise-graph-based GNNs fail to capture la-
+tent higher-order interactions prevalent in empirical systems,
+and their expressive power was proved to be upper bounded
+by Weisfeiler-Lehman (WL) test (Xu et al. 2019).
+Simplicial complexes (SCs) and hypergraphs have
+emerged to study higher-order interactions beyond conven-
+tional pairwise descriptors (Battiston et al. 2020). While
+hypergraph learning has made fruitful progress (Gao et al.
+2022), it typically ignores relations within the hyper-
+edges, and the construction of hypergraphs is often under-
+optimized. The simplicial description is another potent tool
+with elegant mathematical theories to draw from, paving a
+middle ground between graphs and hypergraphs. It has been
+found that SCs play a vital role in social contagion, synchro-
+nization, brain network analysis, etc.
+Deep learning facilitated simplicial complex theory is a
+fresh perspective and a promising research field. Several
+simplicial GNNs have been proposed by simply replacing
+the graph Laplacian with the Hodge Laplacian (Schaub et al.
+2020). A simplicial WL test is proposed along with its neu-
+ral version MPSN (Bodnar et al. 2021) based on the adja-
+cency relations that Hodge theory defines. MPSN is proved
+to be more powerful than vanilla GNNs under ideal condi-
+tions, implying the potential of extending graph representa-
+tion learning to SCs.
+In summary, pairwise GNNs fail to capture latent group
+interactions prevalent in complex systems, and the expres-
+sive power of such models was proved to be upper bounded
+by the WL-test. As an emerging and promising research
+field, simplicial GNNs have initially shown their potential
+to outperform pairwise GNNs. However, existing models are
+limited by their high complexity and low flexibility.
+In this paper, we introduce a novel higher-order flower-
+petals (FP) representation based on two-step random walk
+dynamics (Zeng et al. 2023b) between the flower core and
+petals. This representation enables us to incorporate inter-
+actions among simplices of various orders into graph learn-
+arXiv:2309.12971v2  [cs.LG]  18 Jan 2024
+
+--- PDF PAGE 2 ---
+ing. Higher-order graph convolutional network (HiGCN) is
+then proposed by employing learnable and tailored convo-
+lution filters (group of parameters) in different FP Lapla-
+cian domains. The learnable filters can learn arbitrary shapes
+and deal with high and low-frequency parts of the simpli-
+cial signals adaptively. Hence, the proposed HiGCN model
+can learn the simplex patterns of disparate classes and
+higher-order structures simultaneously. Moreover, the fil-
+ters’ weights in different orders can quantify the higher-
+order interaction strength, contributing to a deeper under-
+standing of higher-order mechanisms in complex systems.
+We also interpret HiGCN from the message-passing per-
+spective and theoretically demonstrate its superior expres-
+sive power. Numerical experiments on various graph tasks
+further pinpoint that the proposed model has outperformed
+state-of-the-art (SOTA) methods.
+Main contributions. To summarise, we construct an inno-
+vative higher-order flower-petals (FP) model and FP Lapla-
+cians from the random walk dynamics to capture interac-
+tions among simplices of different orders. We then propose
+a higher-order graph convolutional network (HiGCN) based
+on our FP Laplacians, which is demonstrated to have su-
+perior expressiveness in theory and significant performance
+gains in various empirical experiments. Furthermore, a data-
+driven strategy is employed to quantify the higher-order in-
+teraction strength. In general, our work is an important step
+towards advancing higher-order graph learning and under-
+standing higher-order mechanisms.
+2 Related Work
+In this section, we briefly review related works on vanilla
+spectral GNNs and higher-order GNNs.
+Spectral GNNs. Spectral GNNs are based on the graph
+Fourier transform (Shuman et al. 2013), which employs
+the graph Laplacian eigenbasis as an analogy of the
+Fourier transform. ChebNet (Defferrard, Bresson, and Van-
+dergheynst 2016) employs Chebyshev polynomials to re-
+place the convolutional core, while GCN (Kipf and Welling
+2017) uses a first-order approximation of the convolution
+operator. By considering the relationship between GCN and
+PageRank, APPNP (Gasteiger, Bojchevski, and G¨unnemann
+2019) is proposed via personalized PageRank. GPRGNN
+(Chien et al. 2020) leverages a learnable graph filter, exhibit-
+ing superiority in heterogeneous graph learning. The filter
+forms of some spectral GNNs are summarized in Table 1.
+Higher-order GNNs. The crude simplification of com-
+plex interaction into pairwise will inevitably result in infor-
+mation loss. Higher-order GNNs, as extensions of vanilla
+GNNs, can be classified into different types according to
+their application scenarios, and spectral-based simplicial
+GNNs are in the limelight of this paper. The Hodge the-
+ory (Hatcher 2002) enables us to describe diffusion across
+simplices conveniently. Several simplicial GNNs, such as
+SNN (Ebli, Defferrard, and Spreemann 2020) and SCoNe
+(Roddenberry, Glaze, and Segarra 2021), simply replace
+the graph Laplacian with the Hodge p-Laplacian. SCNN
+Model Convolution Filter Spectral Learnable
+GCN (Kipf and Welling 2017)(1−λ)K Graph Laplacian✗APPNP (Gasteiger, Bojchevski,and G¨unnemann 2019)
+PKk=0γk
+1−γ(1−λ)k Graph Laplacian✗
+GPRGNN (Chien et al. 2020)PKk=0γk(1−λ)k Graph Laplacianγk
+ChebNet (Defferrard, Bresson,and Vandergheynst 2016)
+PKk=0γkcos (karccos (1−λ)) Graph Laplacianγk, K
+SNN (Ebli, Defferrard, andSpreemann 2020) λK Hodge Laplacian✗
+SCoNe (Roddenberry, Glaze,and Segarra 2021) λKdown, λKup Hodge Laplacian✗
+SCNN (Yang, Isufi, and Leus2022)
+PK1k=0γd,kλkdown+PK2k=0γu,kλkup Hodge Laplacian✗
+BScNets (Chen, Gel, and Poor2022) f(λ1, λ2,· · ·, λP;θ)K Block HodgeLaplacian θ
+HiGCN(Ours) PKk=0γp,k(1−λp)k, p= 1,2,· · ·, P FP Laplacianγp,k
+Table 1: The filter forms of spectral GNNs.
+(Yang, Isufi, and Leus 2022) employs flexible simplicial fil-
+ters to process edge signals from lower and upper simpli-
+cial neighbors, respectively. BScNet (Chen, Gel, and Poor
+2022) is introduced by replacing the graph Laplacian with
+the block Hodge Laplacian. Nevertheless, the Hodge theory
+is inherently constrained to modeling interactions between
+simplices within one order difference. As for spatial mod-
+els, SGAT (Lee, Ji, and Tay 2022) constructs SCs from het-
+erogeneous graphs and leverages upper adjacencies to pass
+messages between simplices. MPSN (Bodnar et al. 2021) is
+designed based on the simplicial WL-test with four types of
+adjacency relations. Generally, most simplicial GNNs can
+only leverage information from specific simplicial orders,
+missing the inherent advantages of SCs. Besides, it is com-
+putationally expensive to find all simplices (Bomze et al.
+1999) and unnecessary to compute embeddings for redun-
+dant simplices in traditional tasks.
+3 Preliminaries
+The background knowledge required to present this work
+better is illustrated in this section. Let G = ( V, E) de-
+note an undirected pairwise graph with a finite node set
+V = {v1, · · · , vn} and an edge set E ⊆ V × V . Assume that
+|V| = n, |E| = n1, and N(v) denotes the set of nodes adja-
+cent to node v in G, i.e., N(v) = {u ∈ V| (v, u) ∈ E} . The
+nodes are associated with a node feature matrix X ∈ Rn×d,
+where d signifies the number of features per node.
+Definition 3.1 (Simplicial complexes, SCs) . A simplicial
+complex K is a finite collection of node subsets closed under
+the operation of taking nonempty subsets, and such a node
+subset σ ∈ K is called a simplex (as illustrated in Figure 1).
+SCs are a potent tool with a rich theoretical foundation
+upon algebraic and differential topology and geometry (Bat-
+tiston et al. 2020). Instead of predominantly studying pair-
+wise interactions, SCs facilitate the modeling of higher-
+order interactions and multi-node graph structures.
+A node subset σ = [ v0, v1, · · · , vp] ∈ K with car-
+dinality p + 1 is referred to as a p-dimensional simplex,
+termed p-simplex, and we denote the set of all such p-
+simplices as Kp with |Kp| = np. One can regard vertices
+as 0-simplices, edges as 1-simplices, “filled” triangles as 2-
+simplices, and so forth. A triangle [v1, v2, v3] ∈ K implies
+that its nonempty subsets, namely [v1], [v2], [v3], [v1, v2],
+
+--- PDF PAGE 3 ---
+0-simplex1-simplex2-simplex...abe
+[e, f][d,e][c,d][b,e][b,d][b,c][a,d][a,b][b,c,d][a,b,d]cabcdef
+fabdc d
+Figure 1: a shows several typical simplices and its collection
+forms SCs in b. Subfigures c and d visualize the higher-order
+incidence matrices Hp for p = 1 and 2, respectively.
+[v1, v3], and [v2, v3], are also in K. Pairwise graphs can
+be viewed as 1-dimensional SCs, while higher-order SCs
+generally carry more structure information over pairwise
+graphs, which is critical and should not be omitted.
+Clique complex lifting transition , as formally defined
+in Appendix B, extracts all cliques as simplices, convert-
+ing pairwise graphs to SCs. This transformation enables the
+study of pairwise graphs from simplicial perspectives.
+The boundary relation describes which simplices lie on
+the boundary of other simplices. We sayσ is on the boundary
+of τ, denoted asσ ≺ τ, iff σ ⊂ τ and dim(σ) = dim(τ)−1.
+For example, edges [v1, v2], [v1, v3], and [v2, v3] lie on the
+boundary of the 2-simplex [v1, v2, v3].
+Hasse diagram is one of the most common representa-
+tions of SCs, where each vertex corresponds to a simplex.
+The edges in the Hasse diagram are defined by the boundary
+relation, and there exists an edge connecting two verticesσ1
+and σ2, iff σ1 ≺ σ2. The hasse diagram is highly expres-
+sive, and several simplicial GNNs (Bodnar et al. 2021; Hajij
+et al. 2022) are built precisely on the boundary relationships
+shown in the hasse diagram.
+4 Methodology
+We first introduce the higher-order flower-petals model for
+simplicial complex representation, which will subsequently
+be leveraged to construct our HiGCN model.
+4.1 Flower-Petals Model
+Hasse diagrams are valuable in studying SCs, but they are in-
+herently constrained to modeling interactions for directly ad-
+jacent simplices and are computationally expensive to con-
+struct. Multiple transitions are required for information to
+pass between nodes and higher-order structures. Besides,
+the number of total simplices grows exponentially with the
+number of nodes in dense graphs. Computing embeddings
+for all higher-order structures can be costly and unneces-
+sary for specific-level tasks. To address these challenges,
+we construct a novel higher-order representation, named the
+flower-petals (FP) model, and then introduce FP adjacency
+and Laplacian matrices based on the higher-order random
+walk dynamics between the flower core and petals.
+It can be simplified only to consider the interaction be-
+tween 0-simplices and higher-order structures when tackling
+the most common tasks: node-level tasks. Hence, we con-
+struct a flower-petals model by simplifying the intermediate
+vertices on the Hasse diagram. Specifically, the flower-petals
+model consists of one core and several petals, see Figure
+2, with interactions considered only between the core and
+petals. 0-simplices are placed in the flower core, and each
+flower petal involves simplices of the same order (larger than
+zero). The term p-petal is used to represent the petal con-
+taining p-simplices. Diverse and complex interactions exist
+between p-petal and the core, which can be unwrapped as
+a bipartite graph Gp. Mathematically, the bipartite graph Gp
+consists of two distinct vertex sets (V, Kp), where V repre-
+sents the set of nodes contained in the flower core and Kp
+comprised of simplices in the p-petal ( p ≥ 1). If simplex
+σ(∈ K p) contains node v(∈ V ), then there exists an edge
+between their corresponding vertices in Gp. The proposed
+flower-petals model prunes the information interaction rules
+between petals but is still extremely expressive and useful.
+Inspired by incidence matrices in pairwise networks, we
+introduce higher-order incidence matrix Hp ∈ R|V|×|K p| to
+describe the association between vertices in the core and p-
+simplices in the p-petal, with entry Hp(v, σ) = 1 indicating
+the vertex v is contained in the simplex σ(∈ K p). Visual
+representations are provided in Figure 1 c and d for clarity.
+4.2 Flower-Petals Algebraic Description
+Hodge Laplacian (Schaub et al. 2020; Hatcher 2002) is a
+fundamental tool in simplicial complexes. However, it can
+only describe interactions between simplices within one-
+order differences. To model interactions between different
+order simplices more flexibly, we introduce novel matrical
+descriptions for simplicial complexes based on the random
+walk dynamics between the flower core and petals.
+The main idea of random walks is to traverse a graph start-
+ing from a single node or a set of nodes and get sequences
+of locations (Zeng et al. 2023a). We introduce the traditional
+random walk model in Appendix D. Walking on the bipar-
+tite graphs Gp consists of two sub-steps: (I) upward walk and
+(II) downward walk.
+The upward walk refers to the walk from nodes in the
+flower core to their corresponding simplices in the p-petal,
+while the downward walk proceeds in the opposite direc-
+tion. Consider π(t) = ( πv1(t), · · · , πvn(t))⊤, whose item
+πσ(t) encodes the probability for simplex σ to be occu-
+pied by a random walker at step t. In the upward walk pro-
+cess, information is transmitted from nodes to simplices and
+the probability of moving from vertex u to simplex σ is
+equal to Hp(u, σ)/dp(u). The downward walk, i.e., petals-
+to-core walk, allows information to be transferred from
+simplices back to nodes. These two processes follow that
+πσ(t − 1) = P
+u dp(u)−1Hp(u, σ)πu(t − 2), and πv(t) =P
+σ δp(σ)−1Hp(v, σ)πσ(t − 1), for upward and downward
+walks, respectively. Here, dp(u) = P
+σ∈Kp Hp(u, σ) de-
+notes the degree ofu on Gp, and δp(σ) =P
+v∈V Hp(v, σ) =
+p + 1 represents the degree of p-simplex σ on Gp(p ≥ 1).
+The two-step walk (Zeng et al. 2023b) integrates both the
+upward and downward walks, allowing the information to
+be transmitted from the flower core and back through the
+
+--- PDF PAGE 4 ---
+3-HiGCN
+1-HiGCN
+a
+b
+c
+d
+𝜆(ℒ2)
+𝑔2
+𝜆(ℒ1)
+𝑔1
+𝜆(ℒ3)
+𝑔3
+1-
+simplex
+0-
+simplex
+0-
+simplex
+2-
+simplex
+3-
+simplex
+0-
+simplex
+4-HiGCN
+2-HiGCN
+Figure 2: Visualization of the flower-petals model. Different HiGCN models employ different numbers of petals, with each
+petal containing simplices of identical order. a-d visualizes 1,2,4,3-HiGCN, respectively. The interaction between each petal
+and the flower core can be unwrapped as an individual bipartite graph. FP Laplacians are derived based on the random walk
+dynamics in the bipartite graphs, followed by various learnable convolution operations gp on each FP Laplacian basis.
+petals. A complete two-step walk process follows that
+πv(t) =
+X
+σ
+Hp(v, σ)
+δp(σ)
+X
+u
+Hp(u, σ)
+dp(u) πu(t − 2). (1)
+We can further derive the matrix representation for
+the two-step walk as π(t) = HpD−1
+p,hH⊤
+p D−1
+p,vπ(t − 2),
+where Dp,v = diag ( dp(v1), · · · , dp(vn)) and Dp,h =
+diag
+ 
+δp(σ1), · · · , δp(σ|K|)
+
+= ( p + 1) I. By multiplying
+D−1/2
+p,v from the left sides of this equation, we can obtain
+D−1/2
+p,v π(t) =
+h
+D−1/2
+p,v HpD−1
+p,hH⊤
+p D−1/2
+p,v
+i
+D−1/2
+p,v π(t − 2).
+(2)
+Therefore, based on the two-step walk dynamic between
+the flower core and petals, we can define higher-order
+flower-petals (FP) adjacency matrices analogously to the re-
+duced adjacency matrices (see Appendix D) as
+˜Ap = D−1/2
+p,v HpD−1
+p,hHp
+⊤D−1/2
+p,v
+= 1
+p + 1D−1/2
+p,v HpHp
+⊤D−1/2
+p,v .
+(3)
+The Laplacian operator is crucial for the processing of
+relational data, and it bears resemblance to the Laplace-
+Beltrami operator in differential geometry. On the basis of
+the FP adjacency matrices, we can likewise define a series
+of higher-order FP Laplacian operators as Lp = I − ˜Ap.
+Theorem 4.1. The flower-petals adjacency matrices ˜Ap and
+flower-petals Laplacian matrices Lp are all symmetric pos-
+itive semidefinite.
+It follows from Theorem 4.1 that0 ≤ λ( ˜Ap), λ(Lp) ≤ 1.
+We defer the proof and further theoretical analysis of the
+spectral properties to Appendix A. Theorem 4.1 contributes
+to alleviate the numerical instability and exploding/vanish-
+ing gradients that may arise in the implementation of deep
+GNNs based on the FP Laplacians. The diverse FP Lapla-
+cian matrices capture the various connectivity relations of
+the simplicial complexes, where we can learn a series of di-
+verse spectral convolution operators.
+4.3 Higher-Order Graph Convolutional Network
+The eigen decomposition L = ΦΛΦ ⊤ can be applied
+to the Laplacian matrix to obtain orthonormal eigenvec-
+tors Φ = ( ϕ1, ϕ2 · · · , ϕn) and a diagonal matrix Λ =
+diag (λ1, λ2, · · · , λn). Then, for a graph signal x, the graph
+Fourier transform is defined asΦ⊤x, where the eigenvectors
+act as the Fourier bases and the eigenvalues are interpreted
+as frequencies. The spectral convolution of signal x and fil-
+ter g can then be formulated as
+g ⋆ x = Φ
+  
+Φ⊤g
+
+⊙
+ 
+Φ⊤x
+
+= Φg(Λ)Φ⊤x. (4)
+Here, operator ⊙ presents the Hadamard product, and the fil-
+ter g(Λ) applies g element-wisely to the diagonal entries of
+Λ, i.e., g(Λ) = diag (g(λ1), · · · , g(λn)). Note that spectral
+decomposition for large-scale networks can be computation-
+ally expensive. Therefore, one can approximate any graph
+filter using a polynomial filter with enough terms (Shuman
+et al. 2013). Consequently, the filter g is usually set to be
+a truncated polynomial g(λ) = PK
+k=0 γkλk of order K. In
+this way, spectral decomposition is avoided.
+We derive various FP Laplacian matrices based on the
+FP model, each representing different connectivity relations
+within SCs. Subsequently, we define different convolution
+operations on each FP Laplacian basis as
+g ⋆p x = gp(Lp)x, (5)
+
+--- PDF PAGE 5 ---
+where graph filter gp(Lp) = PK
+k=0 γp,kLk
+p is composed of
+different learnable polynomial functions in each FP spec-
+tral domain. These learnable coefficients γp,k capture the
+contributions of different hop neighbors in each order. K
+is a hyperparameter denoting the largest hops of the sim-
+plices under consideration. We summarize some prevalent
+filter forms in Table 1. When processing a simplicial sig-
+nal X ∈ Rn×d with d dimensional features, a more general
+form of spectral GNNs follows that Y = ρ (g(L)φ(X)).
+Here, ρ and φ are permutation-invariant functions.
+To encode multi-scale higher-order information, the final
+prediction is obtained by concatenating results from differ-
+ent convolution operations as
+Yp = gp(Lp)φp(X), Y = ρ
+P
+p=1Yp
+
+. (6)
+Here, ∥ concatenates the representation in different spectral
+domains. Besides, we simplify ρ and φp to linear functions
+as suggested by (Wang and Zhang 2022), resulting in
+Y =
+P
+p=1
+ KX
+k=0
+γp,k ˜AkpXΘp
+!
+W. (7)
+Here, γp,k, Θp, and W are trainable parameters, and P is a
+hyperparameter indicating the highest order of the simplices
+under consideration. The model under P = ℓ is denoted as
+ℓ-HiGCN. Notably, the training process can be accelerated
+by precalculating ˜Akp, which can be efficiently calculated be-
+tween sparse matrices.
+HiGCN facilitates the independent and flexible learning
+of filter shapes across disparate FP spectral domains rather
+than predetermining filter configurations. Consequently, it is
+adept at handling both high/low frequency and high/low or-
+der signal components in a versatile manner. Furthermore,
+we find that the filters’ weights in different orders quan-
+tify the strength of the higher-order interactions, contribut-
+ing to the understanding of higher-order mechanisms inher-
+ent within complex systems. Now, we proceed to elucidate
+the advantages of HiGCN from various perspectives.
+Expressive power. We have developed the HiGCN model
+from a spectral perspective. The WL test provides a well-
+studied framework for unique node labeling, and an intrin-
+sic theoretical connection has been uncovered between the
+WL test and message-passing-based GNNs (Xu et al. 2019).
+We extend this relation and propose a higher-order WL test,
+termed HWL, along with its simplified version SHWL. De-
+tailed procedures for WL, HWL, and SHWL are elaborated
+in Appendix B. Furthermore, we revisit the HiGCN model
+from the message-passing perspective in Appendix B, offer-
+ing an alternative interpretation that underscores the excep-
+tional expressive power of our model.
+Theorem 4.2. SHWL with clique complex lifting is strictly
+more powerful than Weisfeiler-Lehman (WL) test.
+The proposed model can be interpreted as a neural version
+of the SHWL test where colors are replaced by continuous
+feature vectors. Hence, Theorem 4.2 implies that HiGCN en-
+dows with greater expressive power than vanilla GNNs. See
+Appendix B for proof and detailed discussion.
+Relation to existing models. HiGCN shows superiority
+over pairwise graph-based GCNs for exploiting higher-order
+information, and it generalizes spectral convolution opera-
+tions on pairwise graphs, including GCN (Kipf and Welling
+2017) and GPRGNN (Chien et al. 2020). On the other
+hand, HiGCN exhibits greater flexibility than certain Hodge
+Laplacian-based simplicial GCNs, such as SNN (Ebli, Def-
+ferrard, and Spreemann 2020) and SCNN (Yang, Isufi,
+and Leus 2022), overcoming the constraints of information
+exchange exclusively through boundary operators. Further
+derivation and discussion are presented in Appendix C.
+Symmetries. It is a fundamental concept for understand-
+ing GNNs and their behavior. HiGCN has been demon-
+strated to exhibit equivariance with respect to relabeling of
+simplices, enabling it to exploit symmetries in SCs. Formal
+proofs and detailed discussions are deferred to Appendix E.
+Computational complexity. A balance between perfor-
+mance and complexity can be achieved by limiting the num-
+ber of petals P . We find that a small P is typically ade-
+quate, and considering more petals may result in diminish-
+ing marginal utility. Generally, the computational complex-
+ity of HiGCN is comparable to that of spectral GNNs. We
+report the average training time per epoch and average to-
+tal running time in Appendix G, demonstrating that HiGCN
+achieves competitive performance with a reasonable compu-
+tational cost. Additionally, when the targeted graph is not in
+the form of SCs, one should also consider the one-time pre-
+processing procedure for graph lifting, see Appendix G for
+details.
+5 Experiments
+In this section, we evaluate HiGCN on three tasks: node/
+graph classification and simplicial data imputation. Detailed
+data introduction and experimental settings are deferred to
+Appendices H and I, respectively.
+5.1 Node Classification on Empirical Datasets
+We perform the node classification task employing five ho-
+mogeneous graphs, encompassing three citation graphs -
+Cora, CiteSeer, PubMed (Yang, Cohen, and Salakhudinov
+2016) - and two Amazon co-purchase graphs, Computers
+and Photo (Shchur et al. 2018). Additionally, we include five
+heterogeneous graphs, namely Wikipedia graphs Chameleon
+and Squirrel (Rozemberczki, Allen, and Sarkar 2021), the
+Actor co-occurrence graph, and the webpage graphs Texas
+and Wisconsin from WebKB (Pei et al. 2020). Adjacent
+nodes in homogeneous graphs tend to share the same la-
+bel, while the opposite holds in heterogeneous graphs. The
+clique complex lifting transition is carried out on each graph.
+We compare HiGCN with various baseline models includ-
+ing MLP, pairwise GNNs (GAT (Veli ˇckovi´c et al. 2018),
+ChebNet (Defferrard, Bresson, and Vandergheynst 2016),
+BernNet (He et al. 2021), GGCN (Yan et al. 2021), APPNP
+(Gasteiger, Bojchevski, and G ¨unnemann 2019), GPRGNN
+(Chien et al. 2020)), and higher-order models (S2V (Billings
+et al. 2019), k-S2V (Hacker 2020), SNN (Ebli, Defferrard,
+and Spreemann 2020), SGAT, SGATEF (Lee, Ji, and Tay
+
+--- PDF PAGE 6 ---
+Method Cora Citeseer PubMed Computers Photo Chameleon Actor Squirrel Texas Wisconsin
+MLP 76.96 ±0.95 76.58±0.88 85.94±0.22 82.85±0.38 84.72±0.34 46.85±1.51 40.19±0.56 31.03±1.18 91.45±1.14 93.56±0.87
+GAT 88.03 ±0.79 80.52±0.71 87.04±0.24 83.33±0.38 90.94±0.68 63.90±0.46 35.98±0.23 42.72±0.33 78.87±0.86 65.64±1.74
+ChebNet 86.67±0.82 79.11±0.75 87.95±0.28 87.54±0.43 93.77±0.32 59.96±0.51 38.02±0.23 40.67±0.31 86.08±0.96 90.57±0.91
+BernNet 88.52±0.95 80.09±0.79 88.48±0.41 87.64±0.44 93.63±0.35 68.29±1.58 41.79±1.91 51.35±0.73 93.12±0.65 91.82±0.38
+GGCN 87.68 ±1.26 77.08±1.32 89.63±0.46 N/A 89.92 ±0.97 62.72±2.05 38.09±0.88 49.86±1.55 85.81±1.72 87.65±1.50
+APPNP 88.14±0.73 80.47±0.74 88.12±0.31 85.32±0.37 88.51±0.31 51.89±1.82 39.66±0.55 34.71±0.57 90.98±1.64 64.59±0.97
+GPRGNN 88.57±0.69 80.12±0.83 88.46±0.33 86.85±0.25 93.85±0.28 67.28±1.09 39.92±0.67 50.15±1.92 92.95±1.31 88.54±1.37
+k-S2V 68.30 ±0.35 44.22±0.44 67.21±0.41 84.15±0.11 89.08±0.65 49.00±0.82 N/A 39.15 ±0.49 85.12±0.98 87.44±0.77
+S2V 80.15 ±0.88 78.21±0.34 85.48±0.33 83.25±0.50 84.33±0.19 47.14±0.32 39.22±0.50 40.26±0.74 82.12±0.23 83.48±0.89
+SNN 87.13 ±1.02 79.87±0.68 86.73±0.28 83.33±0.32 88.27±0.74 60.96±0.78 30.59±0.23 45.66±0.39 75.16±0.96 61.93±0.83
+SGAT 77.49 ±0.79 78.93±0.63 88.10±0.59 N/A N/A 51.23 ±0.36 36.71±0.49 N/A 89.83 ±0.66 81.47±0.64
+SGATEF 78.12±0.85 79.16±0.72 88.47±0.62 N/A N/A 51.61 ±0.40 37.33±0.58 N/A 89.67 ±0.74 81.59±0.81
+1-HiGCN 88.96±0.28 80.96±0.27 89.83±0.73 90.50±0.52 95.22±0.30 63.55±0.84 41.57±0.27 49.13±0.33 90.36±0.78 94.39±0.94
+2-HiGCN89.23±0.23 81.12±0.28 89.89±0.16 90.76±0.27 95.33±0.37 68.47±0.45 41.81±0.52 51.86±0.42 92.15±0.73 94.69±0.95
+3-HiGCN 89.00±0.26 80.90±0.22 89.73±0.17 90.65±0.20 94.40±0.31 67.12±0.32 41.29±0.20 50.92±0.34 91.85±0.62 94.12±0.68
+4-HiGCN 88.63±0.28 80.47±0.31 89.95±0.13 90.35±0.31 94.10±0.24 66.98±0.23 41.13±0.24 50.45±0.21 91.42±0.75 94.89±0.65
+Table 2: Node classification results on empirical benchmark networks: mean accuracy(%) ± 95% confidence interval. The best
+results are in bold, while the second-best ones are underlined.
+2022)). We randomly partition the node set into train/vali-
+dation/test subsets with a ratio of 60%/20%/20%, and repeat
+the experiments 100 times. The mean classification accura-
+cies on the test nodes are reported in Table 2.
+It can be drawn from Table 2 that HiGCN achieves the
+best results in 9 out of the 10 graphs. On the remaining
+dataset, HiGCN also displays comparable performance to
+the SOTA methods. Generally, 2-HiGCN and 3-HiGCN out-
+perform 1-HiGCN, suggesting the value of higher-order in-
+formation in graph learning. However, it is elusive to find
+that performance did not consistently increase with the in-
+clusion of more higher-order interactions. One possible ex-
+planation is that introducing more higher-order interactions
+might make the training process more complex and chal-
+lenging. If the model lacks sufficient training data or appro-
+priate training strategies, it may struggle to effectively har-
+ness these higher-order interactions. Furthermore, HiGCN
+shows on average a greater lead on homogeneous graphs,
+consistent with the intuition that higher-order effects tend to
+manifest on homogeneous graphs (Battiston et al. 2020).
+In addition, we scale to three larger datasets: Ogbn-arxiv
+and Genius (homogeneous graphs) and Penn94 (heteroge-
+neous graph). The results in Appendix G highlight HiGCN’s
+superior performance and robust scalability.
+Quantifying higher-order strength. The filter weights
+γp,k captures the influence ofp-simplex on k-hop neighbors;
+thus, we quantify the p-order interaction strength in terms of
+Sp =
+X
+k
+|γp,k|. (8)
+To gain insight, we visualize Sp with order p = 1, 2, 3, 4 on
+both homogeneous (Cora, Photo) and heterogeneous (Actor,
+Texas) graphs in Figure 3a-d. We observe thatSp decreases
+gently with the increase of p in homogeneous graphs, while
+it decreases rapidly in heterogeneous graphs. This observa-
+tion implies that the strength of higher-order effects varies at
+different orders and across different types of graphs.
+e
+d
+c
+b
+a
+Figure 3: a, b, c and d visualize the stack of learned weights
+|γp,k| under order p = 1 , 2, 3, 4(P = 4) . e visualizes the
+stack of |γ2,k| for Texas under various relative densitiesρ2.
+We observe that graphs with fewer higher-order structures
+tend to exhibit a smaller Sp, potentially degrading HiGCN’s
+performance. For instance, in Texas, the only dataset where
+HiGCN’s performance is not optimal, we note significantly
+weaker higher-order interactions compared to lower-order
+ones (see Figure 3 d), and it has the fewest triangles among
+all datasets (see Table 8). To verify this conjecture, we ma-
+nipulate the number of higher-order structures by adjusting
+the edge connectivity while maintaining the degree distribu-
+tion as done in 1k null models (Zeng et al. 2023c), see Ap-
+pendix F for details. We define the relative higher-order den-
+sity for the modified networks asρp = n′
+p/np −1, where np
+and n′
+p denote the number of p-simplex in the original and
+
+--- PDF PAGE 7 ---
+Dataset PROTEINS MUTAG PTC IMDB-B IMDB-M
+RWK 59.6 ±0.1 79.2±2.1 55.9±0.3 N/A N/A
+GK (k=3) 71.4±0.3 81.4±1.7 55.7±0.5 N/A N/A
+PK 73.7 ±0.7 76.0±2.7 59.5±2.4 N/A N/A
+WL kernel 75.0±3.1 90.4±5.7 59.9±4.3 73.8±3.9 50.9±3.8
+DCNN 61.3 ±1.6 N/A N/A 49.1 ±1.4 33.5±1.4
+DGCNN 75.5 ±0.9 85.8±1.8 58.6±2.5 70.0±10.9 47.8±10.9
+IGN 76.6 ±5.5 83.9±13.0 58.5±6.9 72.0±5.5 48.7±3.4
+GIN 76.2 ±2.8 89.4±5.6 64.6±7.0 75.1±5.1 52.3±2.8
+PPGNs 77.2±4.7 90.6±8.7 66.2±6.6 73.0±15.8 50.5±3.6
+Natural GN 71.7±1.0 89.4±1.6 66.8±1.7 73.5±2.0 51.3±1.5
+MPSN 76.7 ±4.6 89.8±5.5 61.8±9.1 75.6±3.2 52.4±2.9
+HiGCN 77.0±4.2 91.3±6.4 66.2±6.9 76.2±5.1 52.7±3.5
+Table 3: Graph classification results. The best results are in
+bold, while the second-best ones are underlined.
+the modified network, respectively. Figure 3e visualizes Sp
+under different ρ2 for Texas, showing an upward trend as the
+triangle density ρ2 increases. Table 5 also reveals an increas-
+ing accuracy rank of HiGCN with the rise of ρ2. Hence, Sp
+can serve as a quantification of p-order interaction strength.
+More results and discussions are deferred to Appendix F.
+5.2 Graph Classification on TUD Benchmarks
+To verify the broad applicability of the proposed model,
+we also evaluate the graph classification performance
+of HiGCN using various datasets from diverse domains,
+which are categorized into two main groups: bioinformat-
+ics datasets (i.e., PROTEINS (Borgwardt et al. 2005), MU-
+TAG (Debnath et al. 1991), PTC (Toivonen et al. 2003)) and
+social network datasets (i.e., IMDB-B, IMDB-M (Yanardag
+and Vishwanathan 2015)). To obtain a global embedding for
+each graph, we apply readout operations by performing av-
+eraging or summation. Following the standard pipeline in
+(Xu et al. 2019), we conduct a 10-fold cross-validation pro-
+cedure and report the maximum average validation accu-
+racy across folds. The performance of HiGCN is presented
+in Table 3, alongside the results for kernel methods (RWK
+(G¨artner, Flach, and Wrobel 2003), GK (Shervashidze et al.
+2009), PK (Neumann et al. 2016), WL kernel (Shervashidze
+et al. 2011)), pairwise GNNs (DCNN (Atwood and Towsley
+2016), DGCNN (Zhang et al. 2018), IGN (Maron et al.
+2018), GIN (Xu et al. 2019), PPGNs (Maron et al. 2019),
+Natural GN (de Haan, Cohen, and Welling 2020)), and the
+higher-order model MPSN (Bodnar et al. 2021).
+Our model exhibits superior performance compared
+to these baselines, demonstrating strong empirical re-
+sults across all benchmark datasets. Additionally, HiGCN
+achieves its optimal outcomes on the two social network
+datasets, coinciding with the finding that simplices play a
+pivotal role in social networks (Battiston et al. 2021).
+5.3 Simplicial Data Imputation
+In the previous two experiments, we focused on pairwise
+graphs with clique complex lifting. Now, we extend our in-
+vestigation to impute missing signals in coauthorship com-
+plexes, a typical SC, wherein a paper with p + 1 authors
+SCs Method 10% 30% 50% 70%
+History
+SNN 0.201 ±0.0130.354±0.0160.495±0.0020.661±0.002
+SGAT 0.180±0.0100.330±0.0020.432±0.0160.602±0.005
+SGATEF 0.200±0.0020.340±0.0170.454±0.0210.633±0.012
+HiGCN 0.258±0.0040.438±0.0020.579±0.0050.666±0.009
+Geology
+SNN 0.265 ±0.0220.417±0.004 0.594±0.02 0.704±0.003
+SGAT 0.223±0.0040.345±0.0300.599±0.0090.631±0.008
+SGATEF 0.230±0.0020.369±0.0180.615±0.0310.682±0.012
+HiGCN 0.463±0.0120.565±0.0070.644±0.0140.708±0.002
+DBLP
+SNN 0.222 ±0.0210.348±0.0080.496±0.005 0.668±0.003
+SGAT 0.210±0.0150.279±0.0540.487±0.022 0.643±0.017
+SGATEF 0.223±0.0040.311±0.0020.491±0.008 0.678±0.005
+HiGCN 0.385±0.0110.511±0.0040.587±0.021 0.685±0.002
+Table 4: Simplicial data imputation results: mean Kendall
+correlation±standard deviation. The best results are in bold.
+is represented by a p-simplex, and the p-simplicial sig-
+nal corresponds to the number of collaborative publications
+among authors in the p-simplex. We employ three coauthor-
+ship complexes, namely DBLP (Benson et al. 2018), His-
+tory and Geology (Sinha et al. 2015). The known signals
+for 0-simplex are set to range from 10% to 70% (in units
+of 20%), and the remainders are regarded as missing sig-
+nals, replaced by the median of known signals. We apply
+Kendall’s TauT to measure the correlation between true and
+predicted simplicial signal, with T approaching 1 indicating
+superior performance (Kendall 1938). The experiment is re-
+peated for 10 different random weight initializations, and the
+results are compared against higher-order models (namely
+SNN, SGAT, and SGATEF).
+Table 4 shows that HiGCN outperforms other higher-
+order benchmarks. This superiority is mainly due to the in-
+herent flexibility of our model in capturing higher-order in-
+formation, whereas the benchmarks are restricted to learn-
+ing through upper or lower adjacencies. Moreover, HiGCN
+achieves more performance gains when less information is
+available. This may be attributed to higher-order informa-
+tion compensating for missing signals, with potential over-
+lap when there is an abundance of known information.
+6 Conclusion
+This paper introduces a novel higher-order representation,
+the flower-petals (FP) model, enabling interactions among
+simplices of arbitrary orders. To increase efficiency, we sim-
+plify the interaction rules in SCs. It is a valuable and open
+question whether other simplifications would be more ef-
+fective for specific tasks. FP adjacency and Laplacian ma-
+trices are further introduced based on the higher-order ran-
+dom walk dynamics on the FP model. As an application of
+FP Laplacians in deep learning, a higher-order graph con-
+volutional network (HiGCN) is introduced. Our theoretical
+analysis highlights HiGCN’s advanced expressiveness, sup-
+ported by empirical performance gains across various tasks.
+Moreover, we deploy a data-driven strategy to demonstrate
+the existence of higher-order interactions and quantify their
+strength. This work promises to offer novel insights and
+serve as a potent tool in higher-order network analysis.
+
+--- PDF PAGE 8 ---
+Acknowledgments
+The authors acknowledge the STI 2030—Major Projects
+(Grant No. 2022 ZD0211400), the National Natural Science
+Foundation of China (Grant No.T2293771), the Sichuan Sci-
+ence and Technology Program (Grant No.2023NSFSC1919)
+and the New Cornerstone Science Foundation through the
+XPLORER PRIZE.
+References
+Atwood, J.; and Towsley, D. 2016. Diffusion-convolutional
+neural networks. Advances in neural information processing
+systems, 29.
+Battiston, F.; Amico, E.; Barrat, A.; Bianconi, G.; Ferraz de
+Arruda, G.; Franceschiello, B.; Iacopini, I.; K´efi, S.; Latora,
+V .; Moreno, Y .; et al. 2021. The physics of higher-order
+interactions in complex systems. Nature Physics, 17(10):
+1093–1098.
+Battiston, F.; Cencetti, G.; Iacopini, I.; Latora, V .; Lucas, M.;
+Patania, A.; Young, J.-G.; and Petri, G. 2020. Networks be-
+yond pairwise interactions: Structure and dynamics.Physics
+Reports, 874: 1–92.
+Benson, A. R.; Abebe, R.; Schaub, M. T.; Jadbabaie, A.; and
+Kleinberg, J. 2018. Simplicial closure and higher-order link
+prediction. Proceedings of the National Academy of Sci-
+ences.
+Billings, J. C. W.; Hu, M.; Lerda, G.; Medvedev, A. N.;
+Mottes, F.; Onicas, A.; Santoro, A.; and Petri, G. 2019. Sim-
+plex2vec embeddings for community detection in simplicial
+complexes. arXiv:1906.09068.
+Bodnar, C.; Frasca, F.; Wang, Y .; Otter, N.; Montufar, G. F.;
+Lio, P.; and Bronstein, M. 2021. Weisfeiler and lehman go
+topological: Message passing simplicial networks. In Inter-
+national Conference on Machine Learning (ICML) , 1026–
+1037.
+Bomze, I. M.; Budinich, M.; Pardalos, P. M.; and Pelillo,
+M. 1999. The maximum clique problem. In Handbook of
+combinatorial optimization, 1–74. Springer.
+Borgwardt, K. M.; Ong, C. S.; Sch¨onauer, S.; Vishwanathan,
+S.; Smola, A. J.; and Kriegel, H.-P. 2005. Protein function
+prediction via graph kernels. Bioinformatics, 21(suppl 1):
+i47–i56.
+Bron, C.; and Kerbosch, J. 1973. Algorithm 457: Finding
+All Cliques of an Undirected Graph. Commun. ACM, 16(9):
+575–577.
+Cai, J.; F ¨urer, M.; and Immerman, N. 1992. An optimal
+lower bound on the number of variables for graph identifica-
+tion. Combinatorica, 12(4): 398–140.
+Centola, D. 2010. The Spread of Behavior in an Online So-
+cial Network Experiment. Science, 329(5996): 1194–1197.
+Chen, Y .; Gel, Y . R.; and Poor, H. V . 2022. BScNets: Block
+Simplicial Complex Neural Networks. volume 36, 6333–
+6341.
+Chiba, N.; and Nishizeki, T. 1985. Arboricity and subgraph
+listing algorithms. SIAM J. Comput., 14(1): 210–223.
+Chien, E.; Peng, J.; Li, P.; and Milenkovic, O. 2020. Adap-
+tive Universal Generalized PageRank Graph Neural Net-
+work. In International Conference on Learning Represen-
+tations.
+de Haan, P.; Cohen, T. S.; and Welling, M. 2020. Natural
+graph networks. Advances in neural information processing
+systems, 33: 3636–3646.
+Debnath, A. K.; Lopez de Compadre, R. L.; Debnath, G.;
+Shusterman, A. J.; and Hansch, C. 1991. Structure-activity
+relationship of mutagenic aromatic and heteroaromatic nitro
+compounds. correlation with molecular orbital energies and
+hydrophobicity. Journal of medicinal chemistry, 34(2): 786–
+797.
+Defferrard, M.; Bresson, X.; and Vandergheynst, P. 2016.
+Convolutional neural networks on graphs with fast localized
+spectral filtering. Advances in neural information process-
+ing systems, 29: 3838–3845.
+Ebli, S.; Defferrard, M.; and Spreemann, G. 2020. Simpli-
+cial Neural Networks. In NeurIPS 2020 Workshop on Topo-
+logical Data Analysis and Beyond.
+Fey, M.; and Lenssen, J. E. 2019. Fast graph representation
+learning with PyTorch Geometric. arXiv:1903.02428.
+Ganmor, E.; Segev, R.; and Schneidman, E. 2011. Sparse
+low-order interaction network underlies a highly correlated
+and learnable neural population code. Proceedings of the
+National Academy of Sciences, 108(23): 9679–9684.
+Gao, Y .; Zhang, Z.; Lin, H.; Zhao, X.; Du, S.; and Zou, C.
+2022. Hypergraph Learning: Methods and Practices. IEEE
+Transactions on Pattern Analysis and Machine Intelligence,
+44(5): 2548–2566.
+G¨artner, T.; Flach, P.; and Wrobel, S. 2003. On graph ker-
+nels: Hardness results and efficient alternatives. InLearning
+Theory and Kernel Machines, 129–143. Springer.
+Gasteiger, J.; Bojchevski, A.; and G¨unnemann, S. 2019. Pre-
+dict then Propagate: Graph Neural Networks meet Personal-
+ized PageRank. In International Conference on Learning
+Representations.
+Grilli, J.; Barab´as, G.; Michalska-Smith, M. J.; and Allesina,
+S. 2017. Higher-order interactions stabilize dynamics in
+competitive network models. Nature, 548(7666): 210–213.
+Hacker, C. 2020. k-simplex2vec: a simplicial extension of
+node2vec. arXiv:2010.05636.
+Hajij, M.; Zamzmi, G.; Papamarkou, T.; Maroulas, V .; and
+Cai, X. 2022. Simplicial complex representation learning.
+In Machine Learning on Graphs (MLoG) Workshop at 15th
+ACM International WSDM Conference.
+Hatcher, A. 2002. Algebraic topology. Cambridge Univer-
+sity Press.
+He, M.; Wei, Z.; Xu, H.; et al. 2021. Bernnet: Learning
+arbitrary graph spectral filters via bernstein approximation.
+Advances in Neural Information Processing Systems , 34:
+14239–14251.
+Hu, W.; Fey, M.; Zitnik, M.; Dong, Y .; Ren, H.; Liu, B.;
+Catasta, M.; and Leskovec, J. 2020. Open graph benchmark:
+Datasets for machine learning on graphs.Advances in neural
+information processing systems, 33: 22118–22133.
+
+--- PDF PAGE 9 ---
+Kendall, M. G. 1938. A new measure of rank correlation.
+Biometrika, 30(1/2): 81–93.
+Kipf, T. N.; and Welling, M. 2017. Semi-Supervised Classi-
+fication with Graph Convolutional Networks. In ICLR.
+Lee, S. H.; Ji, F.; and Tay, W. P. 2022. SGAT: Simplicial
+Graph Attention Network. In Proceedings of the Thirty-
+First International Joint Conference on Artificial Intelli-
+gence (IJCAI-22), 3192–3200.
+Li, X.; Zhu, R.; Cheng, Y .; Shan, C.; Luo, S.; Li, D.; and
+Qian, W. 2022. Finding global homophily in graph neural
+networks when meeting heterophily. In International Con-
+ference on Machine Learning, 13242–13256. PMLR.
+Lim, D.; and Benson, A. R. 2021. Expertise and dynamics
+within crowdsourced musical knowledge curation: A case
+study of the genius platform. In Proceedings of the Inter-
+national AAAI Conference on Web and Social Media , vol-
+ume 15, 373–384.
+Luan, S.; Hua, C.; Lu, Q.; Zhu, J.; Zhao, M.; Zhang, S.;
+Chang, X.-W.; and Precup, D. 2022. Revisiting heterophily
+for graph neural networks. Advances in neural information
+processing systems, 35: 1362–1375.
+Maron, H.; Ben-Hamu, H.; Serviansky, H.; and Lipman, Y .
+2019. Provably powerful graph networks. Advances in neu-
+ral information processing systems, 32.
+Maron, H.; Ben-Hamu, H.; Shamir, N.; and Lipman, Y .
+2018. Invariant and Equivariant Graph Networks. In In-
+ternational Conference on Learning Representations.
+Milgram, S. 1967. The small world problem. Psychology
+today, 2(1): 60–67.
+Morris, C.; Ritzert, M.; Fey, M.; Hamilton, W. L.; Lenssen,
+J. E.; Rattan, G.; and Grohe, M. 2019. Weisfeiler and Le-
+man Go Neural: Higher-Order Graph Neural Networks.Pro-
+ceedings of the AAAI Conference on Artificial Intelligence ,
+33(01): 4602–4609.
+Neumann, M.; Garnett, R.; Bauckhage, C.; and Kersting,
+K. 2016. Propagation kernels: efficient graph kernels from
+propagated information. Machine Learning, 102: 209–245.
+Orsini, C.; Dankulov, M. M.; Colomer-de Sim ´on, P.; Ja-
+makovic, A.; Mahadevan, P.; Vahdat, A.; Bassler, K. E.;
+Toroczkai, Z.; Bogun´a, M.; Caldarelli, G.; et al. 2015. Quan-
+tifying randomness in real networks. Nature communica-
+tions, 6(1): 8627.
+Pei, H.; Wei, B.; Chang, K. C.-C.; Lei, Y .; and Yang, B.
+2020. Geom-GCN: Geometric Graph Convolutional Net-
+works. In International Conference on Learning Represen-
+tations.
+Roddenberry, T. M.; Glaze, N.; and Segarra, S. 2021. Princi-
+pled Simplicial Neural Networks for Trajectory Prediction.
+In Proceedings of the 38th International Conference on Ma-
+chine Learning, volume 139, 9020–9029. PMLR.
+Rozemberczki, B.; Allen, C.; and Sarkar, R. 2021. Multi-
+scale attributed node embedding. Journal of Complex Net-
+works, 9(2): 1–22.
+Schaub, M. T.; Benson, A. R.; Horn, P.; Lippner, G.; and
+Jadbabaie, A. 2020. Random walks on simplicial com-
+plexes and the normalized Hodge 1-Laplacian. SIAM Re-
+view, 62(2): 353–391.
+Shchur, O.; Mumme, M.; Bojchevski, A.; and G ¨unnemann,
+S. 2018. Pitfalls of Graph Neural Network Evaluation.
+CoRR, abs/1811.05868.
+Shervashidze, N.; Schweitzer, P.; Van Leeuwen, E. J.;
+Mehlhorn, K.; and Borgwardt, K. M. 2011. Weisfeiler-
+lehman graph kernels. Journal of Machine Learning Re-
+search, 12(9).
+Shervashidze, N.; Vishwanathan, S.; Petri, T.; Mehlhorn, K.;
+and Borgwardt, K. 2009. Efficient graphlet kernels for large
+graph comparison. In Artificial intelligence and statistics ,
+488–495. PMLR.
+Shuman, D. I.; Narang, S. K.; Frossard, P.; Ortega, A.; and
+Vandergheynst, P. 2013. The emerging field of signal pro-
+cessing on graphs: Extending high-dimensional data analy-
+sis to networks and other irregular domains. IEEE Signal
+Processing Magazine, 30(3): 83–98.
+Sinha, A.; Shen, Z.; Song, Y .; Ma, H.; Eide, D.; Hsu, B.-J. P.;
+and Wang, K. 2015. An Overview of Microsoft Academic
+Service (MAS) and Applications. InProceedings of the 24th
+International Conference on World Wide Web. ACM Press.
+Toivonen, H.; Srinivasan, A.; King, R. D.; Kramer, S.; and
+Helma, C. 2003. Statistical evaluation of the predictive toxi-
+cology challenge 2000–2001.Bioinformatics, 19(10): 1183–
+1193.
+Traud, A. L.; Mucha, P. J.; and Porter, M. A. 2012. Social
+structure of facebook networks. Physica A: Statistical Me-
+chanics and its Applications, 391(16): 4165–4180.
+Veliˇckovi´c, P.; Cucurull, G.; Casanova, A.; Romero, A.; Li`o,
+P.; and Bengio, Y . 2018. Graph Attention Networks. InInter-
+national Conference on Learning Representations (ICLR).
+Wang, X.; and Zhang, M. 2022. How Powerful are Spec-
+tral Graph Neural Networks. In International Conference
+on Machine Learning (ICML).
+Weisfeiler, B.; and Leman, A. 1968. The reduction of
+a graph to canonical form and the algebra which appears
+therein. NTI, Series, 2(9): 12–16.
+Wu, F.; Souza, A.; Zhang, T.; Fifty, C.; Yu, T.; and Wein-
+berger, K. 2019. Simplifying Graph Convolutional Net-
+works. In Chaudhuri, K.; and Salakhutdinov, R., eds., Pro-
+ceedings of the 36th International Conference on Machine
+Learning, volume 97 of Proceedings of Machine Learning
+Research, 6861–6871. PMLR.
+Xu, K.; Hu, W.; Leskovec, J.; and Jegelka, S. 2019. How
+powerful are graph neural networks? In International Con-
+ference on Learning Representations (ICLR).
+Yan, Y .; Hashemi, M.; Swersky, K.; Yang, Y .; and Koutra,
+D. 2021. Two sides of the same coin: Heterophily and
+oversmoothing in graph convolutional neural networks.
+arXiv:2102.06462.
+Yanardag, P.; and Vishwanathan, S. 2015. Deep Graph Ker-
+nels. In Proceedings of the 21th ACM SIGKDD Interna-
+tional Conference on Knowledge Discovery and Data Min-
+ing, KDD ’15, 1365–1374. New York, NY , USA: Associa-
+tion for Computing Machinery. ISBN 9781450336642.
+Yang, M.; Isufi, E.; and Leus, G. 2022. Simplicial convolu-
+tional neural networks. In ICASSP, 8847–8851.
+
+--- PDF PAGE 10 ---
+Yang, R.; Zhou, F.; Liu, B.; and L¨u, L. 2023. A generalized
+simplicial model and its application. arXiv:2309.02851.
+Yang, Z.; Cohen, W.; and Salakhudinov, R. 2016. Revisiting
+Semi-Supervised Learning with Graph Embeddings. InPro-
+ceedings of The 33rd International Conference on Machine
+Learning, volume 48 of Proceedings of Machine Learning
+Research, 40–48. New York, New York, USA: PMLR.
+Zeng, Y .; Huang, Y .; Ren, X.-L.; and L¨u, L. 2023a. Identify-
+ing vital nodes through augmented random walks on higher-
+order networks. arXiv:2305.06898.
+Zeng, Y .; Huang, Y .; Wu, Q.; and L ¨u, L. 2023b. Influ-
+ential Simplices Mining via Simplicial Convolutional Net-
+work. arXiv:2307.05841.
+Zeng, Y .; Liu, B.; Zhou, F.; and L¨u, L. 2023c. Hyper-Null
+Models and Their Applications. Entropy, 25(10): 1390.
+Zhang, L.; Yan, X.; He, J.; Li, R.; and Chu, W. 2023.
+DRGCN: Dynamic Evolving Initial Residual for Deep
+Graph Convolutional Networks. arXiv:2302.05083.
+Zhang, M.; Cui, Z.; Neumann, M.; and Chen, Y . 2018. An
+end-to-end deep learning architecture for graph classifica-
+tion. In Proceedings of the AAAI conference on artificial
+intelligence, volume 32.
+Zhu, J.; Yan, Y .; Zhao, L.; Heimann, M.; Akoglu, L.; and
+Koutra, D. 2020. Beyond homophily in graph neural net-
+works: Current limitations and effective designs. Advances
+in Neural Information Processing Systems, 33: 7793–7804.
+
+--- PDF PAGE 11 ---
+Appendix
+A Spectral analysis for flower-petals algebraic descriptions
+In this section, we provide a theoretical analysis of the spectral properties of the flower-petals (FP) adjacency and Laplacian
+matrices.
+We divide Theorem 4.1 into two separate lemmas and prove them individually.
+Lemma A.1 (Non-negativity of ˜Ap). The flower-petals adjacency matrices ˜Ap are symmetric positive semidefinite.
+Proof. By considering the bilinear form x⊤ ˜Apx, it can be easily drawn that ˜Ap are positive semidefinite:
+x⊤ ˜Apx = 1
+p + 1x⊤D−1/2
+p,v HpH⊤
+p D−1/2
+p,v x
+= 1
+p + 1
+
+x⊤D−1/2
+p,v Hp
+
+H⊤
+p D−1/2
+p,v x
+
+≥ 0.
+(9)
+Lemma A.2 (Non-negativity of Lp). The flower-petals Laplacian matrices Lp are symmetric positive semidefinite.
+Proof. We first introduce a matrix Gσp to support the proof,
+Gσp(i, j) =
+( p, v i ∈ σp, vj ∈ σp, i = j
+−1, v i ∈ σp, vj ∈ σp, i ̸= j
+0, otherwise
+. (10)
+Let σp =
+
+vi1 , vi2 , · · · , vi(p+1)
+
+be an arbitrary p-simplex, and the notation x = ( x1, x2, · · · , xn)⊤ denotes an arbitrary
+vector in Rn. By considering the bilinear form x⊤Gσp x, we see that Gσp is positive semidefinite:
+x⊤Gσp x =xi1
+ 
+pxi1 − xi2 − · · · − xip+1
+
++
+xi2
+ 
+pxi2 − xi1 − · · · − xip+1
+
++ · · ·
+=(p + 1)
+p+1X
+t=1
+x2
+it −
+ p+1X
+t=1
+xit
+!2
+≥0.
+(11)
+The last inequality holds exploiting the Cauchy-Schwarz inequality.
+We write the higher-order FP Laplacian as a sum over the p-simplices that
+Lp = I − ˜Ap
+= 1
+p + 1D−1/2
+p,v
+
+(p + 1)Dp,v − HpH⊤
+p
+
+D−1/2
+p,v
+= 1
+p + 1D−1/2
+p,v
+
+ X
+σp∈Kp
+Gσp
+
+ D−1/2
+p,v .
+(12)
+We now consider the bilinear form of Lp,
+y⊤Lpy = 1
+p + 1
+
+y⊤D−1/2
+p,v
+ X
+σp∈Kp
+Gσp
+
+D−1/2
+p,v y
+
+= 1
+p + 1D−1/2
+p,v
+X
+σp∈Kp
+ 
+x⊤Gσp x
+
+D−1/2
+p,v
+≥ 0.
+(13)
+Here, x = D−1/2
+p,v y. It follows that Lp are positive semidefinite for arbitrary p.
+According to Lemma A.1 and Lemma A.2, it can be directedly drawn that 0 ≤ λ( ˜Ap) = λ (I − Lp) ≤ 1. In a similar way,
+one can conclude that 0 ≤ λ (Lp) ≤ 1.
+
+--- PDF PAGE 12 ---
+Lemma A.3. 0 is an eigenvalue of the higher-order flower-petals Laplacian matricesLp.
+Proof. Let 1 = (1, 1, · · · , 1)⊤ be an all-one vector. According to the definition ofHp, we can obtain that H⊤
+p 1 = (p + 1)1 and
+Hp1 = Dp,v. It follows that
+Lp1 =
+
+I − 1
+p + 1D−1/2
+p,v HpHp
+⊤D−1/2
+p,v
+
+1
+= D−1/2
+p,v
+
+Dp,v − 1
+p + 1HpHp
+⊤1
+
+D−1/2
+p,v
+= 0.
+(14)
+Therefore, 1 is an eigenvector of Lp associated with eigenvalue 0, which is also the smallest eigenvalue from the non-
+negativity of Lp.
+B Expressive power analysis details
+To demonstrate the superior expressiveness of the proposed model, we begin by offering foundational background information
+in Appendix B.1. Subsequently, we introduce the Weisfeiler-Lehman test and its higher-order versions in Appendices B.2 and
+B.3, respectively. Finally, Appendix B.4 presents the formal proof.
+B.1 Clique complex lifting.
+We can obtain a clique complex, a kind of SCs, by extracting all cliques from a graph and regarding them as simplices. This
+implies that an empty triangle (owning [v1, v2], [v1, v3], [v2, v3] but without [v1, v2, v3]) cannot occur in clique complexes.
+The transition from a pairwise graph to a clique complex, termed the clique complex lifting transition, enables us to study
+pairwise graphs from simplicial perspectives. We defer the complexity discussion of this operation in Appendix G.
+B.2 Introduction to the Weisfeiler-Lehman test
+The Weisfeiler-Lehman (WL) graph isomorphism test (Weisfeiler and Leman 1968) provides a well-studied framework for the
+unique assignment of node labels. An intrinsic theoretical connection has been uncovered between the WL test and spatial
+GNNs (Xu et al. 2019; Morris et al. 2019). Here, we first present a brief introduction to the WL test.
+Algorithm 1: Weisfeiler-Lehman Test
+Input: Graph G, initial node coloring
+
+c(0)(v1), c(0)(v2), · · · , c(0)(vn)
+	
+Output: Final node coloring
+
+c(T )(v1), · · · , c(T )(vn)
+	
+.1: t ← 0
+2: repeat
+3: for v in V do
+4: c(t+1)(v) = Hash
+ 
+c(t)(u)|u ∈ N(v) ∪ {v}
+		
+5: end for
+6: t ← t + 1
+7: until stable node coloring is reached
+Two graphs G and G′ are considered to be isomorphic if there exists an edge-preserving bijection ψ : V → V ′, i.e., (u, v) ∈
+E(G) if and only if (ψ(u), ψ(v)) ∈ E (G′). Graph isomorphism determination is an NP-hard problem, and the Weisfeiler-
+Lehman test, or k-WL, is a family of heuristic algorithms for testing graph isomorphism (Morris et al. 2019). k-WL constructs
+a coloring c of the tuples of k nodes, that is c : V k → Σ with arbitrary codomain Σ.
+We now describe the WL test for graph G with coloring c. In each iteration t, the WL algorithm updates a new coloring
+according to the rule
+c(t+1)(v) = Hash
+nn
+c(t)(u)|u ∈ N(v) ∪ {v}
+oo
+, (15)
+where Hash(·) bijectively maps different multi-set inputs { {·} }to a unique color in Σ, and N(v) presents the set of nodes
+adjacent to node v in G, i.e., N(v) = {u ∈ V| (v, u) ∈ E} . The iteration is finished until stable node coloring is reached, i.e.,
+c(t+1) = c(t), and termination is guaranteed within max{|V|, |E|} iterations.
+To distinguish two graphs G and G′ in terms of isomorphism, we perform the WL test on both G and G′ in parallel, and these
+two graphs are non-isomorphic if their color histograms are different in the iteration.
+The k-WL test (k ≥ 2) is a generalized version of the WL test that colors the tuples V k instead of V. The algorithms
+with larger k are more powerful in distinguishing non-isomorphic graphs. However, it is noted that although the k-WL test is a
+powerful heuristic, it is not guaranteed to be effective in all cases (Cai, F¨urer, and Immerman 1992). Without causing ambiguity,
+we abbreviate the 1-WL test as the WL test to unload the notation burden.
+
+--- PDF PAGE 13 ---
+B.3 Higher-order version of WL test
+The proposed higher-order Weisfeiler-Lehman test, termed HWL, extends the WL test to simplicial complexes. SHWL, a
+simplified version of HWL, further reduces the coloring rule. We can relate the expressive power of HWL, SHWL and WL by
+clique complex lifting transition, and it has been found that both HWL and SHWL are more powerful than Weisfeiler-Lehman
+in terms of expressive power.
+We outline below the steps of HWL in a given simplicial complexK for example.
+(a) Assign the same initial color c(0)(σ) to each simplex σ in K.
+(b) Given the color c(t)(σ) of simplex σ at the t-th iteration. We will refine its color by injectively mapping neighborhood
+colors in the flower-petals model according to
+c(t+1)(σ) = Hash
+
+c(t)(σ),
+nn
+c(t)(τ)|τ ∈ N (σ)
+oo
+. (16)
+Here, the Hash function maps different multi-set inputs to different colors, N (σ) = S
+p Np(σ), and Np denotes the set of
+neighbors of σ in the bipartite graph Gp.
+(c) The algorithm stops until a stable coloring is reached. Two simplicial complexes are considered non-isomorphic if their
+color histograms are different at any iteration. Otherwise, the test is inconclusive.
+Theorem B.1. HWL with clique complex lifting is strictly more powerful than the Weisfeiler-Lehman (WL) test.
+The proof is deferred to Appendix B.4.
+Moreover, we can simplify the coloring rule for simplices whose order is larger than zero to nonvanishing linear functions,
+i.e.,
+c(t+1)(σ) = Linear
+
+c(t)(σ),
+nn
+c(t)(τ)|τ ∈ N (σ)
+oo
+. (17)
+Here, dim(σ) > 0 and Linear(·) is a nonvanishing linear function requiring that the coefficients of the polynomial never be
+zero. Other steps are the same as in HWL, and the simplified version of HWL, referred to as SHWL, is shown in Algorithm 2.
+We find that SHWL is still more powerful than the WL test (refer to Theorem 4.2).
+Algorithm 2: Simplified Higher-order WL Test (SHWL)
+Input: Simplicial complex K, initial simplicial coloring
+
+c(0)(σ1), c(0)(σ2), · · ·
+	
+Output: Final node coloring
+
+c(T )(v1), · · · , c(T )(vn)
+	
+.1: t ← 0
+2: repeat
+3: for v in V do
+4: c(t+1)(v) = Hash
+ 
+c(t)(v),
+
+c(t)(τ)|τ ∈ N (v)
+		
+5: end for
+6: for σ in K1 ∪ K2 ∪ · · · do
+7: c(t+1)(σ) = Linear
+ 
+c(t)(σ),
+
+c(t)(v)|v ∈ N (σ)
+		
+8: end for
+9: t ← t + 1
+10: until stable simplicial coloring is reached
+In dense graphs, the number of total simplices is much larger than the node number. It is not necessary to explicitly figure
+out messages for higher-order structures when tackling the most common node-level tasks. Hence, we can perform the two
+message-passing steps simultaneously. By replacing the colors with continuous feature vectors in the SHWL test and replacing
+the Hash function with a neural network layer-like differentiable function with learnable parameters, we can obtain
+X (k+1) = σ
+
+˜ApX (k)Θ(k)
+p
+
+. (18)
+Here, X (k) ∈ Rn×d is the signal at the k-th layer, X (0) = X presents the initial node features, and σ(·) is differentiable
+non-linear transition function. Following (Wu et al. 2019), the non-linear transition functions between the layers are removed.
+Besides, by linearly combining the results from different layers, we can further obtain that
+Yp =
+KX
+k=0
+γp,k ˜Ak
+pXΘp. (19)
+Here, Θp = Θ(1)
+p Θ(2)
+p · · ·Θ(K)
+p is reparameterized.
+
+--- PDF PAGE 14 ---
+We finally concatenate the results from different FP convolutions followed by a linear layer to reshape the output as follows
+Y =
+P
+
+p=1
+ KX
+k=0
+γp,k ˜AkpXΘp
+!
+W. (20)
+Therefore, the HiGCN model can be interpreted as a neural version of the SHWL test. Theorem 4.2 suggests that the proposed
+HiGCN model endows with greater potential than the traditional GNNs.
+B.4 Proofs of HWL and SHWL theory
+We begin by introducing some required notions and symbols. Note that although these results apply mainly to simplicial
+complexes, they also work for graphs since graphs can be viewed as special simplicial complexes. Besides, we can also obtain
+a unique simplex complex by taking clique complex lifting.
+Definition B.2. A simplicial coloring c is a mapping that assigns a color from a specific color scheme to a simplicial complex
+K and its simplices σ. We notate this color as cK(σ), or as c(σ) when it does not cause ambiguity.
+Definition B.3. Let c be a simplicial coloring. Simplicial complexes J , K are considered to be c-similar, represented by
+cJ = cK, if the numbers of simplices with the same color in J and K are identical. Otherwise, we say cJ ̸= cK.
+Definition B.4. A simplicial coloring c refines another one d, noted as c ⊑ d. Then for all simplicial complexes J , K and all
+σ ∈ J , τ ∈ K, dJ (σ) = dK(τ) iff cJ (σ) = cK(τ).
+If dJ (σ) ̸= dK(τ) for two simplicial colorings c and d satisfying the relation c ⊑ d, then we can obtain cJ (σ) ̸= cK(τ)
+(Bodnar et al. 2021). This conclusion implies that ifc refines d, then c is capable of distinguishing all non-isomorphic simplicial
+complex pairs that d can distinguish. In this sense, we consider c to be at least as powerful as d.
+Equipped with this background knowledge, we are now set up to prove the conclusions in the main article. To begin with, we
+introduce a slightly weak version of Theorem B.1.
+Lemma B.5. HWL is at least as powerful as Weisfeiler-Lehman (WL) test in distinguishing non-isomorphic simplicial com-
+plexes.
+Proof. Let notion a(t) denote the coloring of the Weisfeiler-Lehman test with the coloring update rule a(t+1)(v) =
+Hash
+ 
+a(t)(v),
+
+a(t)(u)|u ∈ N(v)
+		
+and c(t) the coloring of HWL test for the same nodes in K using the rule
+c(t+1) = Hash
+ 
+c(t)(σ),
+
+c(t)(τ)|τ ∈ N (σ)
+		
+. Note that the function Hash
+ 
+a(t)(v),
+
+a(t)(u)|u ∈ N(v)
+		
+and Hash 
+a(t)(u)|u ∈ N(v) ∪ {v}
+		
+are equivalent.
+We additionally introduce b(t) to represent the coloring of restricted HWL that utilizes information no larger than 1-simplex,
+i.e., the refine rule can be represented as b(t+1)(σ) = Hash
+ 
+b(t)(σ),
+
+b(t)(τ)|τ ∈ N 1(σ)
+		
+. Here, N1(σ) denotes the set of
+neighbours of σ in the bipartite graph G1. It’s trivial to showc refines b since it considers the additional colors from higher-order
+simplices. We now only have to prove thatb(2t) ⊑ a(t) by induction.
+The base case holds for all colors are the same at initialization. For the induction step, suppose it satisfies b(2t+2)(v) =
+b(2t+2)(u) for any two 0-simplices v and u in two arbitrary complexes. The inputs to the Hash function need to be the same
+as the SWL coloring is an injective mapping. Hence, we can obtain b(2t+1)(v) = b(2t+1)(u) and
+
+b(2t+1)(σ)|σ ∈ N 1(v)
+		
+=
+b(2t+1)(τ)|τ ∈ N 1(u)
+		
+. By unwrapping the hash function, we can get
+b(2t+1)(σ) = Hash
+
+b(2t)(σ),
+nn
+b(2t)(w)|w ∈ N 1(σ)
+oo
+= Hash
+
+b(2t)(σ),
+nn
+b(2t)(w)|w ∈ N(v) ∪ {v}
+oo
+.
+(21)
+Similarly, we can obtain
+b(2t+1)(τ) = Hash
+
+b(2t)(τ),
+nn
+b(2t)(w)|w ∈ N(u) ∪ {u}
+oo
+. (22)
+By removing the same color b(2t)(σ) and b(2t)(τ) from the input, we can further obtain that
+
+b(2t)(w)|w ∈ N(v) ∪ {v}
+		
+=
+b(2t)(w)|w ∈ N(u) ∪ {u}
+		
+. According to the induction hypothesis b(2t) ⊑ a(t), it can be deduced that
+a(t)(w)|w ∈ N(v) ∪ {v}
+		
+=
+
+a(t)(w)|w ∈ N(u) ∪ {u}
+		
+. We can finally conclude that a(t+1)(v) = a(t+1)(u), which
+implies b(2t+2) ⊑ a(t+1).
+Proof of Theorem B.1 . In accordance with Lemma B.5, we only need to provide a pair of non-isomorphic graphs that WL fails
+to distinguish, while HWL can distinguish with the assistance of a clique complex lifting transition. Any two graphs in Figure
+4 constitute such a pair that satisfies these criteria.
+
+--- PDF PAGE 15 ---
+Figure 4: Three non-isomorphic graphs that are indistinguishable by WL but distinguishable by HWL and SHWL with clique
+complex lifting. The incorporation of higher-order information in HWL and SHWL enables nodes to exhibit a more extensive
+diversity in color compared to the WL test, consequently yielding superior performance in both node-level and graph-level
+tasks.
+Moreover, we can simplify the coloring rule for simplices whose order is larger than 0 to nonvanishing linear functions, re-
+sulting in a simplified version of HWL, termed SHWL. The nonvanishing linear function implies that the polynomial coefficient
+will never be 0. We will demonstrate that the SHWL test remains more powerful than the WL test.
+Lemma B.6. SHWL is at least as powerful as Weisfeiler-Lehman (WL) test in distinguishing non-isomorphic simplicial com-
+plexes.
+Proof. Let notion a(t) denote the coloring of WL test with the rulea(t+1)(v) = Hash
+ 
+a(t)(v),
+
+a(t)(u)|u ∈ N(v)
+		
+and c(t)
+the coloring of SHWL for the same nodes in K using c(t+1) = Hash
+ 
+c(t)(σ),
+
+c(t)(τ)|τ ∈ N (σ)
+		
+.
+We additionally introduceb(t) to represent the coloring of restricted SHWL that utilizes information no larger than 1-simplex,
+i.e. the refine rule can be represented as b(t+1)(σ) = Hash
+ 
+b(t)(σ),
+
+b(t)(τ)|τ ∈ N 1(σ)
+		
+. Here, N1(σ) denotes the set of
+neighbours of σ in the bipartite graph G1. It’s trivial to show c ⊑ b since it considers the additional colors from higher-order
+simplices. We now only have to prove thatb(2t) ⊑ a(t) by induction.
+The base case holds for all colors are the same at initialization. For the induction step, suppose it satisfies b(2t+2)(v) =
+b(2t+2)(u) for any two 0-simplices v and u in two arbitrary complexes. Then we can obtain b(2t+1)(v) = b(2t+1)(u) and
+b(2t+1)(σ)|σ ∈ N 1(v)
+		
+=
+
+b(2t+1)(τ)|τ ∈ N 1(u)
+		
+, since these are the arguments of the hash function. By unwrapping the
+coloring rule, we can obtain
+b(2t+1)(σ) = Linear
+
+b(2t)(σ),
+nn
+b(2t)(w)|w ∈ N 1(σ)
+oo
+= Linear
+
+b(2t)(σ),
+nn
+b(2t)(v), b(2t)(w)|w ∈ N(v)
+oo
+= Linear
+nn
+b(2t)(w)|w ∈ N(v) ∪ {v, σ}
+oo
+.
+(23)
+Similarly, we can obtain
+b(2t+1)(τ) = Linear
+nn
+b(2t)(w)|w ∈ N(u) ∪ {u, τ}
+oo
+. (24)
+Since the coloring b(2t)(σ) and b(2t)(τ) are the same, we can further obtain Linear
+ 
+b(2t)(w)|w ∈ N(v) ∪ {v
+		
+}
+
+=
+Linear
+ 
+b(2t)(w)|w ∈ N(u) ∪ {u}
+		
+by removing the same color from the linear function. Because the linear function is
+nonvanishing, we can finally conclude that a(t+1)(v) = a(t+1)(u), which implies b(2t+2) ⊑ a(t+1).
+Proof of Theorem 4.2 . According to Lemma B.6, we only have to offer a pair of non-isomorphic graphs that WL fails to
+distinguish, while SHWL can distinguish with the help of clique complex lifting transition. It might as well to assume the
+nonvanishing linear function to be a summation function, and such a non-isomorphic graph pair is demonstrated in Figure
+4.
+
+--- PDF PAGE 16 ---
+C Relation to other GCN models
+If we consider only the information transfer process based on the edge (1-simplex) in the bipartite graph G1, then the higher-
+order FP adjacency matrix can be represented as:
+˜A1 = 1
+2 D−1/2H1H⊤
+1 D−1/2 = 1
+2
+
+D−1/2AD−1/2 + I
+
+. (25)
+Here, we omit the subscript for D1,v to unload the notation, for it retains the same meaning as in pairwise graphs without
+causing ambiguity. It can be drawn that the definition of FP adjacency matrices preserves the topological feature of the original
+graph. Additionally, there is no need to add self-loops since they are already implicitly included in the FP adjacency matrices.
+Therefore, HiGCN can be viewed as an extension of vanilla spatial GNNs within the higher-order domain.
+In particular, GPRGNN (Chien et al. 2020), one of the state-of-the-art spectral GNNs related to HiGCN, can be considered
+a special case of HiGCN if we only account for information interactions between 0-simplices and 1-simplices, i.e., requiring
+parameter P = 1. Moreover, GCN (Kipf and Welling 2017) also constitutes a specific instance of our model if we employ a
+fixed low-pass filter and fixP = 1.
+On the other hand, HiGCN demonstrates enhanced flexibility over certain Hodge Laplacian-based simplicial GCNs, tran-
+scending the constraints imposed by information exchange exclusively through boundary operators. Specifically, HiGCN gen-
+eralizes simplicial convolution operations on simplicial complexes, encompassing SNN (Ebli, Defferrard, and Spreemann 2020)
+and SCNN (Yang, Isufi, and Leus 2022), if we apply fixed low-pass filters and requireP = 1 for node-level tasks.
+D Random walk model
+Graph neural networks can also be interpreted as a modified random walk of information over graph structures (Gasteiger,
+Bojchevski, and G¨unnemann 2019). The main idea of random walks is to traverse a graph starting from a single node or a set
+of nodes and get sequences of locations (Zeng et al. 2023a).
+In unbiased random walk models, suppose a random walker is located at node i and he will wander to a neighbouring vertex
+j with probability Aij/kj, reflecting an equal selection betweenkj neighbours. In mathematical, this process can be formulated
+as
+πi(t) =
+X
+j
+Aij
+kj
+πj(t − 1). (26)
+Here, kj stands for the degree of node j. It can be expressed equivalently as
+π(t) = AD−1π(t − 1), (27)
+where π(t) = (π1(t), · · · , πn(t))⊤ and D = diag (k1, · · · , kn).
+Multiplying D−1/2 from left sides of the equation (27) simultaneously, we can obtain
+D−1/2π(t) =
+h
+D−1/2AD−1/2
+i
+D−1/2π(t − 1). (28)
+Here, D−1/2AD−1/2 is a symmetric matrix and is referred to as a reduced adjacency matrix. Based on the reduced adjacency
+matrix, we can obtain the normalized graph Laplacian
+L = I − D−1/2AD−1/2. (29)
+E Equivariance and invariance
+Equivariance and invariance are fundamental concepts in understanding GNNs and their behavior when processing graph-
+structured data. Given a pairwise graph G characterized by adjacency matrix A and feature matrix X, a function f is (node)
+permutation equivariant if Pf(A, X) = f(PAP⊤, PX) for any permutation operation P. GNNs adhere to this equivariance
+property, ensuring consistent computation of functions irrespective of node permutations.
+Generalizing pairwise GNNs, HiGCN demonstrates equivariance with respect to relabeling of simplices, which allows it to
+exploit symmetries in SCs. In accordance with recent endeavors in simplicial neural networks to examine various models in
+terms of equivariance (Bodnar et al. 2021; Yang, Isufi, and Leus 2022), our objective herein is to elucidate the fundamental
+equivariance properties intrinsic to the HiGCN model.
+To formalize this property, we introduce the concept of simplex permutation equivariance and demonstrate that HiGCN
+fulfills this definition.
+Consider a simplicial complex K with a maximum simplex order of ℓ and a sequence H = (H1, · · · , Hℓ) of higher-order
+incidence matrices. Let P = ( P, P1, · · · , Pℓ) represent a sequence of simplicial permutation matrices with P ∈ Rn×n and
+Pi ∈ Rni×ni. Denote the permutation features as P X and the sequence of permutation higher-order incidence matrices
+(P H1P1, · · · , P HℓPℓ) as PHP⊤.
+
+--- PDF PAGE 17 ---
+Definition E.1. A function f is simplex permutation equivariant if f
+
+P X, PHP⊤
+
+= P f (X, H) for any sequence of
+permutation operators P.
+Theorem E.2. The HiGCN model is simplex permutation equivariant.
+Proof. After a sequence of permutations P, the higher-order incidence matrix Hp is transformed into P HpP ⊤
+p and Dp,v
+becomes P Dp,vP ⊤. Consequently, the permuted FP adjacency matrix ˜Ap is given by
+˜Ap
+′
+= 1
+p + 1D′
+p,v
+−1/2H′
+pH′
+p
+⊤D′
+p,v
+−1/2
+= 1
+p + 1
+
+P D−1/2
+p,v P ⊤
+ 
+P HpP ⊤
+p
+
+PpHp
+⊤P ⊤
+
+·
+
+P D−1/2
+p,v P ⊤
+
+= 1
+p + 1P D−1/2
+p,v HpHp
+⊤D−1/2
+p,v P ⊤
+=P ˜ApP ⊤.
+(30)
+Therefore, we can deduce ˜A′p
+k
+= P ˜AkpP ⊤. Subsequently, we can express the permuted convolution output as
+Y ′ =
+
+
+p
+ KX
+k=0
+γp,kP ˜AkpP ⊤P XΘp
+!
+W = P Y. (31)
+Moreover, as the employed non-linear activation function and readout function exhibit equivariance, the HiGCN model is
+simplex permutation equivariant.
+Comprehending equivariance and invariance in GNNs is of paramount importance for devising effective models and training
+methodologies. By taking these properties into account, GNN architectures can be developed to capitalize on equivariance in
+order to capture and propagate local structural information, while simultaneously ensuring invariance to concentrate on graph-
+level or task-specific features.
+F Experimental details for quantification of higher-order interaction strengths
+F.1 Construction of 1k null model
+The null model (Orsini et al. 2015; Zeng et al. 2023c) refers to a class of random networks endowing with some of the same
+properties as an actual network, and they are often employed to quantify the extent of some special properties. The 1k null model
+(Yang et al. 2023) is the network that has the same node number and edge number as the origin network. The construction of
+the 1k null model with a changeable triangle number is divided into two parts: (1) node-picking and (2) relinking.
+In the node-picking process, we traverse all nodes in the graph and find node A with more than two neighbors. Based on
+node A, we pick two neighbor nodes node B and node C which are not connected. We then pick neighbor nodes D and E of
+node B and node C, which should not be connected with node A. Notice that nodes D and E can not connect with each other,
+so the whole chain of D-B-A-C-E contains no triangle.
+In the relinking step, we break the original edges [B, D] and [C, E], and then add edges [B, C] and [D, E] (red edges in
+Figure 5). In this way, a new triangle [A, B, C] (gray shade in Figure 5) is added with the number of nodes and edges stable.
+B C
+A
+CB
+ED
+A
+ED
+Figure 5: The modification process of the 1k null model. The left and right figures show the partial structures of the networks
+before and after modification, respectively.
+
+--- PDF PAGE 18 ---
+F.2 More experimental results
+HiGCN achieves the optimal results in node classification tasks except for Texas, see Table 2. It has also been noticed in Figure
+3(d) that Texas’s higher-order interactions are pretty weak compared to its lower-order ones, along with the least triangles over
+all datasets (see Table 8). Therefore, few higher-order structures may lead to weak higher-order influence, along with degraded
+node classification performance of HiGCN. To verify this conjecture, we modify the number of higher-order structures by
+adjusting the connectivity of edges in the network while maintaining the degree distribution as in 1k null models.
+Table 5 shows the node classification results under different relative triangle densities from 0 (original network) to +50%
+in units of 10%. An increasing accuracy rank is observed between HiGCN and the benchmark with the rise of the triangles’
+density ρ2. In particular, HiGCN performs best at higher relative triangle densities ρ2 = 20%, 40%, and 50%.
+ρ2 0 10% 20% 30% 40% 50%
+MLP 91.45 ±1.14 91.02±0.98 91.90±0.95 91.18±1.11 91.74±0.92 91.05±0.95
+GCN 75.16 ±0.96 64.36±1.83 64.89±2.16 64.07±1.93 62.92±2.34 64.75±2.16
+GAT 78.87 ±0.86 79.97±1.03 78.89±1.07 78.20±1.20 77.28±1.30 77.93±1.42
+ChebNet 86.08 ±0.96 82.10±1.52 83.08±1.09 79.21±1.55 81.34±1.48 81.41±1.34
+BernNet 93.12±0.65 92.10±0.95 92.89±0.92 92.33±1.08 91.54±1.02 91.57±1.21
+GGCN 85.81 ±1.72 85.95±1.42 85.51±1.67 83.84±1.70 91.15±1.02 83.95±1.73
+APPNP 90.98 ±1.64 89.87±1.01 89.31±1.05 89.08±0.98 90.39±1.10 89.57±1.10
+GPRGNN 92.95 ±1.30 86.10±2.76 88.16±1.13 83.05±2.05 84.69±1.77 83.54±2.72
+HiGCN 92.15±0.73 91.70±1.06 93.11±0.87 91.64±1.14 91.93±0.84 92.24±1.41
+Rank 3 2 1 2 1 1
+Table 5: Node classification results on Texas with changeable higher-order densities: mean accuracy (%) ± 95% confidence
+interval. Bold values indicate the best result.
+The process of constructing a 1k null model can also be considered as adding specific noise to the network, and it can be
+found from Table 5 that our model excels in handling noise containing higher-order information.
+G Experiments on large-scale datasets and computational analysis
+We further conduct experiments on three larger datasets: two homogeneous graphs (Ogbn-arxiv (Hu et al. 2020) and Genius
+(Lim and Benson 2021)) and one heterogeneous graph (Penn94 (Traud, Mucha, and Porter 2012)). We compare our method
+with MLP, S2V (simplex2vec) (Billings et al. 2019), as well as several state-of-art GNN models including GCN (Kipf and
+Welling 2017), GAT (Veliˇckovi´c et al. 2018), ChebNet (Defferrard, Bresson, and Vandergheynst 2016), GPRGNN (Chien et al.
+2020), LGGNN, DRGCN (Zhang et al. 2023), GloGNN++ (Li et al. 2022), and ACM-GCN++ (Luan et al. 2022). The results
+presented in Table 6 demonstrate that our HiGCN model outperforms these comparative methods in the node classification task
+while maintaining a reasonable computational cost.
+Method Penn94 Ogbn-arxiv Genius
+MLP 73.61 ±0.40 69.88±0.27 86.68±0.09
+S2V 80.60 ±0.22 68.87±0.12 83.21±0.34
+GCN 82.47 ±0.27 71.49±0.30 87.42±0.37
+GAT 81.53 ±0.55 71.59±0.38 55.80±0.87
+ChebNet 81.21 ±0.32 71.12±0.22 85.69±0.75
+GPRGNN 81.38 ±0.16 71.78±0.18 90.09±0.31
+LGGNN N/A 75.70 ±0.18 N/A
+DRGCN N/A 76.11 ±0.09 N/A
+GloGNN++ 85.74 ±0.42 N/A 90.91 ±0.13
+ACM-GCN++ 86.08±0.43 N/A 91.40 ±0.07
+1-HiGCN 83.01 ±0.44 73.86±0.25 89.98±0.73
+2-HiGCN 85.66 ±0.59 76.00±0.41 91.53±0.36
+3-HiGCN 85.68 ±0.67 76.41±0.53 91.60±0.61
+4-HiGCN 84.98 ±0.32 76.01±0.38 91.66±0.43
+Table 6: Node classification results on large-scale networks: mean accuracy (%) ± 95% confidence interval. The best results
+are in bold, while the second-best ones are underlined.
+
+--- PDF PAGE 19 ---
+In addition, we examine the computational complexity of HiGCN compared to other node classification baselines and report
+the average training time per epoch and average total running time in Table 7.
+Dataset 2-HiGCN 3-HiGCN 4-HiGCN APPNP BERNNET GPRGNN CHEBNET GGCN
+Cora 2.8 / 0.6 3.0 / 0.7 3.3 / 0.9 3.6 / 1.2 11.6 / 3.1 4.3 / 0.9 4.6/2.2 5.2/2.4
+Citeseer 3.0 / 0.7 3.2 / 0.7 3.4 / 0.9 3.7 / 1.3 11.8 / 3.4 4.5 / 1.0 5.4/2.4 2.4/2.7
+Pubmed 4.8 / 1.0 5.7 / 1.2 6.3 / 1.3 3.9 / 2.0 11.1 / 4.9 4.5 / 1.8 6.0/3.0 7.2/7.3
+Computers 6.2 / 1.3 6.5 / 1.4 7.0 / 1.6 6.0 / 2.5 29.3 / 8.6 6.5 / 1.6 21.1/12.7 18.3/15.1
+Photo 5.3 / 1.1 5.6 / 1.2 6.3 / 1.3 5.8 / 2.8 15.3 / 6.2 4.5 / 1.3 19.8/11.9 19.0/10.3
+Chameleon 4.4 / 1.3 4.8 / 1.5 5.3 / 1.6 3.9 / 0.8 11.0 / 2.8 4.4 / 1.0 5.0/2.3 4.8/5.2
+Actor 2.7 / 0.8 3.1 / 0.9 3.5 / 1.1 3.8 / 0.8 10.9 / 3.5 4.3 / 0.9 4.2/1.8 4.7/4.9
+Squirrel 8.5 / 2.6 8.9 / 2.8 9.6 / 3.0 4.3 / 0.9 15.7 / 4.9 4.3 / 2.1 6.3/3.5 11.4/14.7
+Texas 2.4 / 0.7 2.6 / 0.8 2.8 / 0.8 3.8 / 0.8 11.3 / 2.4 4.3 / 1.0 2.5/0.9 2.1/1.5
+Wisconsin 2.5 / 0.7 3.0 / 0.9 3.2 / 1.0 3.9 / 0.8 11.0 / 2.6 4.4 / 0.9 2.6/1.0 2.6/1.9
+Table 7: Efficiency on node classification experiments: Average running time per epoch(ms)/ average total running time(s).
+Furthermore, when the targeted graph is not in the form of SCs, one should also consider the one-time preprocessing pro-
+cedure for graph lifting. Specifically, the number of p-simplices in a graph with n nodes and m edges is upper-bounded by
+O(np−1), and they can be enumerated in O(a (G)p−3 m) time (Chiba and Nishizeki 1985), where a (G) is the arboricity of the
+graph G, a measure of graph sparsity. Since arboricity is demonstrated to be at most O(m1/2) and m ≤ n2, all p-simplices can
+thus be listed inO
+ 
+np−3m
+
+. Besides, the complexity of finding2-simplex is estimated to beO(⟨k⟩ m) with the Bron–Kerbosch
+algorithm (Bron and Kerbosch 1973), where ⟨k⟩ denotes the average node degree, typically a small value for empirical net-
+works.
+H Datasets
+Node classification. Table 8 provides the statistics of all the datasets used in the node classification experiments. The ho-
+mophily level of G is measured by Homophily (G) = |{(u,v):(u,v)∈E∧yv=yu}|
+n1
+(Zhu et al. 2020), where yv is the label of nodes
+v and n1 = |E| denotes the number of edges.
+We additionally scale HiGCN to three large-scale datasets: Penn94, Ogbn-arxiv, and Genius. Penn94 (Traud, Mucha, and
+Porter 2012) is a social network extracted from Facebook where nodes represent students and edges denote the communication
+relationship of students. Ogbn-arxiv (Hu et al. 2020) is a paper citation network of arxiv papers extracted from the Microsoft
+Academic Graph (MAG) where the nodes denote the papers and the edges denote the citation relationship. Genius (Lim and
+Benson 2021) is a social network extracted from a website for crowdsourced annotations of song lyrics named “genius.com”.
+The nodes and edges of it represent users and the following relationship of users.
+Network Classes Features Homophily n n 1 n2 ⟨k⟩
+Cora 7 1433 0.8099 2708 5278 1630 3.90
+Citeseer 6 3703 0.7355 3327 4552 1167 2.74
+PubMed 5 500 0.8023 19717 44324 12520 4.50
+Computers 10 767 0.7772 13752 245861 1527469 35.76
+Photo 8 745 0.8272 7650 119081 717400 31.13
+Chameleon 5 2325 0.2305 2277 31421 343066 27.60
+Actor 5 2089 0.2187 7600 26659 7121 7.02
+Squirrel 5 932 0.2224 5201 198493 9595609 76.33
+Texas 5 1703 0.0871 183 279 67 3.05
+Wisconsin 5 1703 0.1921 251 450 118 3.56
+Penn94 2 5 0.470 41554 1362229 7207796 65.6
+Ogbn-arxiv 40 128 0.655 169343 1157799 2233524 13.7
+Genius 2 12 0.618 421961 984979 1968352 4.7
+Table 8: Statistics of node classification datasets.
+
+--- PDF PAGE 20 ---
+Graph classification. In this study, we investigate various datasets from diverse domains to evaluate the performance of the
+proposed framework. The datasets are divided into two main categories: bioinformatics datasets and social network datasets.
+The bioinformatics datasets comprise MUTAG, PTC, and PROTEINS. MUTAG (Debnath et al. 1991) comprises 188 mu-
+tagenic aromatic and heteroaromatic nitro compounds with seven discrete labels. The goal is to identify mutagenic molecular
+compounds for potential drug development.PTC (Toivonen et al. 2003) involves classifying graph-structured compounds based
+on their carcinogenic properties in rodents, containing 344 chemical compounds with 19 discrete labels that indicate carcino-
+genicity for male and female rats. PROTEINS (Borgwardt et al. 2005) aims to classify proteins into enzyme and non-enzyme
+structures. Nodes represent secondary structure elements (SSEs) connected by edges if they are neighbors in the amino-acid
+sequence or in 3D space. There are three discrete labels: sheet, helix, and turn structures. As for social network datasets,
+IMDB-B & IMDB-M (Yanardag and Vishwanathan 2015) are movie collaboration datasets consisting of actors’ and actresses’
+ego-networks from IMDB. Nodes represent actors/actresses, and edges connect them if they appear in the same movie. Each
+graph originates from a specific movie genre and the task is to classify their genre. The primary difference between the two
+datasets lies in the number of categories: IMDB-B has two (Action and Romance), while IMDB-M includes three (Comedy,
+Romance, and Sci-Fi). Table 9 provides the statistics of the graph classification datasets employed in this study.
+Dataset Graphs Classes ⟨n⟩ ⟨ n1⟩ ⟨ n2⟩ ⟨ k⟩
+MUTAG 188 2 17.93 19.79 0.00 2.21
+PTC 344 2 25.56 25.96 0.04 2.03
+PROTEINS 1113 2 39.06 72.82 27.40 3.73
+IMDB-B 1000 2 19.77 96.53 391.99 9.77
+IMDB-M 1500 3 13.00 65.94 305.90 10.14
+Table 9: Statistics of graph classification datasets.
+Simplicial data imputation. We extract three coauthorship complexes from DBLP (Benson et al. 2018), History and Ge-
+ology (Sinha et al. 2015). In these coauthorship complexes, a paper with p + 1 authors is represented by a p-simplex, and
+the p-simplicial signal corresponds to the number of collaborative publications among these authors. To mitigate the potential
+noise introduced by incidental collaborations, we consider coauthor groups with more than two collaborative publications as
+simplices. Following the standard pipeline for this task (Ebli, Defferrard, and Spreemann 2020), missing values are artificially
+introduced by replacing a portion of the signals with a constant. Table 10 provides the statistics of the coauthorship complexes
+that are employed.
+SCs n n 1 n2 n3 n4 n5
+DBLP 41910 23334 10951 6279 4684 3756
+Geology 52259 52373 50051 62869 98846 159879
+History 29354 5554 9334 24428 65770 166285
+Table 10: Statistics of coauthorship complexes.
+I Supplementary experimental settings
+The well-known small-world effect (Milgram 1967) in network science informs that even large-scale networks possess a finite
+diameter, implying that the neighbor scope under consideration (denoted by K) need not be excessively large, typically around
+6. In all our experiments, we set K = 10, a value considerably larger than the average network diameter.
+Node classification. We train the proposed HiGCN model with the learning rate lr ∈ { 0.01, 0.05, 0.1, 0.2, 0.3} and the
+weight decay wd ∈ { 0.0, 0.0001, 0.001, 0.005, 0.1}. We leverage Adam as the model optimizer and establish the maximum
+number of epochs at 1000 for all datasets. We utilize 2 linear layers with 32 hidden units for the NN component. The activation
+function is log Softmax, and the loss function is negative log Likelyhood loss (NLL loss). We employ RayTune to randomly
+select hyperparameters with the goal of optimizing the accuracy score on the validation set.
+Graph classification. We set the parameter P = 2 in this experiment, implying that the highest order of the simplices under
+consideration is 2-simplices, i.e., each graph is lifted to a clique 2-complex, where 0-simplices are initialized with the original
+node signals as prescribed in (Xu et al. 2019). Our training process starts from an initial learning rate, which decayed after a
+fixed amount of epochs. We implement readout operations by conducting averaging or summation depending on the dataset
+to calculate feature vectors derived from the hidden states. Although we do not deploy any sophisticated simplicial complex
+pooling operator within this study, we anticipate that this concept presents a compelling trajectory for future research endeavors.
+
+--- PDF PAGE 21 ---
+We run a grid search to tune batch size among {32, 64}, hidden dimension among {32, 64}, dropout rate among {0.0, 0.3},
+initial learning rate among{0.0005, 0.001, 0.005, 0.01}. We follow the same evaluation protocol of (Xu et al. 2019), conducting
+a 10-fold cross-validation procedure and reporting the maximum average validation accuracy across folds.
+Simplicial data imputation. We use a two-layer (MLP) with 32 hidden units for the NN component. We adopt the
+ℓ1 norm to train the NNs over known signals for 500 iterations using the Adam optimizer with a learning rate lr ∈
+{0.001, 0.005, 0.01, 0.05}, α ∈ { 0.1, 0.3, 0.5, 0.7, 0.9} and weight decay wd = 0. Each experiment is performed for 10 dif-
+ferent random weight initializations. We run a grid search to select hyperparameters with the goal of optimizing the Kendall
+correlation for the entire signal.
+Baselines. For the baseline methods BernNet (He et al. 2021), GGCN (Yan et al. 2021), APPNP (Gasteiger, Bojchevski, and
+G¨unnemann 2019), GPRGNN (Chien et al. 2020), GIN (Xu et al. 2019), S2V (Billings et al. 2019), SNN (Ebli, Defferrard, and
+Spreemann 2020), SGAT (Lee, Ji, and Tay 2022), SGATEF (Lee, Ji, and Tay 2022) and MPSN (Bodnar et al. 2021), we directly
+use the code provided by the authors. For the baseline methods LGGNN, DRGCN (Zhang et al. 2023), GloGNN++ (Li et al.
+2022) and ACM-GCN++ (Luan et al. 2022), we directly use the results provided by the authors. For the remaining methods, we
+use the Pytorch Geometric library (Fey and Lenssen 2019) for implementations. We adopt the best hyperparameters provided
+by the authors if available; otherwise, hyperparameters are searched within the same hyperparameter space as our model. The
+hyperparameters adopted can be found in our code.
+Computing infrastructure. We utilize NetworkX, Pytorch, and Pytorch Geometric for model construction. All experiments
+are conducted on two Nvidia GeForce RTX 3060 GPUs with 64 GB memory.

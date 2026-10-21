@@ -1,0 +1,925 @@
+                                    Pattern Recognition 177 (2026) 113283
+                                  Contents lists available at ScienceDirect
+
+                                Pattern Recognition
+
+                           journal homepage: www.elsevier.com/locate/pr
+
+BeneÔ¨Åcial noise learning for open intent classiÔ¨Åcation via granular-ball
+representation
+
+Yanhua Li , Xiaocao Ouyang , Jie Zhang , Chaofan Pan , Lingfei Ren , Xin Yang ‚àó
+
+School of Computing and ArtiÔ¨Åcial Intelligence, Southwestern University of Finance and Economics, 611130, Chengdu, China
+
+article info               abstract
+
+Keywords:                  Open intent classiÔ¨Åcation aims to correctly classify the known intents into their corresponding classes while iden-
+BeneÔ¨Åcial noise learning   tifying unknown intents. However, most existing methods assume clean training data, overlooking the prevalent
+Granular-ball computing    label noise in real-world scenarios, including both in-distribution (IND) and out-of-distribution (OOD) noise.
+Open intent classiÔ¨Åcation  Moreover, existing noise-handling approaches typically rely on a single-criterion rule for identifying noisy sam-
+                           ples, with limited consideration of neighborhood information, and they rarely explore the potential beneÔ¨Åts that
+                           noise may oÔ¨Äer for representation learning. To address these issues, we propose a BeneÔ¨Åcial Noise-guided Open
+                           Intent ClassiÔ¨Åcation method via Granular-Ball Representation (BNO-GB). SpeciÔ¨Åcally, we perform unsupervised
+                           granular-ball clustering to obtain noise-resistant granular-ball representations. Based on these representations,
+                           we design two complementary indicators, the Granular-ball-level Outlier Distribution Tendency (G-ODT) and
+                           the Sample-level Inlier Consistency Degree (S-ICD), to build a multi-level noise recognition scheme that sepa-
+                           rates clean samples, IND noise, OOD noise, and uncertain cases. Using the identiÔ¨Åed noise types, we introduce
+                           a beneÔ¨Åcial noise-guided representation learning strategy. Extensive experiments across multiple datasets and
+                           noise conditions demonstrate the eÔ¨Äectiveness and robustness of our approach. The source code of BNO-GB is
+                           available at: https://github.com/Liyanhuaa/BNO_GB.
+
+1. Introduction                                                               through speciÔ¨Åc criteria. Representative methods typically rely on a sin-
+                                                                              gle criterion, such as small-loss selection [3], prediction consistency [5],
+    Open intent classiÔ¨Åcation [1] aims to enable a model not only to          or distance to prototypes [6]. While such criteria can work reasonably
+recognize known intents seen during training but also to detect novel,        well in controlled settings, depending on a single type of evidence makes
+unseen intents at inference time, a capability that is essential for practi-  the decision process vulnerable to noisy or ambiguous samples. More-
+cal dialogue systems. However, training data collected from real-world        over, most existing approaches overlook the use of neighborhood infor-
+applications often contains various forms of label noise, making this         mation for noise identiÔ¨Åcation, ignoring the valuable cues embedded in
+task substantially more challenging. The noise typically includes in-         local agreement and distribution deviation.
+distribution (IND) noise, where samples originating from known classes
+are mislabeled as other known classes, and out-of-distribution (OOD)              In the area of noisy-label representation learning, numerous strate-
+noise, where samples from external distributions are incorrectly anno-        gies have been proposed to improve robustness, including reweighted
+tated as known classes [2]. Both noise types disrupt the learning of stable   objectives [7], contrastive regularization [8], and noise-aware feature
+representations for known intents and hinder the formation of a reliable      correction [9]. Beyond these techniques, an emerging line of research
+boundary for unknown intents. A common line of work in noisy-label            has highlighted the constructive role of noise. For instance, positive-
+learning adopts a ‚Äúsample selection followed by representation learn-         incentive noise reduces task complexity and facilitates more eÔ¨Äective
+ing‚Äù paradigm [3,4], in which samples are Ô¨Årst distinguished accord-          optimization [10,11]; noise-driven augmentation is now viewed as an
+ing to their noise type and then optimized with diÔ¨Äerentiated learning        estimator of beneÔ¨Åcial noise that strengthens contrastive learning [12];
+strategies.                                                                   and structured beneÔ¨Åcial noise embedded into pretrained models sup-
+                                                                              ports incremental learning while preserving old-class discrimination
+    Sample selection aims to partition training data into clean samples,      [13]. These Ô¨Åndings collectively reveal that noise can provide meaning-
+IND noise, and OOD noise by assessing the reliability of each instance        ful learning signals. However, the beneÔ¨Åcial nature of noise has not yet
+
+  ‚àó Corresponding author.
+     E-mail addresses: yyhhliyanhua@163.com (Y. Li), oyxiaocao@swufe.edu.cn (X. Ouyang), jiezhanglx@gmail.com (J. Zhang), pan.chaofan@foxmail.com (C. Pan),
+
+renlf@swufe.edu.cn (L. Ren), yangxin@swufe.edu.cn (X. Yang).
+
+https://doi.org/10.1016/j.patcog.2026.113283
+Received 15 June 2025; Received in revised form 6 January 2026; Accepted 7 February 2026
+Available online 10 February 2026
+0031-3203/¬© 2026 Elsevier Ltd. All rights are reserved, including those for text and data mining, AI training, and similar technologies.
+Y. Li et al.                                                                        Pattern Recognition 177 (2026) 113283
+
+Fig. 1. Motivating example for designing the multi-level noise sample selection     representations. These objectives are jointly optimized to promote ro-
+strategy.                                                                           bust representation learning. Overall, the contributions of this work are
+                                                                                    as follows:
+been explored in open intent classiÔ¨Åcation. Developing eÔ¨Äective ways
+to transform noisy samples into useful signals for open-world represen-                 (1) We propose BNO-GB, a new framework for open intent classiÔ¨Å-
+tation learning remains an important but unresolved challenge.                      cation under noisy conditions, which introduces a novel noise identiÔ¨Å-
+                                                                                    cation mechanism and a beneÔ¨Åcial noise-guided optimization strategy
+    For sample selection, we draw inspiration from granular-ball com-               based on granular-ball representation.
+puting [14]. Granular-ball clustering [15] adaptively groups nearby
+samples into local units and represents the data distribution with a set of             (2) Building on granular-ball representation, we design two com-
+balls, each characterized by attributes such as centroid, radius, purity,           plementary indicators that capture deviation at the ball level and con-
+and label. The label of a granular-ball is determined by the majority la-           sistency at the sample level, thereby constructing a multi-level noise
+bel of its contained samples, which naturally suppresses the inÔ¨Çuence of            sample selection strategy. Based on the identiÔ¨Åed noise types, we fur-
+noisy labels and thus provides stronger robustness in high-noise scenar-            ther develop a beneÔ¨Åcial noise-guided optimization scheme that jointly
+ios. More importantly, the attributes of a granular-ball, together with             leverages OOD Dispersion Loss, Prototype Softmax Loss, and Prototype
+its relationships to neighboring balls, reveal many aspects of both the             Margin Loss to enhance representation learning.
+ball itself and the samples it contains. As illustrated in Fig. 1, which pro-
+vides an example of the granular-balls derived from clustering, granular-               (3) We conduct extensive experiments across multiple datasets and
+ball A is assigned the label ‚Äúblue‚Äù, but its neighboring balls exhibit in-          noise conÔ¨Ågurations, demonstrating clear improvements over represen-
+consistent labels, and it also lies far from other balls sharing the label          tative baselines in noise identiÔ¨Åcation and open intent classiÔ¨Åcation. The
+‚Äúblue‚Äù. This large deviation, together with its low purity, suggests that           results verify the eÔ¨Äectiveness and generality of the proposed approach.
+granular-ball A likely corresponds to a region dominated by OOD noise,
+and therefore samples 1-4 inside it have a high probability of being OOD            2. Related work
+noise. In contrast, granular-ball B shows high label agreement with its
+surrounding balls and exhibits high purity, indicating that it represents           2.1. Learning with noisy labels
+in-distribution samples. Based on the consistency between sample labels
+and the label of granular-ball B, sample 5 can be identiÔ¨Åed as IND noise,               Learning with noisy labels is fundamental in robust deep learning.
+whereas samples 6‚Äì9 can be regarded as clean samples. Thus, granular-               Existing studies can be grouped into four major categories. Sample se-
+ball representation enables the design of multi-perspective indicators for          lection methods [16,17], which identify diÔ¨Äerent noise types based on
+identifying noise types, which in turn supports more eÔ¨Äective represen-             heuristics such as small-loss criterion or consistency across views, and
+tation learning.                                                                    use this information to guide robust training. These methods exhibit
+                                                                                    complementary strengths under diÔ¨Äerent noise conditions. Label correc-
+    Building on these observations, we introduce a BeneÔ¨Åcial Noise-                 tion methods [18,19], which attempt to directly revise incorrect labels,
+guided Open Intent ClassiÔ¨Åcation method via Granular-Ball Represen-                 either via model predictions or auxiliary estimation strategies. Loss cor-
+tation (BNO-GB). SpeciÔ¨Åcally, we perform granular-ball clustering in a              rection methods [20,21], which design robust objective functions that
+label-agnostic and unsupervised manner to obtain granular-ball repre-               are less sensitive to noisy annotations and stabilize the optimization pro-
+sentation of the training features, which alleviates the adverse impact             cess. Transition matrix-based methods [22,23], which aim to explicitly
+of mislabeled samples. In addition, the granular-ball representation en-            model the noise generation process by estimating the label transition
+ables us to design two complementary indicators from distinct view-                 probabilities and correcting posterior predictions accordingly.
+points, which collectively constitute a multi-level noise sample selection
+strategy. At the granular-ball level, we propose the Granular-ball-level                Recent studies highlight the importance of handling both IND noise
+Outlier Distribution Tendency (G-ODT) to estimate the likelihood that               and OOD noise in open-world scenarios. Xia et al. [24] design an ex-
+a granular-ball primarily consists of OOD noise. At the sample level, we            tended Ì†µÌ±á -estimator to model mixed noise through a cluster-dependent
+design the Sample-level Inlier Consistency Degree (S-ICD) to measure                transition matrix. Zhang et al. [6] propose a multi-prototype framework
+how well a sample Ô¨Åts the distribution of its assigned granular-ball.               that separates diÔ¨Äerent types of noisy samples via prototype-sample dis-
+Combining these two indicators enables us to partition the data into                tances. In addition, recent work shows that controlled noise can ben-
+clean samples, IND noise, OOD noise, and uncertain cases. Based on the              eÔ¨Åt diverse modalities. For instance, incentive noise improves vision-
+identiÔ¨Åed noise types, we further develop a beneÔ¨Åcial noise-guided op-              language alignment [25], learned graph noise enhances contrastive
+timization scheme. The OOD Dispersion Loss allows OOD noise to act as               augmentation [26], frequency-guided variation beneÔ¨Åts image gener-
+a constructive signal for shaping the open region by encouraging sep-               ation [27], initialization-based modulation preserves pretrained knowl-
+aration between known intents and the potential unknown space. The                  edge in diÔ¨Äusion transformers [28], and facial adversarial noise supports
+Prototype Softmax Loss and the Prototype Margin Loss encourage clean                privacy-preserving portrait synthesis [29].
+and corrected IND samples to acquire more discriminative, class-speciÔ¨Åc
+                                                                                        Despite recent progress, most existing noise detection methods rely
+                                                                                    on single-aspect cues for noise identiÔ¨Åcation and seldom incorporate
+                                                                                    neighborhood information, which limits their ability to distinguish IND
+                                                                                    and OOD noise. In this work, we propose to identify noisy samples by
+                                                                                    constructing multi-perspective indicators and treat OOD noise as a ben-
+                                                                                    eÔ¨Åcial signal to improve representation.
+
+                                                                                    2.2. Open intent classiÔ¨Åcation
+
+                                                                                        Open Intent ClassiÔ¨Åcation [30,31] aims to classify intents belonging
+                                                                                    to predeÔ¨Åned intent classes while detecting open (unknown) intents.
+                                                                                    This setting is critical in real-world dialogue systems, where new user
+                                                                                    intents frequently emerge. Compared with closed-set classiÔ¨Åcation, it
+                                                                                    requires both discriminative modeling of known intents and robust de-
+                                                                                    tection of unknowns.
+
+                                                                                        Existing open intent classiÔ¨Åcation approaches can be broadly
+                                                                                    grouped into two categories. The Ô¨Årst is post-hoc unknown detec-
+                                                                                    tion, which builds OOD detection mechanisms upon pretrained or
+
+                                                                                 2
+Y. Li et al.                                                                                         Pattern Recognition 177 (2026) 113283
+
+Ô¨Åne-tuned representations. This includes (1) classiÔ¨Åer-based methods                                 3.2. Problem statement
+that compute conÔ¨Ådence scores from output logits, such as OLT [32],
+which calibrates sparse subnetworks for improved detection; and (2)                                      Let Ì†µÌ∞∑ = {(Ì†µÌ±•Ì†µÌ±ñ, Ì†µÌ±¶Ì†µÌ±ñ)}Ì†µÌ†µÌ±ñ=Ì±Å 1 be the training set, Ì†µÌ±ç = {(Ì†µÌ±ßÌ†µÌ±ñ, Ì†µÌ±¶Ì†µÌ±ñ)}Ì†µÌ†µÌ±ñ=Ì±Å 1 comprises in-
+distance-based methods, such as using learned class-wise radii to detect                             put representation Ì†µÌ±ßÌ†µÌ±ñ and its corresponding observed label Ì†µÌ±¶Ì†µÌ±ñ ‚àà Ì†µÌ∞ºKnown.
+unknowns [1]. The second is learning discriminative representations for                              The known class set is deÔ¨Åned as Ì†µÌ∞ºKnown = {1, ‚ãØ , Ì†µÌ∞∂}. The unknown
+OOD detection, which aims to optimize the feature space to separate                                  class is denoted as the (Ì†µÌ∞∂+1)th class, i.e., Ì†µÌ∞ºUnknown = {(Ì†µÌ∞∂+1)}, which is
+known and unknown intents. For instance, DeepUnk [33] introduces a                                   not available during training and only appears in testing. The training
+margin loss to enlarge inter-class gaps and reduce intra-class variance.
+Additionally, some methods utilize pseudo-OOD samples to guide repre-                                set contains three types of samples, categorized based on the relation-
+sentation learning; for example, K+1-way [34] constructs pseudo out-                                 ship between the assigned label Ì†µÌ±¶Ì†µÌ±ñ and ground-truth label Ì†µÌ±¶‚àóÌ†µÌ±ñ . SpeciÔ¨Å-
+liers to train a discriminative classiÔ¨Åer.                                                           cally, clean samples refer to instances whose labels are correctly anno-
+                                                                                                     tated, satisfying Ì†µÌ±¶Ì†µÌ±ñ = Ì†µÌ±¶Ì†µ‚àóÌ±ñ with Ì†µÌ±¶Ì†µ‚àóÌ±ñ ‚àà Ì†µÌ∞ºKnown. IND noise samples are those
+    Despite recent progress, most methods assume clean training data                                 that belong to the known class space but are mislabeled as a diÔ¨Äer-
+and overlook label noise, which is common in large-scale intent datasets.                            ent known class, i.e., Ì†µÌ±¶Ì†µÌ±ñ ‚â† Ì†µÌ±¶‚àóÌ†µÌ±ñ while still holding Ì†µÌ±¶Ì†µ‚àóÌ±ñ ‚àà Ì†µÌ∞ºKnown. In contrast,
+Although a few works in computer vision have explored open-node                                      OOD noise samples originate from external out-of-distribution datasets
+recognition under label noise [2], they remain limited to the image                                  that lie outside the union of known and unknown class sets, i.e., Ì†µÌ±¶Ì†µÌ±ñ ‚â† Ì†µÌ±¶Ì†µ‚àóÌ±ñ
+domain. Existing studies have rarely addressed the coexistence of IND                                and Ì†µÌ±¶Ì†µ‚àóÌ±ñ ‚àâ Ì†µÌ∞ºKnown ‚à™ Ì†µÌ∞ºUnknown. In inference, the test set includes both known
+and OOD noise in open intent classiÔ¨Åcation. This work Ô¨Ålls the gap by                                and unknown intent classes. The objective of BNO-GB is to learn noise-
+proposing a uniÔ¨Åed framework that identiÔ¨Åes multiple noise types and
+exploits OOD noise to improve open-space representation learning.                                    robust representations from the training data, accurately classify known
+                                                                                                     samples to their corresponding classes in Ì†µÌ∞ºKnown, and reliably detect un-
+2.3. Granular-ball computing                                                                         known intents as belonging to Ì†µÌ∞ºUnknown.
+
+    Granular-ball computing was Ô¨Årst practically implemented by Xia et                               4. Methodology
+al. [14] as an eÔ¨Écient and interpretable method for multi-granularity
+data representation. Unlike traditional point-based data, it employs                                     As shown in Fig. 2, the proposed BNO-GB framework consists of three
+spherical structures of varying sizes to adaptively partition and cover the                          main modules. First, we perform unsupervised granular-ball clustering
+data space, thereby improving expressive capacity, eÔ¨Éciency, and ro-                                 over the extracted features to approximate the underlying data distribu-
+bustness when handling complex data. This paradigm has been applied                                  tion with adaptive and noise-tolerant local structures. Then, we design
+in various domains, including granular-ball clustering [15], granular-                               a multi-level noise identiÔ¨Åcation strategy by combining two comple-
+ball classiÔ¨Åcation [35], granular-ball sampling [36], and others.                                    mentary indicators: a global granular-ball-level indicator to assess the
+                                                                                                     outlier tendency (G-ODT), and a local sample-level indicator to evaluate
+    Owing to its coarse-grained and robust representations, granular-ball                            inlier consistency (S-ICD). Based on these indicators, samples are cate-
+computing has recently been explored for addressing noise-related chal-                              gorized into clean, IND noise, OOD noise, and uncertain types. Finally,
+lenges. For example, Wang et al. [37] applied granular-ball mechanisms                               we introduce a beneÔ¨Åcial noise-guided representation learning module,
+to adversarial text defense, mitigating the impact of input perturbations.                           where three tailored losses are applied to guide OOD samples away from
+Wang et al. [38] utilized granular-balls to Ô¨Ålter noisy labels and enhance                           known-class prototypes, aggregate clean and corrected IND samples to-
+model generalization.                                                                                ward their prototypes, and enforce margins between class prototypes
+                                                                                                     to enhance discrimination. In inference, we use multi-granularity de-
+    While these studies demonstrate the potential of granular-ball com-                              cision boundaries for each class to classify known classes and identify
+puting under noisy conditions, they mostly rely on basic granular-ball                               unknown.
+properties for coarse Ô¨Åltering and focus solely on IND noise. In contrast,
+we propose to design multi-perspective indicators based on granular-
+ball representations for identifying both IND and OOD noise, aiming to
+enhance open intent classiÔ¨Åcation under noisy scenarios.
+
+3. Preliminaries                                                                                     4.1. Granular-ball-based space approximation
+
+3.1. Granular-ball                                                                                       Discovering the neighborhood information and the latent class struc-
+                                                                                                     ture from noisy data is essential for reliable noise identiÔ¨Åcation. Prior
+    Following the general formulation of granular-ball computing [36],                               works have adopted clustering-based approaches to estimate multiple
+we introduce the basic concepts used in this work. Let Ì†µÌ±ç = {(Ì†µÌ±ßÌ†µÌ±ñ, Ì†µÌ±¶Ì†µÌ±ñ) ‚à£ Ì†µÌ±ñ =                     prototypes per class to assist in detecting label noise [6]. However, these
+1, 2, ‚Ä¶ , Ì†µÌ±Å} denote a set of representations, where Ì†µÌ±ßÌ†µÌ±ñ is a feature vector                        methods typically require a predeÔ¨Åned number of clusters for each class
+and Ì†µÌ±¶Ì†µÌ±ñ is its associated class label. Based on Ì†µÌ±ç, a set of granular-balls is                      and often rely on supervised clustering guided by noisy labels, which
+constructed and denoted as Ì†µÌ∞∫ = { Ì†µÌ±îÌ†µÌ±èÌ†µÌ±ó ‚à£ Ì†µÌ±ó = 1, 2, ‚Ä¶ , Ì†µÌ±ö }, where Ì†µÌ±îÌ†µÌ±èÌ†µÌ±ó repre-                  can degrade clustering performance. To address this issue, we propose
+sents the Ì†µÌ±óth granular-ball. Each granular-ball Ì†µÌ±îÌ†µÌ±èÌ†µÌ±ó contains a subset of                         to approximate the underlying representation space using unsupervised
+samples, formally written as Ì†µÌ±îÌ†µÌ±èÌ†µÌ±ó = {(Ì†µÌ±ßÌ†µÌ±ó,Ì†µÌ±ò, Ì†µÌ±¶Ì†µÌ±ó,Ì†µÌ±ò) ‚à£ Ì†µÌ±ò = 1, 2, ‚Ä¶ , Ì†µÌ±õÌ†µÌ±ó }, where Ì†µÌ±õÌ†µÌ±ó        granular-ball clustering [15], which avoids reliance on noisy labels and
+denotes the size of the granular-ball, i.e., the number of samples it con-                           adaptively Ô¨Åts the data distribution. Compared with conventional clus-
+tains. The centroid Ì†µÌ±úÌ†µÌ±ó of a granular-ball Ì†µÌ±îÌ†µÌ±èÌ†µÌ±ó is calculated as the mean                         tering methods, granular-ball clustering captures local density, region
+of all feature vectors it contains. The radius of Ì†µÌ±îÌ†µÌ±èÌ†µÌ±ó is deÔ¨Åned in two                            coverage, and structural continuity, making it more eÔ¨Äective in reÔ¨Çect-
+ways: the maximum radius Ì†µÌ±üÌ†µÌ±ó , which denotes the largest Euclidean dis-                             ing the spatial structure of data. The resulting properties of granular-ball
+tance from any sample to the centroid, and the mean radius Ì†µÌ¥ØÌ†µÌ±ó , which                              provide more depictions of data distribution, oÔ¨Äering a stronger foun-
+denotes the average Euclidean distance from each sample to the cen-                                  dation for downstream noise detection.
+troid. For granular-ball Ì†µÌ±îÌ†µÌ±èÌ†µÌ±ó , its label set Ì†µÌ∞øÌ†µÌ±ó is deÔ¨Åned as the collec-
+tion of class labels corresponding to the samples within the ball, i.e.,                                 Given a dataset Ì†µÌ∞∑, we feed the input samples into a pre-trained BERT
+Ì†µÌ∞øÌ†µÌ±ó = {Ì†µÌ±¶Ì†µÌ±ó,Ì†µÌ±ò ‚à£ (Ì†µÌ±ßÌ†µÌ±ó,Ì†µÌ±ò, Ì†µÌ±¶Ì†µÌ±ó,Ì†µÌ±ò) ‚àà Ì†µÌ±îÌ†µÌ±èÌ†µÌ±ó }. The label Ì†µÌ±ôÌ†µÌ±ó assigned to Ì†µÌ±îÌ†µÌ±èÌ†µÌ±ó is determined     model [39] to extract feature representations Ì†µÌ±ç = {(Ì†µÌ±ßÌ†µÌ±ñ, Ì†µÌ±¶Ì†µÌ±ñ)}Ì†µÌ†µÌ±ñ=Ì±Å 1. These
+by the most frequent label in Ì†µÌ∞øÌ†µÌ±ó . The purity Ì†µÌ±ùÌ†µÌ±ó of a granular-ball is then                      representations are then clustered in an unsupervised manner to form a
+computed as the proportion of samples sharing this majority label Ì†µÌ±ôÌ†µÌ±ó ,                             set of granular-balls. The granular-ball clustering process consists of two
+reÔ¨Çecting the degree of label consistency within the ball.                                           stages: ball generation and ball merging. The overall process is detailed
+                                                                                                     as follows.
+
+                                                                                                  3
+Y. Li et al.                                                                                                                      Pattern Recognition 177 (2026) 113283
+
+Fig. 2. Framework of our BNO-GB. (a) Noisy intent data is encoded into features and clustered into granular-balls. (b) Two indicators are constructed: G-ODT, derived
+from distances to the M nearest same-label balls and label inconsistency among the K nearest neighbors; and S-ICD, which measures each sample‚Äôs consistency with
+its ball using Ì†µÌ±ßÌ†µÌ±ó,Ì†µÌ±ò, Ì†µÌ±ùÌ†µÌ±ó , Ì†µÌ±úÌ†µÌ±ó , and Ì†µÌ±üÌ†µÌ±ó . They jointly construct a sample selection criterion to classify samples into OOD noise, IND noise, clean samples, or uncertain samples.
+(c) OOD noise guides feature separation through the OOD Dispersion Loss, while clean and corrected IND samples are optimized via the Prototype Softmax Loss and
+Prototype Margin Loss to strengthen representation.
+
+4.1.1. Granular-ball generation                                                          4.1.2. Granular-ball merging
+
+    The entire dataset is initially considered as a single granular-ball,                    After the splitting process is completed, overlapping granular-balls
+which is iteratively divided to approximate the underlying structure of                  are merged to reduce redundancy. SpeciÔ¨Åcally, two granular-balls Ì†µÌ±îÌ†µÌ±èÌ†µÌ±ñ
+the data space. For each granular-ball Ì†µÌ±îÌ†µÌ±èÌ†µÌ±ó , we compute its centroid Ì†µÌ±úÌ†µÌ±ó             and Ì†µÌ±îÌ†µÌ±èÌ†µÌ±ó are merged if the following condition is satisÔ¨Åed [15]:
+and maximum radius Ì†µÌ±üÌ†µÌ±ó . The sparsity level of a ball is assessed using the
+Distribution Measure (DM) [15], deÔ¨Åned as follows:                                       ‚ÄñÌ†µÌ±úÌ†µÌ±ñ ‚àí Ì†µÌ±úÌ†µÌ±ó ‚Äñ ‚àí (Ì†µÌ±üÌ†µÌ±ñ + Ì†µÌ±üÌ†µÌ±ó ) < Ì†µÌºë,    (3)
+
+         Ì†µÌ±õÌ†µÌ±ó                 Ì†µÌ∞∑Ì†µÌ±ÄÌ†µÌ±ó      =  Ì†µÌ±†Ì†µÌ±ó ,             (1)                      where Ì†µÌ±úÌ†µÌ±ñ and Ì†µÌ±üÌ†µÌ±ñ denote the centroid and radius of granular-ball Ì†µÌ±îÌ†µÌ±èÌ†µÌ±ñ, re-
+                                             Ì†µÌ±õÌ†µÌ±ó                                        spectively, and Ì†µÌ±úÌ†µÌ±ó and Ì†µÌ±üÌ†µÌ±ó correspond to those of Ì†µÌ±îÌ†µÌ±èÌ†µÌ±ó . The threshold Ì†µÌºë
+      ‚àë                                                                                  is adaptively determined based on the density characteristics of the in-
+Ì†µÌ±†Ì†µÌ±ó = ‚ÄñÌ†µÌ±ßÌ†µÌ±ó,Ì†µÌ±ò ‚àí Ì†µÌ±úÌ†µÌ±ó ‚Äñ,
+                                                                                         volved granular-balls. After the merging process, we obtain the resulting
+        Ì†µÌ±ò=1                                                                             granular-ball set Ì†µÌ∞∫Ì†µÌ∞µ = {Ì†µÌ±îÌ†µÌ±è1, Ì†µÌ±îÌ†µÌ±è2, ‚Ä¶ , Ì†µÌ±îÌ†µÌ±èÌ†µÌ±ö}, which captures the true struc-
+                                                                                         ture of the data distribution. For each granular-ball Ì†µÌ±îÌ†µÌ±èÌ†µÌ±ó , its attributes
+where Ì†µÌ±†Ì†µÌ±ó is the cumulative distance to the centroid, and {Ì†µÌ±ßÌ†µÌ±ó,Ì†µÌ±ò}Ì†µÌ†µÌ±õÌ±òÌ†µ=Ì±ó 1 repre-     are computed according to Section 3.1, including the size Ì†µÌ±õÌ†µÌ±ó , assigned
+sent the Ì†µÌ±õÌ†µÌ±ó samples contained within Ì†µÌ±îÌ†µÌ±èÌ†µÌ±ó . A greater DM value indicates             pseudo-label Ì†µÌ±ôÌ†µÌ±ó , purity Ì†µÌ±ùÌ†µÌ±ó , centroid Ì†µÌ±úÌ†µÌ±ó , and max radius Ì†µÌ±üÌ†µÌ±ó .
+
+a greater sparsity level of the granular-ball. A ball is split only if the                   By leveraging these data-driven granular-balls to approximate the
+
+division results in a reduction of its DM value.                                         representation space, the impact of noisy labels is substantially allevi-
+
+    To begin the division of a granular-ball Ì†µÌ±îÌ†µÌ±èÌ†µÌ±ó , the feature point Ì†µÌ±ßÌ†µÌ±ó,1           ated, yielding a robust structural prior that supports downstream noise
+farthest from the center Ì†µÌ±úÌ†µÌ±ó is Ô¨Årst identiÔ¨Åed. Then, the point Ì†µÌ±ßÌ†µÌ±ó,2 that is
+farthest from Ì†µÌ±ßÌ†µÌ±ó,1 is selected to ensure maximal spatial dispersion within             detection and representation learning.
+the ball. Two midpoints are subsequently computed: Ì†µÌ±ßÌ†µ‚Ä≤Ì±ó,1, the midpoint
+between Ì†µÌ±úÌ†µÌ±ó and Ì†µÌ±ßÌ†µÌ±ó,1, and Ì†µÌ±ßÌ†µ‚Ä≤Ì±ó,2, the midpoint between Ì†µÌ±úÌ†µÌ±ó and Ì†µÌ±ßÌ†µÌ±ó,2. These        4.2. Multi-level noise sample selection
+two midpoints serve as the initial centers for generating two candidate
+                                                                                             In this subsection, we incorporate sample features together with
+granular-balls, denoted as Ì†µÌ±îÌ†µÌ±èÌ†µÌ±ó1 and Ì†µÌ±îÌ†µÌ±èÌ†µÌ±ó2 . All remaining points in Ì†µÌ±îÌ†µÌ±èÌ†µÌ±ó are      granular-ball properties and their neighborhood relationships to con-
+then assigned to the candidate ball with the closer midpoint in terms of                 struct two indicators from both the granular-ball-level and sample-level
+                                                                                         perspectives. Based on these indicators, we further design a multi-level
+Euclidean distance. The weighted distribution measure after the split is                 noise sample selection strategy.
+
+calculated as [15]:                                                                      4.2.1. Granular-ball-level outlier distribution tendency
+                                                                                             To assess the extent to which a granular-ball deviates from the rep-
+Ì†µÌ∞∑Ì†µÌ±ÄÌ†µÌ±§Ì†µÌ±íÌ†µÌ±ñÌ†µÌ±î‚ÑéÌ†µÌ±°  =  |Ì†µÌ±õÌ†µÌ±ó1 |  Ì†µÌ∞∑Ì†µÌ±ÄÌ†µÌ±ó1  +  |Ì†µÌ±õÌ†µÌ±ó2 |  Ì†µÌ∞∑Ì†µÌ±ÄÌ†µÌ±ó2  .  (2)
+                    |Ì†µÌ±õÌ†µÌ±ó |               |Ì†µÌ±õÌ†µÌ±ó |                                        resentation space of known classes, we propose the Granular-ball-level
+                                                                                         Outlier Distribution Tendency (G-ODT). This indicator is motivated by
+    A split is accepted if the weighted distribution measure satisÔ¨Åes                    the observation that granular-balls primarily composed of OOD noise
+Ì†µÌ∞∑Ì†µÌ±Äweight < Ì†µÌ∞∑Ì†µÌ±ÄÌ†µÌ±ó . The splitting process is recursively applied to each               samples often lie far from the true distribution of their assigned pseudo-
+granular-ball, unless it contains fewer than a speciÔ¨Åed number of sam-                   labels and exhibit weak label consistency with neighboring balls.
+ples Ì†µÌ±õÌ†µÌ±†Ì†µÌ±ùÌ†µÌ±ôÌ†µÌ±ñÌ†µÌ±°, in which case further division is terminated to avoid over-
+partitioning in sparse regions.
+
+                                                                                      4
+Y. Li et al.                                                                                                                                                                   Pattern Recognition 177 (2026) 113283
+
+    SpeciÔ¨Åcally, for a granular-ball Ì†µÌ±îÌ†µÌ±èÌ†µÌ±ó with pseudo-label Ì†µÌ±ôÌ†µÌ±ó , we Ô¨Årst                    Formally, given a sample (Ì†µÌ±ßÌ†µÌ±ó,Ì†µÌ±ò, Ì†µÌ±¶Ì†µÌ±ó,Ì†µÌ±ò) contained in granular-ball Ì†µÌ±îÌ†µÌ±èÌ†µÌ±ó
+identify the top-Ì†µÌ±Ä nearest granular-balls that share the same label,                       with pseudo-label Ì†µÌ±ôÌ†µÌ±ó , the categorization rule is deÔ¨Åned as follows:
+
+based on the Euclidean distances between their centroids. We then com-                                                ‚éßClean sample, Ì†µÌ±ñÌ†µÌ±ì Ì†µÌ∞∫-Ì†µÌ±ÇÌ†µÌ∞∑Ì†µÌ±áÌ†µÌ±ó < Ì†µÌºÉÌ†µÌ±î , Ì†µÌ±Ü-Ì†µÌ∞ºÌ†µÌ∞∂Ì†µÌ∞∑Ì†µÌ±ßÌ†µÌ±ó,Ì†µÌ±ò ‚â• Ì†µÌºÉÌ†µÌ±†, Ì†µÌ±¶Ì†µÌ±ó,Ì†µÌ±ò = Ì†µÌ±ôÌ†µÌ±ó ;
+pute the average distance from the centroid Ì†µÌ±úÌ†µÌ±ó to the centroids of these
+Ì†µÌ±Ä neighboring balls. This value reÔ¨Çects the spatial deviation of Ì†µÌ±îÌ†µÌ±èÌ†µÌ±ó from                                         ‚é™         noise,          Ì†µÌ±ñÌ†µÌ±ì Ì†µÌ∞∫-Ì†µÌ±ÇÌ†µÌ∞∑Ì†µÌ±áÌ†µÌ±ó < Ì†µÌºÉÌ†µÌ±î , Ì†µÌ±Ü-Ì†µÌ∞ºÌ†µÌ∞∂Ì†µÌ∞∑Ì†µÌ±ßÌ†µÌ±ó,Ì†µÌ±ò ‚â• Ì†µÌºÉÌ†µÌ±†, Ì†µÌ±¶Ì†µÌ±ó,Ì†µÌ±ò ‚â† Ì†µÌ±ôÌ†µÌ±ó ;
+the distribution of its assigned pseudo-label class, and is deÔ¨Åned as:                                                 IND                      Ì†µÌ±ñÌ†µÌ±ì Ì†µÌ∞∫-Ì†µÌ±ÇÌ†µÌ∞∑Ì†µÌ±áÌ†µÌ±ó ‚â• Ì†µÌºÉÌ†µÌ±î , Ì†µÌ±Ü-Ì†µÌ∞ºÌ†µÌ∞∂Ì†µÌ∞∑Ì†µÌ±ßÌ†µÌ±ó,Ì†µÌ±ò < Ì†µÌºÉÌ†µÌ±†;
+                                                                                            Ì†µÌ±á  Ì†µÌ±¶Ì†µÌ±ùÌ†µÌ±í(Ì†µÌ±ßÌ†µÌ±ó ,Ì†µÌ±ò )  =  ‚é™
+                                                                                                                      ‚é®OOD                                                                                           (8)
+
+                                                                                                                      ‚é™         noise,
+
+                                                                                                                      ‚é™‚é©Uncertain,              Ì†µÌ±úÌ†µÌ±°‚ÑéÌ†µÌ±íÌ†µÌ±üÌ†µÌ±§Ì†µÌ±ñÌ†µÌ±†Ì†µÌ±í.
+
+         1    Ì†µÌ±Ä
+         Ì†µÌ±Ä
+Ì†µÌ∞∑Ì†µÌ±ó  =       ‚àë             ‚àí Ì†µÌ±úÌ†µÌ±ñ‚Äñ,                                   (4)                  The thresholds Ì†µÌºÉÌ†µÌ±î and Ì†µÌºÉÌ†µÌ±† are selected based on the distribution of G-
+                  ‚ÄñÌ†µÌ±úÌ†µÌ±ó                                                                     ODT and S-ICD values in the training set. This multi-level noise selec-
+                                                                                            tion strategy eÔ¨Äectively combines granular-ball-level and sample-level
+              Ì†µÌ±ñ=1                                                                          signals to categorize the training data Ì†µÌ±ç = {(Ì†µÌ±ßÌ†µÌ±ñ, Ì†µÌ±¶Ì†µÌ±ñ) ‚à£ Ì†µÌ±ñ = 1, 2, ‚Ä¶ , Ì†µÌ±Å} into
+                                                                                            clean samples, IND noise, OOD noise, and uncertain samples.
+where {Ì†µÌ±úÌ†µÌ±ñ}Ì†µÌ†µÌ±ñ=Ì±Ä1 are the centroids of top-Ì†µÌ±Ä nearest granular-balls with
+label Ì†µÌ±ôÌ†µÌ±ó . In addition, we evaluate the label inconsistency between Ì†µÌ±îÌ†µÌ±èÌ†µÌ±ó                    The clean samples, IND noise, and OOD noise are utilized in the sub-
+and its local neighborhood. SpeciÔ¨Åcally, we identify the top-Ì†µÌ±á nearest                     sequent representation learning stage, where the labels of IND noise are
+                                                                                            corrected to match the pseudo-labels of their corresponding granular-
+granular-balls of Ì†µÌ±îÌ†µÌ±èÌ†µÌ±ó and compute the ratio of those whose pseudo-labels                 balls. Additionally, the centroids of granular-balls with both high purity
+diÔ¨Äer from Ì†µÌ±ôÌ†µÌ±ó :                                                                           and suÔ¨Écient size (Ì†µÌ±ùÌ†µÌ±ó > Ì†µÌ±ù‚Ñé, Ì†µÌ±õÌ†µÌ±ó > Ì†µÌ±õ‚Ñé) are extracted and used as class-level
+                                                                                            prototypes to guide representation learning.
+         1    Ì†µÌ±á
+         Ì†µÌ±á
+Ì†µÌ±ÖÌ†µÌ±ó  =       ‚àë             ‚â†  Ì†µÌ±ôÌ†µÌ±ó ),                                 (5)
+                  Ì†µÌµÄ(Ì†µÌ±ôÌ†µÌ±ñ
+
+              Ì†µÌ±ñ=1
+
+where Ì†µÌµÄ(‚ãÖ) is the indicator function that returns 1 if the condition holds.                4.3. BeneÔ¨Åcial noise-guided representation learning
+The Ô¨Ånal G-ODT score combines both the distance-based deviation and
+the label inconsistency, and is deÔ¨Åned as:
+
+Ì†µÌ∞∫-Ì†µÌ±ÇÌ†µÌ∞∑Ì†µÌ±áÌ†µÌ±ó = Ì†µÌ∞∑Ì†µÌ±ó ‚ãÖ Ì†µÌ±ÖÌ†µÌ±ó .                                            (6)                      The beneÔ¨Åcial role of noise has been demonstrated in many recent
+                                                                                            studies. In the context of open intent classiÔ¨Åcation, OOD noise provides
+G-ODT measures the deviation of a granular-ball from its associated                         informative signals that go beyond clean and IND samples, motivating
+known class distribution, with higher values indicating a greater likeli-                   us to regard it as a beneÔ¨Åcial source and design a beneÔ¨Åcial-noise-guided
+hood of the ball being dominated by OOD noise samples.                                      representation learning strategy. Based on the identiÔ¨Åed clean samples,
+                                                                                            IND noise, and OOD noise, together with the multi-prototype represen-
+4.2.2. Sample-level inlier consistency degree                                               tations of known classes, we introduce three complementary losses to
+    To assess how closely a sample aligns with the central region of the                    enhance discrimination among known intents and improve robustness
+                                                                                            to unseen ones.
+granular-ball it belongs to, while also accounting for the overall label
+consistency of that region, we propose the Sample-level Inlier Consis-                          Let Ì†µÌ±çÌ†µÌ±úÌ†µÌ±úÌ†µÌ±ë denote the set of OOD noise, and Ì†µÌ±çÌ†µÌ±êÌ†µÌ±ô&Ì†µÌ±ñÌ†µÌ±õÌ†µÌ±ë denote the com-
+tency Degree (S-ICD). This indicator jointly considers the sample‚Äôs Eu-                     bined set of clean and IND noise. Let ÓàªÌ†µÌ±òÌ†µÌ±õÌ†µÌ±úÌ†µÌ±§Ì†µÌ±õ = {Ì†µÌ±ú1, Ì†µÌ±ú2, ‚Ä¶ , Ì†µÌ±úÌ†µÌºÖ } be the set
+clidean distance to the centroid of its assigned granular-ball and the                      of known-class prototypes, where each prototype Ì†µÌ±úÌ†µÌºÖ is associated with
+label purity of that ball.                                                                  a known label Ì†µÌ±ôÌ†µÌºÖ . Based on these elements, three complementary loss
+                                                                                            functions are described in the following subsections.
+    For a granular-ball Ì†µÌ±îÌ†µÌ±èÌ†µÌ±ó containing Ì†µÌ±õÌ†µÌ±ó samples Ì†µÌ±ßÌ†µÌ±ó,Ì†µÌ±ò (Ì†µÌ±ò = 1, ‚Ä¶ , Ì†µÌ±õÌ†µÌ±ó ), the
+S-ICD for each sample Ì†µÌ±ßÌ†µÌ±ó,Ì†µÌ±ò is deÔ¨Åned as:                                                 4.3.1. OOD dispersion loss
+
+                                        (    ‚ÄñÌ†µÌ±ßÌ†µÌ±ó,Ì†µÌ±ò  ‚àí  Ì†µÌ±úÌ†µÌ±ó ‚Äñ  )                             To fully leverage the potential of OOD noise, we propose the OOD
+                                          ‚àí                         ,
+Ì†µÌ±Ü-Ì†µÌ∞º Ì†µÌ∞∂Ì†µÌ∞∑Ì†µÌ±ßÌ†µÌ±ó,Ì†µÌ±ò  =  Ì†µÌ±ùÌ†µÌ±ó  ‚ãÖ  exp           Ì†µÌ±üÌ†µÌ±ó                      (7)                  Dispersion Loss to enforce mutual separation between OOD noise sam-
+
+                                                                                            ples and known class prototypes in the representation space. This loss
+
+where Ì†µÌ±ùÌ†µÌ±ó denotes the purity of granular-ball Ì†µÌ±îÌ†µÌ±èÌ†µÌ±ó , Ì†µÌ±úÌ†µÌ±ó is the centroid, and Ì†µÌ±üÌ†µÌ±ó      does not rely on explicit class labels but instead treats all known-class
+is the max radius. The exponential function ensures that samples closer
+to the centroid of the granular-ball receive signiÔ¨Åcantly higher scores,                    prototypes as implicit negative references.
+while those farther away are exponentially penalized. Dividing by the
+radius Ì†µÌ±üÌ†µÌ±ó normalizes the distance, allowing the indicator to remain com-                      SpeciÔ¨Åcally, for each OOD noise sample Ì†µÌ±ßÌ†µÌ±ñ ‚àà Ì†µÌ±çÌ†µÌ±úÌ†µÌ±úÌ†µÌ±ë , we compute its
+parable across granular-balls of varying sizes.                                             Euclidean distances to all known-class prototypes and select the top Ì†µÌ±ÄÌ†µÌ±ú
+                                                                                            nearest prototypes {Ì†µÌ±úÌ†µÌ±ö}Ì†µÌ†µÌ±öÌ±Ä=Ì†µÌ±ú1 ‚äÇ ÓàªÌ†µÌ±òÌ†µÌ±õÌ†µÌ±úÌ†µÌ±§Ì†µÌ±õ. The dispersion penalty is then for-
+    A higher S-ICD value indicates that the sample is located near the                      mulated as:
+center of a high-purity granular-ball, implying a greater likelihood of
+being an inlier (either a clean sample or IND noise). In contrast, a lower                  Óà∏Ì†µÌ±ë Ì†µÌ±ñÌ†µÌ±†Ì†µÌ±ù (Ì†µÌ±ßÌ†µÌ±ñ )           Ì†µÌ±ÄÌ†µÌ±ú       ( Ì†µÌºè        ‚àí  ‚ÄñÌ†µÌ±ßÌ†µÌ±ñ ‚àí  Ì†µÌ±úÌ†µÌ±ö       2  )
+value suggests that the sample lies near the edge of the granular-ball                                                          exp                   Ì†µÌºè                    ,
+or that the ball itself has low purity, indicating a higher probability of                                               ‚àë                                           ‚Äñ
+being OOD noise.
+                                                                                                                   =                                                                                                 (9)
+
+                                                                                                                         Ì†µÌ±ö=1
+
+4.2.3. Sample selection criteria                                                            where Ì†µÌºè > 0 is a margin parameter controlling the degree of separation
+    Based on the proposed granular-ball-level G-ODT and sample-level S-                     from known-class prototypes in the feature space. A smaller distance be-
+                                                                                            tween the OOD sample and a prototype yields a larger penalty, indicat-
+ICD indicators, we develop a multi-level criterion for categorizing train-                  ing that the sample is too close to a known class region. As the distance
+ing samples into diÔ¨Äerent types of noise. SpeciÔ¨Åcally, if a sample is lo-                   increases beyond the margin, the penalty smoothly decays toward zero.
+cated in a granular-ball with a low G-ODT value and has a high S-ICD                        The overall loss is computed by averaging over all OOD noise:
+score, it is considered a clean sample or IND noise. If its label matches
+the pseudo-label of the granular-ball, it is classiÔ¨Åed as a clean sample;                   Óà∏Ì†µÌ±ëÌ†µÌ±ñÌ†µÌ±†Ì†µÌ±ù  =              1           ‚àë             Óà∏Ì†µÌ±ë Ì†µÌ±ñÌ†µÌ±†Ì†µÌ±ù (Ì†µÌ±ßÌ†µÌ±ñ ).                                                  (10)
+otherwise, it is treated as IND noise. In contrast, if the granular-ball has                                       |Ì†µÌ±çÌ†µÌ±úÌ†µÌ±úÌ†µÌ±ë |
+a high G-ODT value and the sample‚Äôs S-ICD score is low, the sample is                                                           Ì†µÌ±ßÌ†µÌ±ñ ‚ààÌ†µÌ±çÌ†µÌ±úÌ†µÌ±úÌ†µÌ±ë
+likely from an out-of-distribution region and is identiÔ¨Åed as OOD noise.
+Samples that do not meet either condition‚Äìshowing inconsistent signals                          As a key component of the beneÔ¨Åcial noise learning strategy, the
+at the ball and sample levels‚Äìare assigned to an uncertain category to                      OOD Dispersion Loss promotes the expansion of the representation space
+reduce the risk of incorrect supervision.                                                   for unknown classes, thereby enhancing the model‚Äôs ability to detect
+                                                                                            unknown intents in open-world scenarios.
+
+                                                                                            4.3.2. Prototype softmax loss
+                                                                                                To eÔ¨Äectively guide the classiÔ¨Åcation of clean samples and corrected
+
+                                                                                            IND noise samples, we construct a softmax-based loss function grounded
+
+                                                                                         5
+Y. Li et al.                                                                                                                                                 Pattern Recognition 177 (2026) 113283
+
+in the multi-prototype representation of known classes. Unlike tradi-                                                                                        constructed in the representation space [40]. For each known class, we
+tional single-center classiÔ¨Åers, this formulation encourages each sample                                                                                     retain its granular-balls with high purity and size (Ì†µÌ±ù > Ì†µÌ±ùÌ†µÌ±°, Ì†µÌ±õ > Ì†µÌ±õÌ†µÌ±°) to rep-
+to move closer to its nearest prototype with the same class label, thus                                                                                      resent its class region, each deÔ¨Åned by a centroid and a corresponding
+better capturing intra-class variability.                                                                                                                    mean radius. These granular-balls serve as Ô¨Çexible decision regions that
+                                                                                                                                                             reÔ¨Çect the intrinsic distribution of each class. Given a query representa-
+    SpeciÔ¨Åcally, for a sample Ì†µÌ±ßÌ†µÌ±ñ ‚àà Ì†µÌ±çÌ†µÌ±êÌ†µÌ±ô&Ì†µÌ±ñÌ†µÌ±õÌ†µÌ±ë , let Ì†µÌ±¶Ì†µÌ±ñ denote the original label                                                                      tion, we determine whether it belongs to any known class by checking
+if the sample is clean, or the corrected pseudo-label if it is identiÔ¨Åed as                                                                                  its distance relative to the centroids of all retained granular-balls. If the
+IND noise. For each sample Ì†µÌ±ßÌ†µÌ±ñ, we select the closest prototype with the                                                                                    query falls outside the radius of every granular-ball, it is considered an
+same label as the target:                                                                                                                                    unknown sample and assigned to the unknown class. Otherwise, it is
+                                                                                                                                                             classiÔ¨Åed into the class of the closest granular-ball that covers it. This
+Ì†µÌ±úÌ†µ‚àóÌ±¶Ì†µÌ±ñ  =   arg       min             ‚ÄñÌ†µÌ±ßÌ†µÌ±ñ  ‚àí  Ì†µÌ±úÌ†µÌºÖ    2  ,                                                                                   (11)         localized, prototype-based decision strategy enables the model to more
+                                                                                                                                                             accurately distinguish known intents while eÔ¨Äectively rejecting open-
+                     Ì†µÌ±úÌ†µÌºÖ ‚à∂Ì†µÌ±ôÌ†µÌºÖ =Ì†µÌ±¶Ì†µÌ±ñ                  ‚Äñ                                                                                                     space unknowns.
+
+where Ì†µÌ±úÌ†µÌºÖ denotes the Ì†µÌºÖth prototype, and Ì†µÌ±ôÌ†µÌºÖ is its associated class label.                                                                               4.5. Time complexity analysis
+Based on this target prototype, the Prototype Softmax Loss for sample
+Ì†µÌ±ßÌ†µÌ±ñ is deÔ¨Åned as:                                                                                                                                               The granular-ball generation module in BNO-GB follows the splitting
+                                                                                                                                                             and merging strategy used in MGNR [15]. During the splitting stage,
+                                                               (                            )                                                                each granular-ball is recursively divided until the purity and size con-
+                                                                                                                                                             straints are satisÔ¨Åed. The most time-consuming operation is the iterative
+                                       ‚éõ         exp           ‚àí‚ÄñÌ†µÌ±ßÌ†µÌ±ñ      ‚àí  Ì†µÌ±ú‚àóÌ†µÌ±¶Ì†µÌ±ñ    2             ‚éû                                                     determination of ball centers by repeatedly identifying farthest points,
+                                       ‚éú                                                               ‚éü.                                                    which requires Ì†µÌ±Ç(Ì†µÌ±Å) time per iteration. Since the maximum number of
+                                       ‚éú                                               ‚Äñ               ‚éü                                                     iterations is log Ì†µÌ±Å, the overall time complexity of the splitting stage is
+                                       ‚éú                                                               ‚éü                                                     Ì†µÌ±Ç(Ì†µÌ±Å log Ì†µÌ±Å). In the merging stage, the algorithm evaluates pairwise simi-
+Óà∏Ì†µÌ±ùÌ†µÌ±üÌ†µÌ±úÌ†µÌ±°Ì†µÌ±ú (Ì†µÌ±ßÌ†µÌ±ñ )  =  ‚àí  log            ‚àë                       exp      (‚àí‚ÄñÌ†µÌ±ßÌ†µÌ±ñ     ‚àí    Ì†µÌ±úÌ†µÌºÖ   2)                                           (12)         larities among the generated granular-balls and performs iterative merg-
+                                                                                                  ‚Äñ                                                          ing operations. Let Ì†µÌ±Ä denote the number of granular-balls after split-
+                                             Ì†µÌ±úÌ†µÌºÖ ‚ààÓàªÌ†µÌ±òÌ†µÌ±õÌ†µÌ±úÌ†µÌ±§Ì†µÌ±õ                                                                                               ting, typically with Ì†µÌ±Ä ‚â™ Ì†µÌ±Å; consequently, the merging process takes
+                                                                                                                                                             Ì†µÌ±Ç(Ì†µÌ±Ä log Ì†µÌ±Ä) time.
+                                       ‚éù                                                               ‚é†
+                                                                                                                                                             5. Experiments
+    Finally, the average loss over all samples in Ì†µÌ±çÌ†µÌ±êÌ†µÌ±ô&Ì†µÌ±ñÌ†µÌ±õÌ†µÌ±ë is shown as fol-
+lows:                                                                                                                                                            In this section, we empirically investigate the open intent classiÔ¨Åca-
+                                                                                                                                                             tion performance of our proposed BNO-GB method in dealing with IND
+Óà∏Ì†µÌ±ùÌ†µÌ±üÌ†µÌ±úÌ†µÌ±°Ì†µÌ±ú  =        1                      ‚àë                                                                                                  (13)         noise and OOD noise. In the following, we describe the experimental set-
+                  |Ì†µÌ±çÌ†µÌ±êÌ†µÌ±ô&Ì†µÌ±ñÌ†µÌ±õÌ†µÌ±ë |                   Óà∏Ì†µÌ±ùÌ†µÌ±üÌ†µÌ±úÌ†µÌ±°Ì†µÌ±ú (Ì†µÌ±ßÌ†µÌ±ñ ).                                                                                    tings (Section 5.1), experimental results (Section 5.2), ablation studies
+                                                                                                                                                             (Section 5.3), analysis of the G-ODT and S-ICD indicators (Section 5.4),
+                                          Ì†µÌ±ßÌ†µÌ±ñ ‚ààÌ†µÌ±çÌ†µÌ±ê Ì†µÌ±ô&Ì†µÌ±ñÌ†µÌ±õÌ†µÌ±ë                                                                                               impact of key parameters during inference (Section 5.5), and computa-
+                                                                                                                                                             tional cost analysis (Section 5.6).
+    The Prototype Softmax Loss guides both clean and corrected IND
+noise samples to converge toward their respective class regions by lever-                                                                                    5.1. Experimental setup
+aging multi-prototype representations. This facilitates structure-aware
+and noise-tolerant representation learning.                                                                                                                  5.1.1. Datasets
+                                                                                                                                                                 To comprehensively assess the eÔ¨Äectiveness of BNO-GB across di-
+4.3.3. Prototype margin loss
+                                                                                                                                                             verse intent classiÔ¨Åcation scenarios, we experiment on three repre-
+    To further enhance the inter-class separability of known classes, we                                                                                     sentative text datasets commonly used in open intent classiÔ¨Åcation.
+                                                                                                                                                             SNIPS [41] is a lightweight dataset for voice assistant intent recog-
+introduce a Prototype Margin Loss. It incorporates an explicit margin                                                                                        nition, containing 7 intent classes with concise user queries. Stack-
+                                                                                                                                                             OverÔ¨Çow [42] is a multi-domain dataset with 20 technical intent
+to push samples away from non-matching class prototypes, thereby in-                                                                                         classes, drawn from developer Q&A posts with diverse linguistic pat-
+                                                                                                                                                             terns. BANKING [43] is a domain-speciÔ¨Åc dataset covering 77 banking-
+creasing the model‚Äôs discriminative capacity.                                                                                                                related intent classes, featuring Ô¨Åne-grained and formal customer ser-
+    For each sample Ì†µÌ±ßÌ†µÌ±ñ ‚àà Ì†µÌ±çÌ†µÌ±êÌ†µÌ±ô&Ì†µÌ±ñÌ†µÌ±õÌ†µÌ±ë , we Ô¨Årst identify the target prototype                                                                             vice queries. An overview of the datasets is given below, with detailed
+                                                                                                                                                             statistics summarized in Table 1. For each dataset, we introduce con-
+Ì†µÌ±úÌ†µ‚àóÌ±¶Ì†µÌ±ñ as the nearest prototype among those with the same label Ì†µÌ±¶Ì†µÌ±ñ, follow-                                                                               trolled noise to simulate real-world challenges, with details of the noise
+ing Eq. (12). To enhance inter-class separability, we contrast the sample                                                                                    setting shown in (Section 5.1.2).
+against all prototypes from diÔ¨Äerent classes {Ì†µÌ±úÌ†µÌºÖ ‚à∂ Ì†µÌ±ôÌ†µÌºÖ ‚â† Ì†µÌ±¶Ì†µÌ±ñ}, with a posi-
+tive margin Ì†µÌªø > 0 added to their distances.                                                                                                                 5.1.2. Open and noise setting
+                                                                                                                                                                 We follow classical open intent classiÔ¨Åcation settings [1] by ran-
+    This formulation imposes a stronger penalty when a sample is closer
+                                                                                                                                                             domly selecting a Ô¨Åxed proportion of classes as known classes for train-
+to non-matching prototypes, eÔ¨Äectively pushing it away from other class                                                                                      ing. The remaining classes of the dataset are treated as unknown classes
+regions. The margin-based prototype loss for sample Ì†µÌ±ßÌ†µÌ±ñ is deÔ¨Åned as:                                                                                       and are used only during testing. The training set contains clean samples,
+                                                                                                                                                             IND noise, and OOD noise. All training samples are assigned labels ex-
+Óà∏Ì†µÌ±öÌ†µÌ±éÌ†µÌ±üÌ†µÌ±îÌ†µÌ±ñÌ†µÌ±õ(Ì†µÌ±ßÌ†µÌ±ñ) =                                                                                                                                        clusively from the known class set. SpeciÔ¨Åcally, IND noise is introduced
+                                                                                                                                                             by corrupting a portion of known-class samples through random misla-
+                                                                                       (                                  )                                  beling within the known classes. OOD noise is generated by sampling
+                                                                                                                                                             data from external out-of-distribution datasets and incorrectly labeling
+                            ‚éõ                                                 exp           ‚àí‚ÄñÌ†µÌ±ßÌ†µÌ±ñ  ‚àí       Ì†µÌ±ú‚àóÌ†µÌ±¶Ì†µÌ±ñ    2                              ‚éû
+                     ‚àí log ‚éú                                                                                                                          ‚éü.
+                                                                                                                     ‚Äñ
+
+                                       ‚éú  exp  (               ‚àí  Ì†µÌ±úÌ†µ‚àóÌ±¶Ì†µÌ±ñ    )  +      ‚àë                    exp      (‚àí(‚ÄñÌ†µÌ±ßÌ†µÌ±ñ  ‚àí  Ì†µÌ±úÌ†µÌºÖ    2  +  Ì†µÌªø))  ‚éü
+                                       ‚éú        ‚àí‚ÄñÌ†µÌ±ßÌ†µÌ±ñ                                                                                                ‚éü
+                                                                             2            Ì†µÌ±úÌ†µÌºÖ ‚à∂Ì†µÌ±ôÌ†µÌºÖ ‚â†Ì†µÌ±¶Ì†µÌ±ñ                              ‚Äñ
+
+                                                                           ‚Äñ
+
+                                       ‚éù                                                                                                              ‚é†
+
+                                                                                                                                                (14)
+
+         The overall loss is obtained by averaging over all samples in Ì†µÌ±çÌ†µÌ±êÌ†µÌ±ô&Ì†µÌ±ñÌ†µÌ±õÌ†µÌ±ë :
+
+Óà∏Ì†µÌ±öÌ†µÌ±éÌ†µÌ±üÌ†µÌ±îÌ†µÌ±ñÌ†µÌ±õ  =         1                       ‚àë                                                                                              (15)
+                     |Ì†µÌ±çÌ†µÌ±êÌ†µÌ±ô&Ì†µÌ±ñÌ†µÌ±õÌ†µÌ±ë |                    Óà∏Ì†µÌ±öÌ†µÌ±éÌ†µÌ±üÌ†µÌ±îÌ†µÌ±ñÌ†µÌ±õ (Ì†µÌ±ßÌ†µÌ±ñ ).
+
+                                              Ì†µÌ±ßÌ†µÌ±ñ ‚ààÌ†µÌ±çÌ†µÌ±êÌ†µÌ±ô&Ì†µÌ±ñÌ†µÌ±õÌ†µÌ±ë
+
+    To fully integrate the advantages of the above three component
+losses, we formulate a uniÔ¨Åed objective function as follows:
+
+Óà∏Ì†µÌ±°Ì†µÌ±úÌ†µÌ±°Ì†µÌ±éÌ†µÌ±ô = Ì†µÌªº ‚ãÖ Óà∏Ì†µÌ±ëÌ†µÌ±ñÌ†µÌ±†Ì†µÌ±ù + Ì†µÌªΩ ‚ãÖ Óà∏Ì†µÌ±ùÌ†µÌ±üÌ†µÌ±úÌ†µÌ±°Ì†µÌ±ú + Ì†µÌªæ ‚ãÖ Óà∏Ì†µÌ±öÌ†µÌ±éÌ†µÌ±üÌ†µÌ±îÌ†µÌ±ñÌ†µÌ±õ,                                                                           (16)
+
+where Ì†µÌªº, Ì†µÌªΩ, and Ì†µÌªæ are hyperparameters that control the relative impor-
+tance of each loss component. These three mechanisms work collabo-
+ratively to construct a more compact and discriminative feature space,
+signiÔ¨Åcantly boosting the model‚Äôs generalization ability and unknown
+intent recognition performance in open-world scenarios.
+
+4.4. Inference strategy
+
+     To perform open intent classiÔ¨Åcation during inference, we adopt a
+multi-granularity classiÔ¨Åer that builds upon the granular-ball structures
+
+                                                                                                                                                          6
+Y. Li et al.                                                                                                                                                     Pattern Recognition 177 (2026) 113283
+
+              Table 1
+              Statistics of Datasets.
+
+              Ì†µÌ∞∑Ì†µÌ±éÌ†µÌ±°Ì†µÌ±éÌ†µÌ±†Ì†µÌ±íÌ†µÌ±°  #Ì†µÌ∞∂ Ì†µÌ±ôÌ†µÌ±éÌ†µÌ±†Ì†µÌ±†Ì†µÌ±íÌ†µÌ±†  #Ì†µÌ±á Ì†µÌ±üÌ†µÌ±éÌ†µÌ±ñÌ†µÌ±õÌ†µÌ±ñÌ†µÌ±õÌ†µÌ±î  #Ì†µÌ±â Ì†µÌ±éÌ†µÌ±ôÌ†µÌ±ñÌ†µÌ±ëÌ†µÌ±éÌ†µÌ±°Ì†µÌ±ñÌ†µÌ±úÌ†µÌ±õ     #Ì†µÌ±á Ì†µÌ±íÌ†µÌ±†Ì†µÌ±°  Ì†µÌ±â Ì†µÌ±úÌ†µÌ±êÌ†µÌ±éÌ†µÌ±èÌ†µÌ±¢Ì†µÌ±ôÌ†µÌ±éÌ†µÌ±üÌ†µÌ±¶ Ì†µÌ±ÜÌ†µÌ±ñÌ†µÌ±ßÌ†µÌ±í  Ì†µÌ±ÄÌ†µÌ±íÌ†µÌ±éÌ†µÌ±õ Ì†µÌ∞øÌ†µÌ±íÌ†µÌ±õÌ†µÌ±îÌ†µÌ±°‚Ñé
+
+              SNIPS           7                 13,084              700                        700         11,971                          9.05
+                                                12,000              2000                       6000        17,182                          9.18
+              StackOverÔ¨Çow 20                   9003                1000                       3080        5028                            11.91
+
+              BANKING         77
+
+them as known classes. SpeciÔ¨Åcally, for StackOverÔ¨Çow, the OOD noise                            5.2. Experimental results
+comes from BANKING; for SNIPS and BANKING, it comes from Stack-
+OverÔ¨Çow. Note that the unknown classes are not present during training                         5.2.1. Main results
+and are only encountered at test time, ensuring a true open-world evalu-                           Table 2 presents the F1-score and Acc of BNO-GB and other base-
+ation. To systematically assess model robustness under various open and
+noise conditions, we vary the known-class ratios (25%, 50%) and over-                          lines on the SNIPS, StackOverÔ¨Çow, and BANKING datasets. Each value
+all noise ratios (20%, 40%), with each noisy setting comprising equal                          represents the average performance over four runs with diÔ¨Äerent ran-
+proportions of IND and OOD noise.                                                              dom seeds. The experiments are conducted under two known-class ratios
+                                                                                               (25% and 50%) and two noise levels (20% and 40%). The best results
+5.1.3. Comparison methods                                                                      among all methods are highlighted in bold, while the second-best re-
+    To evaluate the performance of BNO-GB, we compare it with three                            sults are marked with underline. From Table 2, we observe that when
+                                                                                               the noise level increases from 20% to 40%, both the F1-score and Acc
+categories of baseline methods. The Ô¨Årst category includes open intent                         of BNO-GB decrease on almost all datasets and settings. This is because
+classiÔ¨Åcation methods, which aim to detect unknown intents while ac-                           a higher noise ratio makes it more challenging to accurately identify
+curately classifying known ones. SpeciÔ¨Åcally, we compare with Deep-                            noisy samples and to learn stable intent representations. Table 3 presents
+Unk (2019) [33], K+1-way (2021) [34], DETER (2024) [44], and OLT                               Ô¨Åne-grained F1-scores for known and open classes across the SNIPS,
+(2024) [32]. The second category is granular-ball-based noise-robust                           StackOverÔ¨Çow, and BANKING datasets under diÔ¨Äerent combinations of
+classiÔ¨Åcation methods. We adopt GBRAIN (2024) [38] as a represen-                              known-class ratios (25% and 50%) and noise levels (20% and 40%).
+tative baseline. Since it lacks the ability to detect unknown intents,                         From Table 3, we observe that for BNO-GB, increasing the known-class
+we incorporate an adaptive decision boundary [1] to enable open in-                            ratio from 25% to 50% generally leads to higher F1-scores on known
+tent identiÔ¨Åcation. The third category includes Large Language Model                           classes but lower F1-scores on open classes. This phenomenon can be
+(LLM) baselines, where we adopt Qwen2-7B-Instruct and Baichuan2-                               explained by the fact that a larger known-class ratio provides richer su-
+7B-Chat for open intent classiÔ¨Åcation. All methods are evaluated using                         pervision and clearer intra-class structure for distinguishing known in-
+four metrics consistent with prior work [33], including overall Accu-                          tents, which improves the F1-score on known classes. However, it also
+racy (Acc), macro F1-score across all classes (F1-All), macro F1-score                         reduces the relative size of the open space, causing unseen intents to
+over known classes (Known), and macro F1-score over the open class                             overlap more with known regions and making open-class detection more
+(Open). These metrics oÔ¨Äer a comprehensive assessment of both gen-                             diÔ¨Écult, which leads to lower F1-scores on open classes.
+eral and Ô¨Åne-grained performance.
+                                                                                                   By jointly examining Tables 2 and 3, we can see that BNO-GB
+5.1.4. Implementation details                                                                  achieves the best or highly competitive performance across diÔ¨Äerent
+    We use a pre-trained BERT model [39], where all parameters are                             datasets, noise ratios, and known-class ratios, and outperforms all base-
+                                                                                               line methods. These improvements mainly stem from two key compo-
+frozen except for the Ô¨Ånal classiÔ¨Åcation layer. Training is conducted                          nents of our framework. First, the granular-ball-based multi-level noise
+with a batch size of 128 and an initial learning rate of 2e-5. The train-                      identiÔ¨Åcation enables more reliable separation of clean samples, IND
+ing process consists of 10 warm-up epochs, followed by noise recogni-                          noise, and OOD noise, which allows the model to learn from structurally
+tion and beneÔ¨Åcial noise learning. The total number of training epochs                         trustworthy samples even in the presence of severe label noise. Second,
+is set to 100, with early stopping applied using a patience of 10. Dur-                        the beneÔ¨Åcial noise-guided learning scheme explicitly leverages OOD
+ing granular-ball clustering, only granular-balls with sample size greater                     noise to shape the open region and reinforces the separation between
+than a threshold Ì†µÌ±õÌ†µÌ±†Ì†µÌ±ùÌ†µÌ±ôÌ†µÌ±ñÌ†µÌ±° are split. Based on dataset scale, Ì†µÌ±õÌ†µÌ±†Ì†µÌ±ùÌ†µÌ±ôÌ†µÌ±ñÌ†µÌ±° is set to 16     known and unknown intents. The combination of these two components
+for StackOverÔ¨Çow and BANKING, and 150 for SNIPS. In the multi-level                            leads to more discriminative representations and more accurate open in-
+noise identiÔ¨Åcation module, the number of neighbors for the G-ODT in-                          tent detection.
+dicator is set to Ì†µÌ±Ä = 5, and the consistency neighbor size for G-IND is
+Ì†µÌ±á = 5. To select reliable prototypes, we use centroids of granular-balls                          In addition, we observe that the LLM-based Qwen2-7B-Instruct
+with purity Ì†µÌ±ù‚Ñé > 0.7 and sample size Ì†µÌ±õ‚Ñé > 5 across all datasets. For noise                   achieves relatively good performance on the SNIPS and StackOverÔ¨Çow
+type classiÔ¨Åcation (Eq. (8)), the threshold Ì†µÌºÉÌ†µÌ±î is uniformly set to 0.1,                      datasets, where several metrics reach the second-best level. However,
+while Ì†µÌºÉÌ†µÌ±† is set to 0.25 for BANKING and StackOverÔ¨Çow, and 0.35 for                           its performance degrades signiÔ¨Åcantly on the BANKING dataset, which
+SNIPS. In the beneÔ¨Åcial noise learning stage, three loss functions are                         suggests that current large models still face challenges when dealing
+jointly optimized: OOD Dispersion Loss Óà∏Ì†µÌ±ëÌ†µÌ±ñÌ†µÌ±†Ì†µÌ±ù (Eq. (9)) with Ì†µÌ±ÄÌ†µÌ±ú = 5 and                   with tasks involving a larger number of intent categories. We also Ô¨Ånd
+Ì†µÌºè = 6.0; Prototype Softmax Loss Óà∏Ì†µÌ±ùÌ†µÌ±üÌ†µÌ±úÌ†µÌ±°Ì†µÌ±ú (Eq. 12); and Prototype Margin                    that Baichuan2-7B-Chat performs much worse than Qwen2-7B-Instruct
+Loss Óà∏Ì†µÌ±öÌ†µÌ±éÌ†µÌ±üÌ†µÌ±îÌ†µÌ±ñÌ†µÌ±õ (Eq. (14)) with margin Ì†µÌªø = 0.5. The weights of these losses                under almost all settings. Overall, BNO-GB surpasses both LLM-based
+are set to Ì†µÌªº = 1.0, Ì†µÌªΩ = 1.0, and Ì†µÌªæ = 1.0, respectively.                                     baselines, which further demonstrates the eÔ¨Äectiveness and robustness
+                                                                                               of the proposed method.
+    During inference, decision boundaries are constructed using the cen-
+troids and radii of granular-balls with purity above Ì†µÌ±ùÌ†µÌ±° and sample size                      5.2.2. Evaluation on real-world noisy datasets
+above Ì†µÌ±õÌ†µÌ±°. SpeciÔ¨Åcally, we set Ì†µÌ±ùÌ†µÌ±° = 0.9 when the training noise ratio is                        To further validate the robustness of BNO-GB in practical scenarios,
+0.2, and Ì†µÌ±ùÌ†µÌ±° = 0.8 when the noise ratio is 0.4. The value of Ì†µÌ±õÌ†µÌ±° is dataset-
+dependent.                                                                                     we evaluate it on two real-world noisy datasets constructed from the
+                                                                                               AG News corpus, following prior work [45]. These datasets incorporate
+                                                                                               naturally occurring annotation disagreements instead of synthetic
+                                                                                               corruption. NoisyAG-NewsMed aggregates multiple annotations
+                                                                                               through majority voting, resulting in approximately 80% label accuracy
+                                                                                               and a noise rate of 20%. NoisyAG-NewsWorst represents a more
+
+                                                                                            7
+Y. Li et al.                                                                                                  Pattern Recognition 177 (2026) 113283
+
+              Table 2
+              F1-score and Acc of open intent classiÔ¨Åcation across SNIPS, StackOverÔ¨Çow, and BANKING with diÔ¨Äerent known class ratios (25%, 50%) and
+              noise ratios (20%, 40%).
+
+                   Datasets           SNIPS                              StackOverÔ¨Çow                BANKING
+
+                   Noise%             20%           40%                  20%           40%           20%             40%
+
+              Known% Methods          F1-All Acc    F1-All Acc           F1-All Acc    F1-All Acc    F1-All Acc      F1-All Acc
+
+              25%  GBAIN              32.01  32.76  30.95  32.26         64.36  56.25  57.14  43.75  33.13    25.00  33.93  26.56
+                   DeepUnk            59.22  55.89  59.03  54.59         52.93  45.67  50.82  44.72  66.02    54.22  62.22  50.42
+                   K+1-way            52.35  52.05  53.24  52.33         65.93  66.25  57.05  53.69  75.97    79.01  69.49  72.97
+                   DETER              88.40  86.29  84.18  81.94         55.32  52.39  53.64  50.14  57.07    45.62  49.41  40.42
+                   OLT                50.80  52.76  50.66  51.98         46.54  38.75  39.92  31.50  56.55    38.28  57.37  38.28
+                   Qwen2-7B-Instruct  79.76  81.09  78.97  73.16         80.19  85.18  53.70  73.90  64.28    78.15  65.51  80.53
+                   Baichuan2-7B-Chat  62.40  60.59  55.93  55.76         57.07  69.47  66.18  68.88  45.77    50.42  43.91  44.26
+                   BNO-GB             90.15  90.60  80.05  81.03         84.40  87.15  81.45  84.54  77.41    81.97  72.62  78.68
+
+              50%  GBAIN              67.43  71.43  59.60  64.58         71.62  56.18  67.53  53.07  45.96    42.19  41.59  40.62
+                   DeepUnk            82.50  81.61  82.49  82.20         69.94  63.73  71.87  66.24  73.56    65.26  75.70  67.59
+                   K+1-way            76.84  75.40  78.46  77.98         78.52  74.44  74.25  70.02  79.76    76.72  77.44  74.48
+                   DETER              86.19  85.29  84.51  83.58         72.36  64.02  73.53  68.87  72.02    63.92  71.70  62.89
+                   OLT                72.50  79.78  71.45  79.40         69.61  61.36  71.37  60.42  76.71    63.02  78.19  62.33
+                   Qwen2-7B-Instruct  80.25  78.42  81.05  79.51         80.87  79.30  80.97  79.42  63.45    64.78  64.13  66.57
+                   Baichuan2-7B-Chat  57.79  64.17  47.79  54.17         57.35  64.29  56.95  64.11  44.31    46.48  41.31  42.48
+                   BNO-GB             94.32  94.26  92.15  91.82         83.68  81.89  83.15  81.66  80.70    78.43  76.95  75.08
+
+Table 3
+F1-score on known and open classes across SNIPS, StackOverÔ¨Çow, and BANKING with diÔ¨Äerent known class ratios (25%, 50%) and noise ratios
+(20%, 40%).
+
+                   Datasets           SNIPS                              StackOverÔ¨Çow                BANKING
+
+                   Noise%             20%           40%                  20%           40%           20%             40%
+
+              Known% Methods          Known Open Known Open Known Open Known Open Known Open Known Open
+
+                   GBAIN              48.02 44.34 46.43 46.76 69.23 75.31 68.57 54.55 34.97 34.32 35.71 36.88
+
+                   DeepUnk            74.29 29.07 72.81 31.46 58.88 23.20 56.34 23.17 67.23 43.03 63.57 36.43
+
+                   K+1-way            54.58 47.89 67.57 24.58 65.65 67.35 58.70 48.80 75.64 82.22 69.12 76.59
+
+              25%  DETER              81.37 79.50 78.82 65.62 51.60 70.20 52.10 59.79 55.15 57.80 49.19 52.99
+
+                   OLT                66.20 71.68 65.98 69.56 55.84 69.63 49.90 66.51 59.53 56.03 60.39 54.05
+
+                   Qwen2-7B-Instruct 77.99 80.65 72.78 75.91 78.50 88.62 48.01 82.19 63.09 86.83 64.27 89.10
+
+                   Baichuan2-7B-Chat 62.11 67.19 58.47 62.79 55.65 74.19 54.65 73.80 46.03 55.32 41.46 51.27
+
+                   BNO-GB             89.61 91.24 78.64 82.87 83.35 89.66 80.24 87.48 76.98 85.55 72.08 83.03
+
+                   GBAIN              74.29 68.26 74.50 63.79 71.82 70.63 75.97 79.58 47.49 48.62 42.89 42.58
+
+                   DeepUnk            88.40 58.89 88.36 59.04 74.61 23.28 75.32 37.36 74.36 43.26 76.51 44.76
+
+                   K+1-way            83.85 48.80 85.38 50.79 79.85 65.26 75.82 58.52 79.97 72.02 77.64 69.67
+
+              50%  DETER              80.13 74.35 79.07 70.82 70.13 82.46 72.15 75.99 71.38 72.50 71.72 71.11
+
+                   OLT                80.63 78.26 79.31 75.33 76.58 81.16 78.50 70.30 78.73 74.43 80.25 73.62
+
+                   Qwen2-7B-Instruct 80.52 78.89 81.51 76.41 81.35 76.12 81.42 76.35 63.40 65.67 64.02 68.23
+
+                   Baichuan2-7B-Chat 58.63   68.93 51.71   58.93 53.04          70.40  52.61  70.29  43.89    51.28  39.95  51.28
+                                             87.61 94.53   82.65 84.23          78.21  83.63  78.27  80.88    74.10  77.11  71.04
+                   BNO-GB             96.00
+
+challenging setting, where the Ô¨Ånal label is randomly chosen from           with Jo-SRC and RSS-MGM, and evaluate their ability to identify dif-
+incorrect annotations whenever disagreement occurs, yielding about          ferent noise types by comparing the predicted noise categories with
+62% accuracy and a 38% noise rate. We conduct experiments under             ground-truth annotations. Five metrics are reported, including overall
+two known-class ratios (25% and 50%) and report four metrics (F1-All,       selection accuracy (A-Acc), clean sample recall (C-R), IND noise re-
+Acc, known, and Open). As reported in Table 4, across both datasets         call (I-R), OOD noise recall (O-R), and overall noise recall (N-R), as
+and all settings, BNO-GB consistently surpasses baseline methods,           shown in Table 5. Jo-SRC exhibits a clear imbalance across noise types,
+demonstrating strong resilience to real-world human annotation noise.       achieving high recall for clean samples and IND noise while almost fail-
+These results further conÔ¨Årm the eÔ¨Äectiveness of our multi-level noise      ing to detect OOD noise, whereas RSS-MGM demonstrates relatively
+identiÔ¨Åcation and beneÔ¨Åcial noise-guided representation learning            more balanced performance. In contrast, BNO-GB consistently achieves
+mechanisms.                                                                 the highest overall selection accuracy and superior clean sample recall
+                                                                            across diÔ¨Äerent settings. Although BNO-GB attains relatively lower re-
+5.3. Ablation study                                                         call on IND noise, it achieves the highest recall on OOD noise, which
+                                                                            is particularly important since OOD samples are explicitly treated as
+5.3.1. InÔ¨Çuence of diÔ¨Äerent sample selection strategies                     beneÔ¨Åcial noise and exploited to enhance representation learning in
+    To investigate the inÔ¨Çuence of diÔ¨Äerent sample selection strategies     our framework. Furthermore, the overall noise recall, which jointly
+                                                                            considers IND noise and OOD noise, indicates that BNO-GB achieves
+under complex label noise, we compare Jo-SRC [3], RSS-MGM [46],             the best performance under most settings. Overall, these results reveal
+and our proposed BNO-GB on the StackOverÔ¨Çow and SNIPS datasets              that BNO-GB is more eÔ¨Äective in identifying both clean samples and
+with 25% known classes under 20% and 40% noise ratios. SpeciÔ¨Å-              noise.
+cally, we replace the multi-level sample selection module in BNO-GB
+
+                                                                         8
+Y. Li et al.                                                                                                             Pattern Recognition 177 (2026) 113283
+
+              Table 4
+              Comparative analysis of open classiÔ¨Åcation performance on real-world datasets NoisyAG-NewsMed and
+              NoisyAG-NewsWorst with diÔ¨Äerent known class ratios (25%, 50%).
+
+                            Datasets             NoisyAG-NewsMed                            NoisyAG-NewsWorst
+
+                     Known% Methods              F1-All Acc                   Known Open F1-All Acc       Known Open
+
+                            DeepUnk              50.02 51.47 56.62 43.43 47.82 46.38 53.27 41.03
+
+                     25%    K+1-way              58.04 62.42 64.56 55.00 58.72 61.38 63.45 56.31
+
+                            Qwen2-7B-Instruct 79.31 80.02 78.12 80.45 78.22 78.91 76.98 79.02
+
+                            BNO-GB               83.20 84.76 81.64 88.40 79.84 80.12 78.93 88.57
+
+                            DeepUnk              49.40 48.70 56.93 40.34 46.79 45.11 54.63 38.10
+
+                     50%    K+1-way              53.25 57.97 59.67 53.99 52.81 58.52 60.21 52.74
+
+                            Qwen2-7B-Instruct 72.15 72.33 71.78 72.61 73.67 73.91 73.12 74.25
+
+                            BNO-GB               81.79 78.54 76.82 85.36 76.19 77.27 74.41 84.19
+
+              Table 5
+              Performance of applying diÔ¨Äerent strategies for sample selection on the StackOverÔ¨Çow and SNIPS datasets with 25%
+              known class and diÔ¨Äerent noise ratios (20%, 40%).
+
+              Datasets      Methods   20% Noise                                             40% Noise
+
+                                      A-Acc C-R            I-R                O-R    N-R    A-Acc C-R     I-R     O-R    N-R
+
+              StackOverÔ¨Çow  Jo-SRC    73.09  83.58         61.86              0.30   31.08  52.13  57.20  86.80   2.27   44.54
+                            RSS-MGM   81.40  82.45         90.99              63.36  77.18  68.45  58.98  85.60   79.73  82.67
+                            BNO-GB    84.04  84.74         84.68              77.78  81.23  78.27  79.87  68.00   83.73  75.87
+
+              SNIPS         Jo-SRC    83.48  92.38         93.99              1.68   83.48  65.70  72.71  93.38   16.97  55.18
+                            RSS-MGM   90.83  92.44         95.67              73.08  84.38  64.53  60.37  67.13   74.39  70.76
+                            BNO-GB    93.64  95.77         94.71              75.48  85.10  74.24  75.60  66.06   78.34  72.20
+
+                        Table 6
+                        Ablation study results on StackOverÔ¨Çow and SNIPS with 25% known class and 20% noise.
+
+                          Methods            StackOverÔ¨Çow                                 SNIPS
+
+                          w/o G-ODT & S-ICD  Known Open         F1-All             Acc    Known    Open   F1-All  Acc
+                          w/o Óà∏Ì†µÌ±ëÌ†µÌ±ñÌ†µÌ±†Ì†µÌ±ù
+                          w/o Óà∏Ì†µÌ±ùÌ†µÌ±üÌ†µÌ±úÌ†µÌ±°Ì†µÌ±ú    76.48  83.10       77.58              79.94  88.27    89.85  88.80   89.04
+                          w/o Óà∏Ì†µÌ±öÌ†µÌ±éÌ†µÌ±üÌ†µÌ±îÌ†µÌ±ñÌ†µÌ±õ  81.18  88.30       82.37              85.48  86.54    84.98  86.02   85.52
+                          BNO-GB             78.89  84.89       79.89              82.24  86.74    83.65  85.71   85.07
+                                             80.88  88.60       82.16              85.70  89.24    87.59  88.69   88.06
+                                             83.35  89.66       84.40              87.15  89.61    91.24  90.15   90.60
+
+5.3.2. Assessment of key components                                                tion. To assess the discriminative capability of the proposed indicators,
+    Our proposed method introduces two core innovations: (1) a multi-              we plot the probability density distributions of G-ODT and S-ICD values
+                                                                                   for clean samples, IND noise, and OOD noise, categorized according to
+level noise identiÔ¨Åcation strategy based on the G-ODT and S-ICD in-                ground-truth labels on the StackOverÔ¨Çow and SNIPS datasets, as shown
+dicators, and (2) a beneÔ¨Åcial noise learning strategy with tailored loss           in Fig. 3 (a)-(d).
+functions. To evaluate the individual contributions of these components,
+we implement and test the following variants of our model. BNO-GB:                     Fig. 3(a) and (c) present the distribution of G-ODT values. It can
+The full model with multi-level noise identiÔ¨Åcation (G-ODT and S-ICD)              be observed that the G-ODT values of clean and IND noise samples
+and beneÔ¨Åcial noise learning using all three loss functions. w/o G-ODT             are primarily concentrated near zero, indicating that their correspond-
+& S-ICD: a variant with noise identiÔ¨Åcation is removed. Training is per-           ing granular-balls maintain label consistency with neighboring balls
+formed on the full noisy dataset using standard softmax loss, and in-              and are positioned near the same-label balls in the feature space. In
+ference still adopts granular-ball-based decision boundaries. w/o Óà∏Ì†µÌ±ëÌ†µÌ±ñÌ†µÌ±†Ì†µÌ±ù:       contrast, the G-ODT values of OOD noise samples tend to be higher,
+a variant with OOD Dispersion Loss is removed. w/o Óà∏Ì†µÌ±ùÌ†µÌ±üÌ†µÌ±úÌ†µÌ±°Ì†µÌ±ú: a variant          suggesting that their granular-balls deviate signiÔ¨Åcantly from known
+with Prototype Softmax Loss is removed. w/o Óà∏Ì†µÌ±öÌ†µÌ±éÌ†µÌ±üÌ†µÌ±îÌ†µÌ±ñÌ†µÌ±õ: a variant with          classes. These results conÔ¨Årm the eÔ¨Äectiveness of the G-ODT indica-
+Prototype Margin Loss is removed.                                                  tor in capturing out-of-distribution tendencies. Fig. 3(b) and (d) show
+                                                                                   the S-ICD value distributions. Across both datasets, clean and IND noise
+    Table 6 presents the performance of all ablation variants on Stack-            samples share similar distributions, with relatively high S-ICD values
+OverÔ¨Çow and SNIPS under the 25% known class ratio and 20% noise                    concentrated on the right-hand side, whereas OOD noise samples ex-
+setting. Experiments on the same dataset are conducted using the same              hibit signiÔ¨Åcantly lower S-ICD values concentrated in the left-hand re-
+hyperparameter conÔ¨Åguration, and results are averaged over four dif-               gion. This indicates that the S-ICD indicator eÔ¨Äectively captures the
+ferent random seeds for robustness. As shown in the Table 6, removing              in-distribution consistency of samples, allowing for reliable noise-type
+any single component results in a performance drop, demonstrating that             diÔ¨Äerentiation.
+each module makes a meaningful contribution to the overall eÔ¨Äective-
+ness of BNO-GB.                                                                        In summary, G-ODT and S-ICD provide complementary perspectives
+                                                                                   at the granular-ball level and the sample level, respectively, for mod-
+5.4. Analysis of G-ODT and S-ICD                                                   eling outlier and inlier tendencies. Their distribution patterns not only
+                                                                                   validate the discriminative ability of each individual indicator but also
+    In Section 4.2, we proposed two indicators, G-ODT and S-ICD, and               demonstrate their synergistic potential in jointly enabling robust noise
+used their values along with label information to make noise recogni-              identiÔ¨Åcation under open-world conditions.
+
+                                                                              9
+Y. Li et al.                                                                           Pattern Recognition 177 (2026) 113283
+
+              Fig. 3. The distributions of G-ODT and S-ICD on StackOverÔ¨Çow and SNIPS.
+
+5.5. Parameter study                                                               the eÔ¨Äectiveness of our BeneÔ¨Åcial Noise-guided Representation Learn-
+                                                                                   ing module in promoting open space representation, thereby enhancing
+    In the inference, we use granular-balls with purity above a prede-             the model‚Äôs ability to recognize open intents.
+Ô¨Åned threshold Ì†µÌ±ùÌ†µÌ±° and size greater than Ì†µÌ±õÌ†µÌ±° to construct the decision
+boundaries for all known classes. To investigate the inÔ¨Çuence of the pu-           5.6. Computational cost analysis
+rity threshold Ì†µÌ±ùÌ†µÌ±° and the size threshold Ì†µÌ±õÌ†µÌ±° on classiÔ¨Åcation performance,
+we conduct experiments on the StackOverÔ¨Çow dataset under a known                       To further evaluate the computational eÔ¨Éciency of BNO-GB, we ex-
+class ratio of 25% and a total noise ratio of 40%. Fig. 4(a)‚Äì(d) illus-            tend the analysis in Table 7 by comparing BNO-GB with several compet-
+trate how the model performance varies as Ì†µÌ±ùÌ†µÌ±° increases from 0.5 to 0.9           itive baselines, including DeepUnk [33], GBAIN [38], and DETER [44]
+in increments of 0.1, under diÔ¨Äerent Ô¨Åxed values of Ì†µÌ±õÌ†µÌ±° set to 8, 10, 12,         under diÔ¨Äerent noise ratios on three datasets. We report the total train-
+and 14, respectively. The plots show the eÔ¨Äects of Ì†µÌ±ùÌ†µÌ±° on four evaluation         ing and inference time (Time, min) and the peak memory usage (P-
+metrics: Known, Open, F1-All, and Acc.                                             Memory, GB). All experiments were conducted on an NVIDIA A100
+                                                                                   80GB GPU with an Intel Xeon Gold 6338 CPU (16 cores) and CUDA
+    The results reveal a consistent pattern, as the purity threshold in-           12.8. In terms of runtime, BNO-GB is generally slower than lightweight
+creases, all performance metrics initially improve, indicating that ex-            methods such as DeepUnk, but remains comparable to or faster than
+cluding low-purity granular-balls enhances the reliability and discrim-            GBAIN and DETER across most experimental settings. Regarding mem-
+inative ability of the decision boundary. However, when Ì†µÌ±ùÌ†µÌ±° becomes               ory consumption, as the noise ratio increases from 20% to 40%, BNO-GB
+too large (e.g., Ì†µÌ±ùÌ†µÌ±° = 0.9), a noticeable performance drop occurs in cer-         requires the accumulation of a larger number of feature representations,
+tain settings, particularly in subÔ¨Ågure (d), with the Known and F1-score           which leads to an increase in peak memory usage. Overall, BNO-GB
+metrics exhibiting sharp declines. This suggests that overly strict pu-            shows increased peak memory usage compared with other baselines,
+rity constraints may result in insuÔ¨Écient sample coverage, leading to              while GBAIN and DETER likewise require relatively high memory re-
+the exclusion of informative data during training. Moreover, as the size           sources. The additional memory overhead of BNO-GB mainly arises from
+threshold Ì†µÌ±õÌ†µÌ±° increases, the peak performance tends to shift toward lower         the accumulation of batch-level feature representations within each
+purity values, indicating that when the granular-ball size requirement             training epoch for granular-ball clustering, which temporarily increases
+becomes stricter, the model relies more on medium-purity balls for eÔ¨Äec-           peak memory usage. Nevertheless, this memory overhead supports more
+tive generalization. It is also worth noting that across all subÔ¨Ågures, the
+performance on unknowns (Open) is mostly the highest. This highlights
+
+                                                                               10
+Y. Li et al.                                                                                                 Pattern Recognition 177 (2026) 113283
+
+Fig. 4. Performance variation with diÔ¨Äerent purity thresholds Ì†µÌ±ùÌ†µÌ±° under Ô¨Åxed size thresholds Ì†µÌ±õÌ†µÌ±° on the StackOverÔ¨Çow dataset. The values of Ì†µÌ±õÌ†µÌ±° are 8, 10, 12, and 14
+in (a)-(d), respectively.
+
+              Table 7
+              Computational cost of diÔ¨Äerent methods on three datasets with 25% known class and diÔ¨Äerent noise ratios (20%,
+              40%).
+
+              Datasets      Noise%  Time (min)                                        P-Memory (GB)
+                                    BNO-GB DeepUnk                                    BNO-GB DeepUnk
+                                                    GBAIN                      DETER                  GBAIN  DETER
+
+              SNIPS         20%     3.27  1.28      4.19                       6.33   13.53  1.33     8.17   8.58
+                                                                                                      8.17   8.58
+                            40%     2.96  1.91      5.27                       5.22   15.10  1.33
+
+              BANKING       20%     3.23  4.55      5.36                       7.58   12.37  1.52     10.23  9.32
+                                                                                                      10.23  9.32
+                            40%     3.75  2.12      5.90                       7.55   13.87  1.52
+
+              StackOverÔ¨Çow  20%     7.22  2.81      6.64                       5.72   14.21  1.41     9.21   8.82
+                                                                                                      9.21   8.82
+                            40%     7.59  2.83      7.00                       5.33   15.71  1.41
+
+robust sample selection and open intent classiÔ¨Åcation, as evidenced by         strate the eÔ¨Äectiveness of our method across various noise scenarios. Al-
+the improved performance reported in previous sections.                        though BNO-GB exhibits strong robustness under complex noise, several
+                                                                               parameters, including the granular-ball thresholds used in splitting and
+6. Conclusions                                                                 inference, remain sensitive to the scale of the dataset. This introduces
+                                                                               limited manual conÔ¨Åguration when adapting to datasets of diÔ¨Äerent den-
+    In this paper, we present a novel framework, BNO-GB, to tackle             sities. In future work, we plan to develop adaptive or parameter-free
+open intent classiÔ¨Åcation in the presence of both IND and OOD noisy            granular-ball mechanisms to automatically determine these thresholds.
+labels. SpeciÔ¨Åcally, we perform granular-ball clustering to obtain noise-      We also aim to further improve computational eÔ¨Éciency and extend the
+robust granular-ball representations. In addition, we design a multi-          framework to broader open intent understanding scenarios.
+level noise sample selection strategy by combining granular-ball-level
+and sample-level indicators to accurately identify clean, IND noise, and       CRediT authorship contribution statement
+OOD noise samples. Furthermore, we develop a beneÔ¨Åcial noise-guided
+learning strategy that leverages OOD noise to expand the open space,               Yanhua Li: Writing ‚Äì original draft, Visualization, Methodology;
+while jointly enhancing class representation and inter-class separabil-        Xiaocao Ouyang: Writing ‚Äì original draft, Methodology; Jie Zhang:
+ity through three tailored loss functions. Extensive experiments demon-        Writing ‚Äì original draft; Chaofan Pan: Writing ‚Äì review & editing,
+
+                                                                           11
+Y. Li et al.                                                                                                                                                         Pattern Recognition 177 (2026) 113283
+
+Methodology; Lingfei Ren: Writing ‚Äì review & editing; Xin Yang: Writ-                             [20] Y.S. Wang, X.J. Ma, Z.Y. Chen, Y. Luo, J.F. Yi, J. Bailey, Symmetric cross entropy
+ing ‚Äì review & editing, Methodology.                                                                     for robust learning with noisy labels, in: Proceedings of the IEEE/CVF International
+                                                                                                         Conference on Computer Vision, 2019, pp. 322‚Äì330.
+Data availability
+                                                                                                  [21] X.J. Ma, H.X. Huang, Y.S. Wang, S. Romano, S. Erfani, J. Bailey, Normalized loss
+    The data that has been used is conÔ¨Ådential.                                                          functions for deep learning with noisy labels, in: International Conference on Ma-
+                                                                                                         chine Learning, PMLR, 2020, pp. 6543‚Äì6553.
+Declaration of competing interest
+                                                                                                  [22] T.L. Liu, D.C. Tao, ClassiÔ¨Åcation with noisy labels by importance reweighting, IEEE
+    The authors declare that they have no known competing Ô¨Ånancial                                       Trans. Pattern Anal. Mach. Intell. 38 (3) (2015) 447‚Äì461.
+interests or personal relationships that could have appeared to inÔ¨Çuence
+the work reported in this paper.                                                                  [23] L.L. Cheng, X.Z. Zhou, L.M. Zhao, D.W. Li, H. Shang, Y. Zheng, P. Pan, Y.H. Xu,
+                                                                                                         Weakly supervised learning with side information for noisy labeled images, in:
+Acknowledgments                                                                                          Computer Vision‚ÄìECCV, Springer, 2020, pp. 306‚Äì321.
+
+    This work was supported by the National Natural Science Founda-                               [24] X.B. Xia, B. Han, N.N. Wang, J.K. Deng, J.T. Li, Y.N. Mao, T.L. Liu, Extended Ì†µÌ±á :
+tion of China (Nos. 62476228, 62406259, 62506308), the Fundamen-                                         learning with mixed closed-set and open-set noisy labels, IEEE Trans. Pattern Anal.
+tal Research Funds for the Central Universities (Nos. JBK202511005,                                      Mach. Intell. 45 (3) (2022) 3047‚Äì3058.
+JBK2507011, JBK202511053), the Sichuan Science and Technology
+Program (No. 2026NSFSC1475), and the Basic Research Project of                                    [25] S.D. Huang, H.Y. Zhang, X.L. Li, Enhance vision-language alignment with noise,
+Chengdu Science and Technology Bureau (No. 2025YF1200030RC).                                             in: Proceedings of the AAAI Conference on ArtiÔ¨Åcial Intelligence, 39, 2025, pp.
+                                                                                                         17449‚Äì17457.
+References
+                                                                                                  [26] S.Q. Huang, Y.C. Xu, H.Y. Zhang, X.L. Li, Learn beneÔ¨Åcial noise as graph aug-
+ [1] H.L. Zhang, H. Xu, T.E. Lin, Deep open intent classiÔ¨Åcation with adaptive decision                  mentation, in: Forty-second International Conference on Machine Learning,
+       boundary, in: Proceedings of the AAAI Conference on ArtiÔ¨Åcial Intelligence, 2021,                 2025.
+       pp. 14374‚Äì14382.
+                                                                                                  [27] Z.H. Huang, X. Qiu, Y.K. Ma, Y.F. Zhou, J.J. Chen, H.Y. Zhang, C. Zhang, X.L.
+ [2] Q. Zhang, J.X. Lu, X.W. Li, H.S. Wu, S.R. Pan, J.Y. Chen, CONC: complex-noise-                      Li, NFIG: multi-scale autoregressive image generation via frequency ordering, in:
+       resistant open-set node classiÔ¨Åcation with adaptive noise detection, in: Proceed-                 The Thirty-Ninth Annual Conference on Neural Information Processing Systems,
+       ings of the International Joint Conference on ArtiÔ¨Åcial Intelligence, 2024, pp.                   2025.
+       5481‚Äì5489.
+                                                                                                  [28] S.D. Huang, S.Q. Huang, P. Luo, H.Y. Zhang, Laytrol: preserving pretrained knowl-
+ [3] Y.Z. Yao, Z.R. Sun, C.Y. Zhang, F.M. Shen, Q. Wu, J. Zhang, Z.M. Tang, Jo-SRC: a                    edge in layout control for multimodal diÔ¨Äusion transformers, arXiv:2511.07934
+       contrastive approach for combating noisy labels, in: Proceedings of the IEEE/CVF                  (2025).
+       Conference on Computer Vision and Pattern Recognition, 2021, pp. 5192‚Äì5201.
+                                                                                                  [29] J.Y. Wang, H.Y. Zhang, Y. Yuan, ADV-CPG: a customized portrait generation frame-
+ [4] Z.R. Sun, F.M. Shen, D. Huang, Q. Wang, X.B. Shu, Y.Z. Yao, J.H. Tang, PNP: ro-                     work with facial adversarial attacks, in: Proceedings of the IEEE/CVF Conference
+       bust learning from noisy labels by probabilistic noise prediction, in: Proceedings of             on Computer Vision and Pattern Recognition, 2025, pp. 21001‚Äì21010.
+       the IEEE/CVF Conference on Computer Vision and Pattern Recognition, 2022, pp.
+       5311‚Äì5320.                                                                                 [30] Y.H. Li, J.F. Liu, L.H. Yang, C.F. Pan, X.K. Wang, X. Yang, Three-way open in-
+                                                                                                         tent classiÔ¨Åcation with nearest centroid-based representation, Inf. Sci. 681 (2024)
+ [5] R. Sachdeva, F.R. Cordeiro, V. Belagiannis, I. Reid, G. Carneiro, EvidentialMix:                    121251.
+       learning with combined open-set and closed-set noisy labels, in: Proceedings of
+       the IEEE/CVF Winter Conference on Applications of Computer Vision, 2021, pp.               [31] J.K. Wang, X.K. Wang, J.F. Liu, X.C. Ouyang, Y.H. Li, J. Zhang, X. Yang, Robust
+       3607‚Äì3615.                                                                                        open intent classiÔ¨Åcation in many-shot and few-shot scenarios, Neural Netw. 192
+                                                                                                         (2025) 107964.
+ [6] Y. Zhang, Y.Y. Chen, C.W. Fang, Q. Wang, J.Y. Wu, J.M. Xin, Learning from open-
+       set noisy labels based on multi-prototype modeling, Pattern Recognit. 157 (2025)           [32] Y.H. Zhou, P.Y. Wang, P.J. Liu, Y.X. Wang, X.P. Qiu, The open-world lottery ticket
+       110902.                                                                                           hypothesis for OOD intent classiÔ¨Åcation, in: LREC/COLING, 2024.
+
+ [7] L. Jiang, Z.Y. Zhou, T. Leung, L.J. Li, F.F. Li, MentorNet: learning data-driven cur-        [33] T.E. Lin, H. Xu, Deep unknown intent detection with margin loss, in: Proceedings
+       riculum for very deep neural networks on corrupted labels, in: International Con-                 of the Annual Meeting of the Association for Computational Linguistics, 2019, pp.
+       ference on Machine Learning, PMLR, 2018, pp. 2304‚Äì2313.                                           5491‚Äì5496.
+
+ [8] C.Y. Chuang, J. Robinson, Y.C. Lin, A. Torralba, S. Jegelka, Debiased contrastive            [34] L.M. Zhan, H.W. Liang, B. Liu, L. Fan, X.M. Wu, A.Y.S. Lam, Out-of-scope intent
+       learning, Adv. Neural Inf. Process. Syst. 33 (2020) 8765‚Äì8775.                                    detection with self-supervision and discriminative training, in: ACL/IJCNLP, 2021,
+                                                                                                         pp. 3521‚Äì3532.
+ [9] J.N. Li, R. Socher, S.C.H. Hoi, DivideMix: learning with noisy labels as semi-
+       supervised learning, in: International Conference on Learning Representations,             [35] S.Y. Xia, X.Y. Lian, G.Y. Wang, X.B. Gao, J.C. Chen, X.L. Peng, GBSVM: an eÔ¨Écient
+       2020.                                                                                             and robust support vector machine framework via granular-ball computing, IEEE
+                                                                                                         Trans. Neural Netw. Learn. Syst. 36 (2024) 9253‚Äì9267.
+[10] X.L. Li, Positive-incentive noise, IEEE Trans. Neural Netw. Learn. Syst. 35 (6) (2024)
+       8708‚Äì8714.                                                                                 [36] S.Y. Xia, S.Y. Zheng, G.Y. Wang, X.B. Gao, B.G. Wang, Granular ball sampling for
+                                                                                                         noisy label classiÔ¨Åcation or imbalanced classiÔ¨Åcation, IEEE Trans. Neural Netw.
+[11] Z.Y. Gu, Y.C. Xu, S.D. Huang, Y.B. Guo, H.Y. Zhang, RectiÔ¨Åed noise: a generative                    Learn. Syst. 34 (4) (2021) 2144‚Äì2155.
+       model using positive-incentive noise, (2025). arXiv:2511.07911
+                                                                                                  [37] Z.L. Wang, J. Li, S.Y. Xia, L.L. Lin, G.Y. Wang, Text adversarial defense via granular-
+[12] H.Y. Zhang, Y.C. Xu, S.D. Huang, X.L. Li, Data augmentation of contrastive learning                 ball sample enhancement, in: Proceedings of the International Conference on Mul-
+       is estimating positive-incentive noise, (2024). arXiv:2408.09929                                  timedia Retrieval, 2024, pp. 348‚Äì356.
+
+[13] K. Jiang, Z.Y. Shi, D. Zhang, H.Y. Zhang, X.L. Li, Mixture of noise for pre-trained          [38] Z.L. Wang, T. Zhang, S.Y. Xia, L.L. Lin, G.Y. Wang, GBRAIN: combating textual label
+       model-based class-Incremental learning, in: The Thirty-Ninth Annual Conference                    noise by granular-ball based robust training, in: Proceedings of the International
+       on Neural Information Processing Systems, 2025.                                                   Conference on Multimedia Retrieval, 2024, pp. 357‚Äì365.
+
+[14] S.Y. Xia, Y.S. Liu, X. Ding, G.Y. Wang, H. Yu, Y.G. Luo, Granular ball computing             [39] J. Devlin, M.W. Chang, K. Lee, K. Toutanova, BERT: pre-training of deep bidirec-
+       classiÔ¨Åers for eÔ¨Écient, scalable and robust learning, Inf. Sci. 483 (2019) 136‚Äì152.               tional transformers for language understanding, in: NAACL-HLT, vol. 1, 2019, p.
+                                                                                                         2.
+[15] J. Xie, X.X. Xiang, S.Y. Xia, L. Jiang, G.Y. Wang, X.B. Gao, MGNR: a multi-
+       granularity neighbor relationship and its application in KNN classiÔ¨Åcation and clus-       [40] Y.H. Li, X.C. Ouyang, C.F. Pan, J. Zhang, S. Zhao, S.Y. Xia, X. Yang, G.Y. Wang, T.R.
+       tering methods, IEEE Trans. Pattern Anal. Mach. Intell. 46 (12) (2024) 7956‚Äì7972.                 Li, Multi-granularity open intent classiÔ¨Åcation via adaptive granular-ball decision
+                                                                                                         boundary, in: Proceedings of the AAAI Conference on ArtiÔ¨Åcial Intelligence, 39,
+[16] B. Han, Q. Yao, X. Yu, G. Niu, M. Xu, W. Hu, I. Tsang, M. Sugiyama, Co-teaching:                    2025, pp. 24512‚Äì24520.
+       robust training of deep neural networks with extremely noisy labels, Adv. Neural
+       Inf. Process. Syst. 31 (2018) 8536‚Äì8546.                                                   [41] A. Coucke, A. Saade, A. Ball, T. Bluche, A. Caulier, D. Leroy, C. Doumouro, T. Gis-
+                                                                                                         selbrecht, F. Caltagirone, T. Lavril, et al., Snips voice platform: an embedded spo-
+[17] Y.B. Bai, T.L. Liu, Me-momentum: extracting hard conÔ¨Ådent examples from noisily                     ken language understanding system for private-by-design voice interfaces, 2018,
+       labeled data, in: Proceedings of the IEEE/CVF International Conference on Com-                    1805.10190
+       puter Vision, 2021, pp. 9312‚Äì9321.
+                                                                                                  [42] J.M. Xu, P. Wang, G.H. Tian, B. Xu, J. Zhao, F.Y. Wang, H.W. Hao, Short
+[18] C. Northcutt, L. Jiang, I. Chuang, ConÔ¨Ådent learning: estimating uncertainty in                     text clustering via convolutional neural networks, in: Proceedings of the Work-
+       dataset labels, J. Artif. Intell. Res. 70 (2021) 1373‚Äì1411.                                       shop on Vector Space Modeling for Natural Language Processing, 2015, pp. 62‚Äì
+                                                                                                         69.
+[19] A. Veit, N. Alldrin, G. Chechik, I. Krasin, A. Gupta, S. Belongie, Learning from
+       noisy large-scale datasets with minimal supervision, in: Proceedings of the IEEE           [43] I. Casanueva, T. Temcinas, D. Gerz, M. Henderson, I. Vulic¬¥, EÔ¨Écient intent detection
+       Conference on Computer Vision and Pattern Recognition, 2017, pp. 839‚Äì847.                         with dual sentence encoders, in: Proceedings of the Workshop on Natural Language
+                                                                                                         Processing for Conversational AI, 2020, pp. 38‚Äì45.
+
+                                                                                                  [44] H. Zawbaa, W. Rashwan, S. Dutta, H. Assem, Improved out-of-scope intent classi-
+                                                                                                         Ô¨Åcation with dual encoding and threshold-based re-classiÔ¨Åcation, in: Proceedings
+                                                                                                         of the Joint International Conference on Computational Linguistics, Language Re-
+                                                                                                         sources and Evaluation, 2024, pp. 8708‚Äì8718.
+
+                                                                                                  [45] H.F. Huang, T.T. Liang, X.X. Sun, Z.K. Jin, Y.Y. Yin, NoisyAG-News: a bench-
+                                                                                                         mark for addressing instance-dependent noise in text classiÔ¨Åcation, (2024).
+                                                                                                         arXiv:2407.06579
+
+                                                                                                  [46] Y.D. Zhao, Q.X. Xia, Y. Sun, Z.J. Wen, L.Y. Ma, S.H. Ying, Open set label noise
+                                                                                                         learning with robust sample selection and margin-guided module, Knowl. Based
+                                                                                                         Syst. (2025) 113670.
+
+                                                                                              12
+

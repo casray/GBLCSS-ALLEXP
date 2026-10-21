@@ -1,0 +1,106 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <title>SoftDist 主线：方法、证据与论文边界</title>
+  <style>
+    body{font-family:Segoe UI,Microsoft YaHei,Arial,sans-serif;line-height:1.65;margin:0;background:#f6f7f9;color:#20242a}
+    main{max-width:1120px;margin:0 auto;padding:36px 24px 64px}
+    h1{font-size:30px;margin:0 0 8px}
+    h2{font-size:22px;margin-top:34px;border-left:5px solid #2f6fed;padding-left:10px}
+    h3{font-size:18px;margin-top:24px}
+    .card{background:#fff;border:1px solid #d8dde6;border-radius:8px;padding:18px 22px;margin:16px 0}
+    .claim{border-left:5px solid #15803d;background:#f0fdf4}
+    .limit{border-left:5px solid #b91c1c;background:#fef2f2}
+    .note{border-left:5px solid #d97706;background:#fff7ed}
+    code{background:#eef2f7;padding:2px 5px;border-radius:4px}
+    table{border-collapse:collapse;width:100%;background:#fff;margin:12px 0}
+    th,td{border:1px solid #d8dde6;padding:8px 10px;text-align:left;vertical-align:top}
+    th{background:#eef2ff}
+  </style>
+</head>
+<body>
+<main>
+  <h1>SoftDist [X‖H] 主线：方法、证据与论文边界</h1>
+  <p>本文件给外部 GPT 解释主方法到底是什么、主表支持什么、哪些 claim 不能写过头。</p>
+
+  <h2>1. 任务与协议</h2>
+  <div class="card">
+    <ul>
+      <li><strong>任务：</strong>图节点噪声标签鲁棒分类。训练标签含噪，validation/test 干净。</li>
+      <li><strong>框架：</strong>NoisyGL，percent split <code>0.2/0.1/0.7</code>，主噪声设置为 uniform <code>0.4</code>，5 seeds。</li>
+      <li><strong>核心对照：</strong><code>gcn_xh_ce</code>、SoftDist [X‖H]、SoftDist shuffled、NRGNN[X‖H] fairness。</li>
+      <li><strong>原则：</strong>不改变 split，不改变 baseline evaluation，不把 same-ball 当 hard positive label。</li>
+    </ul>
+  </div>
+
+  <h2>2. 主方法算法</h2>
+  <div class="card">
+    <ol>
+      <li>用 GRACE 进行 label-free 对比学习预训练，只用图结构和特征 <code>X,A</code>，得到 frozen 表征 <code>H</code>。</li>
+      <li>在 <code>H</code> 空间用几何 2-means 递归分裂，构造约 64 个 hard granular balls。</li>
+      <li>每个球内只用 train nodes 的 noisy labels 投票，得到 <code>ball_dist</code>。</li>
+      <li>用 multiclass margin 产生 alpha：
+        <code>alpha=(margin-1/C)/(1-1/C)</code>。</li>
+      <li>每个节点 soft target：
+        <code>soft=(1-alpha)*onehot(noisy_y)+alpha*ball_dist</code>。</li>
+      <li>训练一个新的 GCN，输入拼接特征 <code>[X‖L2norm(H)]</code>，用 soft cross entropy。</li>
+    </ol>
+  </div>
+
+  <h2>3. 主表结果</h2>
+  <table>
+    <tr><th>数据集</th><th>规模/类数</th><th>SoftDist [X‖H]</th><th>vs GCN[X‖H] CE</th><th>vs shuffled</th><th>结论</th></tr>
+    <tr><td>Cora</td><td>2.7k / 7</td><td>0.8137±0.0067</td><td>+1.10pp, 4/5</td><td>+2.16pp, 5/5</td><td>成功</td></tr>
+    <tr><td>CiteSeer</td><td>3.3k / 6</td><td>0.6891±0.0159</td><td>+1.30pp, 5/5</td><td>+1.95pp, 5/5</td><td>成功</td></tr>
+    <tr><td>Coauthor-CS</td><td>18.3k / 15</td><td>0.9243±0.0018</td><td>+0.53pp, 5/5</td><td>+0.55pp, 5/5</td><td>成功，大图证据</td></tr>
+  </table>
+
+  <div class="card claim">
+    <strong>可防守 claim：</strong>
+    控制 H 输入后，真实粒球 soft target 在三个主表数据集上稳定优于同 H 的 CE 和随机球。这里的贡献是“受控粒球增量”，不是 SOTA。
+  </div>
+
+  <h2>4. 最重要的公平性边界</h2>
+  <div class="card limit">
+    Phase24 给 NRGNN 同样的 <code>[X‖H]</code> 后，SoftDist 不再领先：Cora 基本持平，CiteSeer/Coauthor-CS 输约 1.2 到 2pp。因此不能写“SoftDist 超过 NRGNN/SOTA”。正确写法是：SoftDist 是一种简单、低方差、非迭代的粒球软标签校正方法，在控制 H 变量后有受控增量。
+  </div>
+
+  <h2>5. 机制证据</h2>
+  <h3>5.1 MLP(X) 机制变体</h3>
+  <div class="card">
+    下游不输入 H、也不用图传播，只用普通 MLP(X) 时，SoftDist 球软目标带来约 +6 到 +9pp 的大增益，且多噪声条件稳定。这说明球软目标不是必须依赖把 H 输入分类器；但构球仍依赖 frozen H。raw-X ball 失败，不能改成完全无 H。
+  </div>
+
+  <h3>5.2 标签率敏感性</h3>
+  <table>
+    <tr><th>数据集</th><th>强证据 train ratios</th><th>高标签率现象</th><th>论文用法</th></tr>
+    <tr><td>Cora</td><td>0.05 / 0.10 / 0.20</td><td>0.40 对 GCN[X‖H] 为 -0.99pp</td><td>低/中标签率更能体现球增量</td></tr>
+    <tr><td>CiteSeer</td><td>0.05 / 0.10 / 0.15 / 0.20 / 0.25</td><td>0.30/0.40 shuffled 门槛变弱</td><td>主协议 0.20 仍合理</td></tr>
+    <tr><td>Coauthor-CS</td><td>全部比例小幅正</td><td>增量只有约 +0.13pp 到 +0.63pp</td><td>稳定小正，不写强增量</td></tr>
+  </table>
+  <div class="card note">
+    结论：不能写 train ratio 越大越好。主表继续使用 <code>20/10/70</code>，标签率曲线作为机制/敏感性分析，不作为跨比例 leaderboard。
+  </div>
+
+  <h2>6. 当前论文最稳贡献</h2>
+  <ol>
+    <li>一个简单、非迭代、无需模型预测反馈的粒球 soft target 去噪框架。</li>
+    <li>控制 H 后的真实粒球增量：优于 GCN[X‖H] CE 和 shuffled ball。</li>
+    <li>机制拆解：SoftDist-MLP(X) 显示球软目标本身有效，但 raw-X ball 不足以替代 H-space ball。</li>
+    <li>诚实边界：大规模失败轴、检测换题、椭球、GEAF、参数网格都被记录为适用域分析。</li>
+  </ol>
+
+  <h2>7. 不应写的 claim</h2>
+  <div class="card limit">
+    <ul>
+      <li>不能写 SOTA 或全面优于 NRGNN。</li>
+      <li>不能写粒球检测器优于 kNN/GCN 置信度。</li>
+      <li>不能把 offline diagnostic 的 clean mass 提升写成 downstream accuracy 提升。</li>
+      <li>不能把 seed0 结果当成稳定结论。</li>
+      <li>不能写“更多 train labels / 更多 balls / 更复杂椭球 一定更好”。</li>
+    </ul>
+  </div>
+</main>
+</body>
+</html>

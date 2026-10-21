@@ -1,0 +1,131 @@
+{
+  "config": {
+    "datasets": [
+      "Cora",
+      "CiteSeer"
+    ],
+    "noise_specs": [
+      "pair:0.4",
+      "pair:0.6",
+      "symmetric:0.4"
+    ],
+    "seeds": [
+      0,
+      1,
+      2,
+      3,
+      4
+    ],
+    "split_seed": 0,
+    "split_mode": "ratio",
+    "train_ratio": 0.2,
+    "val_ratio": 0.1,
+    "warmup_epochs": 20,
+    "ramp_epochs": 20,
+    "classifier_epochs": 500,
+    "learning_rate": 0.01,
+    "weight_decay": 0.0005,
+    "patience": 50,
+    "gb_min_ball_size": 5,
+    "gagb_max_hops": 2,
+    "gagb_max_ball_size": 128,
+    "min_train_per_ball": 3,
+    "gpu_id": null,
+    "out_dir": "reports\\maintable_20260608\\CiteSeer_pair_0p6",
+    "dataset": "CiteSeer",
+    "noise_type": "pair",
+    "noise_rate": 0.6
+  },
+  "gates": {
+    "gate_A_beats_coteaching": {
+      "passes": false,
+      "candidates": [
+        {
+          "method": "sel_topk",
+          "baseline": "coteaching",
+          "wins": 2,
+          "mean_delta": -0.019673538208007813,
+          "passes": false
+        },
+        {
+          "method": "sel_dcgb",
+          "baseline": "coteaching",
+          "wins": 2,
+          "mean_delta": -0.019673538208007813,
+          "passes": false
+        }
+      ]
+    },
+    "gate_B_beats_structure_controls": {
+      "passes": false,
+      "candidates": [
+        {
+          "method": "sel_topk",
+          "parts": [
+            {
+              "method": "sel_topk",
+              "baseline": "sel_noball",
+              "wins": 0,
+              "mean_delta": 0.0,
+              "passes": false
+            },
+            {
+              "method": "sel_topk",
+              "baseline": "sel_shuffled",
+              "wins": 0,
+              "mean_delta": 0.0,
+              "passes": false
+            },
+            {
+              "method": "sel_topk",
+              "baseline": "sel_random",
+              "wins": 0,
+              "mean_delta": 0.0,
+              "passes": false
+            }
+          ],
+          "passes": false
+        },
+        {
+          "method": "sel_dcgb",
+          "parts": [
+            {
+              "method": "sel_dcgb",
+              "baseline": "sel_noball",
+              "wins": 0,
+              "mean_delta": 0.0,
+              "passes": false
+            },
+            {
+              "method": "sel_dcgb",
+              "baseline": "sel_shuffled",
+              "wins": 0,
+              "mean_delta": 0.0,
+              "passes": false
+            },
+            {
+              "method": "sel_dcgb",
+              "baseline": "sel_random",
+              "wins": 0,
+              "mean_delta": 0.0,
+              "passes": false
+            }
+          ],
+          "passes": false
+        }
+      ]
+    },
+    "gate_C_beats_ce": {
+      "passes": false,
+      "mean_delta": -0.0026632308959960937,
+      "threshold": 0.015,
+      "best_structured_by_seed": {
+        "0": 0.47680413722991943,
+        "1": 0.2590206265449524,
+        "2": 0.27963918447494507,
+        "3": 0.24699312448501587,
+        "4": 0.28135737776756287
+      }
+    }
+  }
+}

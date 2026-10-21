@@ -1,0 +1,652 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>GAGB / GB-GCL 全实验思想包</title>
+  <style>
+    :root {
+      --bg: #f6f7f9;
+      --paper: #ffffff;
+      --text: #1f2937;
+      --muted: #5d6673;
+      --border: #d7dce5;
+      --head: #eef2f7;
+      --blue: #2457a7;
+      --blue-bg: #eaf1ff;
+      --green: #0d6b3b;
+      --green-bg: #e9f7ef;
+      --amber: #805300;
+      --amber-bg: #fff7df;
+      --red: #9e2f2f;
+      --red-bg: #fff0f0;
+      --code: #f0f2f5;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--text);
+      font-family: "Microsoft YaHei", "Segoe UI", Arial, sans-serif;
+      line-height: 1.68;
+    }
+    main {
+      width: min(1180px, calc(100% - 32px));
+      margin: 24px auto 56px;
+      padding: 30px 36px;
+      background: var(--paper);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      box-shadow: 0 10px 28px rgba(25, 35, 50, 0.06);
+    }
+    h1, h2, h3 { line-height: 1.28; }
+    h1 { margin: 0 0 8px; font-size: 30px; }
+    h2 {
+      margin: 30px 0 12px;
+      padding-top: 22px;
+      border-top: 1px solid var(--border);
+      font-size: 22px;
+    }
+    h3 { margin: 20px 0 8px; font-size: 17px; }
+    p { margin: 8px 0 12px; }
+    ul, ol { margin: 8px 0 14px; padding-left: 24px; }
+    li { margin: 4px 0; }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 12px 0 18px;
+      font-size: 14px;
+    }
+    th, td {
+      border: 1px solid var(--border);
+      padding: 8px 10px;
+      vertical-align: top;
+      text-align: left;
+    }
+    th { background: var(--head); }
+    code {
+      background: var(--code);
+      border-radius: 4px;
+      padding: 1px 5px;
+      font-family: Consolas, "Cascadia Mono", monospace;
+      font-size: 0.95em;
+    }
+    pre {
+      white-space: pre-wrap;
+      background: #101827;
+      color: #edf2ff;
+      border-radius: 6px;
+      padding: 14px 16px;
+      overflow: auto;
+      font-family: Consolas, "Cascadia Mono", monospace;
+      font-size: 13px;
+      line-height: 1.52;
+    }
+    .meta { color: var(--muted); margin-bottom: 18px; }
+    .box {
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 13px 15px;
+      margin: 12px 0;
+      background: #fbfcfe;
+    }
+    .ok { border-color: #b8dfc8; background: var(--green-bg); }
+    .warn { border-color: #f0d58a; background: var(--amber-bg); }
+    .bad { border-color: #efb5b5; background: var(--red-bg); }
+    .tag {
+      display: inline-block;
+      margin: 0 6px 6px 0;
+      padding: 2px 8px;
+      border-radius: 999px;
+      background: var(--blue-bg);
+      color: var(--blue);
+      font-size: 12px;
+      font-weight: 700;
+    }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      gap: 12px;
+      margin: 12px 0;
+    }
+    .card {
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 12px 14px;
+      background: #fbfcfe;
+    }
+    .card h3 { margin-top: 0; }
+    .small { color: var(--muted); font-size: 13px; }
+    .num { font-variant-numeric: tabular-nums; }
+  </style>
+</head>
+<body>
+<main>
+  <h1>GAGB / GB-GCL 全实验思想包</h1>
+  <p class="meta">生成日期：2026-06-02。用途：把到目前为止的 GAGB、GB-GCL、noisy-label local smoothing、target repair、失败模式和研究边界打包给 Claude 思考。本文件是 self-contained 版本，Claude 不需要访问本地代码、CSV、日志或历史文档。</p>
+
+  <div class="box warn">
+    <strong>一句话总判断：</strong> 当前最有价值的不是“GAGB 已经成功”，而是一个清晰的研究收缩：粒球不能当硬语义标签、不能强改 view generation、不能只追求 compactness；Graph-aware Granular Ball 更合理的定位是 frozen / host classifier 阶段的 soft local prior、soft-label generator、confidence signal 和诊断对象。最新 v2.1 结果显示 target repair 能产生正 NCR 且 CDR 受控，但 GAGB-specific value 只被部分支持，尚未达到主方法 claim。
+  </div>
+
+  <div class="grid">
+    <div class="card">
+      <h3>当前可支持</h3>
+      <p>GAGB 分组能降低 noisy-label entropy、提高局部纯度；conflict-gated target repair 可把 pre-alpha correction signal 转成正 NCR；clean damage 在 v2.1 中保持在 <code>CDR &lt; 0.03</code>。</p>
+    </div>
+    <div class="card">
+      <h3>当前不支持</h3>
+      <p>不能说 GAGB 稳定优于所有 fair controls；不能说 same-ball 是语义真值；不能把小于 std 的 accuracy gain 写成显著提升；不能把 ordinary GB 或 kmeans/topk 也能解释的收益归因给 GAGB。</p>
+    </div>
+    <div class="card">
+      <h3>下一步核心问题</h3>
+      <p>不是继续堆公式，而是验证：GAGB target repair 是否真的优于 intervention-strength-matched shuffled / kmeans / topk / khop controls，并解释 Cora 0.4 的 class 1 / class 6 间接边界移动。</p>
+    </div>
+  </div>
+
+  <h2>1. 给 Claude 的阅读规则</h2>
+  <ol>
+    <li>不要假设你能访问本地文件。本文已经把必要事实、数值和结论边界整理出来。</li>
+    <li>请把“实验支持的结论”“合理猜测”“尚未验证假设”“被负结果削弱的方向”分开判断。</li>
+    <li>不要做代码审查，除非本文主动贴出机制或伪代码。主要任务是科研判断、方法边界和下一步设计。</li>
+    <li>任何 claim 必须经得起 matched controls、paired seed、std overlap、clean/noisy damage、coverage 和 class-level diagnostics 检查。</li>
+  </ol>
+
+  <h2>2. 研究目标与角色收缩</h2>
+  <p>最初目标是把 Granular Ball Computing 与 GRACE 或类似节点级图对比学习结合，形成一条可投稿的研一阶段论文主线。多轮实验后，研究角色已经发生收缩：</p>
+  <table>
+    <thead><tr><th>粒球角色</th><th>当前判断</th><th>原因</th></tr></thead>
+    <tbody>
+      <tr><td>hard positive label / hard semantic truth</td><td><strong>放弃</strong></td><td>same-ball membership 过粗，直接拉近同球节点、prototype pulling、hard positive、hard negative suppression 多次不稳。</td></tr>
+      <tr><td>view generator / augmentation controller</td><td><strong>放弃</strong></td><td>GB 深度介入 view generation 多次低于健康 GRACE，可能破坏原本有效的 augmentation distribution。</td></tr>
+      <tr><td>pure edge denoise rule</td><td><strong>放弃主线</strong></td><td>same/cross-ball membership 命中噪声边弱，容易误伤 clean edges；x-space percentile 更强但不是 GB 贡献。</td></tr>
+      <tr><td>loss-side conservative prior</td><td><strong>保留弱主线</strong></td><td>GB-FN topk-soft 是历史上最安全的 GB+GCL 用法，但 gain 很小、no-ball topk 接近。</td></tr>
+      <tr><td>local relation regularizer</td><td><strong>可继续验证</strong></td><td>RDCL 在 PubMed 有正信号，但需要 fixed / random / shuffled / size-matched partition 控制。</td></tr>
+      <tr><td>soft-label generator / confidence signal</td><td><strong>当前 GAGB 主线</strong></td><td>GAGB v2 target repair 显示局部 q_mix 与 teacher 信号能识别部分 noisy nodes，但仍需证明 GAGB grouping 的独立价值。</td></tr>
+    </tbody>
+  </table>
+
+  <h2>3. 历史 GB-GCL 实验链</h2>
+  <p>下面这些方向来自多份 <code>02_experiment_history_and_lessons*.md</code>、<code>03_cross_direction_meta_review.md</code> 和导师汇报的整合。它们不是单个 seed 的印象，而是跨项目复盘后形成的边界。</p>
+  <table>
+    <thead><tr><th>方向</th><th>粒球怎么用</th><th>关键结果</th><th>结论</th></tr></thead>
+    <tbody>
+      <tr>
+        <td>GB-guided view generation</td>
+        <td>用 same-ball / cross-ball 控制删边、特征扰动、view schedule。</td>
+        <td>active balls 不等于表示变好；长训、decay、freeze、anchor/explore、stronger recovery 后仍多次低于 GRACE。</td>
+        <td><span class="tag">abandon</span> 负结果可作为 motivation，不能继续作为主线调参。</td>
+      </tr>
+      <tr>
+        <td>GB-BGRL / GB-GBT</td>
+        <td>把 GB view 接入 bootstrap / redundancy reduction objective。</td>
+        <td>GB-BGRL 不稳定；GB-GBT 稍稳但仍低于 GRACE。换 objective 没修复 GB view mismatch。</td>
+        <td><span class="tag">abandon</span> 不要用换目标函数修 view-side 失败。</td>
+      </tr>
+      <tr>
+        <td>Hard / broad same-ball relation</td>
+        <td>same-ball positive、prototype、direct consistency、full/ratio suppression。</td>
+        <td>Cora/CiteSeer 未稳定提升，部分下降；GB-PCL 只有 Cora single-seed 正信号。</td>
+        <td><span class="tag">abandon / inconclusive</span> same-ball 只能是 weak prior。</td>
+      </tr>
+      <tr>
+        <td>GB-FN-GRACE topk-soft</td>
+        <td>只在 loss 中对少量同球、高相似 false negatives 降权。</td>
+        <td>Cora 约 <code>+0.0014</code>，CiteSeer 约 <code>+0.0010</code>，PubMed 持平；std overlap，no-ball topk 接近。</td>
+        <td><span class="tag">weak positive</span> 最安全但不是强胜利，必须补 no-ball/candidate overlap 机制证明。</td>
+      </tr>
+      <tr>
+        <td>Pure GB edge denoise</td>
+        <td>同球边保留、跨球边降权或删除。</td>
+        <td>downweight precision 约 <code>0.5596</code>、recall 约 <code>0.2272</code>；quick val 低于 GRACE。</td>
+        <td><span class="tag">abandon main method</span> GB 可做 edge scorer feature，但不能当硬规则。</td>
+      </tr>
+      <tr>
+        <td>RDCL local relation consistency</td>
+        <td>用 GB/kmeans 分组构造局部关系一致性正则。</td>
+        <td>PubMed 3-seed 有 <code>+0.0030</code> / <code>+0.0025</code> 正信号；random / shuffled 接近主方法。</td>
+        <td><span class="tag">modify</span> 可继续，但 claim 要降级为 local regularizer，先做 fixed/size-matched controls。</td>
+      </tr>
+      <tr>
+        <td>Diagnostics</td>
+        <td>用粒球分析 purity、candidate precision、edge risk、assignment collapse。</td>
+        <td>高 protected_precision、高 ball activation、健康 ball count 不等于下游有效；ball-topk 不一定优于 no-ball topk。</td>
+        <td><span class="tag">keep</span> 诊断必须先于 formal run。</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h2>4. Stage A/B/C：为什么转向后处理和 target repair</h2>
+  <h3>Stage A：InfoNCE vs negative-free 表示空间诊断</h3>
+  <p>Stage A 比较 GRACE InfoNCE 与 raw negative-free 表征对粒球结构的影响。标签只用于后验诊断，不参与 SSL 训练或构球。</p>
+  <ul>
+    <li>raw negative-free 的球半径和平均角距离更小，但 effective rank、feature std、linear eval accuracy 明显变差，说明“紧凑”可能来自表示过压缩。</li>
+    <li>Cora 上 InfoNCE plain 在 Stage-A augmentation 下 acc 约 <code>0.7880</code>、effective rank 约 <code>135.45</code>；negfree plain acc 约 <code>0.3557</code>、effective rank 约 <code>2.215</code>。</li>
+    <li>加入 BN 后 negative-free 可恢复语义可分性，例如 Cora negfree BN acc 约 <code>0.7910</code>、effective rank 约 <code>131.89</code>，但半径/AD 也变大，紧凑优势消失。</li>
+    <li>结论：不能只优化 compactness；局部紧凑性必须与全局可分性、anti-collapse、effective rank 一起看。</li>
+  </ul>
+
+  <h3>Stage B：GB compactness 约束与动态刷新</h3>
+  <p>B 组尝试把粒球作为 soft structural constraint 反向约束 encoder。B2 验证“动态刷新粒球 assignment 是否能修复静态 B1 不稳定”。</p>
+  <table>
+    <thead><tr><th>设置</th><th>相对 B0 平均 acc 差值</th><th>acc_ge_b0</th><th>结论</th></tr></thead>
+    <tbody>
+      <tr><td><code>lambda=0.0005, refresh=50</code></td><td class="num">-0.0353 ± 0.1294</td><td>3/6</td><td>最好也只是持平一半，未过成功标准。</td></tr>
+      <tr><td><code>lambda=0.0005, refresh=100</code></td><td class="num">-0.0443 ± 0.1046</td><td>2/6</td><td>仍不稳定。</td></tr>
+      <tr><td><code>lambda=0.001, refresh=50</code></td><td class="num">-0.1400 ± 0.1180</td><td>0/6</td><td>明显过强。</td></tr>
+      <tr><td><code>lambda=0.001, refresh=100</code></td><td class="num">-0.1602 ± 0.1235</td><td>0/6</td><td>明显过强。</td></tr>
+    </tbody>
+  </table>
+  <p>结论：动态刷新不能解决 B1 不稳定；单纯 compactness loss 仍容易牺牲全局语义可分性。后续设计应把粒球放到更弱的位置，例如 frozen embedding 后处理、soft target、confidence weighting，而不是强行训练 encoder。</p>
+
+  <h3>Stage C：confidence soft relation 计划</h3>
+  <p>C 组计划不是已完成主结果，而是从 B 组负结果导出的设计方案：稳定 encoder baseline、置信度加权 compactness、防塌缩门控、soft ball relation alignment。它的思想后来与 GAGB 的 soft local prior、confidence signal、target repair 方向一致。</p>
+
+  <h2>5. Noisy-label GB validation：GAGB 前的普通 GB gate</h2>
+  <p>这个阶段的任务是 frozen GRACE embedding 上的 noisy-label node classification。普通 GB 用作 classifier-stage local reliability unit，不参与 GRACE pretraining、view generation、hard positive、hard negative filter 或 split/evaluation 修改。</p>
+  <table>
+    <thead><tr><th>协议</th><th>内容</th></tr></thead>
+    <tbody>
+      <tr><td>数据集</td><td>Cora, CiteSeer</td></tr>
+      <tr><td>split</td><td>ratio train <code>0.1/0.2</code>, val <code>0.1</code>, split seed 0</td></tr>
+      <tr><td>noise</td><td>symmetric label noise <code>0.2/0.4</code></td></tr>
+      <tr><td>seeds</td><td><code>0,1,2,3,4</code></td></tr>
+      <tr><td>methods</td><td><code>ce</code>, <code>global</code>, <code>kmeans</code>, <code>topk_matched</code>, <code>gb</code>, <code>gb_prior</code>, <code>gb_ca_ce</code>, <code>gb_ca_global</code></td></tr>
+    </tbody>
+  </table>
+  <p>主要发现：</p>
+  <ul>
+    <li>coverage-aware 变体达到 full train-node coverage，但实际 alpha 很小：Cora <code>gb_ca_ce</code> 的 <code>alpha_mean_all_train</code> 约 <code>0.0593-0.0774</code>，CiteSeer 约 <code>0.0560-0.0678</code>。</li>
+    <li>在 Cora train=0.2 noise=0.4，普通 <code>gb</code> acc <code>0.7974 ± 0.0054</code>，高于 CE <code>0.7935 ± 0.0082</code> 和 kmeans <code>0.7945 ± 0.0062</code>，这是 Cora 局部正信号。</li>
+    <li>在 CiteSeer 上不稳定：例如 train=0.2 noise=0.2，<code>gb_ca_ce</code> acc <code>0.7009 ± 0.0129</code>，低于 global <code>0.7082 ± 0.0055</code> 和 <code>gb_ca_global</code> <code>0.7093 ± 0.0063</code>。</li>
+    <li>最终结论：simple confidence-weighted GB smoothing 不能作为主方法；后续必须和 CE/global/kmeans/topk matched 同协议比较。</li>
+  </ul>
+
+  <h2>6. Graph-aware Granular Ball 方法定义</h2>
+  <p>GAGB 的动机是：ordinary GB 只看 embedding-space compactness，不显式使用图拓扑和预测一致性；图节点不是独立样本，局部连通、K-hop/PPR 邻近、teacher prediction consistency 也应参与定义“可靠局部区域”。</p>
+  <table>
+    <thead><tr><th>形态</th><th>构球信号</th><th>标签角色</th><th>风险</th></tr></thead>
+    <tbody>
+      <tr><td>ordinary GB</td><td>embedding 距离和半径收益</td><td>无标签构球</td><td>忽略拓扑和预测一致性。</td></tr>
+      <tr><td>SGBGC 类</td><td>connected subgraph + supervised purity threshold</td><td>强监督 split</td><td>noisy-label 场景有 leakage 风险。</td></tr>
+      <tr><td>GAGB v1/v2</td><td>embedding similarity + topology proximity + 后续 teacher/noisy target</td><td>noisy labels 只在构球后弱参与 target</td><td>必须证明优于 khop/kmeans/topk/shuffled controls。</td></tr>
+    </tbody>
+  </table>
+
+  <h3>核心定义</h3>
+  <p>给定 frozen GRACE embedding <code>H</code>、图边 <code>E</code> 和 teacher prediction <code>P</code>，GAGB membership score 可写为：</p>
+  <pre>s(i, B) = lambda_h * s_h(i, B) + lambda_t * s_t(i, B) + lambda_p * s_p(i, B)
+
+s_h(i, B) = (1 + cos(h_i, mu_B)) / 2
+s_t(i, B) = topology proximity, e.g. K-hop / PPR proximity to center c_B
+s_p(i, B) = 1 - JS(p_i, pbar_B) / log(C)</pre>
+  <p>当前已实现的 v1 更接近 <code>lambda_h=0.7</code>、<code>lambda_t=0.3</code>、<code>lambda_p=0</code> 的 embedding + topology greedy grouping；v2 主要改的是 target construction，而不是构球本身。</p>
+
+  <h3>target construction 思想</h3>
+  <pre>q_B      = ball-level target distribution
+q_pred_B = teacher / prediction-informed ball prior
+q_mix    = beta * q_label_B + (1 - beta) * q_pred_B
+
+conflict gate:
+  edit train node i only if q_mix[noisy_y_i] <= 0.35 and max(q_mix) >= 0.55
+
+old alpha03 update:
+  target_i = (1 - alpha_i) * one_hot(noisy_y_i) + alpha_i * q_mix
+
+repair variants:
+  alpha09:       use stronger alpha on gated nodes
+  replace_qmix:  replace target with q_mix on gated nodes
+  margin_replace: replace only if q_mix margin is large enough</pre>
+  <p>clean labels 不参与构球、teacher 训练、target construction 或 classifier training；只用于 diagnostics / evaluation，例如 NCR、CDR、clean purity、per-class failure analysis。</p>
+
+  <h2>7. GAGB v1：graph-aware grouping 的第一轮 minival</h2>
+  <p>实验问题：Graph-aware granular balls 是否比 ordinary embedding-only GB 更适合 noisy-label local smoothing？协议固定为 Cora/CiteSeer、train ratio 0.2、val 0.1、symmetric noise 0.2/0.4、seeds 0-4、frozen GRACE、alpha 0.3。</p>
+  <table>
+    <thead><tr><th>Setting</th><th><code>gagb</code> vs <code>gb</code></th><th><code>gagb_ca_ce</code> vs <code>gb</code></th><th>解释</th></tr></thead>
+    <tbody>
+      <tr><td>CiteSeer 0.2</td><td>+0.00034, 3/5 seeds</td><td>+0.00069, 3/5 seeds</td><td>小正。</td></tr>
+      <tr><td>CiteSeer 0.4</td><td>+0.00043, 3/5 seeds</td><td>+0.00103, 2/5 seeds</td><td>小正但 seed 不稳。</td></tr>
+      <tr><td>Cora 0.2</td><td>+0.00011, 2/5 seeds</td><td>+0.00106, 3/5 seeds</td><td>很弱。</td></tr>
+      <tr><td>Cora 0.4</td><td>-0.00232, 1/5 seeds</td><td>-0.00211, 1/5 seeds</td><td>明显弱设置。</td></tr>
+    </tbody>
+  </table>
+  <p>机制诊断显示，<code>gagb</code> 在四个设置中 clean purity 高于 ordinary <code>gb</code>，noisy-label entropy 低于 ordinary <code>gb</code>；但 <code>gagb</code> 的 noise detection AUROC 在四个设置中都低于 ordinary <code>gb</code>。更重要的是，<code>gagb</code> 没有稳定打过 <code>khop_only</code> 和 <code>gagb_shuffled</code>。</p>
+  <div class="box warn"><strong>v1 决策：</strong>graph-aware grouping 能产生更干净、低熵的局部区域，但 independent value 未证明。v1 只能作为 diagnostic baseline，不是 paper-ready main method。</div>
+
+  <h2>8. GAGB v1 fair-control patch</h2>
+  <p>v1 初跑后补了更严格的 matched controls：<code>emb_only_gagb_local/global</code>、<code>kmeans_gagb_matched</code>、<code>topk_gagb_matched</code>、<code>gagb_shuffled_size_only</code>、<code>gagb_shuffled_alpha_matched</code>。alpha-matched shuffled sanity 中 alpha diff 和 coverage diff 都为 <code>0.0</code>。</p>
+  <table>
+    <thead><tr><th>Setting</th><th><code>gagb</code> vs strongest relevant controls</th><th>结论</th></tr></thead>
+    <tbody>
+      <tr><td>Cora 0.2</td><td>vs <code>gb</code> +0.00011；vs <code>khop_only</code> -0.00011；vs <code>gagb_shuffled_alpha_matched</code> -0.00021</td><td>不能证明 GAGB-specific value。</td></tr>
+      <tr><td>Cora 0.4</td><td>vs <code>gb</code> -0.00232；vs <code>emb_only_gagb_global</code> +0.00211；vs <code>topk_gagb_matched</code> +0.00665</td><td>和不同 control 比有混合结果。</td></tr>
+      <tr><td>CiteSeer 0.2</td><td>vs <code>gb</code> +0.00034；vs <code>khop_only</code> -0.00670；vs <code>gagb_shuffled_alpha_matched</code> +0.00103</td><td>输给 topology-only。</td></tr>
+      <tr><td>CiteSeer 0.4</td><td>vs <code>gb</code> +0.00043；vs <code>topk_gagb_matched</code> +0.00447；vs <code>gagb_shuffled_alpha_matched</code> -0.00034</td><td>仍不稳定。</td></tr>
+    </tbody>
+  </table>
+  <div class="box bad"><strong>fair-control 决策：</strong>GAGB v1 没有通过 independent-value gate。它可继续作为 diagnostic baseline，但需要明确改变机制，例如 target construction、prediction consistency 或 Q(B)，而不是继续解释同一个 v1。</div>
+
+  <h2>9. GAGB v2 target-only：从局部分组转向 soft-label generator</h2>
+  <p>v2 target-only 的假设是：v1 失败可能因为 <code>q_B</code> 太直接依赖 noisy local majority。于是保持 GRACE embedding 和 GAGB grouping 不变，只改 ball-wise soft target：加入 noisy-label-only linear teacher、<code>q_pred_B</code>、teacher prior、conflict gate。</p>
+  <table>
+    <thead><tr><th>Setting</th><th><code>gagb_qb_conflict_gate</code> vs <code>gb</code></th><th>vs v1 <code>gagb</code></th><th>NCR/CDR</th></tr></thead>
+    <tbody>
+      <tr><td>Cora 0.2</td><td>-0.00011</td><td>-0.00021</td><td>NCR 0.0, CDR 0.0</td></tr>
+      <tr><td>Cora 0.4</td><td>-0.00169</td><td>+0.00063</td><td>NCR 0.0, CDR 0.0</td></tr>
+      <tr><td>CiteSeer 0.2</td><td>+0.00747</td><td>+0.00713</td><td>NCR 0.0, CDR 0.0</td></tr>
+      <tr><td>CiteSeer 0.4</td><td>+0.00034</td><td>-0.00009</td><td>NCR 0.0, CDR 0.0</td></tr>
+    </tbody>
+  </table>
+  <p>success criteria：beat <code>gb</code> 至少 3/4 settings 失败（2/4），beat v1 <code>gagb</code> 至少 3/4 settings 失败（2/4），NCR 仍为 0 失败，clean damage controlled 通过。</p>
+  <div class="box warn"><strong>v2 target-only 决策：</strong>pipeline 可运行且不使用 clean labels；CiteSeer 0.2 有真实 paired positive signal；但 target-only v2 不是主方法。最关键异常是：gate 选到的节点看起来可能可纠正，但 alpha mixing 没让 target argmax 改变。</div>
+
+  <h2>10. Gated-node diagnostic：发现 alpha 阻塞 correction signal</h2>
+  <p>诊断脚本专门检查为什么 <code>gagb_qb_conflict_gate</code> 的 NCR 为 0。结论非常关键：q_mix 在 gated noisy nodes 上经常已经指向 clean label，但 old alpha03 convex update 把 target argmax 留在 noisy label。</p>
+  <table>
+    <thead><tr><th>Setting</th><th>Gated ratio</th><th>Gated noisy ratio</th><th>Possible before alpha</th><th>Lost by alpha</th><th>Teacher gated clean acc</th><th>Ball clean purity</th></tr></thead>
+    <tbody>
+      <tr><td>CiteSeer 0.2</td><td>0.0547</td><td>0.6262</td><td>0.8426</td><td>0.8426</td><td>0.8346</td><td>0.8525</td></tr>
+      <tr><td>CiteSeer 0.4</td><td>0.0324</td><td>0.8812</td><td>0.9032</td><td>0.9032</td><td>0.9032</td><td>0.8956</td></tr>
+      <tr><td>Cora 0.2</td><td>0.0631</td><td>0.8101</td><td>0.9722</td><td>0.9722</td><td>0.9663</td><td>0.9335</td></tr>
+      <tr><td>Cora 0.4</td><td>0.0343</td><td>0.9664</td><td>0.9875</td><td>0.9875</td><td>0.9875</td><td>0.9861</td></tr>
+    </tbody>
+  </table>
+  <p>这说明 NCR=0 不是“GAGB 没有 correction signal”的证据，而是 target update 太弱。下一轮 target-repair 因此合理。</p>
+
+  <h2>11. GAGB v2 target-repair：让 NCR 转正</h2>
+  <p>target-repair 只修 target update，不改 GRACE、GAGB construction、teacher、split、noise 或 graph augmentation。测试 <code>alpha06/07/09</code>、<code>replace_qmix</code>、<code>sharpen_qmix_T05</code>、<code>margin_replace</code>。</p>
+  <table>
+    <thead><tr><th>Setting</th><th>gb acc</th><th>gagb acc</th><th>alpha09 acc / NCR / CDR</th><th>replace_qmix acc / NCR / CDR</th><th>解释</th></tr></thead>
+    <tbody>
+      <tr><td>Cora 0.2</td><td>0.8118</td><td>0.8119</td><td>0.8120 / 0.2519 / 0.0143</td><td>0.8136 / 0.2519 / 0.0143</td><td>repair 有机制正向。</td></tr>
+      <tr><td>Cora 0.4</td><td>0.7974</td><td>0.7950</td><td>0.7966 / 0.0811 / 0.0025</td><td>0.7961 / 0.0811 / 0.0025</td><td>仍低于 gb，是弱设置。</td></tr>
+      <tr><td>CiteSeer 0.2</td><td>0.7009</td><td>0.7012</td><td>0.7101 / 0.1444 / 0.0255</td><td>0.7077 / 0.1444 / 0.0255</td><td>明显正向但需控。</td></tr>
+      <tr><td>CiteSeer 0.4</td><td>0.6976</td><td>0.6980</td><td>0.6991 / 0.0617 / 0.0075</td><td>0.7005 / 0.0617 / 0.0075</td><td>小正。</td></tr>
+    </tbody>
+  </table>
+  <ul>
+    <li><code>alpha09</code> vs <code>alpha03</code>：4/4 settings positive；vs <code>gb</code>：3/4 settings positive；vs <code>gagb</code>：4/4 settings positive。</li>
+    <li><code>replace_qmix</code> / <code>margin_replace</code> beat <code>gagb</code> in 4/4 settings and beat <code>gb</code> in 3/4 settings。</li>
+    <li><code>sharpen_qmix_T05</code> 0/4 settings positive vs alpha03，应丢弃。</li>
+  </ul>
+  <div class="box ok"><strong>repair 结论：</strong>target update 确实阻塞了 correction signal；修复后 NCR 在四个设置中都转正，CDR 低于 0.03。这个结果是 mechanism-positive、method-promising，但不是 paper-ready，因为当轮缺少 matched shuffled、kmeans、topk fair controls。</div>
+
+  <h2>12. GAGB v2.1 fair-control repair：修复 routing bug 后的关键证据</h2>
+  <p>v2.1 初版发现一个重要路由 bug：<code>_method_grouping()</code> 先匹配泛化的 V2 target methods，导致 <code>gagb_shuffled_alpha09_matched</code>、<code>khop_only_alpha09</code> 等 control 被错误路由到 GAGB grouping。修复后新增单元测试并重跑 20 个 frozen classifier runs。本报告只以 <code>gagb_v2_1_fair_repair_fixed_20260602</code> 为结论依据。</p>
+  <table>
+    <thead><tr><th>Setting</th><th>alpha03</th><th>alpha09</th><th>replace</th><th>shuffled alpha09</th><th>重要解释</th></tr></thead>
+    <tbody>
+      <tr><td>Cora 0.2</td><td>0.8039 / NCR 0</td><td>0.8083 / NCR 0.2519 / CDR 0.0143</td><td>0.8090 / NCR 0.2519 / CDR 0.0143</td><td>0.8038 / NCR 0 / CDR 0.0005</td><td>repair 优于 shuffled，但 kmeans alpha09 达 0.8095。</td></tr>
+      <tr><td>Cora 0.4</td><td>0.7949 / NCR 0</td><td>0.7907 / NCR 0.0811 / CDR 0.0025</td><td>0.7886 / NCR 0.0811 / CDR 0.0025</td><td>0.7931 / NCR 0 / CDR 0</td><td>明确弱设置，repair 低于 alpha03/gb/shuffled。</td></tr>
+      <tr><td>CiteSeer 0.2</td><td>0.7058 / NCR 0</td><td>0.7087 / NCR 0.1444 / CDR 0.0255</td><td>0.7064 / NCR 0.1444 / CDR 0.0255</td><td>0.7064 / NCR 0 / CDR 0.0004</td><td>alpha09 有较好信号。</td></tr>
+      <tr><td>CiteSeer 0.4</td><td>0.6982 / NCR 0</td><td>0.6981 / NCR 0.0617 / CDR 0.0075</td><td>0.6997 / NCR 0.0617 / CDR 0.0075</td><td>0.6979 / NCR 0 / CDR 0</td><td>replace 小正。</td></tr>
+    </tbody>
+  </table>
+  <table>
+    <thead><tr><th>Comparison</th><th>alpha09 wins</th><th>replace wins</th><th>含义</th></tr></thead>
+    <tbody>
+      <tr><td>vs alpha03</td><td>2/4</td><td>3/4</td><td>replace 通过 hard gate，alpha09 未通过。</td></tr>
+      <tr><td>vs gb</td><td>3/4</td><td>3/4</td><td>方法正向，但 gain 多数小于 std。</td></tr>
+      <tr><td>vs shuffled matched</td><td>3/4</td><td>3/4</td><td>修 bug 后能过 shuffled sanity，但 shuffled intervention 很弱。</td></tr>
+      <tr><td>vs kmeans matched</td><td>3/4</td><td>2/4</td><td>GAGB-specific value 只部分支持。</td></tr>
+      <tr><td>vs topk matched</td><td>4/4</td><td>3/4</td><td>topk NCR 高但 CDR 也高，说明 aggressive local repair 会伤 clean nodes。</td></tr>
+      <tr><td>vs khop repair</td><td>2/4</td><td>3/4</td><td>拓扑-only 仍是强解释对照。</td></tr>
+    </tbody>
+  </table>
+  <div class="box warn"><strong>v2.1 决策：</strong>继续，但缩窄 claim。可说“conservative conflict-gated target repair can produce useful noise correction with bounded clean damage”。不能说“GAGB grouping consistently beats all fair alternatives”。</div>
+
+  <h2>13. GAGB v2.2 / v2.3：Cora 0.4 失败与 class-safe calibration</h2>
+  <p>v2.2 诊断 Cora noise=0.4：为什么 positive NCR 反而 accuracy 不稳或下降。clean labels 仅用于诊断。</p>
+  <ul>
+    <li>失败不是主要由 aggregate CDR 高造成。GAGB alpha09 / replace 的 direct clean damage 主要集中在 class 0，CDR 约 <code>0.0202</code>；但最大 test accuracy drop 是 class 1。</li>
+    <li>class 1 最差：alpha09 vs gb delta <code>-0.0592</code>，replace vs gb delta <code>-0.0868</code>；但 class 1 平均只有约 <code>0.4</code> gated noisy nodes 和 <code>0.0</code> gated clean nodes，说明下降大于直接干预 footprint。</li>
+    <li>class 6 也下降，但 GAGB repair 对 class 6 有 <code>0</code> gated noisy 和 <code>0</code> gated clean，属于 indirect classifier-boundary movement。</li>
+    <li>khop repair 改动更多 class 且 direct CDR 更高，但某些 class-level accuracy 反而没 GAGB 那么差，这削弱强 GAGB-builder claim。</li>
+  </ul>
+  <p>v2.3 测试 class-safe target calibration：<code>alpha06/07/08</code>、<code>class_capped_alpha09</code>、<code>class_balanced_alpha09</code>、<code>boundary_safe_alpha09</code>、以及 replay random same-count diagnostic。它主要服务于 Cora 0.4 的边界敏感性诊断。</p>
+  <table>
+    <thead><tr><th>Cora 0.4 method</th><th>Aggregate test acc mean ± std</th><th>相对 alpha09 的解释</th></tr></thead>
+    <tbody>
+      <tr><td><code>gb</code></td><td>0.7968 ± 0.0056</td><td>当前 Cora 0.4 参照。</td></tr>
+      <tr><td><code>gagb_qb_conflict_gate_alpha09</code></td><td>0.7907 ± 0.0097</td><td>原 v2.1 强 alpha，低于 gb。</td></tr>
+      <tr><td><code>replace_qmix</code></td><td>0.7886 ± 0.0090</td><td>更强替换，class 1/6 更差。</td></tr>
+      <tr><td><code>alpha06</code></td><td>0.7939 ± 0.0061</td><td>缓和强度，class 1/6 有恢复，但仍低于 gb。</td></tr>
+      <tr><td><code>alpha07</code></td><td>0.7950 ± 0.0060</td><td>比 alpha09 更安全，仍未超过 gb。</td></tr>
+      <tr><td><code>class_capped_alpha09</code></td><td>0.7958 ± 0.0065</td><td>class 1 明显恢复，但整体仍略低于 gb。</td></tr>
+      <tr><td><code>class_balanced_alpha09</code></td><td>0.7957 ± 0.0058</td><td>类似 capped，未形成强结论。</td></tr>
+      <tr><td><code>boundary_safe_alpha09</code></td><td>0.7959 ± 0.0043</td><td>当前 calibration 中较稳，但仍略低于 gb。</td></tr>
+      <tr><td><code>khop_only_alpha09</code></td><td>0.7922 ± 0.0063</td><td>拓扑-only repair 仍不强，但可解释部分机制。</td></tr>
+    </tbody>
+  </table>
+  <div class="box warn"><strong>v2.3 当前状态：</strong>它是 failure diagnosis / calibration，不是新主结果。它支持“target update strength 会造成间接决策边界移动”，也提示 class-capped / boundary-safe 更稳；但还需要放回四个 dataset-noise settings 和 fair controls 里验证。</div>
+
+  <h2>14. 指标定义与判断门槛</h2>
+  <table>
+    <thead><tr><th>指标</th><th>定义 / 用途</th><th>注意事项</th></tr></thead>
+    <tbody>
+      <tr><td>Accuracy mean/std</td><td>5 seeds 的 test accuracy at best validation。</td><td>小于 std 或 seed wins 不稳不能写强 claim。</td></tr>
+      <tr><td>Paired delta</td><td>同 split/noise/seed 下 method - baseline。</td><td>比单纯 mean 更重要。</td></tr>
+      <tr><td>Clean purity</td><td>用 clean labels 后验统计球内纯度。</td><td>只用于诊断，不能作为训练信号。</td></tr>
+      <tr><td>Noisy-label entropy</td><td>球内 noisy train label 分布熵。</td><td>低熵不等于下游有效。</td></tr>
+      <tr><td>Noise detection AUROC</td><td>用 suspicion score 区分 noisy / clean train nodes。</td><td>v1 GAGB AUROC 不稳定优于 ordinary GB。</td></tr>
+      <tr><td>NCR</td><td>noisy train nodes 中 target argmax 被改到 clean label 的比例。</td><td>clean label 只用于评估；NCR 高但 CDR 高也不可接受。</td></tr>
+      <tr><td>CDR</td><td>clean train nodes 中 target argmax 被改错的比例。</td><td>v2.1 要求 <code>CDR &lt; 0.03</code> 或至少 <code>&lt; 0.05</code>。</td></tr>
+      <tr><td>Possible before alpha</td><td>q_mix 在 alpha mixing 前可纠正 noisy node 的比例。</td><td>解释 old alpha03 为什么 NCR=0。</td></tr>
+      <tr><td>Lost by alpha</td><td>pre-alpha 可纠正但 convex update 后没改变 argmax 的比例。</td><td>target repair 的直接动机。</td></tr>
+      <tr><td>Coverage / alpha stats</td><td>多少节点被 local target 影响，影响强度多大。</td><td>coverage 高不等于 GB-specific value。</td></tr>
+      <tr><td>Class-level diagnostics</td><td>每类 NCR/CDR/changed/test acc/confusion matrix。</td><td>用于发现 Cora 0.4 的 indirect boundary movement。</td></tr>
+    </tbody>
+  </table>
+
+  <h2>15. 已支持、尚未支持与负结果</h2>
+  <div class="grid">
+    <div class="card">
+      <h3>实验支持的结论</h3>
+      <ul>
+        <li>强行把 GB 用在 view generation、hard positive、hard edge rule 上不可靠。</li>
+        <li>compactness alone 容易与 global separability 冲突。</li>
+        <li>ordinary GB / coverage-aware smoothing 只有弱信号，Cora 局部正向、CiteSeer 不稳。</li>
+        <li>GAGB v1 能产生更纯、低熵局部区域，但不能证明 independent value。</li>
+        <li>v2 conflict gate 能选中高 noisy ratio 节点；old alpha03 是 NCR=0 的主要原因。</li>
+        <li>target repair 能让 NCR 转正且 CDR 受控。</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h3>合理但未证明的解释</h3>
+      <ul>
+        <li>GAGB 的价值可能在 target repair 的 conservative local correction，而不是 grouping purity 本身。</li>
+        <li>Cora 0.4 失败可能来自 target update 对 classifier boundary 的间接扰动。</li>
+        <li>class-capped / boundary-safe update 可能比 replace_qmix 更稳。</li>
+        <li>prediction consistency 和 Q(B) 可能改善 GAGB grouping，但还没被当前 v2 证明。</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h3>当前不能写的 claim</h3>
+      <ul>
+        <li>不能说 GAGB 显著、稳定优于 GB/kmeans/topk/khop/shuffled。</li>
+        <li>不能说 GAGB 已经是 paper-ready main method。</li>
+        <li>不能把 purity/entropy/AUROC 诊断直接等同于下游有效。</li>
+        <li>不能把 x-space percentile robustness 写成 GB 贡献。</li>
+        <li>不能用 Cora 单设置或 single-seed 支撑主结论。</li>
+      </ul>
+    </div>
+  </div>
+
+  <h2>16. 当前最稳的论文叙事</h2>
+  <p>保守但可辩护的叙事是：</p>
+  <div class="box">
+    <p><strong>方法定位：</strong>我们不把 granular balls 当作硬语义标签或 view generator，而是定义 graph-aware granular balls 作为 noisy-label node classification 中的 local soft-label and confidence prior。GAGB 结合 frozen representation similarity 和 graph topology proximity，随后通过 teacher-aware target construction 与 conflict gate，只在高冲突节点上进行保守 target repair。</p>
+    <p><strong>实验定位：</strong>历史 GB-GCL 负结果说明强 GB 机制会破坏 GCL；普通 GB local smoothing 只有弱信号；GAGB v1 提供更纯局部区域但独立价值不足；v2 target repair 首次证明 correction signal 可以从 pre-alpha q_mix 转为正 NCR 且 CDR 受控。</p>
+    <p><strong>claim 边界：</strong>当前只支持 mechanism-positive 和 partially method-positive，不支持 strong main method claim。下一步如果 fair controls 和 class-safe calibration 都通过，才可以升级为主方法。</p>
+  </div>
+
+  <h2>17. 建议 Claude 重点思考的问题</h2>
+  <ol>
+    <li>v2.1 的结果是否足以支持继续投入 GAGB target repair？如果支持，最小下一步是什么？</li>
+    <li>怎样设计 intervention-strength-matched shuffled control，避免当前 shuffled controls “几乎不改节点”的问题？</li>
+    <li>Cora 0.4 的 class 1 / class 6 indirect boundary movement 应该如何诊断？需要看哪些 confusion / qmix / teacher bias 指标？</li>
+    <li>class-capped、class-balanced、boundary-safe 三类 calibration 哪个最值得进入下一轮 fair-control full setting？</li>
+    <li>是否应该先继续 frozen-GRACE project-aligned track，还是转 NoisyGL / RTGNN public benchmark track？两者如何拆表避免协议混淆？</li>
+    <li>如何把论文 claim 写得既有创新性又不 overclaim？</li>
+  </ol>
+
+  <h2>18. 下一步最小实验建议</h2>
+  <table>
+    <thead><tr><th>优先级</th><th>实验</th><th>只改什么</th><th>成功标准</th><th>失败标准</th></tr></thead>
+    <tbody>
+      <tr>
+        <td>1</td>
+        <td>v2.4 fair-control calibration</td>
+        <td>保留 <code>alpha07</code>、<code>class_capped_alpha09</code>、<code>boundary_safe_alpha09</code>，放回 Cora/CiteSeer 0.2/0.4 5 seeds，并恢复 gb/gagb/khop/kmeans/topk/shuffled controls。</td>
+        <td>至少 3/4 settings beat alpha03、gb、shuffled；至少 2/4 beat kmeans/topk/khop；CDR < 0.03；Cora 0.4 不再明显低于 gb。</td>
+        <td>若仍只在 CiteSeer 0.2 或 Cora 0.2 正向，或 kmeans/khop 持平/更强，则降级为 diagnostic。</td>
+      </tr>
+      <tr>
+        <td>2</td>
+        <td>intervention-strength-matched shuffled / replay control</td>
+        <td>让 shuffled control 改动相同数量节点、相似 class distribution、相近 alpha/target strength，但不使用真实 GAGB grouping。</td>
+        <td>GAGB repair 仍优于 matched intervention。</td>
+        <td>若 matched random/shuffled 复现收益，则 GAGB-specific claim 失败，claim 降为 “target repair regularization”。</td>
+      </tr>
+      <tr>
+        <td>3</td>
+        <td>Cora 0.4 boundary diagnosis</td>
+        <td>固定方法，导出 class 1/6 teacher/qmix/confusion 变化、decision boundary sensitivity、per-class train/test distribution。</td>
+        <td>能解释为什么少量 target changes 导致大 class drop。</td>
+        <td>解释不出则不要继续 threshold sweep。</td>
+      </tr>
+      <tr>
+        <td>4</td>
+        <td>GAGB construction v3 with Q(B) / prediction consistency</td>
+        <td>只有在 target repair gate 通过后，再加入 <code>Q(B)</code>、prediction consistency 或 PPR。</td>
+        <td>新增构球机制稳定提升 NCR/AUROC/accuracy，并优于 ordinary GB/kmeans/khop/PPR-only。</td>
+        <td>若只提升 purity/entropy 而不提升下游或不胜 controls，停止。</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h2>19. 主要证据文件索引</h2>
+  <ul>
+    <li><code>01_literature_and_research_map_ai_optimized.md</code>：研究偏好、文献地图、claim boundary。</li>
+    <li><code>02_experiment_history_and_lessons*.md</code>：十份方向级实验历史，原始负结果和经验边界。</li>
+    <li><code>03_cross_direction_meta_review.md</code>：跨方向复盘，合并失败模式和正向信号。</li>
+    <li><code>deep-research-report.md</code>：六轮 GB+GCL 失败收缩和下一步决策。</li>
+    <li><code>deep-research-report-GGB.md</code>：Graph-aware GB noisy-label 研究设计。</li>
+    <li><code>导师汇报_粒球与图对比学习实验总结.md</code>：面向导师汇报的方向级中文总结。</li>
+    <li><code>gb_denoise_stage_a_negfree_vs_infonce/results/stage_a_summary.md</code>：InfoNCE vs negative-free 表征和粒球诊断。</li>
+    <li><code>gb_denoise_stage_b_compactness/reports/*</code>：compactness、动态刷新、B 组稳定性报告。</li>
+    <li><code>gb_noisy_label_validation/reports/2026-05-21_coverage_aware_validation_report.md</code>：ordinary GB coverage-aware local smoothing 验证。</li>
+    <li><code>gb_graph_aware_minival_6_1/reports/2026-06-01_gagb_minival_result.md</code>：GAGB v1 minival。</li>
+    <li><code>gb_graph_aware_minival_6_1/reports/2026-06-01_gagb_fair_minival_result.md</code>：GAGB v1 fair controls。</li>
+    <li><code>gb_graph_aware_minival_6_1/reports/2026-06-01_gagb_v2_target_minival_result.md</code>：GAGB target-only v2。</li>
+    <li><code>gb_graph_aware_minival_6_1/reports/gagb_v2_gated_diagnostic_20260601/gated_nodes_diagnostic_report.md</code>：alpha 阻塞诊断。</li>
+    <li><code>gb_graph_aware_minival_6_1/reports/gagb_v2_target_repair_20260601/target_repair_report.md</code>：target repair。</li>
+    <li><code>gb_graph_aware_minival_6_1/reports/gagb_v2_1_fair_repair_fixed_20260602/fair_repair_report.md</code>：修复 routing bug 后的 fair-control repair。</li>
+    <li><code>gb_graph_aware_minival_6_1/reports/gagb_v2_2_class_failure_20260602/cora_0p4_failure_report.md</code>：Cora 0.4 class-level failure。</li>
+    <li><code>gb_graph_aware_minival_6_1/reports/gagb_v2_3_class_safe_calibration_20260602/v2_3_report.md</code>：class-safe target calibration。</li>
+  </ul>
+
+  <h2>20. 可直接复制给 Claude 的提示词</h2>
+  <pre>你看不到我的本地实验文件夹、代码、CSV、日志和 HTML，所以我把关键事实完整整理在下面。请只基于这份 self-contained 信息进行科研判断，不要假设你能访问本地路径。
+
+我希望你帮我思考：
+1. 当前 GAGB / GB-GCL 实验真正验证了什么，没有验证什么？
+2. 哪些结论可以写进论文，哪些只能作为合理猜测或负结果？
+3. 最新 GAGB v2.1 / v2.3 之后，下一步最小实验应该是什么？
+4. 如何避免把 Cora 局部小提升、purity/entropy 诊断、或小于 std 的 gain 写成过强 claim？
+5. GAGB target repair 的机制是否值得继续，还是应该降级为 diagnostic / appendix？
+
+项目背景：
+- 研究目标是把 Granular Ball Computing 与 GRACE 或类似节点级图对比学习结合，用于研一阶段可投稿论文。
+- 多轮历史实验已经否定了强 GB 路线：GB 不适合直接当 view generator、hard positive label、hard negative filter、prototype pulling target、pure edge denoise rule。
+- 当前保守定位：GB/GAGB 只作为 soft local prior、soft-label generator、confidence signal、diagnostic object。
+
+历史 GB-GCL 结论：
+- GB-guided view generation 多次低于健康 GRACE，应 abandon。
+- GB-BGRL / GB-GBT 没有修复 view-target mismatch，应 abandon。
+- hard/broad same-ball positive、prototype、direct consistency 不稳，应 abandon 或只作负结果。
+- GB-FN topk-soft 是历史上最安全 GB+GCL 形式，但 Cora 约 +0.0014、CiteSeer 约 +0.0010、PubMed 持平，std overlap 且 no-ball topk 接近，所以只能弱 claim。
+- pure GB edge denoise 命中弱，downweight precision 约 0.5596、recall 约 0.2272；x-space percentile 更强但不是 GB 贡献。
+- RDCL PubMed 有 +0.0030/+0.0025 正信号，但 random/shuffled 控制接近主方法，因此只能说 local relation regularizer 可能有效，不能说语义粒球已证明必要。
+
+Stage A/B 背景：
+- raw negative-free SSL 会产生很小粒球半径和 AD，但 effective rank、feature std、linear acc 明显下降，说明 compactness 可能来自过压缩。
+- Cora 上 InfoNCE plain acc 约 0.7880、effective rank 约 135.45；negfree plain acc 约 0.3557、effective rank 约 2.215。
+- negative-free + BN 可恢复 acc/effective rank，但紧凑优势基本消失。
+- Stage B 的 GB compactness 和动态刷新没有解决不稳定：lambda=0.001 动态刷新对 B0 是 0/6 pair 不低于 baseline，lambda=0.0005 最好也只是 3/6。
+- 因此后续不再强行反向训练 encoder，而转向 frozen embedding / classifier-stage local target repair。
+
+ordinary GB noisy-label validation：
+- 协议：Cora/CiteSeer, train ratio 0.1/0.2, val 0.1, symmetric noise 0.2/0.4, seeds 0-4, frozen GRACE。
+- methods: ce, global, kmeans, topk_matched, gb, gb_prior, gb_ca_ce, gb_ca_global。
+- coverage-aware variants full coverage，但 alpha 很小，Cora gb_ca_ce alpha_mean_all_train 约 0.0593-0.0774，CiteSeer 约 0.0560-0.0678。
+- Cora 有局部正信号，比如 train=0.2 noise=0.4 普通 gb acc 0.7974±0.0054，高于 CE 0.7935±0.0082 和 kmeans 0.7945±0.0062。
+- CiteSeer 不稳，比如 train=0.2 noise=0.2 gb_ca_ce 0.7009±0.0129，低于 global 0.7082±0.0055 和 gb_ca_global 0.7093±0.0063。
+- 结论：simple confidence-weighted GB smoothing 不能作为主方法。
+
+GAGB 方法定义：
+- GAGB = Graph-aware Granular Ball。ordinary GB 只看 embedding-space compactness；GAGB 想结合 frozen GRACE embedding similarity 与 topology proximity，并在 target construction 阶段结合 noisy-label teacher。
+- membership score: s(i,B)=lambda_h*s_h + lambda_t*s_t + lambda_p*s_p；当前 v1/v2 实现主要是 lambda_h=0.7, lambda_t=0.3，尚未真正加入 prediction consistency Q(B) 主机制。
+- target construction 中，q_mix 融合 noisy local label distribution 与 noisy-label-only teacher prediction。conflict gate 只在 q_mix[noisy_y] <= 0.35 且 max(q_mix) >= 0.55 时修改 train target。
+- clean labels 不用于构球、teacher、target、classifier training，只用于 NCR/CDR/purity 等诊断。
+
+GAGB v1 minival：
+- 协议：Cora/CiteSeer, train ratio 0.2, val 0.1, noise 0.2/0.4, seeds 0-4, frozen GRACE, alpha 0.3。
+- gagb vs ordinary gb paired deltas: CiteSeer 0.2 +0.00034, CiteSeer 0.4 +0.00043, Cora 0.2 +0.00011, Cora 0.4 -0.00232。
+- gagb_ca_ce vs gb: CiteSeer 0.2 +0.00069, CiteSeer 0.4 +0.00103, Cora 0.2 +0.00106, Cora 0.4 -0.00211。
+- GAGB clean purity 高于 ordinary GB，noisy-label entropy 低于 ordinary GB，但 noise AUROC 不稳定优于 GB；且没有稳定打过 khop_only 和 shuffled controls。
+- v1 fair-control patch 加入 emb_only、kmeans_gagb_matched、topk_gagb_matched、gagb_shuffled_alpha_matched。结论：v1 没有通过 independent-value gate。
+
+GAGB v2 target-only：
+- 保持 GAGB grouping 不变，只改 target construction：加入 noisy-label-only linear teacher、q_pred、teacher_prior、conflict_gate。
+- gagb_qb_conflict_gate vs gb: Cora 0.2 -0.00011, Cora 0.4 -0.00169, CiteSeer 0.2 +0.00747, CiteSeer 0.4 +0.00034。
+- 但 NCR 仍为 0，CDR 为 0；beat gb 只有 2/4，beat v1 gagb 只有 2/4，失败。
+
+Gated-node diagnostic：
+- gate 选中的节点 noisy ratio 很高，且 q_mix 在 alpha 前经常指向 clean label：
+  CiteSeer 0.2 gated noisy ratio 0.6262, possible before alpha 0.8426, lost by alpha 0.8426。
+  CiteSeer 0.4 gated noisy ratio 0.8812, possible before alpha 0.9032, lost by alpha 0.9032。
+  Cora 0.2 gated noisy ratio 0.8101, possible before alpha 0.9722, lost by alpha 0.9722。
+  Cora 0.4 gated noisy ratio 0.9664, possible before alpha 0.9875, lost by alpha 0.9875。
+- 结论：NCR=0 不是 GAGB 没有 correction signal，而是 alpha03 convex update 太弱。
+
+Target repair：
+- 只修 target update，不改 GRACE/GAGB/teacher/split/noise。
+- alpha09 / replace_qmix / margin_replace 让 NCR 转正且 CDR 低。
+- target repair results:
+  Cora 0.2: gb 0.8118, gagb 0.8119, alpha09 0.8120/NCR 0.2519/CDR 0.0143, replace 0.8136/NCR 0.2519/CDR 0.0143。
+  Cora 0.4: gb 0.7974, gagb 0.7950, alpha09 0.7966/NCR 0.0811/CDR 0.0025, replace 0.7961/NCR 0.0811/CDR 0.0025。
+  CiteSeer 0.2: gb 0.7009, gagb 0.7012, alpha09 0.7101/NCR 0.1444/CDR 0.0255, replace 0.7077/NCR 0.1444/CDR 0.0255。
+  CiteSeer 0.4: gb 0.6976, gagb 0.6980, alpha09 0.6991/NCR 0.0617/CDR 0.0075, replace 0.7005/NCR 0.0617/CDR 0.0075。
+- target repair 是 mechanism-positive，但当时缺 fair controls。
+
+GAGB v2.1 fair-control repair：
+- 修复了一个重要 routing bug：shuffled/khop repair controls 曾被错误路由到 GAGB grouping。修复后重跑，旧目录不能作为结论依据。
+- fixed report 中，replace_qmix wins: vs alpha03 3/4, vs gb 3/4, vs gagb 3/4, vs shuffled matched 3/4, vs kmeans matched 2/4, vs topk matched 3/4, vs khop repair 3/4。
+- alpha09 wins: vs alpha03 2/4, vs gb 3/4, vs shuffled 3/4, vs kmeans 3/4, vs topk 4/4, vs khop 2/4。
+- v2.1 支持：NCR 在四个设置中转正，CDR < 0.03；repair 比 shuffled/topk 多数时候更稳。
+- v2.1 不支持：GAGB grouping 一定优于 kmeans/khop/topk；Cora 0.4 明显失败；gains 多数小于 std。
+
+GAGB v2.2/v2.3 class failure：
+- Cora 0.4 失败不是简单 aggregate CDR 高。class 1 最大下降：alpha09 vs gb -0.0592，replace vs gb -0.0868，但 class 1 只有约 0.4 gated noisy nodes 和 0 gated clean nodes；class 6 也下降但没有直接 gated nodes，说明是 indirect classifier-boundary movement。
+- v2.3 中 Cora 0.4 aggregate:
+  gb 0.7968±0.0056；
+  alpha09 0.7907±0.0097；
+  replace_qmix 0.7886±0.0090；
+  alpha06 0.7939±0.0061；
+  alpha07 0.7950±0.0060；
+  class_capped_alpha09 0.7958±0.0065；
+  class_balanced_alpha09 0.7957±0.0058；
+  boundary_safe_alpha09 0.7959±0.0043。
+- class-safe calibration 有所恢复，但仍略低于 gb。它是诊断，不是新主结果。
+
+请你基于以上事实给出：
+1. 当前最诚实的科研结论；
+2. GAGB 是否还值得继续；
+3. 下一步最小实验的具体设计，包括 methods、controls、metrics、success/failure criteria；
+4. 可以写入论文的 claim 和必须避免的 overclaim；
+5. 如果你认为应该停掉 GAGB 主线，也请明确说明停在什么证据点上。</pre>
+
+</main>
+</body>
+</html>

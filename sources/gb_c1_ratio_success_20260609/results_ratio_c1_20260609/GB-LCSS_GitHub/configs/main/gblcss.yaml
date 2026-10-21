@@ -1,0 +1,35 @@
+method:
+  max_balls: 64
+  min_ball_size: 32
+  split_improvement: 0.05
+  min_train_per_ball: 2
+  beta: 0.5
+  leave_one_out: true
+  tie_mode: distribution_only
+
+model:
+  hidden: 64
+  layers: 2
+  dropout: 0.5
+
+training:
+  learning_rate: 0.01
+  weight_decay: 0.0005
+  epochs: 200
+  device: cpu
+
+distillation:
+  temperature: 1.0
+
+noise:
+  scope: train
+  type: uniform
+  rate: 0.4
+
+split:
+  type: percent
+  train: 0.2
+  validation: 0.1
+  test: 0.7
+
+seeds: [0, 1, 2, 3, 4]

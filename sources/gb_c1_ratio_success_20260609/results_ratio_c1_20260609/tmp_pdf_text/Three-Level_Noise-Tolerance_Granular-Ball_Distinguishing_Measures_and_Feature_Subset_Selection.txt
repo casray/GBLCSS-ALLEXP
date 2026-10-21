@@ -1,0 +1,1021 @@
+IEEE TRANSACTIONS ON FUZZY SYSTEMS, VOL. 34, NO. 5, MAY 2026                     1551
+
+Three-Level Noise-Tolerance Granular-Ball
+   Distinguishing Measures and Feature
+                Subset Selection
+
+                           Zhehuang Huang , Yongxi Chen, and Jinjin Li
+
+   Abstract—Uncertainty modeling with different granularity                      [1]. Feature selection, as an efﬁcient data preprocessing tech-
+structures is a research hotspot in granular computing. How-                     nique, plays a crucial role in addressing dimensional challenges.
+ever, most granularity-related uncertainty measures lack effec-                  This technique not only effectively reduces data dimensionality
+tive means to represent and exploit the inherent granularity in-                 by eliminating redundant and irrelevant features, but also signif-
+formation in data, making it difﬁcult for them to capture the                    icantly enhances the stability and generalization performance of
+distribution characteristics of samples and causing noise samples                learning models. Feature evaluation criteria, serving as standards
+in high-aggregation regions to be misidentiﬁed. Meanwhile, they                  for quantifying the contribution of features to classiﬁcation
+rarely involve noise-resistance mechanisms and struggle to accu-                 tasks, have been extensively studied with various innovative
+rately characterize the differences between samples in strongly                  evaluation methods proposed [2], [3], [4].
+disturbed environments, resulting in sensitivity to noise and in-
+sufﬁcient robustness. Motivated by these issues, we investigate a                   Granular computing [5], as a scalable information processing
+novel granular-ball distinguishing measure that enhances noise-                  paradigm, provides novel theoretical perspectives and method-
+resistance on three levels: the algebraic perspective (dependency                ological tools for solving complex problems. In recent years, the
+function), information theory (variable-precision entropy), and                  integration of granular computing theory and methods into fea-
+granular-ball computing (granulation mechanism). To this end, we                 ture selection has demonstrated signiﬁcant advantages and broad
+deﬁne a relative-distance fuzzy similarity relation that fully con-              application prospects in related ﬁelds, such as classiﬁcation
+siders local and global data distribution, thus effectively mitigating           tasks and cognitive learning [6], [7]. This integration not only
+the inﬂuence of noise and outliers. A relative-distance granular-ball            enriches the theoretical foundation of feature selection but also
+dependency function is then introduced by means of the relative-                 provides more effective solutions for addressing dimensionality
+distance fuzzy similarity relation and fuzzy decision. Moreover,                 challenges in complex data environments.
+several granular-ball fuzzy entropy measures are presented, in-
+corporating a variable-precision view to ﬂexibly deal with noise                 A. Related Work
+and uncertainty. Finally, a granular-ball distinguishing measure is
+presented to comprehensively evaluate the distinguishing ability of                 Pawlak’s classical rough set theory (PRS) [8] has achieved
+candidate features. From the view of maintaining the classiﬁcation               favorable application results as a feature selection model across
+ability, we further developed a heuristic feature selection algorithm            multiple domains [9], [10]. However, PRS can only handle
+with the distinguishing measure. Numerical experiments on 18                     discrete data, which limits its application scope. To address the
+benchmark datasets demonstrate the effectiveness and robustness                  discretization problem, Zadeh [11] introduced fuzzy set theory.
+of the proposed model, as well as its superiority over six state-of-             Building upon this foundation, Dubois et al. [12] combined
+the-art comparative algorithms.                                                  rough sets with fuzzy sets, deﬁned the concept of fuzzy similarity
+                                                                                 relations, and proposed fuzzy rough sets (FRSs) to directly
+   Index Terms—Feature selection, fuzzy rough sets (FRSs),                       handle continuous data. To tackle the misclassiﬁcation and noise
+granular-ball computing (GBC), information entropy.                              perturbation issues presented in original data, Ziarko [13] intro-
+                                                                                 duced the variable precision rough set model. To overcome the
+                           I. INTRODUCTION                                       limitation of fuzzy set models’ dependence on prior knowledge,
+                                                                                 Hu et al. [14] put forward the neighborhood rough sets (NRSs),
+H IGH-DIMENSIONAL data introduces the curse of di-                               which requires no additional prior knowledge while effectively
+       mensionality, leading to increased uncertainty and re-                    handling continuous data. Furthermore, Wang et al. [15] con-
+duced interpretability in data analysis and modeling processes                   ducted an in-depth analysis of the intrinsic relationship between
+                                                                                 fuzzy neighborhoods and fuzzy decisions, and proposed the
+   Received 20 November 2025; revised 7 January 2026; accepted 13 February       fuzzy neighborhood rough sets (FNRS). Based on the FNRS
+2026. Date of publication 17 February 2026; date of current version 5 May 2026.  theoretical framework, scholars have conducted extensive and
+This work was supported in part by the National Natural Science Foundation of    comprehensive research and achieved remarkable success across
+China under Grant 12271191, and in part by the Natural Science Foundation of     various application domains [16], [17].
+Fujian Province under Grant 2023J01125. Recommended by Associate Editor
+R. Jensen. (Corresponding author: Zhehuang Huang.)
+
+   Zhehuang Huang and Yongxi Chen are with the School of Mathematics
+Sciences, Huaqiao University, Quanzhou 362021, China (e-mail: startstart1@
+163.com; yongxichen0228@163.com).
+
+   Jinjin Li is with the School of Mathematics Sciences and Statistics, Minnan
+Normal University, Zhangzhou 363000, China (e-mail: jinjinli@mnnu.edu.cn).
+
+   Digital Object Identiﬁer 10.1109/TFUZZ.2026.3665578
+
+                1941-0034 © 2026 IEEE. All rights reserved, including rights for text and data mining, and training of artiﬁcial intelligence and similar technologies.
+        Personal use is permitted, but republication/redistribution requires IEEE permission. See https://www.ieee.org/publications/rights/index.html for more information.
+
+Authorized licensed use limited to: NANJING UNIVERSITY OF SCIENCE AND TECHNOLOGY. Downloaded on June 24,2026 at 00:36:13 UTC from IEEE Xplore. Restrictions apply.
+1552                                                                 IEEE TRANSACTIONS ON FUZZY SYSTEMS, VOL. 34, NO. 5, MAY 2026
+
+   Granular-ball computing (GBC) [18], [19], [20] is an efﬁcient,    B. Our Work
+robust, and interpretable multigranularity computing paradigm.
+It simulates the “large-scale priority” cognitive mechanism of          The motivations of this study are summarized from the fol-
+the human brain to achieve adaptive multigranularity represen-       lowing three aspects.
+tation. Xia et al. [18] put forward GBC theory, innovatively
+using balls to represent granules, termed “granular-balls.” Sub-        1) Traditional fuzzy similarity relations ignore the distribu-
+sequently, Xia et al. [19] further proposed the granular-ball               tional characteristics of datasets and cannot effectively
+rough set (GBRS) model, providing a novel implementation                    characterize differences among samples. As a result, noisy
+framework for rough set theory. In addition, Xia et al. [20]                samples in high-aggregation areas may be mistakenly
+introduced GBC theory into the ﬁeld of fuzzy sets, proposing the            treated as highly similar to normal samples, which under-
+granular-ball fuzzy set framework. Zhang et al. [21] investigated           mines the accuracy and robustness of feature selection.
+a granular-ball incremental learning for dynamic mixed-type
+decision system. Xie et al. [22] presented a more efﬁcient and          2) Most fuzzy-relation-based approximation operators can-
+stable granular-ball generation strategy. With its unique theoreti-         not guarantee the maximum membership degree of sam-
+cal advantages, GBC theory has now been successfully extended               ples to their own categories. They are difﬁcult to accurately
+and applied to numerous research domains [23], [24].                        characterize the differences between samples in a noisy
+                                                                            environment.
+   Robust feature selection [25] has received widespread atten-
+tion from the academic community in recent years. To address            3) Most uncertainty measures lack effective means for eval-
+the limitations of traditional FRS models when handling noisy               uating and handling noise. Consequently, they are of-
+data and data with signiﬁcant class density differences, Qiu et al.         ten highly sensitive to noise in data and unsuitable for
+[26] proposed a robust feature selection algorithm based on                 security-sensitive application scenarios.
+linear reconstruction measures. Yuan et al. [27] observed that
+existing multigranularity data analysis methods primarily focus         To address these issues, we propose a novel noise-tolerance
+on single-granularity information while neglecting the hierarchi-    granular-ball distinguishing measure (GBDM) that synergisti-
+cal structural characteristics of multigranularity data, therefore,  cally integrates GBC, FRS theory, and Shannon entropy. The
+presented a multigranularity data analysis model. However, the       main contributions of this work are as follows.
+distribution of real-world datasets is typically unknown and
+difﬁcult to accurately characterize using a single distribution         1) To consider the distributional characteristics of different
+model [28]. Therefore, precise modeling of data distributions               datasets, we deﬁne a novel relative-distance fuzzy simi-
+remains a challenging task, which also constitutes one of the               larity relation. It adaptively adjusts the similarity between
+major technical bottlenecks faced by existing methods.                      samples based on comparisons of local and global data
+                                                                            distribution. By reducing the inﬂuence of distance in high-
+   Information entropy, as a measure of uncertainty, serves as an           aggregation regions, the relative-distance fuzzy relation
+effective tool for characterizing the discriminative information            effectively mitigates the interference of noise and outliers
+of feature subsets. Shannon’s information entropy provides an               in similarity computation.
+effective theoretical framework for quantifying data uncertainty.
+In recent years, Shannon entropy and its variants have received         2) Considering the efﬁciency and robustness of GBC in
+widespread attention in machine learning and granular com-                  knowledge representation, we introduce it into the con-
+puting [29], [30]. To compute discriminative information for                struction of the relative-distance fuzzy relation. For a
+fuzzy or numerical features, Yager [31] introduced the concept              given purity threshold, the granular-ball list is generated
+of information entropy into fuzzy similarity relations, proposing           on C. Under the GBC framework, we further redeﬁne the
+a generalization of Shannon entropy via fuzzy similarity classes.           relative-distance fuzzy approximation operators and fuzzy
+Qian and Liang [32] investigated a combined measure for eval-               dependency function.
+uating the discriminative capability of feature subset. Hu et al.
+[33] introduced a neighborhood mutual information in numerical          3) To enhance the robustness against noise, we propose a
+spaces to evaluate the correlation between continuous features              granular-ball fuzzy entropy. This measure combines GBC,
+and discrete decision attributes. Furthermore, entropy theory has           Shannon entropy theory, and variable-precision mecha-
+been widely integrated into FRS models to enhance the effective-            nism, enabling the model to ﬂexibly tolerate noise and
+ness of feature evaluation. Wang et al. [34] developed a fuzzy              thereby improving adaptability to complex and imprecise
+entropy that averages multigranularity information, enriching               information.
+the evaluation tools for feature selection. Huang et al. [35],
+[36] conducted an in-depth analysis of the granulation structure        4) We introduce a noise-tolerance GBDM, which mitigates
+of fuzzy β covering and innovatively introduced discernibility              noise from three perspectives: the algebraic perspec-
+measures for fuzzy covering decision systems. Wang et al. [37]              tive (dependency functions), information theory (variable-
+introduced a fuzzy scale entropy for multiscale decision systems.           precision entropy), and GBC (granulation mechanisms).
+Xie et al. [38] and Yin et al. [39] deﬁned conditional entropy              This approach makes the evaluation of attribute impor-
+for optimal granularity selection, providing a new theoretical              tance more balanced, comprehensive, and reliable.
+foundation for attribute reduction.
+                                                                        The rest of this article is organized as follows. In Section II,
+                                                                     we review some relevant fundamental concepts. In Section III,
+                                                                     we introduce the GBDM and design a heuristic feature selection
+                                                                     algorithm based on GBDM. In Section IV, we validate the feasi-
+                                                                     bility and robustness of the algorithm through experiments and
+                                                                     present the experimental results and analysis. Finally, Section V
+                                                                     concludes this article.
+
+Authorized licensed use limited to: NANJING UNIVERSITY OF SCIENCE AND TECHNOLOGY. Downloaded on June 24,2026 at 00:36:13 UTC from IEEE Xplore. Restrictions apply.
+HUANG et al.: THREE-LEVEL NOISE-TOLERANCE GRANULAR-BALL DISTINGUISHING MEASURES AND FEATURE SUBSET SELECTION                 1553
+
+                          II. PRELIMINARIES                           their categories. The purity of GBk is deﬁned as
+
+   This section introduces some basic concepts related to FRSs                           purity(GBk)  =  max(|pi|)           (4)
+and GBC.
+                                                                                                            s    |pi|
+                                                                                                            i=1
+
+A. Fuzzy Rough Sets                                                   where |pi| represents the number of samples in GBk belonging
+                                                                      to the ith class.
+   Let U = {x1, x2, . . . , xn} denote a nonempty ﬁnite set of
+objects containing n samples, and C = {c1, c2, . . . , cm} denote        After partitioning the dataset into some granular-balls, the
+a nonempty ﬁnite set of attributes containing m conditional at-       purity of each granular-ball needs to be calculated, as purity
+tributes. Then, (U, C) constitutes an information system. When        determines whether a granular-ball requires further splitting.
+a decision attribute set D is introduced, (U, C, D) is called a       When the purity of all granular-balls meets the preset conditions,
+                                                                      the boundaries reach their clearest state, and the algorithm
+decision information system.                                          converges. The granular-balls that no longer split are referred
+   Let B ⊆ C, and B induce a fuzzy binary relation RB on              to as “stable granular-balls” [20].
+
+U . RB is called a fuzzy similarity relation if it satisﬁes the                  III. FEATURE SELECTION WITH GBDMS
+following:
+                                                                      In this section, we investigate a three-level noise-tolerance
+   1) reﬂexivity: RB(x, x) = 1 ∀x ∈ U ;
+   2) symmetry: RB(x, y) = RB(y, x) ∀x, y ∈ U .                       GBDM by means of relative-distance fuzzy dependency func-
+   Let c ∈ B and Rc be a fuzzy similarity relation induced by c,
+we denote RB = c∈B Rc. For any x ∈ U , the fuzzy neighbor-            tion and variable-precision granular-ball entropy, as well as their
+hood [15] of x is deﬁned as [x]B(y) = RB(x, y), y ∈ U .
+   Let X be a fuzzy set, the fuzzy lower approximation and upper      application of feature selection.
+approximation of X with respect to B are, respectively, deﬁned
+                                                                      Deﬁnition 1: Let (U, C, D) be a decision system, and c ∈ C.
+as
+                                                                      The relative-distance fuzzy similarity relation induced by c is
+
+                                                                      deﬁned as     ⎧
+
+B(X)(x) = {(1 − RB(x, y)) ∨ X(y)}                                     Rc(x,  y)  =  ⎪⎨1 − |c(x) − c(y)| ,   sc(μx) ≤ sc(U )
+                                             (1)                                               1 + sc(μx)   else             (5)
+                                                                                    ⎪⎩1     |c(x) − c(y)|,
+          y∈U                                                                            −
+
+B(X)(x) = {RB(x, y) ∧ X(y)}                  (2)                      RB(x, y)   =  min  Rc  (x,  y)                         (6)
+
+          y∈U                                                                       c∈B
+
+for any x ∈ U .                                                       for any x, y ∈ U , where c(x) means the the normalized value of
+   If B(X) = B(X), then X is called an FRS; otherwise, it is          x under feature c, |c(x) − c(y)| denotes the Euclidean distance
+                                                                      between x and y under feature c, μx denotes the μ nearest
+exact.                                                                neighbors of object x, that is, μx = {y1, y2, . . . , yμ}, where
+                                                                      y1, y2, . . . , yμ are the top μ objects sorted in ascending order
+B. Granular-Ball Computing                                            according to the distance |c(x) − c(yi)|. sc(μx) represents the
+                                                                      standard deviation of local objects μx under feature c, and sc(U )
+   Xia et al. [19] proposed a novel and efﬁcient granular com-        represents the standard deviation of all objects in U under feature
+puting method: GBC. Its core idea involves utilizing “granular-       c. To reduce computational complexity, when x is located before
+balls” to fully or partially cover the sample space. This method      y in U , we calculate Rc(x, y) by (5); Otherwise, we denote
+employs granular-balls as the fundamental units, instead of tradi-    Rc(x, y)=Rc(y, x).
+tional individual sample points. Each granular-ball is described
+by two parameters: center and radius.                                    The relative-distance fuzzy relation addresses the problem
+
+   Let (U, C, D) be a decision system, and GB = {GBk, k =             that traditional fuzzy similarity relations ignore the distributional
+1, 2, . . . , l} be the list of granular-balls generated on C. GBk =
+{xi, i = 1, 2, . . . , t} is a granular-ball, where xi represents an  characteristics of data. The standard deviation is employed as
+object in GBk, and t is the number of objects in GBk. The center
+ck and radius rk of granular-ball GBk are deﬁned as                   a measure of sample aggregation-degree [40]. The smaller the
+
+       1  t               1  t                                        sample standard deviation is, the higher the sample aggregation-
+       t                  t
+ck  =          xi, rk  =          |xi − ck|  (3)                      degree becomes. The core idea of this deﬁnition is to adaptively
+
+          i=1                i=1                                      adjust similarity measures according to the distribution charac-
+                                                                      teristics of the region where samples are located: when sc(μx) ≤
+where |xi − ck| denotes the Euclidean distance from xi to ck.         sc(U ), indicating that the sample distribution in this region
+   Xia et al. [28] introduced a “purity” metric to measure the        is relatively dense, the 1 + sc(μx) term in the denominator
+                                                                      reduces the inﬂuence weight of distance, making nearby sam-
+quality of granular-balls. For each granular-ball, purity is deﬁned
+                                                                      ples in high-aggregation regions have higher similarity; when
+as the proportion of the largest category of samples within the       sc(μx) > sc(U ), the standard distance measurement method
+entire granular-ball. All samples in GBk are divided into s           is adopted. This design effectively mitigates the problem of
+mutually exclusive decision classes (p1, p2, . . . , ps) based on
+                                                                      noise samples being incorrectly identiﬁed as similar samples in
+
+                                                                      high-aggregation regions, improving the accuracy of similarity
+
+                                                                      calculations.
+
+Authorized licensed use limited to: NANJING UNIVERSITY OF SCIENCE AND TECHNOLOGY. Downloaded on June 24,2026 at 00:36:13 UTC from IEEE Xplore. Restrictions apply.
+1554                                                                                     IEEE TRANSACTIONS ON FUZZY SYSTEMS, VOL. 34, NO. 5, MAY 2026
+
+                                                                                    Deﬁnition 3: Let (U, C, D) be a decision system with U/D =
+                                                                                 {[x]D|x ∈ U }, GB be a granular-ball list generated on C. The
+                                                                                 relative-distance granular-ball fuzzy decision induced by D is
+
+                                                                                 deﬁned as
+
+                                                                                             RDGB(x, y)    =  |[y]CGB ∩ [x]D|                                    (9)
+                                                                                                                  |[y]GCB|
+
+                                                                                 for any x, y ∈ U .
+
+                                                                                 Compared with general decision methods, the relative-
+
+                                                                                 distance granular-ball fuzzy decision considers both the neigh-
+
+                                                                                 borhood information between samples and the original decision
+
+Fig. 1. Schematic of the relative-distance granular-ball fuzzy similarity rela-  information. This approach is expected to more accurately char-
+tion.
+                                                                                 acterize the differences between samples and possesses certain
+
+                                                                                 noise resistance capabilities. Based on sample distribution and
+
+   Deﬁnition 2: Let (U, C, D) be a decision system, B ⊆ C, and                   GBC,    RsaDGmBe(xd,eyc)isrieoﬂneccltasstsheasprsoabmapblielitxy,  that sample  y belongs
+GB = {GBk, k = 1, 2, . . . , l} be a granular-ball list generated                to the                                                             namely the   degree of
+on C. The relative-distance granular-ball fuzzy similarity rela-
+tion induced by B and the relative-distance granular-ball fuzzy                  decision similarity between samples.
+neighborhood of x are deﬁned, respectively, as
+                                                                                 Classical fuzzy rough approximation operators cannot guar-
+
+                                                                                 antee the maximum membership degree of samples to their own
+
+                                                                                 categories. When different categories of a dataset exhibit a large
+
+                                                                                 degree of overlap, it easily results in samples being misclassiﬁed
+
+RBGB(x, y) =  0,         x ∈ GBi and y ∈ GBj, i = j                              and cannot ideally describe the differences between samples.
+              RB(x, y),  else
+                                                                                 Wang et al. [4] introduced an improved lower approximation op-
+                                                            (7)
+                                                                                 erator that guarantees the maximum membership degree of each
+
+[x]BGB(y) = RBGB(x, y)                                                           sample to its own class. Following this idea, the relative-distance
+
+                         (8)                                                     fuzzy lower and upper approximations are presented. They can
+
+                                                                                 guarantee the maximum membership degree of samples to their
+
+for any x, y ∈ U , where RB(x, y) is the relative-distance fuzzy                 own categories and can well ﬁt given datasets.
+similarity relation induced by B.
+                                                                                 Deﬁnition 4: Let (U, C, D) be a decision system, U/D =
+   Deﬁnition 2 further introduces the GBC framework and pro-
+poses the relative-distance granular-ball fuzzy similarity re-                   {D1, D2, . . . , Dr}, B ⊆ C, and GB be a granular-ball list
+lation. This deﬁnition partitions the data space into multiple                   generated on C. The relative-distance fuzzy lower and upper
+granular-balls and further optimizes similarity relations within
+the GBC framework. When two samples x and y belong to differ-                    approximations of Di w.r.t. B on the granular-ball list GB are
+ent granular-balls, their similarity is directly set to 0, reﬂecting
+the clear boundaries between granular-balls.                                     deﬁned, respectively, as
+
+   Fig. 1 illustrates the computation of the relative-distance                   AprGBB(Di)(x)
+granular-ball fuzzy relation. First, for each attribute c, the
+similarity between samples is adaptively adjusted according                      =           y∈U [(1 − RBGB(x, y)) ∨ RDGB(x, y)],                   x ∈ Di (10)
+to local and global distribution characteristics to compute the                                                                                     x ∈/ Di
+relative-distance fuzzy relation Rc, and the aggregated relation is                      0,
+obtained as RB = c∈B Rc. Then, a granular-ball list GB is gen-
+erated on the feature set C, where explicit decision boundaries                  AprGBB(Di)(x)
+are enforced between different granular-balls. For sample pairs
+across different granular-balls, their similarity is truncated to 0;             =           y∈U [RBGB(x, y) ∧ RDGB(x, y)], x ∈ Di                               (11)
+for sample pairs within the same granular-ball, their similarity
+is preserved as RB(x, y), yielding the relation RBGB(x, y).                              0,                                                         x ∈/ Di
+
+   Proposition 1: Let B1 ⊆ B2 ⊆ C, and GB be the granular-                       for x ∈ U .
+ball lists generated on C. Then, RBG1B ⊇ RBG2B.                                     The newly approximation operators take into account the ac-
+
+   Proof: Since RB1 = c∈B1 Rc and RB2 = c∈B2 Rc. If                              tual category to which the sample belongs, thereby overcoming
+B1 ⊆ B2, for any c ∈ B1, we obtain that c ∈ B2. It follows                       the shortcomings of classical models and providing a satisfac-
+that RB1 ⊇ RB2 . Since GB be the granular-ball lists generated                   tory description of differences among sample classiﬁcations.
+on C, by Deﬁnition 2, we determine that RBGB1 ⊇ RBGB2 .
+                                                                                    Deﬁnition 5: Let (U, C, D) be a decision system, B ⊆ C, and
+   In order to better ﬁt the data, Wang et al. [15] introduced a                 U/D = {D1, D2, . . . , Dr}. The relative-distance fuzzy positive
+fuzzy decision that integrates sample information and original                   region of D w.r.t. B is deﬁned as
+decision information. Inspired by this idea, we present a new
+relative-distance granular-ball fuzzy decision.                                                               r
+
+                                                                                             POSBGB(D) = AprGBB(Di).                                             (12)
+
+                                                                                                              i=1
+
+                                                                                    Deﬁnition 6: Let (U, C, D) be a decision system, B ⊆ C.
+                                                                                 The relative-distance fuzzy dependency function of D w.r.t. B
+
+Authorized licensed use limited to: NANJING UNIVERSITY OF SCIENCE AND TECHNOLOGY. Downloaded on June 24,2026 at 00:36:13 UTC from IEEE Xplore. Restrictions apply.
+HUANG et al.: THREE-LEVEL NOISE-TOLERANCE GRANULAR-BALL DISTINGUISHING MEASURES AND FEATURE SUBSET SELECTION                         1555
+
+is deﬁned as                                                           Deﬁnition 8: Let (U, C, D) be a decision system, B ⊆ C,
+                                                                    and GB be a granular-ball list generated on C. The granular-
+              γBGB(D)  =  |POSBGB(D)|             (13)              ball fuzzy joint entropy of B and D with a variable precision
+                                |U |                                t ∈ [0, 0.5] is deﬁned as (15) shown at the bottom of this page.
+
+where | · | means the cardinality of a fuzzy set.                      The granular-ball fuzzy joint entropy characterizes the joint
+   The fuzzy dependency reﬂects the classiﬁcation capability of
+                                                                    discriminative capability of a feature subset together with the
+a condition attribute subset. Attribute reduction aims to identify
+                                                                    decision. Clearly, the joint entropy is at least as large as the
+a feature subspace in which the value of the fuzzy dependency
+                                                                    granular-ball fuzzy information entropy computed on the feature
+function is maximized, since under this circumstance the clas-
+                                                                    subset alone. Moreover, the granular-ball fuzzy joint entropy
+siﬁcation error rate will be lower. Hence, the fuzzy dependency
+                                                                    increases monotonically with the enlargement of the feature
+function serves as an effective index for evaluating the discrim-
+inative power of an attribute subset B.                             subset, because introducing additional features yields a ﬁner
+
+   Proposition 2: If B1 ⊆ B2 ⊆ C, then POSGB1B(D) ⊆                 fuzzy relation.
+POSBG2B(D) and γBG1B(D) ≤ γBG2B(D).                                    Deﬁnition 9: Let (U, C, D) be a decision system, B ⊆ C,
+
+   Proof: From Proposition 1, we obtain RBG1B ⊇ RBG2B. By Def-      and GB be a granular-ball list generated on C. The granular-ball
+inition 4, ∀Di ∈ U/D, we have AprBG1B(Di) ⊆ AprGB2B(Di).            fuzzy conditional entropy of D w.r.t. B with a variable preci-
+Thus, POSBG1B(D) ⊆ POSGB2B(D) and γBG1B(D) ≤ γBG2B(D).              sion t ∈ [0, 0.5] is deﬁned as (16) shown at the bottom of this
+                                                                    page.
+   Deﬁnition 7: Let (U, C, D) be a decision system, B ⊆ C
+and GB be a granular-ball list generated on C. The granular-ball       Since RBGB(x, y) ∧ t ≤ RBGB(x, y) and RBGB(x, y) ∧
+fuzzy entropy of B is deﬁned as                                     RDGB(x, y) ≤ RBGB(x, y), it follows that HGB,t(D|B) ≥ 0. The
+                                                                    granular-ball fuzzy conditional entropy HGB,t(D|B) measures
+         HGB(B) = log             n2              (14)              the ability of the feature subset B to distinguish samples with
+                       x∈U ( y∈U RBGB(x, y))                        different class labels; the smaller HGB,t(D|B) is, the stronger
+                                                                    the discriminative ability of B. When the feature subset B
+where the base of the logarithm is 2. Throughout this article,      completely partitions all samples into their respective classes,
+                                                                    we have HGB,t(D|B) = 0.
+The base of logarithms is taken as 2 by default.
+                                                                       Proposition 5: For a given feature subset B ⊆ C, if t1 < t2,
+   The granular-ball fuzzy entropy is a mapping from a feature      then HGB,t1 (D|B) ≥ HGB,t2 (D|B).
+subset to the nonnegative real space: H : (B) → R+. This form
+                                                                       Proof: Since
+
+of fuzzy entropy can be viewed as an extension of Shannon
+
+information entropy for fuzzy decision systems. It has properties
+
+similar to Shannon entropy, and can be used to quantify the                                   (RBGB(x, y) ∧ t1))
+
+discriminatory power of a feature subset.                                             y∈U,
+   Proposition 3: Let B ⊆ C, then 0 ≤ HGB(B) ≤ log(n).                          RGB (x,y )≤t1
+
+                                                                                   D
+
+Proof: By Deﬁnition 1, we have 0 ≤ Rc(x, y) ≤ 1 for any                         +                           RBGB(x, y) ∧ RDGB(x, y)
+
+x, y ∈ U . It follows that 0 ≤ RB(x, y) ≤ 1. By Deﬁnition 2,
+we further obtain 0 ≤ RBGB(x, y) ≤ 1. With the reﬂexivity
+of RBGB (i.e., RBGB(x, x) = 1) for any sample x, we have                                        y∈U,
+n ≤ x∈U ( y∈U RBGB(x, y)) ≤ n2. Thus, 0 ≤ HGB(B) ≤
+                                                                                             RGB (x,y )>t1
+                                                                                             D
+
+log(n).                                                                         ≤                     RBGB(x, y) ∧ t2
+
+Proposition 4: If B1 ⊆ B2 ⊆ C, then HGB(B1) ≤                                            y∈U,
+H GB (B2 ).                                                                        RGB (x,y )≤t1
+
+                                                                                      D
+
+Proof: By Proposition 1, RBG1B ⊇ RBG2B, and hence,                              +                               RBGB(x, y) ∧ t2
+x∈U ( y∈U RBG1B(x, y)) ≥ x∈U ( y∈U RBG2B(x, y)).
+                                                        It                                            y∈U,
+                                                                                             t1 ≤RGB (x,y )≤t2
+follows that HGB(B1) ≤ HGB(B2).
+                                                                                                        D
+
+              HGB,t(B, D) = log  ⎛                                      n2                                                     ⎞.    (15)
+                                 ⎝ y∈U,                                                         RBGB(x, y) ∧ RDGB(x, y) ⎠            (16)
+                                                  RBGB(x, y) ∧ t +
+
+                                                                                       y∈U,
+
+                                 x∈U RGB(x,y)≤t                              RGB (x,y )>t
+
+                                    D                                        D
+
+                                                                    x∈U y∈U  RBGB(x, y)
+
+              HGB,t(D|B) = log   ⎛                                                              (RBGB(x,           RDGB(x,  ⎞.
+                                 ⎝ y∈U, (RBGB(x, y) ∧ t) +                                                  y)  ∧           y))
+                                                                                                                               ⎠
+                                                                                y∈U,
+
+                                 x∈U RGB(x,y)≤t                              RGB (x,y )>t
+
+                                       D                                     D
+
+Authorized licensed use limited to: NANJING UNIVERSITY OF SCIENCE AND TECHNOLOGY. Downloaded on June 24,2026 at 00:36:13 UTC from IEEE Xplore. Restrictions apply.
+1556                                                                                  IEEE TRANSACTIONS ON FUZZY SYSTEMS, VOL. 34, NO. 5, MAY 2026
+
+      +                   RBGB(x, y) ∧ RDGB(x, y)                    fuzzy mutual information of B and D with a variable preci-
+                                                                     sion t ∈ [0, 0.5] is deﬁned as (17) shown at the bottom of this
+                y∈U,                                                 page.
+
+         RGB (x,y )>t2                                                  The granular-ball fuzzy mutual information describes the
+             D                                                       statistical correlation between B and D. It is easy to show
+                                                                     that M GB,t(B, D) ≥ 0. When B and D are independent,
+      =                 RBGB(x, y) ∧ t2                              M GB,t(B, D) = 0. In this case, B provides no predictive in-
+                                                                     formation about D.
+               y∈U,
+         RGB (x,y )≤t2                                                  Proposition 7: Let B ⊆ C. The following properties hold.
+                                                                        1) M GB,t(B, D) = HGB(B)+HGB(D)−HGB,t(B, D);
+            D                                                           2) M GB,t(B, D) = HGB(D) − HGB,t(D | B)
+                                                                        Proof: 1) unnumbered equation shown at the bottom of this
+      +                   RBGB(x, y) ∧ RDGB(x, y)
+                                                                     page.
+                y∈U,
+                                                                        2) unnumbered equation shown at the bottom of next page.
+         RGB (x,y )>t2
+             D                                                          According to the relationship between granular-ball fuzzy
+
+we have HGB,t1 (D | B) ≥ HGB,t2 (D | B).                             conditional entropy and granular-ball fuzzy mutual information,
+   Proposition 6: Let B ⊆ C. Then, HGB,t(D | B) =
+                                                                     it is clear that as the discriminative ability of an attribute subset
+HGB,t(B, D) − HGB(B).
+                                                                     improves, its mutual information with the decision increases
+   Proof: Unnumbered equation shown at the bottom of this
+                                                                     accordingly.
+page.
+   Deﬁnition 10: Let (U, C, D) be a decision system, B ⊆ C,
+
+and GB be a granular-ball list generated on C. The granular-ball
+
+                                     ⎛             (RBGB(x, y) ∧ t) +                                  (RBGB(x,  y)  ∧   RDGB(x,     ⎞
+                                     ⎝                                                                                            y))
+                             n2           y∈U,                                             y∈U,
+                                                                                                                                     ⎠
+
+         M GB,t(B, D) = log       x∈U RGB(x,y)≤t                                      RDGB(x, y) > t                                          (17)
+
+                                                     D
+
+                                          x∈U           y∈U RBGB(x, y) ·                   x∈U         y∈U RDGB(x, y)
+
+      HGB,t(B, D) − HGB(B) = log ⎛                                                         n2                                              ⎞
+
+                                          ⎝ y∈U,          RBGB(x, y) ∧ t +                                RBGB  (x,  y)  ∧  RGB   (x,  y)  ⎠
+
+                                                                                              y∈U,                             D
+
+                                          x∈U RGB(x,y)≤t                                   RGB (x,y )>t
+
+                                                D                                          D
+
+      − log           n2          =  log  ⎛                                           x∈U y∈U RBGB(x, y)                                   ⎞
+                      RBGB(x, y)          ⎝ y∈U,
+             x∈U y∈U                                      RBGB(x, y) ∧ t +                                RBGB  (x,  y)  ∧  RGB   (x,  y)  ⎠
+
+                                                                                              y∈U,                             D
+
+                                          x∈U RGB(x,y)≤t                                   RGB (x,y )>t
+
+                                                D                                          D
+
+                                  = HGB,t(D | B).
+
+         HGB(B) + HGB(D) − HGB,t(B, D) = log              x∈U (                        n2              +  log      (     n2
+                                                                                      y∈U RBGB(x, y))                    RGB(x, y))
+                                                                                                               x∈U y∈U
+                                                                                                                            D
+
+                − log ⎛                                   n2                                                         ⎞
+
+                          ⎝ y∈U,          RBGB(x, y) ∧ t +                                 RBGB(x, y) ∧ RDGB(x, y) ⎠
+
+                                                                                y∈U,
+
+                        x∈U RGB(x,y)≤t                    RGB (x,y )>t
+
+                             D                                    D
+
+                          ⎛                                                                                             ⎞
+                                          RBGB(x, y) ∧ t +                                 RBGB(x, y) ∧ RDGB(x, y) ⎠
+                      n2  ⎝ y∈U,
+                                                                                y∈U,
+
+                          x∈U RGB(x,y)≤t                          RGB (x,y )>t
+
+             = log           D                                    D
+
+                                     x∈U  y∈U RBGB(x, y) ·                            x∈U  y∈U RDGB(x, y)
+
+             = M GB,t(B, D).
+
+Authorized licensed use limited to: NANJING UNIVERSITY OF SCIENCE AND TECHNOLOGY. Downloaded on June 24,2026 at 00:36:13 UTC from IEEE Xplore. Restrictions apply.
+HUANG et al.: THREE-LEVEL NOISE-TOLERANCE GRANULAR-BALL DISTINGUISHING MEASURES AND FEATURE SUBSET SELECTION                     1557
+
+   Deﬁnition 11: Let (U, C, D) be a decision system, B ⊆             Algorithm 1: Feature Selection With the Granular-Ball
+C, GB be a granular-ball list generated on C, and t ∈ [0, 0.5].
+The GBDM induced by B is deﬁned as                                   Distinguishing Measure (GBDM).
+
+     GBDMt(B) = − 1 − γBGB(D) HGB,t (D | B) . (18)                    Input: A decision system (U, C, D) and variable precision
+                                                                       t.
+   The GBDM integrates the relative-distance dependency func-         Output: Feature reduction C .
+tion and granular-ball conditional entropy to provide a compre-       1: Initialize C ← ∅;
+hensive and effective assessment of an attribute subset’s discrim-    2: Perform 2 -means clustering based on C until the purity
+inative ability. Therefore, when a new attribute is introduced,
+the gain in discriminative information can be measured by the            of each granular-ball reaches the threshold p, resulting in
+change in the GBDM.                                                      a list of granular-balls GB = {GBk, k = 1, 2, . . . , l};
+                                                                      3: Compute RDGB(x, y) by Deﬁnition 3;
+   Proposition 8: For a given feature subset B ⊆ C, if t1 ≤ t2,       4: While |C| = 0
+then GBDMt1 (B) ≤ GBDMt2 (B).                                         5: For each ci ∈ C
+                                                                      6: Calculate RCGB∪{ci} by Deﬁnition 2;
+   Proof: From Proposition 5, we have HGB,t1 (D | B) ≥                7: Calculate γCGB∪{ci}(D) by Deﬁnition 6;
+HGB,t2 (D | B). By Deﬁnition 11, we obtain GBDMt1 (B) ≤               8: Compute HGB,t(D | C ∪ {ci}) with parameter t by
+GBDMt2 (B).
+                                                                              Deﬁnition 9;
+   Deﬁnition 12: Let (U, C, D) be a decision system and B ⊆           9: Calculate GBDM t(C ∪ {ci}) by Deﬁnition 11;
+C. B is called a reduct of C, if B satisﬁes:                         10: Compute SIGt(ci, C , D) by Deﬁnition 13;
+                                                                     11: End For
+   1) GBDMt(B) ≥ GBDMt(C);                                           12: Find attribute ck with maximum signiﬁcance
+   2) GBDMt(B − {c}) < GBDMt(B) ∀c ∈ B.
+   Deﬁnition 13: Let (U, C, D) be a decision system, B ⊆ C,                SIGt(ck, C , D);
+and c ∈ C − B. The granular-ball signiﬁcance of c w.r.t. B is        13: If SIGt(ck, C , D) > 0
+deﬁned as                                                            14: Let C ← C ∪ {ck} and C ← C − {ck}
+                                                                     15: Else
+  SIGt(c, B, D) = GBDMt (B ∪ {c}) − GBDMt(B). (19)                   16: Return C ;
+                                                                     17: End if
+   Following the above ideas, a heuristic forward algorithm is
+developed to ﬁnd a reduct for decision systems. The granular-        18: End While
+ball signiﬁcance is employed to determine whether a candi-
+date attribute can be added to the optimal attribute subset.         generate the granular-ball list GB on C. According to the litera-
+Algorithm 1 outlines the detailed procedure of the proposed
+algorithm. The granular-ball truncation expected to reduce the       ture [22], the time complexity can be considered to be O(n). In
+impact of inaccurate or noisy information on the model, thereby
+obtaining clearer classiﬁcation rules. The purity threshold p is     Step 3, RGB(x, y) is    computed by means of the relative-distance
+a key indicator that controls the coarseness or ﬁneness of the                               neighborhood. For ci ∈ C, Since Rci can
+generated granular-ball list in GBC. In Algorithm 1, we set the                     D
+purity threshold p = 0.7.
+                                                                     granular-ball fuzzy
+   Next, we analyze the computational complexity of
+Algorithm 1. Let the number of objects be n and the number           be calculated in O(n2), we obtain RC within O(mn2) with
+of features be m. In Step 2, 2-means clustering is employed to
+                                                                     the  fact  that  RC  =   ∩     Rci  .  As  a  result,  the  relative-distance
+
+                                                                                             ci ∈C
+
+                                                                     granular-ball fuzzy decision can obtained with the complexity
+
+                                                                     O(mn2). Steps 4–18 aim to gradually ﬁnd optimal features with
+
+HGB(D) − HGB,t(D | B) = log                                          n2
+
+                                                                x∈U  y∈U  RGB(x,  y)
+
+                                                                             D
+
+                           x∈U                                            RBGB(x, y)
+
+− log ⎛                                                              y∈U                                           ⎞
+
+           ⎝ y∈U,          RBGB(x, y) ∧ t +                                             RBGB(x, y) ∧ RDGB(x, y) ⎠
+
+                                                                 y∈U,
+
+       x∈U RGB(x,y)≤t                                                RGB (x,y )>t
+
+              D                                                           D
+
+           ⎛                                                                                                       ⎞
+                           RBGB(x, y) ∧ t +                                             RBGB(x, y) ∧ RDGB(x, y) ⎠
+       n2  ⎝ y∈U,
+                                                                 y∈U,
+
+           x∈U RGB(x,y)≤t                                                 RGB (x,y )>t
+
+= log         D                                                           D
+
+                 x∈U       y∈U RDGB(x, y) ·                                     x∈U       y∈U RBGB(x, y)
+
+= M GB,t(B, D).
+
+Authorized licensed use limited to: NANJING UNIVERSITY OF SCIENCE AND TECHNOLOGY. Downloaded on June 24,2026 at 00:36:13 UTC from IEEE Xplore. Restrictions apply.
+1558                                                                              IEEE TRANSACTIONS ON FUZZY SYSTEMS, VOL. 34, NO. 5, MAY 2026
+
+Fig. 2. Framework of feature selection with noise-tolerance GBDM.
+
+the maximum signiﬁcance, and determine whether a certain fea-                     smaller than mn2, we conclude that the total spatial complexity
+                                                                                  of Algorithm 1 is O(mn2).
+ture should be added to B. In the worst case, all features in C are
+                                                                                     As shown in Fig. 2, the overall workﬂow of GBDM consists
+selected. In this way, the total evaluations number of the GBDM                   of the following four steps:
+
+will  reach  m  +  (m  −  1)  +  ···  +  2  +   1  =    m(m+1)    .  We  further     1) GBC;
+                                                             2                       2) relative-distance fuzzy dependency degree;
+                                                                                     3) GBDM;
+analyze the computational complexity for evaluating each                             4) feature selection based on GBDM.
+
+candidate feature. Steps 6–10 aim to calculate the signiﬁcance                                     IV. EXPERIMENTS AND ANALYSIS
+of each candidate feature. In Step 6, RCGB∪{ci} is calculated by an
+incremental approach in O(n2) with the fact that RCGB∪{ci} =                         In this section, two groups of numerical experiments are
+RCGB ∩ R{GcBi}. In Steps 7 and 8, the relative-distance fuzzy                     conducted to demonstrate the robustness and effectiveness of
+dependency function γCGB∪{ci}(D) and the granular-ball fuzzy                      the proposed model.
+conditional entropy HGB,t(D | C ∪ {ci}) are computed based
+on the granular-ball fuzzy similarity relation within O(n2).                      A. General Settings
+
+As a result, the evaluation of each candidate feature can be                         In this section, we compare the proposed GBDM algorithm
+completed with the time complexity O(n2). Therefore, we deter-                    with six state-of-the-art feature selection algorithms across 18
+                                                                                  public datasets. These algorithms include: NRS [14], granular-
+mine that the time complexity       of Steps 4–18 is         O(   m(m+1)   .n2),  ball neighborhood rough set (GBNRS) [28], GBRS [19], rough
+i.e., O(m2n2). Based on the         above analysis,          the           time   set based on local redundancy relative stability (RSLRS) [23],
+                                                                       2          attribute reduction with fuzzy rough self-information measures
+                                                                                  (FSI) [41], and feature selection algorithm with directed fuzzy
+                                                                  overall         rough sets (DRFFS) [42]. The datasets used in this study are
+                                                                                  available at: https://gitlab.com/h-fuzzy/gbdm.git.
+complexity of the proposed algorithm is no more than O(m2n2).
+                                                                                     We evaluate the classiﬁcation accuracy of the selected fea-
+We further analyze the spatial complexity of Algorithm 1.                         ture sets on two classiﬁers using 10-fold cross-validation. The
+                                                                                  employed classiﬁers include classiﬁcation and regression tree
+In Step 2, the 2-means clustering is employed to generate                         (CART) and K-nearest neighbors (KNN). For GBDM, the pa-
+                                                                                  rameter t is varied from 0 to 0.5 in increments of 0.1 for the ﬁrst
+granular-ball list with the spatial complexity O(m + n) [22].                     15 datasets, and is set from 0 to 0.05 in increments of 0.01 for
+                                                                                  the last three high-dimensional datasets.
+Step 3 aims to compute the relative-distance granular-ball
+                                                                                     Eighteen datasets were selected from the UCI Machine Learn-
+fuzzy  decision.   Since  RC     =   ∩     Rci  ,  for  the  convenience   of     ing Repository,1 KEEL Dataset Repository,2 Gene Expression
+
+                                    ci ∈C                                            1[Online]. Available: https://archive.ics.uci.edu/
+                                                                                     2[Online]. Available: https://sci2s.ugr.es/keel/imbalanced.php
+subsequent calculations, we need to store the fuzzy similarity
+
+relationships induced by each feature. Thus, the spatial com-
+plexity of Step 3 is O(mn2). Steps 4–18 aim to gradually ﬁnd
+
+the optimal features. In Step 6, granular-ball fuzzy similarity
+relation RCGB∪{ci} is computed by using an incremental strategy.
+RCGB is stored in the previous cycle. We just need to ﬁnd the
+union between it and R{GcBi}. Thus, the spatial complexity of
+Step 6 is within O(n2). Steps 7–10 do not require additional
+
+storage space, and the spatial complexity is O(1). In Step 12,
+
+the attribute ck with maximum signiﬁcance can be computed
+within O(m). Considering the reuse of some variables, there is
+
+no need to reallocate space. The spatial complexity of Steps 4–18
+is not more than O(n2 + m). Considering that n2 + m is much
+
+Authorized licensed use limited to: NANJING UNIVERSITY OF SCIENCE AND TECHNOLOGY. Downloaded on June 24,2026 at 00:36:13 UTC from IEEE Xplore. Restrictions apply.
+HUANG et al.: THREE-LEVEL NOISE-TOLERANCE GRANULAR-BALL DISTINGUISHING MEASURES AND FEATURE SUBSET SELECTION                                1559
+
+                                          TABLE I                        2) Classiﬁcation Accuracy: The classiﬁcation accuracy of
+              DETAILED INFORMATION ABOUT EIGHTEEN DATASETS
+                                                                     the comparative methods on the two classiﬁers is reported in
+Omnibus,3 and ELVIRA Biomedical Dataset Repository4 to
+evaluate the comparative performance between the proposed            Tables III and IV, presented in the format of Acc.% ± Std., where
+method and other approaches. To comprehensively assess model
+performance, the selected datasets encompass various feature         Acc. and Std. represent the average classiﬁcation accuracy and
+types, including both continuous and discrete datasets. Speciﬁ-
+cally, these include two imbalanced datasets (Glass6, Haberman,      corresponding standard deviation, respectively.
+with imbalance ratios of 6.38 and 2.78, respectively), three high-
+dimensional datasets (ColonTumor, LungCancer-Ontario, and                The GBDM algorithm demonstrates excellent classiﬁcation
+NervousSystem). Detailed information is presented in Table I.
+Normalization is performed before data processing, so as to          performance, achieving the highest average classiﬁcation ac-
+overcome the scale sensitivity.
+                                                                     curacy across both classiﬁers. Speciﬁcally, with the CART
+B. Comparative Analysis of Classiﬁcation Performance
+   We provide a comparative analysis of the proposed GBDM al-        classiﬁer, GBDM achieves the highest classiﬁcation accuracy
+
+gorithm against six feature selection methods from three aspects:    on 9 out of 18 datasets, while NRS, GBNRS, GBRS, RSLRS,
+number of selected features, classiﬁcation performance, and
+statistical signiﬁcance testing. The optimal results are underlined  and DRFFS perform best on only 3, 2, 4, 1, and 3 datasets,
+in the corresponding tables.
+                                                                     respectively. Note that NRS shows low classiﬁcation accuracy
+   1) Number of Selected Features: Table II reports the number
+of selected features for each method. For GBDM, the last             on the Vowel-gy dataset because it selects only a single feature.
+column gives the mean number of selected features across
+the two classiﬁers, obtained by averaging the feature counts         In addition, six algorithms used for comparison perform poorly
+corresponding to the highest accuracy under CART and KNN,
+respectively. Table II indicates that all seven comparison algo-     on the Haberman dataset due to their failure to effectively remove
+rithms can effectively reduce redundant features. The average
+dimensionality reduction rate of GBDM reaches approximately          redundant features. This highlights the importance of reasonable
+99.27%. Note that although RSLRS selects the smallest average
+number of features, it frequently selects only a single feature      selection of key features for achieving optimal classiﬁcation
+on multiple datasets, which may lead to the loss of impor-
+tant features and consequently affect classiﬁcation accuracy. In     performance.
+short, GBDM demonstrates its capability in selecting appropri-
+ate features, reducing redundancy, and enhancing classiﬁcation           3) Statistical Signiﬁcance Testing: To further validate
+accuracy.
+                                                                     whether signiﬁcant differences exist among the comparative
+   3[Online]. Available: https://www.ncbi.nlm.nih.gov/geo/
+   4[Online]. Available: http://leo.ugr.es/elvira/DBCRepository/     methods, the Friedman test [43] is ﬁrst conducted at sig-
+
+                                                                     niﬁcance level α = 0.1. According to Friedman test the-
+
+                                                                     ory,  FF   follows    a  Fisher       distribution:    FF  =      (N −1)χF2    ∼
+                                                                                                                                     N (k−1)−χ2F
+                                                                     F (k − 1, (k − 1)(N − 1)), where the Friedman statistic χF2 =
+                                                                                              k(k+1)2
+                                                                       12N   (  k     Ri2  −       4   ),  N  is     the  number     of  datasets,  k
+                                                                     k(k+1)     i=1
+
+                                                                     is the number of compared algorithms, and Ri is the average
+
+                                                                     ranking of algorithm i in classiﬁcation accuracy across all
+
+                                                                     datasets.
+
+                                                                         The null hypothesis of the Friedman test assumes no signif-
+
+                                                                     icant differences among all comparative methods in terms of
+
+                                                                     classiﬁcation accuracy. Table V presents the average rankings
+
+                                                                     of the seven algorithms under two classiﬁers as well as the
+
+                                                                     χ2F and FF values. If FF > F (k − 1, (k− 1)(N − 1)), the
+                                                                     null hypothesis can be rejected. At signiﬁcance level α = 0.1,
+
+                                                                     the critical value is F (k − 1, (k − 1)(N − 1)) = F (6, 102) =
+
+                                                                     1.8327 (where k = 7, N = 18) [43]. From Table V, it can be
+
+                                                                     seen that the FF values under both classiﬁers are greater than
+                                                                     F (6, 102), therefore, the null hypothesis that the seven algo-
+
+                                                                     rithms have identical classiﬁcation performance can be rejected
+
+                                                                     at the α = 0.1 level, indicating signiﬁcant differences in perfor-
+
+                                                                     mance among these comparative algorithms.
+
+                                                                         Therefore, post hoc testing is required to further distinguish
+
+                                                                     these algorithms, with the Nemenyi test [43] being commonly
+
+                                                                     used. The critical distance for this test is calculated as CDα =
+
+                                                                     qα    k(k+1)  ,  where   qα  is  the  critical  value  in  the  test.
+                                                                              6N
+
+                                                                         The critical value for the Nemenyi test is q0.1 = 2.6927[43],
+
+                                                                     thus, CD0.1 = 1.9390 can be calculated (where k = 7, N =
+
+                                                                     18). The critical difference CD diagram [43] is employed
+
+                                                                     to visually demonstrate the differences among algorithms.
+
+                                                                     In the CD diagram, if the difference in average rank-
+
+                                                                     ings between two compared algorithms is less than the
+
+                                                                     critical difference value, they are connected by a straight
+
+                                                                     line. That is, if there is no connection between two algo-
+
+                                                                     rithms, it indicates signiﬁcant performance differences between
+
+                                                                     them.
+
+Authorized licensed use limited to: NANJING UNIVERSITY OF SCIENCE AND TECHNOLOGY. Downloaded on June 24,2026 at 00:36:13 UTC from IEEE Xplore. Restrictions apply.
+1560                                                                   IEEE TRANSACTIONS ON FUZZY SYSTEMS, VOL. 34, NO. 5, MAY 2026
+
+                                           TABLE II
+      NUMBER OF SELECTED FEATURES FOR DIFFERENT COMPARED METHODS
+
+                                                                                                     TABLE III
+                                                   CLASSIFICATION ACCURACY OF COMPARED METHODS ON CART CLASSIFIER (ACC.% ± STD.)
+
+                                                                                                     TABLE IV
+                                                    CLASSIFICATION ACCURACY OF COMPARED METHODS ON KNN CLASSIFIER (ACC.% ± STD.)
+
+Authorized licensed use limited to: NANJING UNIVERSITY OF SCIENCE AND TECHNOLOGY. Downloaded on June 24,2026 at 00:36:13 UTC from IEEE Xplore. Restrictions apply.
+HUANG et al.: THREE-LEVEL NOISE-TOLERANCE GRANULAR-BALL DISTINGUISHING MEASURES AND FEATURE SUBSET SELECTION      1561
+
+                                                                                           TABLE V
+                                                           STATISTICAL TEST OF SEVEN MODELS WITH TWO CLASSIFIERS
+
+                     TABLE VI
+MEAN ANALYSIS OF FEATURE CHANGE RATES
+
+                TABLE VII                                            C. Robustness Analysis
+RUNNING TIME FOR FINDING A REDUCT
+                                                                        We validated the effectiveness of the proposed GBDM al-
+                                                                     gorithm under different noise distributions, including random
+                                                                     noise, Gaussian noise, and uniform noise. Granular-ball-based
+                                                                     algorithms were evaluated under noise conditions, including
+                                                                     GBNRS [28], GBRS [19], and the variable-precision GBDM
+                                                                     algorithm using only a single parameter (GBDM-SP, t = 0).
+                                                                     The proportion of noisy samples r was varied from 10% to 50%
+                                                                     in steps of 10%.
+
+                                                                        For each dataset, the noisy dataset is generated as follows:
+
+                                                                     c(x) =  c(x) + ε, 0 ≤ c(x) + ε ≤ 1
+
+                                                                             c(x),  otherwise
+
+                                                                     where c(x) means the attribute value of object x in attribute c
+                                                                     and ε represents the added random noise, Gaussian noise and
+                                                                     uniform noise, respectively.
+
+                                                                        Fig. 4 plots the feature change rate across some datasets under
+                                                                     different noise distributions and varying proportions of noisy
+                                                                     samples. The horizontal axis represents the proportion of noisy
+                                                                     samples, while the vertical axis denotes the feature change rate.
+                                                                     Lower rates indicate stronger noise robustness. Table VI reports
+                                                                     the mean feature change rate for each setting; lower means
+                                                                     indicate better resistance to noise. As seen in Fig. 4 and Table VI,
+                                                                     GBDM achieves the lowest mean feature change rate across
+                                                                     the considered noise distributions and datasets, demonstrating
+                                                                     strong robustness to noise.
+
+Fig. 3. CD diagram of the Nemenyi test. (a) CART classiﬁer. (b) KNN  D. Parameter Sensitivity Analysis
+classiﬁer.
+                                                                        The parameter t introduced in Section III affects the granular-
+   As shown in Fig. 3, for the CART classiﬁer, at the signiﬁcance    ball fuzzy conditional entropy and variable-precision GBDM,
+level α = 0.1, GBDM outperforms RSLRS and FSI, and shows             thereby directly inﬂuencing the effectiveness of the feature
+comparable classiﬁcation performance to NRS, GBNRS, GBRS,            selection process. To explore the impact mechanism of this
+and DRFFS; for the KNN classiﬁer, at the signiﬁcance level           parameter on classiﬁcation performance, Fig. 5 shows the trends
+α = 0.1, GBDM signiﬁcantly outperforms GBRS and RSLRS,               of classiﬁcation accuracy across some datasets under two clas-
+while achieving comparable classiﬁcation performance to NRS,         siﬁers as parameter t varies.
+GBNRS, FSI, and DRFFS.
+                                                                        As shown in Fig. 5, the classiﬁcation accuracy exhibits some
+                                                                     ﬂuctuations with changes in parameter t, indicating that the
+
+Authorized licensed use limited to: NANJING UNIVERSITY OF SCIENCE AND TECHNOLOGY. Downloaded on June 24,2026 at 00:36:13 UTC from IEEE Xplore. Restrictions apply.
+1562                                                              IEEE TRANSACTIONS ON FUZZY SYSTEMS, VOL. 34, NO. 5, MAY 2026
+
+Fig. 4. Feature change rate versus noisy sample proportion under three noise distributions. (a) and (b) Random noise. (c) and (d) Gaussian noise. (e) and (f)
+Uniform noise.
+
+Fig. 5. Classiﬁcation accuracy varying with parameter t. (a) Ionos dataset. (b) Sonar dataset. (c) Blood dataset. (d) GSE28700 dataset. (e) DrivPoints dataset.
+(f) Glass6 dataset. (g) ColonTumor dataset. (h) NervousSystem dataset.
+
+performance of the GBDM algorithm demonstrates certain sen-          Although the choice of parameter t affects the performance
+sitivity to parameter t. Therefore, reasonable adjustment of      of the feature selection algorithm across different datasets, a
+parameter t values for different datasets is necessary to ob-     relatively stable optimal range of t values can usually be ob-
+tain optimal feature subsets. However, some datasets, such        served for certain datasets. When the variable-precision mech-
+as GSE28700, exhibit signiﬁcant stability in classiﬁcation        anism is disabled (i.e., GBDM-SP, ﬁxed t = 0) robustness ex-
+accuracy. With the parameter t changes from 0 to 0.5, the         periments show that GBDM-SP exhibits degraded robustness
+classiﬁcation accuracy of different classiﬁers remains basically  compared with GBDM, conﬁrming the necessity of introducing
+unchanged.                                                        the variable-precision mechanism.
+
+Authorized licensed use limited to: NANJING UNIVERSITY OF SCIENCE AND TECHNOLOGY. Downloaded on June 24,2026 at 00:36:13 UTC from IEEE Xplore. Restrictions apply.
+HUANG et al.: THREE-LEVEL NOISE-TOLERANCE GRANULAR-BALL DISTINGUISHING MEASURES AND FEATURE SUBSET SELECTION  1563
+
+E. Running Time                                                                                        REFERENCES
+
+   To further evaluate the computational efﬁciency and appli-          [1] R. Jensen and Q. Shen, “New approaches to fuzzy-rough feature selection,”
+cability of GBDM, we provided actual execution times on                     IEEE Trans. Fuzzy Syst., vol. 17, no. 4, pp. 824–838, Aug. 2009.
+the datasets. These experiments were carried out on a per-
+sonal computer with Windows 10, AMD A6-3400 M CPU,                     [2] C. Z. Wang, B. X. Deng, S. An, and Y. Huang, “A noise-aware weighted
+and 6-GB memory. In GBDM, RCGB∪{ci} can be calculated                       fuzzy rough set model for feature selection,” IEEE Trans. Fuzzy Syst.,
+by means of an incremental strategy. It is obviously that                   vol. 33, no. 10, pp. 3504–3514, Oct. 2025.
+RCGB∪{ci} = RCGB ∩ R{GcBi}. Therefore, it is just need to store RCGB
+in the previous cycle, and then ﬁnd the intersection between           [3] Y. X. Chen, Z. H. Huang, and J. J. Li, “Fuzzy neighborhood based variable-
+it and R{GcBi}. This strategy avoids a considerable amount of               precision granular-ball rough sets with applications to feature selection,”
+unnecessary time-consuming calculation. Table VII presents the              Fuzzy Sets Syst., vol. 512, 2025, Art. no. 109382.
+runtime for performing attribute reduction to obtain optimal
+reduct subsets. We conclude that GBDM obtains the optimal              [4] C. Z. Wang et al., “A ﬁtting model for feature selection with fuzzy rough
+feature subset in relatively less time and is suitable for big data         sets,” IEEE Trans. Fuzzy Syst., vol. 25, no. 4, pp. 741–753, Aug. 2017.
+applications.
+                                                                       [5] T. Y. Lin, “Granular computing: From rough sets and neighborhood
+                            V. CONCLUSION                                   systems to information granulation and computing with words,” in Proc.
+                                                                            Eur. Cong. Intell. Techn. Soft Comput., 1997, pp. 1602–1606.
+   This study proposes an innovative three-level noise-tolerance
+GBDM that addresses the limitations of traditional FRS models          [6] D. D. Guo, W. H. Xu, Y. H. Qian, and W. P. Ding, “Fuzzy-granular
+in handling complex data. By synergistically integrating FRS                concept-cognitive learning via three-way decision: Performance evalua-
+theory, Shannon information entropy, and GBC, the model en-                 tion on dynamic knowledge discovery,” IEEE Trans. Fuzzy Syst., vol. 32,
+hances noise resistance on three levels: the algebraic perspective          no. 3, pp. 1409–1423, Mar. 2024.
+(dependency functions), information theory (variable-precision
+entropy), and GBC (granulation mechanisms). We introduce               [7] X. T. Zou and J. H. Dai, “Feature selection based on rough diversity
+relative-distance granular-ball fuzzy similarity relations and de-          entropy,” Pattern Recognit., vol. 170, 2026, Art. no. 112032.
+pendency function, develop a variable-precision granular-ball
+fuzzy conditional entropy, and ultimately construct a distin-          [8] Z. Pawlak, “Rough sets,” Int. J. Comput. Inf. Sci., vol. 11, no. 5,
+guishing measure that comprehensively incorporates both fuzzy               pp. 341–356, 1982.
+dependency and conditional entropy. In addition, a novel at-
+tribute reduction algorithm is developed to ﬁnd the optimal            [9] N. Mac Parthaláin, R. Jensen, and R. Diao, “Fuzzy-rough set bireducts for
+attribute subset, which is experimentally compared with existing            data reduction,” IEEE Trans. Fuzzy Syst., vol. 28, no. 8, pp. 1840–1850,
+algorithms on 18 benchmark datasets. The experimental results               Aug. 2020.
+demonstrate that the GBDM model achieves superior accuracy
+and robustness in processing fuzzy and uncertain knowledge.           [10] Y. Song, H. Lin, and Z. W. Li, “Outlier detection in a multiset-valued
+                                                                            information system based on rough set theory and granular computing,”
+   Nevertheless, several issues remain to be further investigated,          Inf. Sci., vol. 657, 2024, Art. no. 119950.
+as follows.
+                                                                      [11] L. A. Zadeh, “Fuzzy sets,” Inf. Control, vol. 8, no. 3, pp. 338–353, 1965.
+   1) In high-dimensional feature spaces, the increased model         [12] D. Dubois and H. Prade, “Rough fuzzy sets and fuzzy rough sets,” Int. J.
+       complexity may introduce the risk of overﬁtting and per-
+       formance degradation. Introducing regularization tech-               Gen. Syst., vol. 17, no. 2/3, pp. 191–209, 1990.
+       niques or dimension-aware strategies into the granular-        [13] W. Ziarko, “Variable precision rough set model,” J. Comput. Syst. Sci.,
+       ball construction and feature evaluation process could
+       enhance the model’s generalization capability.                       vol. 46, no. 1, pp. 39–59, 1993.
+                                                                      [14] Q. H. Hu, D. R. Yu, J. F. Liu, and C. X. Wu, “Neighborhood rough set
+   2) The selection of the parameter t has an inﬂuence on model
+       performance. Future work will, therefore, focus on devel-            based heterogeneous feature subset selection,” Inf. Sci., vol. 178, no. 18,
+       oping automatic parameter adaptation and multiobjective              pp. 3577–3594, 2008.
+       optimization strategies to further improve the robustness      [15] C. Z. Wang, M. W. Shao, Q. He, Y. H. Qian, and Y. L. Qi, “Feature subset
+       and practical applicability of the model.                            selection based on fuzzy neighborhood rough sets,” Knowl.-Based Syst.,
+                                                                            vol. 111, pp. 173–179, 2016.
+   3) Most existing artiﬁcial intelligence technologies are based     [16] X. Y. Zhang, B. W. Chen, and D. Q. Miao, “Systematic feature se-
+       on the ﬁnest granularity and do not conform to human                 lection based on three-level improvements of fuzzy dominance three-
+       cognitive laws. The combination of granular computing                way neighborhood rough sets,” IEEE Trans. Fuzzy Syst., vol. 32, no. 9,
+       and deep learning provides a new approach to solving                 pp. 5060–5072, Sep. 2024.
+       this problem. For example, granular convolutional net-         [17] X. P. Zhao and W. H. Xu, “NFMPAtt-Unet: Neighborhood fuzzy c-means
+       works, granular reinforcement learning, granular adver-              multi-scale pyramid hybrid attention Unet for medical image segmenta-
+       sarial learning, etc., are new directions for the development        tion,” Neural Netw., vol. 178, 2024, Art. no. 106489.
+       of knowledge mining in the future.                             [18] S. Y. Xia, Y. S. Liu, X. Ding, G. Y. Wang, H. Yu, and Y. G. Luo, “Granular-
+                                                                            ball computing classiﬁers for efﬁcient, scalable and robust learning,” Inf.
+                                                                            Sci., vol. 483, pp. 136–152, 2019.
+                                                                      [19] S. Y. Xia et al., “GBRS: A uniﬁed granular-ball learning model of pawlak
+                                                                            rough set and neighborhood rough set,” IEEE Trans. Neural Netw. Learn.
+                                                                            Syst., vol. 36, no. 1, pp. 1719–1733, Jan. 2025.
+                                                                      [20] S. Y. Xia et al., “GRRS: Accurate and efﬁcient neighborhood rough set for
+                                                                            feature selection,” IEEE Trans. Knowl. Data Eng., vol. 35, pp. 9281–9294,
+                                                                            Sep. 2023.
+                                                                      [21] Q. H. Zhang et al., “Incremental learning based on granular ball rough sets
+                                                                            for classiﬁcation in dynamic mixed-type decision system,” IEEE Trans.
+                                                                            Knowl. Data Eng., vol. 35, pp. 9319–9332, Sep. 2023.
+                                                                      [22] Q. Xie et al., “GBG++: A fast and stable granular ball generation method
+                                                                            for classiﬁcation,” IEEE Trans. Emerg. Topics Comput. Intell., vol. 8, no. 2,
+                                                                            pp. 2022–2036, Apr. 2024.
+                                                                      [23] S. Y. Xia et al., “An efﬁcient and accurate rough set for feature selection,
+                                                                            classiﬁcation, and knowledge representation,” IEEE Trans. Knowl. Data
+                                                                            Eng., vol. 35, no. 8, pp. 7724–7735, Aug. 2023.
+                                                                      [24] J. Yang et al., “Constructing three-way decision with fuzzy granular-ball
+                                                                            rough sets based on uncertainty invariance,” IEEE Trans. Fuzzy Syst.,
+                                                                            vol. 33, no. 6, pp. 1781–1792, Jun. 2025.
+                                                                      [25] B. B. Sang, L. Yang, H. M. Chen, T. R. Li, and W. H. Xu, “Robust attribute
+                                                                            reduction exploring class-separability and attribute-correlation for ordered
+                                                                            decision systems,” IEEE Trans. Syst. Man Cybern. Syst., vol. 55, no. 6,
+                                                                            pp. 3941–3953, Jun. 2025.
+                                                                      [26] L. Qiu, X. W. Wang, Y. P. Qu, K. M. Zhang, F. Gao, and B. Yi, “A robust
+                                                                            pseudo fuzzy rough feature selection using linear reconstruction measure,”
+                                                                            IEEE Trans. Fuzzy Syst., vol. 32, no. 10, pp. 5687–5701, Oct. 2024.
+
+Authorized licensed use limited to: NANJING UNIVERSITY OF SCIENCE AND TECHNOLOGY. Downloaded on June 24,2026 at 00:36:13 UTC from IEEE Xplore. Restrictions apply.
+1564                                                                                IEEE TRANSACTIONS ON FUZZY SYSTEMS, VOL. 34, NO. 5, MAY 2026
+
+[27] K. H. Yuan, D. Q. Miao, W. Pedrycz, H. Y. Zhang, and L. Hu, “Multigran-        [41] C. Z. Wang, Y. Huang, W. P. Ding, and Z. H. Cao, “Attribute reduction
+      ularity data analysis with zentropy uncertainty measure for efﬁcient and            with fuzzy rough self-information measures,” Inf. Sci., vol. 549, pp. 68–86,
+      robust feature selection,” IEEE Trans. Cybern., vol. 55, no. 2, pp. 740–752,        2021.
+      Feb. 2025.
+                                                                                    [42] C. Y. Wang, C. Z. Wang, S. An, W. P. Ding, and Y. H. Qian, “Feature
+[28] S. Y. Xia, H. Zhang, W. H. Li, G. Y. Wang, E. Giem, and Z. Z. Chen,                  selection and classiﬁcation based on directed fuzzy rough sets,” IEEE
+      “GBNRS: A novel rough set algorithm for fast adaptive attribute reduc-              Trans. Syst. Man Cybern. Syst., vol. 55, no. 1, pp. 699–711, Jan. 2025.
+      tion in classiﬁcation,” IEEE Trans. Knowl. Data Eng., vol. 34, no. 3,
+      pp. 1231–1242, Mar. 2022.                                                     [43] J. Demšar, “Statistical comparisons of classiﬁers over multiple data sets,”
+                                                                                          J. Mach. Learn. Res., vol. 7, pp. 1–30, 2006.
+[29] Z. H. Zhang, D. D. Chen, L. Bai, J. J. Wang, and E. R. Hancock, “Graph
+      motif entropy for understanding time-evolving networks,” IEEE Trans.                                         Zhehuang Huang received the M.S. degree in ap-
+      Neural Netw. Learn. Syst., vol. 34, no. 4, pp. 1651–1665, Apr. 2023.                                         plied mathematics from Fuzhou University, Fuzhou,
+                                                                                                                   China, in 2005 and the Ph.D. degree in fundamentals
+[30] Y. Shalev, A. Painsky, and I. Ben-Gal, “Neural joint entropy estimation,”                                     of artiﬁcial intelligence from Xiamen University, Xi-
+      IEEE Trans. Neural Netw. Learn. Syst., vol. 35, no. 4, pp. 5488–5500,                                        amen, China, in 2015.
+      Apr. 2024.
+                                                                                                                      He is currently a Professor with the Col-
+[31] R. R. Yager, “Entropy measures under similarity relations,” Int. J. Gen.                                      lege of Mathematics Sciences, Huaqiao University,
+      Syst., vol. 20, no. 4, pp. 341–358, 1992.                                                                    Quanzhou, China. He has authored or coauthored
+                                                                                                                   more than 50 journal and conference papers in the
+[32] Y. H. Qian and J. Y. Liang, “Combination entropy and combination                                              ﬁeld of rough sets, machine learning, and granular
+      granulation in rough set theory,” Int. J. Uncertainty, Fuzziness Knowl.                                      computing.
+      Based Syst., vol. 16, no. 2, pp. 179–193, 2008.
+                                                                                                                   Yongxi Chen received the B.S. degree in mathematics
+[33] Q. H. Hu, L. Zhang, D. Zhang, W. Pan, S. An, and W. Pedrycz, “Measuring                                       and applied mathematics from the Fujian Agriculture
+      relevance between discrete and continuous features based on neighborhood                                     and Forestry University, Fuzhou, China, in 2023.
+      mutual information,” Expert Syst. Appl., vol. 38, no. 9, pp. 10737–10750,                                    She is currently working toward the M.S. degree in
+      2011.                                                                                                        computational mathematics from Huaqiao Univer-
+                                                                                                                   sity, QuanZhou, China.
+[34] Z. H. Wang, H. M. Chen, Z. Yuan, J. H. Wan, and T. R. Li, “Multiscale
+      fuzzy entropy-based feature selection,” IEEE Trans. Fuzzy Syst., vol. 31,                                       Her research interests include granular computing,
+      no. 9, pp. 3248–3262, Sep. 2023.                                                                             information fusion, and data mining.
+
+[35] Z. H. Huang and J. J. Li, “Discernibility measures for fuzzy β covering                                       Jinjin Li received the B.S. degree in pure mathe-
+      and their application,” IEEE Trans. Cybern., vol. 52, no. 9, pp. 9722–9735,                                  matics from Guangxi University, Nanning, China, in
+      Sep. 2022.                                                                                                   1988 and the Ph.D. degree in pure mathematics from
+                                                                                                                   Shandong University, Jinan, China, in 2000.
+[36] Z. H. Huang, J. J. Li, and Y. H. Qian, “Noise-tolerant fuzzy-β-covering
+      based multigranulation rough sets and feature subset selection,” IEEE                                           He is currently a Professor with the College of
+      Trans. Fuzzy Syst., vol. 30, no. 7, pp. 2721–2735, Jul. 2022.                                                Mathematics and Statistics, Minnan Normal Univer-
+                                                                                                                   sity, Zhangzhou, China. He has authored or coau-
+[37] J. Y. Wang, Z. H. Huang, Z. F. Weng, and J. J. Li, “Feature subset                                            thored more than 200 papers in the areas of rough
+      selection using fuzzy scale entropy-based uncertainty measures for multi-                                    sets, granular computing, and topologies.
+      scale fuzzy relation decision systems,” Fuzzy Sets Syst., vol. 526, 2026,
+      Art. no. 109665.
+
+[38] Z. H. Xie, W. Z. Wu, L. X. Wang, and A. H. Tan, “Entropy based optimal
+      scale selection and attribute reduction in multi-scale interval-set decision
+      tables,” Int. J. Mach. Learn. Cybern., vol. 15, no. 7, pp. 3005–3026, 2024.
+
+[39] T. Y. Yin, H. M. Chen, J. H. Wan, P. F. Zhang, S. J. Horng, and T. R. Li,
+      “Exploiting feature multi-correlations for multilabel feature selection in
+      robust multi-neighborhood fuzzy β covering space,” Inf. Fusion, vol. 104,
+      2024, Art. no. 102150.
+
+[40] A. Shuang, E. H. Zhao, C. Z. Wang, G. Guo, S. Y. Zhao, and P. Y. Li, “Rel-
+      ative fuzzy rough approximations for feature selection and classiﬁcation,”
+      IEEE Trans. Cybern., vol. 53, no. 4, pp. 2200–2210, Apr. 2023.
+
+Authorized licensed use limited to: NANJING UNIVERSITY OF SCIENCE AND TECHNOLOGY. Downloaded on June 24,2026 at 00:36:13 UTC from IEEE Xplore. Restrictions apply.
+

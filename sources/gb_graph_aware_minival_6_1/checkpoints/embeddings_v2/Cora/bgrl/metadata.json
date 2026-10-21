@@ -1,0 +1,28 @@
+{
+  "dataset": "Cora",
+  "method": "bgrl",
+  "seed": 0,
+  "embedding_shape": [
+    2708,
+    128
+  ],
+  "config": {
+    "epochs": 10000,
+    "lr": 0.0001,
+    "weight_decay": 1e-05,
+    "mm": 0.99,
+    "hidden_dim": 128,
+    "num_layers": 2,
+    "activation": "relu",
+    "predictor_hidden_dim": 512,
+    "drop_edge_1": 0.4,
+    "drop_feat_1": 0.1,
+    "drop_edge_2": 0.1,
+    "drop_feat_2": 0.2,
+    "source_note": "BGRL official repo has no Cora/CiteSeer config; reused official Amazon-Photos transductive defaults for augmentation/lr/mm."
+  },
+  "source_reference": "upstream/bgrl official transductive code; no Cora/CiteSeer config, uses official Amazon-Photos transductive augmentation/optimizer pattern",
+  "upstream_commits": "GRACE:b3b5ac3,bgrl:60f9f19,GraphMAE:b14f080,CCA-SSG:ce5b2c0",
+  "label_free": true,
+  "used_labels_or_masks_in_training": false
+}

@@ -1,0 +1,20 @@
+[
+  {
+    "kind": "pretrain",
+    "output": "C:\\Users\\Admin\\Desktop\\实验8去噪5.19-\\gb_graph_aware_minival_6_1\\checkpoints\\grace\\Cora\\ratio_train0p2_val0p1_split0_pretrain0\\checkpoint.pt",
+    "skip": true,
+    "command": "C:\\Users\\Admin\\AppData\\Local\\Programs\\Python\\Python312\\python.exe scripts/run_vanilla_grace.py --dataset Cora --split-seed 0 --split-mode ratio --pretrain-seed 0 --train-ratio 0.2 --val-ratio 0.1"
+  },
+  {
+    "kind": "embedding",
+    "output": "C:\\Users\\Admin\\Desktop\\实验8去噪5.19-\\gb_graph_aware_minival_6_1\\checkpoints\\embeddings\\Cora\\ratio_train0p2_val0p1_split0_pretrain0\\H.pt",
+    "skip": true,
+    "command": "C:\\Users\\Admin\\AppData\\Local\\Programs\\Python\\Python312\\python.exe scripts/extract_embeddings.py --dataset Cora --split-seed 0 --split-mode ratio --pretrain-seed 0 --train-ratio 0.2 --val-ratio 0.1"
+  },
+  {
+    "kind": "classifier",
+    "output": "C:\\Users\\Admin\\Desktop\\实验8去噪5.19-\\gb_graph_aware_minival_6_1\\results\\gate_runs\\Cora\\symmetric_0p4\\ratio_train0p2_val0p1_split0_pretrain0_noise0_clf0\\result_rows.csv",
+    "skip": false,
+    "command": "C:\\Users\\Admin\\AppData\\Local\\Programs\\Python\\Python312\\python.exe scripts/run_noisy_classifier.py --dataset Cora --split-seed 0 --split-mode ratio --pretrain-seed 0 --train-ratio 0.2 --val-ratio 0.1 --noise-seed 0 --classifier-seed 0 --noise-type symmetric --noise-rate 0.4 --classifier-epochs 500 --patience 50 --alphas 0.3 --primary-alpha 0.3 --teacher-epochs 100 --teacher-lr 0.01 --teacher-weight-decay 0.0005 --teacher-temperature 1.0 --qb-pred-beta 0.5 --qb-teacher-gamma 2.0 --conflict-noisy-support-max 0.35 --conflict-target-conf-min 0.55 --methods gb grace_gagb grace_gagb_qb_conflict_gate_alpha07 grace_gagb_qfilter_alpha07_q70 grace_gagb_qsafe_boundary_alpha09_q50 grace_gagb_qsafe_boundary_alpha07_q50 grace_gagb_qsafe_class_capped_alpha09_q50 gagb_qsafe_boundary_alpha09_q50 khop_only_qsafe_boundary_alpha09_q50 grace_gagb_shuffled_qsafe_boundary_alpha09_q50"
+  }
+]
