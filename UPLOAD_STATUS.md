@@ -1,4 +1,18 @@
-# Upload Completed
+# Latest Update: 2026-10-26
+
+Recent experiment sources and results were pushed successfully in commit
+[cdbf847827aad749eedcf11b7a427ba91d848681](https://github.com/casray/GBLCSS-ALLEXP/commit/cdbf847827aad749eedcf11b7a427ba91d848681).
+`git ls-remote` independently returned that commit for GitHub `main` after the push.
+
+- Added41,104 source files; updated2 existing source files,423,227,664 bytes of changed source payload before Git compression.
+- Includes R2+SUPPORT+D1+C1 integration, D1/C1 confirmation and combination experiments, earlier unsynced experiments and research notes.
+- Experiment index now covers66 branches. See [recent results](RECENT_RESULTS_20261026.md).
+- Scoped inventory110,115 files; local-only weights, arrays, datasets and duplicate packages retain per-file hashes in [the update manifests](manifests/update_20261026/summary.json).
+- All41,106 changed source copies match source SHA256 and exact staged Git blob bytes. Seven policy tests and credential scans passed; quarantine count0.
+- Original experiment files remain unchanged. Initial2026-10-21 manifests remain intact as a historical snapshot.
+- See [local verification](manifests/update_20261026/local_verification.json) and [remote verification](manifests/update_20261026/remote_verification.json).
+
+# Initial Upload Completed
 
 Date: 2026-10-21. Repository: https://github.com/casray/GBLCSS-ALLEXP
 
