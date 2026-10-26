@@ -1,0 +1,38 @@
+{
+  "datasets": ["cora", "citeseer", "corafull", "coauthorcs", "amazonpho"],
+  "seeds": [0, 1, 2],
+  "conditions": {
+    "uniform0.4": ["uniform", 0.4],
+    "uniform0.6": ["uniform", 0.6],
+    "pair0.4": ["pair", 0.4]
+  },
+  "arms": ["CE", "OLD_LCSS", "SUPPORT_LCSS"],
+  "model": {
+    "hidden": 64,
+    "layers": 2,
+    "dropout": 0.5,
+    "learning_rate": 0.01,
+    "weight_decay": 0.0005,
+    "epochs": 200,
+    "threads": 4,
+    "target_beta": 0.5,
+    "min_remaining_votes": 2
+  },
+  "success_gate": {
+    "min_mean_support_gain_pp": 0.5,
+    "positive_seed_means_required": 3,
+    "positive_dataset_means_required": 3,
+    "seed_count": 3,
+    "dataset_count": 5
+  },
+  "protocol": {
+    "train_fraction": 0.2,
+    "validation_fraction": 0.1,
+    "test_fraction": 0.7,
+    "noise_scope": "train_only",
+    "validation_selection": "first_epoch_with_max_clean_validation_accuracy",
+    "test_selection_allowed": false,
+    "independent_grace_repeats": false,
+    "student_distillation_included": false
+  }
+}

@@ -1,0 +1,109 @@
+{
+  "datasets": [
+    "cora",
+    "citeseer",
+    "corafull",
+    "coauthorcs",
+    "amazonpho"
+  ],
+  "seeds": [
+    0,
+    1,
+    2
+  ],
+  "conditions": [
+    "clean",
+    "uniform0.4",
+    "uniform0.6",
+    "pair0.4"
+  ],
+  "backbones": [
+    "R2"
+  ],
+  "supports": [
+    4,
+    8,
+    16,
+    32,
+    64,
+    128
+  ],
+  "strengths": [
+    0.25,
+    0.5,
+    1.0
+  ],
+  "group_pairs": [
+    [
+      0.0,
+      1.0
+    ],
+    [
+      0.25,
+      1.0
+    ],
+    [
+      1.0,
+      0.25
+    ],
+    [
+      1.0,
+      0.0
+    ]
+  ],
+  "tie_lambda": 1.0,
+  "mean_lambda": "arithmetic mean over all training nodes including zero-mass nodes",
+  "ranking": [
+    "validation accuracy descending",
+    "selected checkpoint NLL",
+    "mean applied lambda",
+    "larger support",
+    "earlier best epoch",
+    "fixed id: CE then uniforms then groups"
+  ],
+  "joint_race": [
+    [
+      25,
+      14
+    ],
+    [
+      75,
+      4
+    ],
+    [
+      200,
+      1
+    ]
+  ],
+  "global_race": [
+    [
+      25,
+      6
+    ],
+    [
+      75,
+      2
+    ],
+    [
+      200,
+      1
+    ]
+  ],
+  "forced_anchor": "S32_L1.0",
+  "checkpoint_selection": "first strict maximum validation correct",
+  "historical_replay": "retrospective exact complete uniform trajectories; score reads prefix only",
+  "fixed_controls": "complete only after per-cell joint decision hash frozen",
+  "epochs": 200,
+  "scientific_new_unique_upper": 1500,
+  "smoke_fits": 4,
+  "storage": {
+    "minimum_free_bytes": 3221225472,
+    "historical": "external hash references; no artifact copying",
+    "targets": "content addressed",
+    "prefix": "own optimizer/RNG resume snapshots at25/75 retained",
+    "full": "verified best checkpoint/probabilities; drop terminal resume only"
+  },
+  "analysis": "seed-first means, sample SD ddof1; seeds0/1/2 and seeds1/2; validation-only selection",
+  "scope": "60 R2 cells; R0 readonly reference; no KM/kNN/SSL/weighting/teachers",
+  "development_status": "all graphs/seeds previously developed on; retrospective integration validation"
+}

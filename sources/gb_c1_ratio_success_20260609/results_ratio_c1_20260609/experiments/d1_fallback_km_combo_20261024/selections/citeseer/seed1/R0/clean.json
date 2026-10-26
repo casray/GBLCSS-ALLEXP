@@ -1,0 +1,562 @@
+{
+  "dataset": "citeseer",
+  "seed": 1,
+  "backbone": "R0",
+  "condition": "clean",
+  "meta": {
+    "legacy_tie_lambda": 0.25,
+    "retrospective_fallback": true,
+    "adaptive_support": 32,
+    "PROBE": "S32_L0.5",
+    "probe_sha256": "9029f77c962c08fe61ab41b51d8b268e82e94136ee0610b4e5e7e23105d4b54c",
+    "deep_ties": {
+      "S32": 0.25
+    },
+    "adaptive_cost": {
+      "upstream_probe_with_ce": 1200,
+      "prefix_epochs": {
+        "S32_L0.25": 25,
+        "S32_L0.5": 200,
+        "S32_L1.0": 200
+      },
+      "additional_global_updates": 175,
+      "additional_group_updates": 800,
+      "global_total_updates": 1375,
+      "expanded_total_updates": 2175
+    },
+    "fixed_global_updates": 800,
+    "fixed_expanded_updates": 1600,
+    "matched_legacy_km_global_updates": 800,
+    "matched_legacy_km_expanded_updates": 1600
+  },
+  "pools": {
+    "CE": [
+      {
+        "ref": "citeseer/seed1/R0/clean/LEGACY/CE",
+        "validation": 0.6837349397590361,
+        "valid_macro_f1": 0.6591268366060535,
+        "valid_nll": 1.2299655675888062,
+        "best_epoch": 138
+      }
+    ],
+    "LEGACY_GLOBAL": [
+      {
+        "ref": "citeseer/seed1/R0/clean/LEGACY/CE",
+        "validation": 0.6837349397590361,
+        "valid_macro_f1": 0.6591268366060535,
+        "valid_nll": 1.2299655675888062,
+        "best_epoch": 138
+      },
+      {
+        "ref": "citeseer/seed1/R0/clean/LEGACY/L0.25",
+        "validation": 0.713855421686747,
+        "valid_macro_f1": 0.6821380331020073,
+        "valid_nll": 0.9160976409912109,
+        "best_epoch": 182
+      },
+      {
+        "ref": "citeseer/seed1/R0/clean/LEGACY/L0.5",
+        "validation": 0.7108433734939759,
+        "valid_macro_f1": 0.6631221528401742,
+        "valid_nll": 0.9220375418663025,
+        "best_epoch": 75
+      },
+      {
+        "ref": "citeseer/seed1/R0/clean/LEGACY/L1.0",
+        "validation": 0.6987951807228916,
+        "valid_macro_f1": 0.6381420317254819,
+        "valid_nll": 0.9711074829101562,
+        "best_epoch": 31
+      }
+    ],
+    "LEGACY_EXPANDED": [
+      {
+        "ref": "citeseer/seed1/R0/clean/LEGACY/CE",
+        "validation": 0.6837349397590361,
+        "valid_macro_f1": 0.6591268366060535,
+        "valid_nll": 1.2299655675888062,
+        "best_epoch": 138
+      },
+      {
+        "ref": "citeseer/seed1/R0/clean/LEGACY/L0.25",
+        "validation": 0.713855421686747,
+        "valid_macro_f1": 0.6821380331020073,
+        "valid_nll": 0.9160976409912109,
+        "best_epoch": 182
+      },
+      {
+        "ref": "citeseer/seed1/R0/clean/LEGACY/L0.5",
+        "validation": 0.7108433734939759,
+        "valid_macro_f1": 0.6631221528401742,
+        "valid_nll": 0.9220375418663025,
+        "best_epoch": 75
+      },
+      {
+        "ref": "citeseer/seed1/R0/clean/LEGACY/L1.0",
+        "validation": 0.6987951807228916,
+        "valid_macro_f1": 0.6381420317254819,
+        "valid_nll": 0.9711074829101562,
+        "best_epoch": 31
+      },
+      {
+        "ref": "citeseer/seed1/R0/clean/LEGACY/GROUP_A0.0_C1.0",
+        "validation": 0.7078313253012049,
+        "valid_macro_f1": 0.6244317797670627,
+        "valid_nll": 0.9966378211975098,
+        "best_epoch": 161
+      },
+      {
+        "ref": "citeseer/seed1/R0/clean/LEGACY/GROUP_A0.25_C1.0",
+        "validation": 0.6987951807228916,
+        "valid_macro_f1": 0.6159183656041083,
+        "valid_nll": 0.9498936533927917,
+        "best_epoch": 100
+      },
+      {
+        "ref": "citeseer/seed1/R0/clean/LEGACY/GROUP_A1.0_C0.25",
+        "validation": 0.6927710843373494,
+        "valid_macro_f1": 0.6610144174950471,
+        "valid_nll": 0.9169331789016724,
+        "best_epoch": 155
+      },
+      {
+        "ref": "citeseer/seed1/R0/clean/LEGACY/GROUP_A1.0_C0.0",
+        "validation": 0.6716867469879518,
+        "valid_macro_f1": 0.6416962393801942,
+        "valid_nll": 0.9611882567405701,
+        "best_epoch": 186
+      }
+    ],
+    "LEGACY_FORCED": [
+      {
+        "ref": "citeseer/seed1/R0/clean/LEGACY/GROUP_A0.0_C1.0",
+        "validation": 0.7078313253012049,
+        "valid_macro_f1": 0.6244317797670627,
+        "valid_nll": 0.9966378211975098,
+        "best_epoch": 161
+      },
+      {
+        "ref": "citeseer/seed1/R0/clean/LEGACY/GROUP_A0.25_C1.0",
+        "validation": 0.6987951807228916,
+        "valid_macro_f1": 0.6159183656041083,
+        "valid_nll": 0.9498936533927917,
+        "best_epoch": 100
+      },
+      {
+        "ref": "citeseer/seed1/R0/clean/LEGACY/GROUP_A1.0_C0.25",
+        "validation": 0.6927710843373494,
+        "valid_macro_f1": 0.6610144174950471,
+        "valid_nll": 0.9169331789016724,
+        "best_epoch": 155
+      },
+      {
+        "ref": "citeseer/seed1/R0/clean/LEGACY/GROUP_A1.0_C0.0",
+        "validation": 0.6716867469879518,
+        "valid_macro_f1": 0.6416962393801942,
+        "valid_nll": 0.9611882567405701,
+        "best_epoch": 186
+      }
+    ],
+    "KM_GLOBAL": [
+      {
+        "ref": "citeseer/seed1/R0/clean/KM/CE",
+        "validation": 0.6837349397590361,
+        "valid_macro_f1": 0.6591268366060535,
+        "valid_nll": 1.2299655675888062,
+        "best_epoch": 138
+      },
+      {
+        "ref": "citeseer/seed1/R0/clean/KM/L0.25",
+        "validation": 0.7108433734939759,
+        "valid_macro_f1": 0.6796839256045235,
+        "valid_nll": 0.9227408170700073,
+        "best_epoch": 170
+      },
+      {
+        "ref": "citeseer/seed1/R0/clean/KM/L0.5",
+        "validation": 0.7108433734939759,
+        "valid_macro_f1": 0.6583697147981752,
+        "valid_nll": 0.8937466144561768,
+        "best_epoch": 186
+      },
+      {
+        "ref": "citeseer/seed1/R0/clean/KM/L1.0",
+        "validation": 0.7018072289156626,
+        "valid_macro_f1": 0.6323192624322298,
+        "valid_nll": 0.9274315237998962,
+        "best_epoch": 193
+      }
+    ],
+    "KM_EXPANDED": [
+      {
+        "ref": "citeseer/seed1/R0/clean/KM/CE",
+        "validation": 0.6837349397590361,
+        "valid_macro_f1": 0.6591268366060535,
+        "valid_nll": 1.2299655675888062,
+        "best_epoch": 138
+      },
+      {
+        "ref": "citeseer/seed1/R0/clean/KM/L0.25",
+        "validation": 0.7108433734939759,
+        "valid_macro_f1": 0.6796839256045235,
+        "valid_nll": 0.9227408170700073,
+        "best_epoch": 170
+      },
+      {
+        "ref": "citeseer/seed1/R0/clean/KM/L0.5",
+        "validation": 0.7108433734939759,
+        "valid_macro_f1": 0.6583697147981752,
+        "valid_nll": 0.8937466144561768,
+        "best_epoch": 186
+      },
+      {
+        "ref": "citeseer/seed1/R0/clean/KM/L1.0",
+        "validation": 0.7018072289156626,
+        "valid_macro_f1": 0.6323192624322298,
+        "valid_nll": 0.9274315237998962,
+        "best_epoch": 193
+      },
+      {
+        "ref": "citeseer/seed1/R0/clean/KM/GROUP_A0.0_C1.0",
+        "validation": 0.7048192771084337,
+        "valid_macro_f1": 0.6279060862175476,
+        "valid_nll": 0.9867708086967468,
+        "best_epoch": 174
+      },
+      {
+        "ref": "citeseer/seed1/R0/clean/KM/GROUP_A0.25_C1.0",
+        "validation": 0.7018072289156626,
+        "valid_macro_f1": 0.6314951622719304,
+        "valid_nll": 0.9352102875709534,
+        "best_epoch": 93
+      },
+      {
+        "ref": "citeseer/seed1/R0/clean/KM/GROUP_A1.0_C0.25",
+        "validation": 0.7018072289156626,
+        "valid_macro_f1": 0.6711142214328755,
+        "valid_nll": 0.9205102324485779,
+        "best_epoch": 152
+      },
+      {
+        "ref": "citeseer/seed1/R0/clean/KM/GROUP_A1.0_C0.0",
+        "validation": 0.677710843373494,
+        "valid_macro_f1": 0.6424683041056994,
+        "valid_nll": 1.0005487203598022,
+        "best_epoch": 86
+      }
+    ],
+    "FIXED_GLOBAL": [
+      {
+        "ref": "citeseer/seed1/R0/clean/S32/CE",
+        "validation": 0.6837349397590361,
+        "valid_macro_f1": 0.6591268366060535,
+        "valid_nll": 1.2299655675888062,
+        "best_epoch": 138
+      },
+      {
+        "ref": "citeseer/seed1/R0/clean/S32/L0.25",
+        "validation": 0.713855421686747,
+        "valid_macro_f1": 0.6821380331020073,
+        "valid_nll": 0.9160976409912109,
+        "best_epoch": 182
+      },
+      {
+        "ref": "citeseer/seed1/R0/clean/S32/L0.5",
+        "validation": 0.7108433734939759,
+        "valid_macro_f1": 0.6631221528401742,
+        "valid_nll": 0.9220375418663025,
+        "best_epoch": 75
+      },
+      {
+        "ref": "citeseer/seed1/R0/clean/S32/L1.0",
+        "validation": 0.6987951807228916,
+        "valid_macro_f1": 0.6381420317254819,
+        "valid_nll": 0.9711074829101562,
+        "best_epoch": 31
+      }
+    ],
+    "FIXED_EXPANDED": [
+      {
+        "ref": "citeseer/seed1/R0/clean/S32/CE",
+        "validation": 0.6837349397590361,
+        "valid_macro_f1": 0.6591268366060535,
+        "valid_nll": 1.2299655675888062,
+        "best_epoch": 138
+      },
+      {
+        "ref": "citeseer/seed1/R0/clean/S32/L0.25",
+        "validation": 0.713855421686747,
+        "valid_macro_f1": 0.6821380331020073,
+        "valid_nll": 0.9160976409912109,
+        "best_epoch": 182
+      },
+      {
+        "ref": "citeseer/seed1/R0/clean/S32/L0.5",
+        "validation": 0.7108433734939759,
+        "valid_macro_f1": 0.6631221528401742,
+        "valid_nll": 0.9220375418663025,
+        "best_epoch": 75
+      },
+      {
+        "ref": "citeseer/seed1/R0/clean/S32/L1.0",
+        "validation": 0.6987951807228916,
+        "valid_macro_f1": 0.6381420317254819,
+        "valid_nll": 0.9711074829101562,
+        "best_epoch": 31
+      },
+      {
+        "ref": "citeseer/seed1/R0/clean/S32/GROUP_A0.0_C1.0",
+        "validation": 0.7078313253012049,
+        "valid_macro_f1": 0.6244317797670627,
+        "valid_nll": 0.9966378211975098,
+        "best_epoch": 161
+      },
+      {
+        "ref": "citeseer/seed1/R0/clean/S32/GROUP_A0.25_C1.0",
+        "validation": 0.6987951807228916,
+        "valid_macro_f1": 0.6159183656041083,
+        "valid_nll": 0.9498936533927917,
+        "best_epoch": 100
+      },
+      {
+        "ref": "citeseer/seed1/R0/clean/S32/GROUP_A1.0_C0.25",
+        "validation": 0.6927710843373494,
+        "valid_macro_f1": 0.6610144174950471,
+        "valid_nll": 0.9169331789016724,
+        "best_epoch": 155
+      },
+      {
+        "ref": "citeseer/seed1/R0/clean/S32/GROUP_A1.0_C0.0",
+        "validation": 0.6716867469879518,
+        "valid_macro_f1": 0.6416962393801942,
+        "valid_nll": 0.9611882567405701,
+        "best_epoch": 186
+      }
+    ],
+    "ADAPTIVE_GLOBAL": [
+      {
+        "ref": "citeseer/seed1/R0/clean/S32/CE",
+        "validation": 0.6837349397590361,
+        "valid_macro_f1": 0.6591268366060535,
+        "valid_nll": 1.2299655675888062,
+        "best_epoch": 138
+      },
+      {
+        "ref": "citeseer/seed1/R0/clean/S32/L0.25",
+        "validation": 0.713855421686747,
+        "valid_macro_f1": 0.6821380331020073,
+        "valid_nll": 0.9160976409912109,
+        "best_epoch": 182
+      },
+      {
+        "ref": "citeseer/seed1/R0/clean/S32/L0.5",
+        "validation": 0.7108433734939759,
+        "valid_macro_f1": 0.6631221528401742,
+        "valid_nll": 0.9220375418663025,
+        "best_epoch": 75
+      },
+      {
+        "ref": "citeseer/seed1/R0/clean/S32/L1.0",
+        "validation": 0.6987951807228916,
+        "valid_macro_f1": 0.6381420317254819,
+        "valid_nll": 0.9711074829101562,
+        "best_epoch": 31
+      }
+    ],
+    "ADAPTIVE_EXPANDED": [
+      {
+        "ref": "citeseer/seed1/R0/clean/S32/CE",
+        "validation": 0.6837349397590361,
+        "valid_macro_f1": 0.6591268366060535,
+        "valid_nll": 1.2299655675888062,
+        "best_epoch": 138
+      },
+      {
+        "ref": "citeseer/seed1/R0/clean/S32/L0.25",
+        "validation": 0.713855421686747,
+        "valid_macro_f1": 0.6821380331020073,
+        "valid_nll": 0.9160976409912109,
+        "best_epoch": 182
+      },
+      {
+        "ref": "citeseer/seed1/R0/clean/S32/L0.5",
+        "validation": 0.7108433734939759,
+        "valid_macro_f1": 0.6631221528401742,
+        "valid_nll": 0.9220375418663025,
+        "best_epoch": 75
+      },
+      {
+        "ref": "citeseer/seed1/R0/clean/S32/L1.0",
+        "validation": 0.6987951807228916,
+        "valid_macro_f1": 0.6381420317254819,
+        "valid_nll": 0.9711074829101562,
+        "best_epoch": 31
+      },
+      {
+        "ref": "citeseer/seed1/R0/clean/S32/GROUP_A0.0_C1.0",
+        "validation": 0.7078313253012049,
+        "valid_macro_f1": 0.6244317797670627,
+        "valid_nll": 0.9966378211975098,
+        "best_epoch": 161
+      },
+      {
+        "ref": "citeseer/seed1/R0/clean/S32/GROUP_A0.25_C1.0",
+        "validation": 0.6987951807228916,
+        "valid_macro_f1": 0.6159183656041083,
+        "valid_nll": 0.9498936533927917,
+        "best_epoch": 100
+      },
+      {
+        "ref": "citeseer/seed1/R0/clean/S32/GROUP_A1.0_C0.25",
+        "validation": 0.6927710843373494,
+        "valid_macro_f1": 0.6610144174950471,
+        "valid_nll": 0.9169331789016724,
+        "best_epoch": 155
+      },
+      {
+        "ref": "citeseer/seed1/R0/clean/S32/GROUP_A1.0_C0.0",
+        "validation": 0.6716867469879518,
+        "valid_macro_f1": 0.6416962393801942,
+        "valid_nll": 0.9611882567405701,
+        "best_epoch": 186
+      }
+    ],
+    "ORIGINAL_C1": [
+      {
+        "ref": "citeseer/seed1/R0/clean/S32/L0.5",
+        "validation": 0.7108433734939759,
+        "valid_macro_f1": 0.6631221528401742,
+        "valid_nll": 0.9220375418663025,
+        "best_epoch": 75
+      }
+    ],
+    "FIXED_S32": [
+      {
+        "ref": "citeseer/seed1/R0/clean/S32/L1.0",
+        "validation": 0.6987951807228916,
+        "valid_macro_f1": 0.6381420317254819,
+        "valid_nll": 0.9711074829101562,
+        "best_epoch": 31
+      }
+    ],
+    "SINGLE_MODULE_VAL": [
+      {
+        "ref": "citeseer/seed1/R0/clean/S32/CE",
+        "validation": 0.6837349397590361,
+        "valid_macro_f1": 0.6591268366060535,
+        "valid_nll": 1.2299655675888062,
+        "best_epoch": 138
+      },
+      {
+        "ref": "citeseer/seed1/R0/clean/S32/L0.25",
+        "validation": 0.713855421686747,
+        "valid_macro_f1": 0.6821380331020073,
+        "valid_nll": 0.9160976409912109,
+        "best_epoch": 182
+      },
+      {
+        "ref": "citeseer/seed1/R0/clean/S32/L0.5",
+        "validation": 0.7108433734939759,
+        "valid_macro_f1": 0.6631221528401742,
+        "valid_nll": 0.9220375418663025,
+        "best_epoch": 75
+      },
+      {
+        "ref": "citeseer/seed1/R0/clean/S32/L1.0",
+        "validation": 0.6987951807228916,
+        "valid_macro_f1": 0.6381420317254819,
+        "valid_nll": 0.9711074829101562,
+        "best_epoch": 31
+      },
+      {
+        "ref": "citeseer/seed1/R0/clean/S32/CE",
+        "validation": 0.6837349397590361,
+        "valid_macro_f1": 0.6591268366060535,
+        "valid_nll": 1.2299655675888062,
+        "best_epoch": 138
+      },
+      {
+        "ref": "citeseer/seed1/R0/clean/S32/L0.25",
+        "validation": 0.713855421686747,
+        "valid_macro_f1": 0.6821380331020073,
+        "valid_nll": 0.9160976409912109,
+        "best_epoch": 182
+      },
+      {
+        "ref": "citeseer/seed1/R0/clean/S32/L0.5",
+        "validation": 0.7108433734939759,
+        "valid_macro_f1": 0.6631221528401742,
+        "valid_nll": 0.9220375418663025,
+        "best_epoch": 75
+      },
+      {
+        "ref": "citeseer/seed1/R0/clean/S32/L1.0",
+        "validation": 0.6987951807228916,
+        "valid_macro_f1": 0.6381420317254819,
+        "valid_nll": 0.9711074829101562,
+        "best_epoch": 31
+      },
+      {
+        "ref": "citeseer/seed1/R0/clean/S32/GROUP_A0.0_C1.0",
+        "validation": 0.7078313253012049,
+        "valid_macro_f1": 0.6244317797670627,
+        "valid_nll": 0.9966378211975098,
+        "best_epoch": 161
+      },
+      {
+        "ref": "citeseer/seed1/R0/clean/S32/GROUP_A0.25_C1.0",
+        "validation": 0.6987951807228916,
+        "valid_macro_f1": 0.6159183656041083,
+        "valid_nll": 0.9498936533927917,
+        "best_epoch": 100
+      },
+      {
+        "ref": "citeseer/seed1/R0/clean/S32/GROUP_A1.0_C0.25",
+        "validation": 0.6927710843373494,
+        "valid_macro_f1": 0.6610144174950471,
+        "valid_nll": 0.9169331789016724,
+        "best_epoch": 155
+      },
+      {
+        "ref": "citeseer/seed1/R0/clean/S32/GROUP_A1.0_C0.0",
+        "validation": 0.6716867469879518,
+        "valid_macro_f1": 0.6416962393801942,
+        "valid_nll": 0.9611882567405701,
+        "best_epoch": 186
+      }
+    ]
+  },
+  "choices": {
+    "accuracy": {
+      "CE": "citeseer/seed1/R0/clean/LEGACY/CE",
+      "LEGACY_GLOBAL": "citeseer/seed1/R0/clean/LEGACY/L0.25",
+      "LEGACY_EXPANDED": "citeseer/seed1/R0/clean/LEGACY/L0.25",
+      "LEGACY_FORCED": "citeseer/seed1/R0/clean/LEGACY/GROUP_A0.0_C1.0",
+      "KM_GLOBAL": "citeseer/seed1/R0/clean/KM/L0.5",
+      "KM_EXPANDED": "citeseer/seed1/R0/clean/KM/L0.5",
+      "FIXED_GLOBAL": "citeseer/seed1/R0/clean/S32/L0.25",
+      "FIXED_EXPANDED": "citeseer/seed1/R0/clean/S32/L0.25",
+      "ADAPTIVE_GLOBAL": "citeseer/seed1/R0/clean/S32/L0.25",
+      "ADAPTIVE_EXPANDED": "citeseer/seed1/R0/clean/S32/L0.25",
+      "ORIGINAL_C1": "citeseer/seed1/R0/clean/S32/L0.5",
+      "FIXED_S32": "citeseer/seed1/R0/clean/S32/L1.0",
+      "SINGLE_MODULE_VAL": "citeseer/seed1/R0/clean/S32/L0.25"
+    },
+    "balanced": {
+      "CE": "citeseer/seed1/R0/clean/LEGACY/CE",
+      "LEGACY_GLOBAL": "citeseer/seed1/R0/clean/LEGACY/L0.25",
+      "LEGACY_EXPANDED": "citeseer/seed1/R0/clean/LEGACY/L0.25",
+      "LEGACY_FORCED": "citeseer/seed1/R0/clean/LEGACY/GROUP_A1.0_C0.25",
+      "KM_GLOBAL": "citeseer/seed1/R0/clean/KM/L0.25",
+      "KM_EXPANDED": "citeseer/seed1/R0/clean/KM/L0.25",
+      "FIXED_GLOBAL": "citeseer/seed1/R0/clean/S32/L0.25",
+      "FIXED_EXPANDED": "citeseer/seed1/R0/clean/S32/L0.25",
+      "ADAPTIVE_GLOBAL": "citeseer/seed1/R0/clean/S32/L0.25",
+      "ADAPTIVE_EXPANDED": "citeseer/seed1/R0/clean/S32/L0.25",
+      "ORIGINAL_C1": "citeseer/seed1/R0/clean/S32/L0.5",
+      "FIXED_S32": "citeseer/seed1/R0/clean/S32/L1.0",
+      "SINGLE_MODULE_VAL": "citeseer/seed1/R0/clean/S32/L0.25"
+    }
+  },
+  "frozen": "2026-10-24T08:21:07.980775+00:00"
+}

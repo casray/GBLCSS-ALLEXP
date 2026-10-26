@@ -1,0 +1,24 @@
+{"stage": "PREFLIGHT", "time": "2026-10-24T08:08:36.258013+00:00"}
+Traceback (most recent call last):
+  File "C:\Users\Admin\Desktop\ʵ��8ȥ��5.19-\gb_c1_ratio_success_20260609\results_ratio_c1_20260609\experiments\d1_fallback_km_combo_20261024\run.py", line 365, in <module>
+    main()
+  File "C:\Users\Admin\Desktop\ʵ��8ȥ��5.19-\gb_c1_ratio_success_20260609\results_ratio_c1_20260609\experiments\d1_fallback_km_combo_20261024\run.py", line 331, in main
+    preflight()
+  File "C:\Users\Admin\Desktop\ʵ��8ȥ��5.19-\gb_c1_ratio_success_20260609\results_ratio_c1_20260609\experiments\d1_fallback_km_combo_20261024\run.py", line 221, in preflight
+    existing(n,s,'R0',c,'KM','L1.0',shrink(es['KM'],1),values)
+  File "C:\Users\Admin\Desktop\ʵ��8ȥ��5.19-\gb_c1_ratio_success_20260609\results_ratio_c1_20260609\experiments\d1_fallback_km_combo_20261024\run.py", line 133, in existing
+    return register(n,s,b,c,p,arm,folder,'historical_exact_provenance',values,target)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Admin\Desktop\ʵ��8ȥ��5.19-\gb_c1_ratio_success_20260609\results_ratio_c1_20260609\experiments\d1_fallback_km_combo_20261024\run.py", line 106, in register
+    r = verify_old(folder,digest,ih) if historical else read(folder/'result.json')
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Admin\Desktop\ʵ��8ȥ��5.19-\gb_c1_ratio_success_20260609\results_ratio_c1_20260609\experiments\d1_fallback_km_combo_20261024\run.py", line 73, in verify_old
+    logs = [json.loads(x) for x in track(folder/'epochs.jsonl').read_text().splitlines()]
+                                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Admin\Desktop\ʵ��8ȥ��5.19-\gb_c1_ratio_success_20260609\results_ratio_c1_20260609\experiments\d1_fallback_km_combo_20261024\protocol.py", line 83, in track
+    save(ROOT/'inputs.json', INPUTS)
+  File "C:\Users\Admin\Desktop\ʵ��8ȥ��5.19-\gb_c1_ratio_success_20260609\results_ratio_c1_20260609\experiments\d1_fallback_km_combo_20261024\protocol.py", line 52, in save
+    temp.replace(path)
+  File "C:\Users\Admin\AppData\Local\Programs\Python\Python312\Lib\pathlib.py", line 1376, in replace
+    os.replace(self, target)
+PermissionError: [WinError 5] �ܾ����ʡ�: 'C:\\Users\\Admin\\Desktop\\ʵ��8ȥ��5.19-\\gb_c1_ratio_success_20260609\\results_ratio_c1_20260609\\experiments\\d1_fallback_km_combo_20261024\\inputs.json.tmp' -> 'C:\\Users\\Admin\\Desktop\\ʵ��8ȥ��5.19-\\gb_c1_ratio_success_20260609\\results_ratio_c1_20260609\\experiments\\d1_fallback_km_combo_20261024\\inputs.json'

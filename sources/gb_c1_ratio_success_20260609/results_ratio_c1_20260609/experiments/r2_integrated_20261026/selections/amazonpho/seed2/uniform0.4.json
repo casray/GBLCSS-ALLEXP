@@ -1,0 +1,110 @@
+{
+  "dataset": "amazonpho",
+  "seed": 2,
+  "backbone": "R2",
+  "condition": "uniform0.4",
+  "frozen": "2026-10-26T04:01:58.898522+00:00",
+  "choices": {
+    "CE": "amazonpho/seed2/R2/uniform0.4/CE",
+    "GCE": "amazonpho/seed2/R2/uniform0.4/GCE",
+    "OLD64": "amazonpho/seed2/R2/uniform0.4/OLD64",
+    "LEGACY_SUPPORT32": "amazonpho/seed2/R2/uniform0.4/LEGACY_SUPPORT32",
+    "FIXED_GLOBAL": "amazonpho/seed2/R2/uniform0.4/S32_L1.0",
+    "FIXED_EXPANDED": "amazonpho/seed2/R2/uniform0.4/S32_G_A0.0_C1.0",
+    "ADAPTIVE_GLOBAL": "amazonpho/seed2/R2/uniform0.4/S128_L1.0",
+    "ADAPTIVE_EXPANDED": "amazonpho/seed2/R2/uniform0.4/S128_G_A0.0_C1.0",
+    "SINGLE_MODULE_VAL": "amazonpho/seed2/R2/uniform0.4/S128_L1.0",
+    "FIXED_S32": "amazonpho/seed2/R2/uniform0.4/S32_L1.0"
+  },
+  "fixed_scores": [
+    {
+      "arm": "CE",
+      "support": 0,
+      "mean_lambda": 0.0,
+      "epoch": 200,
+      "best_epoch": 23,
+      "valid_correct": 634,
+      "valid_total": 765,
+      "valid_nll": 0.9635440707206726
+    },
+    {
+      "arm": "S32_L0.25",
+      "support": 32,
+      "mean_lambda": 0.25,
+      "epoch": 200,
+      "best_epoch": 26,
+      "valid_correct": 636,
+      "valid_total": 765,
+      "valid_nll": 0.9221264719963074
+    },
+    {
+      "arm": "S32_L0.5",
+      "support": 32,
+      "mean_lambda": 0.5,
+      "epoch": 200,
+      "best_epoch": 38,
+      "valid_correct": 637,
+      "valid_total": 765,
+      "valid_nll": 0.8857148885726929
+    },
+    {
+      "arm": "S32_L1.0",
+      "support": 32,
+      "mean_lambda": 1.0,
+      "epoch": 200,
+      "best_epoch": 39,
+      "valid_correct": 642,
+      "valid_total": 765,
+      "valid_nll": 0.8247883319854736
+    },
+    {
+      "arm": "S32_G_A0.0_C1.0",
+      "support": 32,
+      "mean_lambda": 0.4803921568627451,
+      "epoch": 200,
+      "best_epoch": 48,
+      "valid_correct": 645,
+      "valid_total": 765,
+      "valid_nll": 0.7573160529136658
+    },
+    {
+      "arm": "S32_G_A0.25_C1.0",
+      "support": 32,
+      "mean_lambda": 0.6102941176470589,
+      "epoch": 200,
+      "best_epoch": 47,
+      "valid_correct": 644,
+      "valid_total": 765,
+      "valid_nll": 0.7744312882423401
+    },
+    {
+      "arm": "S32_G_A1.0_C0.25",
+      "support": 32,
+      "mean_lambda": 0.6504901960784314,
+      "epoch": 200,
+      "best_epoch": 27,
+      "valid_correct": 631,
+      "valid_total": 765,
+      "valid_nll": 0.9700878262519836
+    },
+    {
+      "arm": "S32_G_A1.0_C0.0",
+      "support": 32,
+      "mean_lambda": 0.5339869281045752,
+      "epoch": 200,
+      "best_epoch": 164,
+      "valid_correct": 625,
+      "valid_total": 765,
+      "valid_nll": 1.0057933330535889
+    }
+  ],
+  "joint_sha256": "fe4bf2d01d61cb58160f5131819fc3d1d2b59088a5564883fdae2695f744ae09",
+  "global_sha256": "3e4af047d622c6ee5d04eadc6cb1dc43ea7ce834096ff22edb7876496c022f5b",
+  "fixed_controls_after_joint": true,
+  "rank": "rules.rank_key; GLOBAL original pilot rank",
+  "joint_candidate_updates": 2250,
+  "global_candidate_updates": 1000,
+  "ce_updates": 200,
+  "fixed_global_updates": 800,
+  "fixed_expanded_updates": 1600
+}

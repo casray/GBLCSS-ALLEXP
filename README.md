@@ -5,8 +5,11 @@ GB-LCSS and related GB–GCL research archive, assembled on 2026-10-21 from the 
 
 ## Start here / 阅读入口
 
-- [实验目录索引](EXPERIMENT_INDEX.md)：当前主实验目录下的 52 个历史分支。
-- [项目核心上下文](sources/项目核心总结_新窗口上下文.md)、[项目交接](sources/99_session_handoff.md)。
+- [2026-10-26近期实验与主线判断](RECENT_RESULTS_20261026.md)：R2、SUPPORT、D1、C1整合及教师蒸馏待测问题。
+- [本次增量归档清单](manifests/update_20261026/summary.json)：原2026-10-21清单保留为初始快照，新文件与本地大文件清单单独记录。
+- [实验目录索引](EXPERIMENT_INDEX.md)：包括本次增量在内的历史实验分支。
+- [初始项目核心上下文](sources/项目核心总结_新窗口上下文.md)、[最新实验交接](sources/gb_c1_ratio_success_20260609/results_ratio_c1_20260609/99_session_handoff.md)。
+- [最新实验历史](sources/gb_c1_ratio_success_20260609/results_ratio_c1_20260609/02_experiment_history_and_lessons.md)：包含三seed整合及失败分支。
 - [历史实验记录](sources/experiment_history_and_lessons)、[文献研究地图](sources/01_literature_and_research_map.md)。
 - [GB-LCSS implementation](sources/gb_c1_ratio_success_20260609/results_ratio_c1_20260609/GB-LCSS_code)、[全部主实验目录](sources/gb_c1_ratio_success_20260609/results_ratio_c1_20260609/experiments)。
 - [后续研究与复盘](sources/gb_c1_ratio_success_20260609/results_ratio_c1_20260609/research)、[更早的GRACE实验](sources/gb_graph_aware_minival_6_1)。
@@ -15,7 +18,7 @@ GB-LCSS and related GB–GCL research archive, assembled on 2026-10-21 from the 
 
 ## What is actually included / 归档范围
 
-复制了 32,158 个源文件（2.363 GB，十进制）。
+初始2026-10-21快照复制了 32,158 个源文件（2.363 GB，十进制）；2026-10-26增量见上方清单。
 `sources/` 下保留相对原项目根目录的路径，区分原方法、后续尝试、基线实现与历史版本。
 模型权重、数组缓存和原始数据按所有者选择保留本地，**没有声称它们已上传**。
 完整盘点 51,241 个文件，逐文件路径、大小、SHA-256及上传/留存原因见 [files.csv](manifests/files.csv)。

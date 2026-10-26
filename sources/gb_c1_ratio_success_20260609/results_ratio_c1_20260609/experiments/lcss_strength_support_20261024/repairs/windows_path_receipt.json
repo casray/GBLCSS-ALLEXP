@@ -1,0 +1,14 @@
+{
+  "status": "resolved_postprocessing_only",
+  "root_cause": "Windows Path string serialization uses backslashes; analytical fitpath references use forward slashes",
+  "additional_presentation_issues": ["original alias flag used forward-slash prefix against Windows path strings", "40 C1_ANCHOR new fits would be hidden by blanket _REF output filtering"],
+  "fix": "Independent analyze_windows.py copy canonicalizes path keys, emits canonical registry/explicit aliases and retains 40 newly fitted anchors in results",
+  "original_files_modified": false,
+  "selections_modified": false,
+  "training_affected": false,
+  "classification_fits_added": 0,
+  "entry_point_after_all_stages": "postprocess/finalize.py",
+  "red_test": "test_windows_paths.py failed on absent PathKeyDict before the repair",
+  "green_test": "Path regression passed; all 1500 result rows generated; final audit passed",
+  "reported_to_parent": "commentary"
+}

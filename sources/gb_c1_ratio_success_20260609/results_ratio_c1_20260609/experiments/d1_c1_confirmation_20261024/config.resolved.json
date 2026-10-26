@@ -1,0 +1,75 @@
+{
+  "experiment": "d1_c1_confirmation_20261024",
+  "datasets": [
+    "cora",
+    "citeseer",
+    "corafull",
+    "coauthorcs",
+    "amazonpho"
+  ],
+  "seeds": [
+    0,
+    1,
+    2
+  ],
+  "backbones": [
+    "R0",
+    "R2"
+  ],
+  "conditions": [
+    "clean",
+    "uniform0.4",
+    "uniform0.6",
+    "pair0.4"
+  ],
+  "epochs": 200,
+  "supports": [
+    4,
+    8,
+    16,
+    32,
+    64,
+    128
+  ],
+  "strengths": [
+    0.25,
+    0.5,
+    1.0
+  ],
+  "group_pairs": [
+    [
+      0.0,
+      1.0
+    ],
+    [
+      0.25,
+      1.0
+    ],
+    [
+      1.0,
+      0.25
+    ],
+    [
+      1.0,
+      0.0
+    ]
+  ],
+  "fit_upper_bound": 3600,
+  "smoke_limit": 8,
+  "historical_whole_cell_reuse": false,
+  "d1_rank": "pilot rank_key: accuracy,NLL,zero strength,zero support,best_epoch,stable arm order",
+  "storage": {
+    "minimum_free_bytes": 3221225472,
+    "target_content_addressed": true,
+    "r2_checkpoint_head_only_with_hashed_encoder_reference": true,
+    "keep_prefix_optimizer_rng": true,
+    "delete_completed_resume_after_artifact_verification": true,
+    "historical_deletion": false,
+    "other_drive_writes": false
+  },
+  "selection": "validation_only_first_strict_best_checkpoint",
+  "test_access": "after_all_selections_frozen",
+  "ssl": "fixed_historical_no_retraining",
+  "extra_stages": [],
+  "threads": 1
+}

@@ -1,0 +1,41 @@
+STATUS {"timestamp": "2026-10-24T02:26:10.570037+00:00", "stage": "PREFLIGHT", "dataset": "cora", "seed": 0}
+C:\Users\Admin\AppData\Local\Programs\Python\Python312\Lib\site-packages\joblib\externals\loky\backend\context.py:131: UserWarning: Could not find the number of physical cores for the following reason:
+found 0 physical cores < 1
+Returning the number of logical cores instead. You can silence this warning by setting LOKY_MAX_CPU_COUNT to the number of cores you want to use.
+  warnings.warn(
+  File "C:\Users\Admin\AppData\Local\Programs\Python\Python312\Lib\site-packages\joblib\externals\loky\backend\context.py", line 255, in _count_physical_cores
+    raise ValueError(f"found {cpu_count_physical} physical cores < 1")
+STATUS {"timestamp": "2026-10-24T02:26:11.822426+00:00", "stage": "PREFLIGHT", "dataset": "cora", "seed": 1}
+STATUS {"timestamp": "2026-10-24T02:26:12.248933+00:00", "stage": "PREFLIGHT", "dataset": "cora", "seed": 2}
+STATUS {"timestamp": "2026-10-24T02:26:12.712799+00:00", "stage": "PREFLIGHT", "dataset": "citeseer", "seed": 0}
+STATUS {"timestamp": "2026-10-24T02:26:13.688888+00:00", "stage": "PREFLIGHT", "dataset": "citeseer", "seed": 1}
+STATUS {"timestamp": "2026-10-24T02:26:14.766560+00:00", "stage": "PREFLIGHT", "dataset": "citeseer", "seed": 2}
+STATUS {"timestamp": "2026-10-24T02:26:15.775553+00:00", "stage": "PREFLIGHT", "dataset": "corafull", "seed": 0}
+STATUS {"timestamp": "2026-10-24T02:26:43.254973+00:00", "stage": "PREFLIGHT", "dataset": "corafull", "seed": 1}
+STATUS {"timestamp": "2026-10-24T02:27:10.642555+00:00", "stage": "PREFLIGHT", "dataset": "corafull", "seed": 2}
+STATUS {"timestamp": "2026-10-24T02:27:36.060257+00:00", "stage": "PREFLIGHT", "dataset": "coauthorcs", "seed": 0}
+STATUS {"timestamp": "2026-10-24T02:27:58.329051+00:00", "stage": "INTERRUPTED", "failure": "failure_latest.json"}
+Traceback (most recent call last):
+  File "C:\Users\Admin\Desktop\ʵ��8ȥ��5.19-\gb_c1_ratio_success_20260609\results_ratio_c1_20260609\experiments\d1_c1_confirmation_20261024\run.py", line 363, in <module>
+    main()
+  File "C:\Users\Admin\Desktop\ʵ��8ȥ��5.19-\gb_c1_ratio_success_20260609\results_ratio_c1_20260609\experiments\d1_c1_confirmation_20261024\run.py", line 323, in main
+    preflight()
+  File "C:\Users\Admin\Desktop\ʵ��8ȥ��5.19-\gb_c1_ratio_success_20260609\results_ratio_c1_20260609\experiments\d1_c1_confirmation_20261024\run.py", line 123, in preflight
+    p = cell_inputs(name,seed,cond)
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Admin\Desktop\ʵ��8ȥ��5.19-\gb_c1_ratio_success_20260609\results_ratio_c1_20260609\experiments\d1_c1_confirmation_20261024\protocol.py", line 223, in cell_inputs
+    previous = load(oldroot/'inputs'/name/f'seed{seed}'/f'{condition}.pt')
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Admin\Desktop\ʵ��8ȥ��5.19-\gb_c1_ratio_success_20260609\results_ratio_c1_20260609\experiments\d1_c1_confirmation_20261024\protocol.py", line 88, in load
+    return torch.load(track(path), map_location='cpu', weights_only=True)
+                      ^^^^^^^^^^^
+  File "C:\Users\Admin\Desktop\ʵ��8ȥ��5.19-\gb_c1_ratio_success_20260609\results_ratio_c1_20260609\experiments\d1_c1_confirmation_20261024\protocol.py", line 78, in track
+    key, digest = str(path), sha(path)
+                             ^^^^^^^^^
+  File "C:\Users\Admin\Desktop\ʵ��8ȥ��5.19-\gb_c1_ratio_success_20260609\results_ratio_c1_20260609\experiments\d1_c1_confirmation_20261024\protocol.py", line 70, in sha
+    with Path(path).open('rb') as stream:
+         ^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Admin\AppData\Local\Programs\Python\Python312\Lib\pathlib.py", line 1013, in open
+    return io.open(self, mode, buffering, encoding, errors, newline)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+FileNotFoundError: [Errno 2] No such file or directory: 'C:\\Users\\Admin\\Desktop\\ʵ��8ȥ��5.19-\\gb_c1_ratio_success_20260609\\results_ratio_c1_20260609\\experiments\\r2_support_5dataset_20261022\\inputs\\coauthorcs\\seed0\\clean.pt'

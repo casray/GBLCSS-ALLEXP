@@ -1,4 +1,110 @@
-# 最新执行：2026-10-21 边界诊断与粗化复盘已完成
+# 最新执行：2026-10-26 R2+SUPPORT+D1+C1三seed整合全部完成
+
+入口`experiments/r2_integrated_20261026/REPORT_zh.md`与`research/r2_integrated_20261026/PARENT_REVIEW.md`。五图四条件三seed60格，1500条新增候选轨迹（407完整200轮）、123475更新、4smoke。无KM/kNN新增、无新SSL/R0/teacher；历史全局轨迹因果前缀复用，新分组真实续训，平票lambda1是显式新约定。全部选参冻结后才读test。脚本独立完成，agent额度中断未影响训练；无剩余Python进程，不重复启动。
+
+完整带噪accuracy71.5305%，较R2CE/GCE/OLD64/SUPPORT为+3.901/+.379/+1.591/+.916pp；较验证选较优单模块+.307±.165pp，macroF1+.474。三seed增量均正，五图均值为+.610/+.220/+.048/+.213/+.446。clean对CE平均accuracy+.135、macroF1+.107；CFcleanF1−.286仍保留。联合2450更新含CE，全局1200、固定D11600，搜索预算差公开。历史开发seed/固定SSL，本轮整合验证；不宣称超KM/kNN。
+
+Worker11tests/2760目标/120race/30GPUreload通过；parent120race/5280prefix/300选择/660paired/1134summary/30CPUreload独立通过，最大差1.37e-6且预测一致。决定保留完整组合供论文整理，无自动更多实验、稿件更改或上传。
+
+# 历史完成：2026-10-23 R2正文对照全部完成
+
+目录`experiments/r2_body_comparison_20261023/`。480个R2头+40外部单元完成。后台最后analyze同名导入冲突，finalize_results.py绝对路径恢复汇总与独立重载；无重训。REPORT_zh、summary、paired、matched_seed0、decision、delivery_audit齐全。480模型重载误差0、104额外源哈希、五GSSC split/noise一致，审计passed。无待续任务。
+
+三seed带噪五图宏均值 CE67.630/GCE71.151/OLD64 69.940/SUPPORT70.615/KM70.985%；SUPPORT−CE+2.985pp，−OLD64+.675，−GCE−.536，−KM−.370。KM逐图均高，验证选固定竞争者后SUPPORT五图均负，门失败；clean相对CE Cora−1.953/CF−1.030pp。相同seed0外部SimMLP 4/5图高于SUPPORT（CS例外），GSSC较弱。当前粒球监督增量未胜强对照，保留R2骨干扩展与LCSS相对CE增量，不自动调参或扩种子。β历史配置和固定SSL/外部单seed范围保留。
+
+# 历史启动：2026-10-23 R2正文对照队列
+
+目录`experiments/r2_body_comparison_20261023/`。读PLAN/HANDOFF/ENGINEERING；background_status.json与status.json为运行入口。全部480个R2分类头已完成（五图四条件三seed八监督），尚待外部对照全部完成后统一test评分。
+
+外部SimMLP/GSSC五图四条件seed0共40单元，历史5个GSSC uniform.4复用，其余补跑。当前独立后台background.py串行执行recover.py，然后自动analyze和verify_and_interpret，最终生成REPORT_zh/summary/paired/matched_seed0/decision/delivery_audit。不要重复启动。后台实际PID见background_status.json（启动时111568）；run.lock是当前训练子进程。
+
+原前台63382在GSSC历史config文件不存在处退出；原源/失败保留，新external_v2仅改读旧result的config字段。恢复前台51627已停止，切换持久后台；中断的CoraFull pair.4 GSSC日志在interrupted/corafull_pair04_GSSC_foreground保存，该单元完整重跑。已完成模型均复用。大图GSSC单元约12分钟，预算保持原辅助阶段+200主训练，故队列较长。
+
+4测试通过，15个初始分类头共享组验证一致，Cora历史SUPPORT概率桥接误差2.384e-7。新实验全部预定拟合结束前不读测试评分；原稿和旧实验未改。下次先查后台状态与进程，完成后读取报告并补详细结论；failed时先读日志，保留部分单元再修复。
+
+# 前次执行：2026-10-23 节点路由并列对照已完成
+
+入口 `experiments/node_channel_routing_20261023/REPORT_zh.md`、`HANDOFF.md`、`final_audit.json`。用户另行授权直接比较节点路由与全局融合，原L1停止记录保持。五图四条件seed0缓存，新增神经网络训练0；8个学生自身特征、L2逻辑回归C1，外5内4嵌套验证，20规则全部落盘后评分test。
+
+验证门通过：ROUTER−GLOBAL带噪Cora/Cite/CF/CS/Photo +.864/+.904/+.185/−.200/+.044pp，clean均满足下限。测试同差−.229/−1.017/−.137/−.231/−.093pp，五图均负；相对最好单通道−.035/+.773/+.060/+.036/+.349pp。Cora路由AUC .558，Photo .796但净增量很小；Cora/Photo macroF1较GLOBAL +.935/+.616pp，其他三图负。验证正信号尚未兑现为测试精度优势，暂缓加复杂模块；图/GB统计未跑，单学生融合蒸馏未跑。
+
+5tests、620路由模型独立重拟合、20外折预测、140指标行、20旧全局权重、9源90输入哈希通过。首次末尾哈希审计Windows默认编码损坏中文路径，run.py只加UTF8读取；原failure/source保留，finalize.py还原原文摘要确认。完成标记存在，无待续进程。旧实验/投稿/远端未改。下一步先读结果，保持验证门通过和测试负结果两项事实。
+
+# 前次执行：2026-10-23 通道互补/随机性对照完成，第0层通过，L1停止
+
+入口 `experiments/channel_routing_variance_20261023/REPORT_zh.md`、`RESULT_TABLES.md`、`HANDOFF.md`。新增40个GPU学生（五图四条件A300/C_head）和2个短smoke，复用40旧模型；protocol0/split/noise/teacher/GRACE/R2固定，仅学生seed1，C_head只改变头初始化。无待续进程。
+
+主门槛A0C0并集−逐格max(A0A1,C0C1)，带噪三条件均值Cora/CiteSeer/CF/CS/Photo为+4.080915/+2.720504/+2.381812/+1.109120/+1.929661pp，前三图全通过2pp门。四跨配对平均也支持额外互补，固定表示的头随机性与单协议范围写明。
+
+L1全局权重由验证选，验证增量+.123457/+.903614/+.134748/+.272777/+.740741pp；前三主图仅CiteSeer过.5pp，需两图，所以停止L2–L5。测试GLOBAL比最好单通道+.1935/+1.7898/+.1973/+.2675/+.4420pp；CiteSeer直接平均65.178%/全局64.977%/C0 63.187%。局部正信号保留。节点级逻辑回归和图/GB统计均未运行。
+
+9测试、两桥接exact、40配对、80新旧结果核验、40独立checkpoint重载、20融合重算、11源/405输入/5L1源哈希通过。完整mean/std为固定protocol下两个学生初始化。第0层显式测试筛查、L1验证选择，旧验证选checkpoint的复用记录保留。无科学运行失败；投稿/旧源/远端未改。
+
+下一窗口：先读本轮报告。当前问题为全局融合收益有限，直接可观察路由仍待测；原阶梯在L1停止。新方案须另立计划，保留本轮门槛与停止记录。
+
+# 前次执行：2026-10-23 SC选支持量、对齐预算及双通道蒸馏试跑已完成
+
+入口 `experiments/sc_support_channel_pilot_20261023/REPORT_zh.md`、`RESULT_TABLES.md`、三个reports阶段报告、`final_audit.json`。按两小时后单次启动的授权完成E1/E2/E4；无待续GPU任务，E3/E5未启动，不重跑旧入口。投稿稿件、旧实验和远端未改。
+
+E1离线五图三seed四条件360目标/60次选择，15树均六种不同截断；R0分类只三图seed0四条件144拟合。SC−VAL uniform验证−2.058519pp，SC−新树32仅CF+.050531、Cora−3.888889/Photo−.522876；clean验证两图低CE超过1pp，门失败。测试带噪SC52.9133/新树3253.1804/历史3253.4698/VAL53.9682%，不可用测试局部正值救门。SC−真投票候选排名平均rho U.4 .9377/U.6 .8857，估计投票质量不等于选出最佳分类目标。
+
+E2审15旧日志，三条600轮对齐+72头拟合；三份历史100状态精确复现。300/600对100验证增量Cora−.694/−2.593、CS−1.923/−1.439、Photo−2.255/−.229pp，全留100。Photo600测试+1.071pp仅事后信号；固定100轮分类头及转导拟合限制仍在，不断言X不可预测H。
+
+E4五图四条件seed0六臂120学生，复用15份noisy普通SUPPORT-LCSS GCN并补5clean教师。A200/A300随机KD200/300，B=R2 100+全模型KD200，D=R2+冻结头KD200，C_full/C_head=R2后全模型/头SUPPORT200。KD为全节点soft CE，不是DIST论文损失。B整体验证入选，但相对逐格验证选最强对照无一图达到+1pp，门失败。带噪测试B−A300五图宏差−.0143pp；CiteSeer D−A300+2.577pp同时clean−1.246pp，且D−C_head macro-F1−1.693pp，不事后逐图挑B/D。
+
+分层新线索：Cora教师错节点D31.188% vs A300 11.884%，教师对节点D88.154% vs A300 95.919%，总精度下降；CoraFull正确侧损失更大，Photo错误侧无获益。支持纠错/保留正确预测存在权衡的描述；可观察的可靠选择规则尚未验证，不自动加模块。
+
+总336正式分类拟合+3对齐+5clean教师，另4短smoke；分类全seed0/std=null。11测试、15源/115输入、336选模/预算/结果与模型概率哈希、20配对轨迹审计passed。两次后处理工程错误（arm重复、Path类型）已留痕修复，原脚本/日志/首次test_release/所有选择保留，训练未重跑。原fit_sources保留冻结版本，最终审计通过原分析副本及修复后摘要验证，不重启原fit入口。
+
+下一窗口先读报告并与门槛核对；本规格停止自动扩展。全局选s不保证原留一独立性、pair不适用对称恒等式、beta历史开发选择仍需保留说明。
+
+# 前次执行：2026-10-22 SUPPORT 教师替换蒸馏已完成
+
+入口`experiments/teacher_support_distillation_20261022/REPORT_zh.md`及目录内PLAN/config、审计、CSV与ENGINEERING。复用旧LCSS与SUPPORT-LCSS教师端冻结预测，不重训GCN；5数据集×3协议seed×3噪声×3教师臂共135个属性MLP学生拟合，GPU完成，无待续任务。学生结构、训练预算、干净验证选模、split/noise固定；CE蒸馏作参照，主比较SUPPORT−旧LCSS。
+
+学生准确率74.670/74.249%，配对差+.421±1.965pp（45格，描述性SD），25胜/0平/20负；macro-F1差−.567pp，教师准确率差+.405pp。分噪声学生准确率差U.4−.074、U.6+.328、Pair.4+1.009pp；macro-F1三者均负（−.911/−.556/−.234）。预设门为平均至少+.5pp、3/3 seed均值正、至少3/5数据集均值正；结果分别为+.421、3/3、3/5，整体失败。学生增益没有超过教师增益，且准确率信号集中于Pair噪声；三seed仅作描述性筛查，无clean条件，不能称显著、普遍稳定或无clean损害。
+
+135检查点重载、选模和指标独立复算通过。审计器仅因CPU/GPU归约差异将离线指标复核容差从1e-8调到1e-6；训练及模型产物未变，详见目录ENGINEERING/analysis_amendment。保留结果，不自动扩种子、不据此组合新模块；若继续，需单独授权并先明确要验证的机制。
+
+# 最新执行：2026-10-22 支持量/近邻身份三种子消融已完成
+
+入口`experiments/neighbor_support_ablation_20261022/综合结论与接续.md`及目录交接、RESULT_TABLES、decision/audit。
+576结果格216旧锚360新模型、24冒烟完成，无后台队列；原稿/旧源/远端未改。三图四条件、seed0/1/2、固定历史SSL/R2，
+仅同树支持量与成员身份消融，k32固定无搜索。R0主、R2辅。
+
+R0 OLD44.580/NP45.931/SUPPORT45.935/COUNT46.010/KMNP46.533/KNN46.851%；R2为59.306/60.525/60.509/60.426/61.143/60.843。
+NP−SUPPORT−.004±.080/+.016±.127pp，NP−COUNT−.080/+.100，均未过.5pp；KMNP两路线均优于NP且3/3seed宏差正。
+NP−旧版+1.351±.727/+1.220±.392，两个路线3/3seed宏差正；R0修复门通过，但Cora U.4三seed全负平均−.985；
+R2clean Cora−1.917/CF−1.131且CF−旧版仅+.984，修复门失败。停止扩完整NP，保留简单R0返修修复，不自动拼模块。
+
+18测试、288目标、9几何、576重载/选模/别名、288冻结R2、1333输入源哈希、32配对宏均值/样本std独立复算通过。
+准备CE元数据兼容已修复；首次审计浮点归一化容差过紧，保留原冻结源，恢复入口analysis_recovery_v2.py只改数值检查。
+最终audit.passed=true，无训练失败/重跑。不要重跑原analyze.py full或再次prepare/freeze。
+COUNT/KMNP仍借NP球数，不称独立低成本选数；SUPPORT免近邻但端到端速度未测。不是32最优、正式等价或独立SSL确认。
+
+# 前次执行：2026-10-22 邻域保真生成器seed0已完成
+
+入口`experiments/neighbor_preserving_ball_20261022/综合结论与接续.md`及目录交接。三图四条件R0/R2，八臂192单元（144新拟合48旧锚）+16smoke，GPU全部完成；没有待续训练，旧源/稿件/远端未改。固定历史H与seed0编码器，构球只读H/train位置；256叶候选树、32近邻TV代价DP截断，实际20/22/142球，原LCSS与训练不动。
+
+R0带噪OLD64 43.420→NP45.590，+2.169pp，8/9胜；相对TREE64/FINE +.996/+.782且9/9胜。clean对CE三图+2.533/+3.136/+1.754，修复门通过。R2 OLD64 57.921→NP59.461，+1.540pp，7/9胜，但CoraFull clean仍低CE1.068pp，修复门失败。
+
+关键负结果：同球数KM为R0 46.347/R2 60.304，NP两路线都0/9胜，独立算法增量门均失败；KNNMATCH也高NP .734/.486pp。CoraFull clean目标Brier由.127173变.158005，R0 NP macro-F136.628仍低CE37.318。不能将分类涨分写成软目标或小类已修复。
+
+9测试、96目标独立公式、16smoke/四精确历史桥、三图重建/96完整近邻排序、192重载与选模/96冻结R2、425哈希、32汇总168差值四门槛审计均passed。只是seed0，std=null；按PLAN保留R0确认候选而非宣称成功，不自动扩seed或拼多视图/GCE。下一轮若授权仅做同规格seed1/2、保留KM最强对照。工程两处审计假设修复见目录ENGINEERING.md，无训练失败。
+
+# 历史执行：2026-10-22 GCE-LCSS融合已完成
+
+入口`experiments/gce_lcss_fusion_20261022/综合结论与接续.md`及目录交接。504最终拟合、14冒烟、六份新R2无标签encoder完成，旧实验/投稿/远端未改，无运行中队列。三图四条件、协议和学生seed0/1/2，固定历史GRACE、每seed分区；不是独立SSL确认。
+
+R0带噪LCSS44.5796、W_LCSS45.0674、GCE34.6563、W_MASS40.6584；W−LCSS+.4878±.4247pp，8/9均值正1平、3/3seed宏差正，低于1pp门。R0clean对CE三图+.5101/+1.7612/−.9142通过；CoraFull U.6+1.3016±.6003三seed正是局部返修储备。完整主门失败，不调参救援、不把+10.411对GCE当新增模块贡献。
+
+R2 LCSS59.3056、GCE60.6031、W_LCSS59.5839、W_MASS60.9805；W对GCE−1.0191，对W_MASS−1.3966，CoraFull clean−CE4.179pp。SOFT_GCE R0低LCSS3.577pp，R2高LCSS1.804但Cora/CoraFull clean−CE3.237/6.135pp。不要根据70%错类目标argmax直接推断训练必败，也不因R2带噪增益忽略clean风险。
+
+v1 GCE下溢NaN已用exp(q*log_p)等价稳定实现恢复，旧冻结源不改；97旧成功+1失败尝试保存在engineering_v1_runs，504是最终唯一网格。12测试、36协议、504重载/选模、48旧锚逐元素/轮次一致、252冻结encoder/BN、168summary/336配对/六门槛、161源和三恢复源哈希均passed。不要重跑原v1入口。
+
+停止当前融合规格自动扩展，R0小幅正信号保存为返修储备；软归属/自适应生成/新聚类路线本轮未执行，不拼模块、不改投稿主表，下一轮需另行授权。
+
+# 历史执行：2026-10-21 边界诊断与粗化复盘已完成
 
 入口`experiments/r2_boundary_diagnostic_20261021/综合结论与接续.md`及目录交接。用户批准先执行非训练前两项，实际新模型0，旧代码/模型/稿件未改，无待续训练。20656训练节点—条件行、12协议、99相关/394分箱，seed0事后诊断；237源哈希与11测试通过。
 

@@ -1,0 +1,18 @@
+AUDITED cora seed0: 64/576
+AUDITED cora seed1: 128/576
+AUDITED cora seed2: 192/576
+AUDITED citeseer seed0: 256/576
+AUDITED citeseer seed1: 320/576
+AUDITED citeseer seed2: 384/576
+Traceback (most recent call last):
+  File "C:\Users\Admin\Desktop\ʵ��8ȥ��5.19-\gb_c1_ratio_success_20260609\results_ratio_c1_20260609\experiments\neighbor_support_ablation_20261022\analyze.py", line 464, in <module>
+    smoke_audit() if args.phase == 'smoke' else full_audit()
+                                                ^^^^^^^^^^^^
+  File "C:\Users\Admin\Desktop\ʵ��8ȥ��5.19-\gb_c1_ratio_success_20260609\results_ratio_c1_20260609\experiments\neighbor_support_ablation_20261022\analyze.py", line 441, in full_audit
+    row, check = audit_model(name, seed, condition, route, arm, data, geo, cache, y, verified)
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Admin\Desktop\ʵ��8ȥ��5.19-\gb_c1_ratio_success_20260609\results_ratio_c1_20260609\experiments\neighbor_support_ablation_20261022\analyze.py", line 271, in audit_model
+    require(torch.allclose(probabilities.sum(1), torch.ones(len(probabilities)), rtol=0, atol=3e-7),
+  File "C:\Users\Admin\Desktop\ʵ��8ȥ��5.19-\gb_c1_ratio_success_20260609\results_ratio_c1_20260609\experiments\neighbor_support_ablation_20261022\analyze.py", line 21, in require
+    raise RuntimeError(message)
+RuntimeError: Probabilities not normalized

@@ -1,0 +1,42 @@
+{
+  "experiment_id": "teacher_support_distillation_20261022",
+  "datasets": ["cora", "citeseer", "corafull", "coauthorcs", "amazonpho"],
+  "seeds": [0, 1, 2],
+  "conditions": {
+    "uniform0.4": {"type": "uniform", "rate": 0.4},
+    "uniform0.6": {"type": "uniform", "rate": 0.6},
+    "pair0.4": {"type": "pair", "rate": 0.4}
+  },
+  "teacher_arms": ["CE", "OLD_LCSS", "SUPPORT_LCSS"],
+  "primary_comparison": "SUPPORT_LCSS-OLD_LCSS",
+  "student": {
+    "hidden": 64,
+    "layers": 2,
+    "dropout": 0.5,
+    "learning_rate": 0.01,
+    "weight_decay": 0.0005,
+    "epochs": 200,
+    "temperature": 1.0,
+    "loss": "all-node soft cross-entropy",
+    "input": "node attributes only",
+    "initialization_seed": "protocol seed, reset identically for each teacher arm",
+    "checkpoint_selection": "first epoch with maximum clean validation accuracy"
+  },
+  "protocol": {
+    "split": "20/10/70 train/validation/test",
+    "noise_scope": "training labels only",
+    "teacher_training": "reuse frozen completed teacher runs; no teacher retraining",
+    "distillation_scope": "all nodes, matching established DIST screen",
+    "test_labels_in_training": false,
+    "independent_grace_repeats": false,
+    "clean_condition_included": false
+  },
+  "success_gate": {
+    "mean_support_minus_old_accuracy_pp_at_least": 0.5,
+    "positive_seed_means_required": 3,
+    "seed_count": 3,
+    "positive_dataset_means_required": 3,
+    "dataset_count": 5,
+    "interpretation": "practical screening gate only; not a significance test"
+  }
+}

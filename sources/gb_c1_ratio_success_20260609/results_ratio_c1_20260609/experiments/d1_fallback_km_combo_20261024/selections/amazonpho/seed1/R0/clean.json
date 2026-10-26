@@ -1,0 +1,563 @@
+{
+  "dataset": "amazonpho",
+  "seed": 1,
+  "backbone": "R0",
+  "condition": "clean",
+  "meta": {
+    "legacy_tie_lambda": 0.25,
+    "retrospective_fallback": true,
+    "adaptive_support": 64,
+    "PROBE": "S64_L0.25",
+    "probe_sha256": "fc0cd9c0820356c1d7cebacc48cf61263abb4fc239fd8892a65c74950d8ff777",
+    "deep_ties": {
+      "S32": 0.0,
+      "S64": 0.25
+    },
+    "adaptive_cost": {
+      "upstream_probe_with_ce": 1200,
+      "prefix_epochs": {
+        "S64_L0.25": 200,
+        "S64_L0.5": 25,
+        "S64_L1.0": 25
+      },
+      "additional_global_updates": 350,
+      "additional_group_updates": 800,
+      "global_total_updates": 1550,
+      "expanded_total_updates": 2350
+    },
+    "fixed_global_updates": 800,
+    "fixed_expanded_updates": 1600,
+    "matched_legacy_km_global_updates": 800,
+    "matched_legacy_km_expanded_updates": 1600
+  },
+  "pools": {
+    "CE": [
+      {
+        "ref": "amazonpho/seed1/R0/clean/LEGACY/CE",
+        "validation": 0.9019607843137255,
+        "valid_macro_f1": 0.8807248079351256,
+        "valid_nll": 0.3476479649543762,
+        "best_epoch": 26
+      }
+    ],
+    "LEGACY_GLOBAL": [
+      {
+        "ref": "amazonpho/seed1/R0/clean/LEGACY/CE",
+        "validation": 0.9019607843137255,
+        "valid_macro_f1": 0.8807248079351256,
+        "valid_nll": 0.3476479649543762,
+        "best_epoch": 26
+      },
+      {
+        "ref": "amazonpho/seed1/R0/clean/LEGACY/L0.25",
+        "validation": 0.9045751633986928,
+        "valid_macro_f1": 0.881795953686892,
+        "valid_nll": 0.34510481357574463,
+        "best_epoch": 26
+      },
+      {
+        "ref": "amazonpho/seed1/R0/clean/LEGACY/L0.5",
+        "validation": 0.9006535947712418,
+        "valid_macro_f1": 0.8697601201375609,
+        "valid_nll": 0.354417622089386,
+        "best_epoch": 31
+      },
+      {
+        "ref": "amazonpho/seed1/R0/clean/LEGACY/L1.0",
+        "validation": 0.8954248366013072,
+        "valid_macro_f1": 0.8630906380119165,
+        "valid_nll": 0.4095611870288849,
+        "best_epoch": 30
+      }
+    ],
+    "LEGACY_EXPANDED": [
+      {
+        "ref": "amazonpho/seed1/R0/clean/LEGACY/CE",
+        "validation": 0.9019607843137255,
+        "valid_macro_f1": 0.8807248079351256,
+        "valid_nll": 0.3476479649543762,
+        "best_epoch": 26
+      },
+      {
+        "ref": "amazonpho/seed1/R0/clean/LEGACY/L0.25",
+        "validation": 0.9045751633986928,
+        "valid_macro_f1": 0.881795953686892,
+        "valid_nll": 0.34510481357574463,
+        "best_epoch": 26
+      },
+      {
+        "ref": "amazonpho/seed1/R0/clean/LEGACY/L0.5",
+        "validation": 0.9006535947712418,
+        "valid_macro_f1": 0.8697601201375609,
+        "valid_nll": 0.354417622089386,
+        "best_epoch": 31
+      },
+      {
+        "ref": "amazonpho/seed1/R0/clean/LEGACY/L1.0",
+        "validation": 0.8954248366013072,
+        "valid_macro_f1": 0.8630906380119165,
+        "valid_nll": 0.4095611870288849,
+        "best_epoch": 30
+      },
+      {
+        "ref": "amazonpho/seed1/R0/clean/LEGACY/GROUP_A0.0_C1.0",
+        "validation": 0.8888888888888888,
+        "valid_macro_f1": 0.8491907763746256,
+        "valid_nll": 0.38775673508644104,
+        "best_epoch": 33
+      },
+      {
+        "ref": "amazonpho/seed1/R0/clean/LEGACY/GROUP_A0.25_C1.0",
+        "validation": 0.8915032679738563,
+        "valid_macro_f1": 0.8502743774399472,
+        "valid_nll": 0.39229464530944824,
+        "best_epoch": 28
+      },
+      {
+        "ref": "amazonpho/seed1/R0/clean/LEGACY/GROUP_A1.0_C0.25",
+        "validation": 0.8993464052287582,
+        "valid_macro_f1": 0.8710969510810485,
+        "valid_nll": 0.3706079125404358,
+        "best_epoch": 25
+      },
+      {
+        "ref": "amazonpho/seed1/R0/clean/LEGACY/GROUP_A1.0_C0.0",
+        "validation": 0.8928104575163399,
+        "valid_macro_f1": 0.8719515385798491,
+        "valid_nll": 0.37086421251296997,
+        "best_epoch": 29
+      }
+    ],
+    "LEGACY_FORCED": [
+      {
+        "ref": "amazonpho/seed1/R0/clean/LEGACY/GROUP_A0.0_C1.0",
+        "validation": 0.8888888888888888,
+        "valid_macro_f1": 0.8491907763746256,
+        "valid_nll": 0.38775673508644104,
+        "best_epoch": 33
+      },
+      {
+        "ref": "amazonpho/seed1/R0/clean/LEGACY/GROUP_A0.25_C1.0",
+        "validation": 0.8915032679738563,
+        "valid_macro_f1": 0.8502743774399472,
+        "valid_nll": 0.39229464530944824,
+        "best_epoch": 28
+      },
+      {
+        "ref": "amazonpho/seed1/R0/clean/LEGACY/GROUP_A1.0_C0.25",
+        "validation": 0.8993464052287582,
+        "valid_macro_f1": 0.8710969510810485,
+        "valid_nll": 0.3706079125404358,
+        "best_epoch": 25
+      },
+      {
+        "ref": "amazonpho/seed1/R0/clean/LEGACY/GROUP_A1.0_C0.0",
+        "validation": 0.8928104575163399,
+        "valid_macro_f1": 0.8719515385798491,
+        "valid_nll": 0.37086421251296997,
+        "best_epoch": 29
+      }
+    ],
+    "KM_GLOBAL": [
+      {
+        "ref": "amazonpho/seed1/R0/clean/KM/CE",
+        "validation": 0.9019607843137255,
+        "valid_macro_f1": 0.8807248079351256,
+        "valid_nll": 0.3476479649543762,
+        "best_epoch": 26
+      },
+      {
+        "ref": "amazonpho/seed1/R0/clean/KM/L0.25",
+        "validation": 0.9058823529411765,
+        "valid_macro_f1": 0.8830662545810612,
+        "valid_nll": 0.34402692317962646,
+        "best_epoch": 42
+      },
+      {
+        "ref": "amazonpho/seed1/R0/clean/KM/L0.5",
+        "validation": 0.9032679738562092,
+        "valid_macro_f1": 0.8769561129025385,
+        "valid_nll": 0.35367438197135925,
+        "best_epoch": 30
+      },
+      {
+        "ref": "amazonpho/seed1/R0/clean/KM/L1.0",
+        "validation": 0.8993464052287582,
+        "valid_macro_f1": 0.8670870080540689,
+        "valid_nll": 0.40452179312705994,
+        "best_epoch": 26
+      }
+    ],
+    "KM_EXPANDED": [
+      {
+        "ref": "amazonpho/seed1/R0/clean/KM/CE",
+        "validation": 0.9019607843137255,
+        "valid_macro_f1": 0.8807248079351256,
+        "valid_nll": 0.3476479649543762,
+        "best_epoch": 26
+      },
+      {
+        "ref": "amazonpho/seed1/R0/clean/KM/L0.25",
+        "validation": 0.9058823529411765,
+        "valid_macro_f1": 0.8830662545810612,
+        "valid_nll": 0.34402692317962646,
+        "best_epoch": 42
+      },
+      {
+        "ref": "amazonpho/seed1/R0/clean/KM/L0.5",
+        "validation": 0.9032679738562092,
+        "valid_macro_f1": 0.8769561129025385,
+        "valid_nll": 0.35367438197135925,
+        "best_epoch": 30
+      },
+      {
+        "ref": "amazonpho/seed1/R0/clean/KM/L1.0",
+        "validation": 0.8993464052287582,
+        "valid_macro_f1": 0.8670870080540689,
+        "valid_nll": 0.40452179312705994,
+        "best_epoch": 26
+      },
+      {
+        "ref": "amazonpho/seed1/R0/clean/KM/GROUP_A0.0_C1.0",
+        "validation": 0.8901960784313725,
+        "valid_macro_f1": 0.8592275039687514,
+        "valid_nll": 0.3926950991153717,
+        "best_epoch": 27
+      },
+      {
+        "ref": "amazonpho/seed1/R0/clean/KM/GROUP_A0.25_C1.0",
+        "validation": 0.8915032679738563,
+        "valid_macro_f1": 0.85946556314135,
+        "valid_nll": 0.3838300406932831,
+        "best_epoch": 27
+      },
+      {
+        "ref": "amazonpho/seed1/R0/clean/KM/GROUP_A1.0_C0.25",
+        "validation": 0.9124183006535947,
+        "valid_macro_f1": 0.8898284645210695,
+        "valid_nll": 0.3447873294353485,
+        "best_epoch": 39
+      },
+      {
+        "ref": "amazonpho/seed1/R0/clean/KM/GROUP_A1.0_C0.0",
+        "validation": 0.8967320261437909,
+        "valid_macro_f1": 0.8819870618441075,
+        "valid_nll": 0.3919714391231537,
+        "best_epoch": 83
+      }
+    ],
+    "FIXED_GLOBAL": [
+      {
+        "ref": "amazonpho/seed1/R0/clean/S32/CE",
+        "validation": 0.9019607843137255,
+        "valid_macro_f1": 0.8807248079351256,
+        "valid_nll": 0.3476479649543762,
+        "best_epoch": 26
+      },
+      {
+        "ref": "amazonpho/seed1/R0/clean/S32/L0.25",
+        "validation": 0.9006535947712418,
+        "valid_macro_f1": 0.8748183523838293,
+        "valid_nll": 0.34459221363067627,
+        "best_epoch": 27
+      },
+      {
+        "ref": "amazonpho/seed1/R0/clean/S32/L0.5",
+        "validation": 0.9006535947712418,
+        "valid_macro_f1": 0.8679712710118523,
+        "valid_nll": 0.3524421751499176,
+        "best_epoch": 31
+      },
+      {
+        "ref": "amazonpho/seed1/R0/clean/S32/L1.0",
+        "validation": 0.9006535947712418,
+        "valid_macro_f1": 0.8731064381669742,
+        "valid_nll": 0.40519213676452637,
+        "best_epoch": 33
+      }
+    ],
+    "FIXED_EXPANDED": [
+      {
+        "ref": "amazonpho/seed1/R0/clean/S32/CE",
+        "validation": 0.9019607843137255,
+        "valid_macro_f1": 0.8807248079351256,
+        "valid_nll": 0.3476479649543762,
+        "best_epoch": 26
+      },
+      {
+        "ref": "amazonpho/seed1/R0/clean/S32/L0.25",
+        "validation": 0.9006535947712418,
+        "valid_macro_f1": 0.8748183523838293,
+        "valid_nll": 0.34459221363067627,
+        "best_epoch": 27
+      },
+      {
+        "ref": "amazonpho/seed1/R0/clean/S32/L0.5",
+        "validation": 0.9006535947712418,
+        "valid_macro_f1": 0.8679712710118523,
+        "valid_nll": 0.3524421751499176,
+        "best_epoch": 31
+      },
+      {
+        "ref": "amazonpho/seed1/R0/clean/S32/L1.0",
+        "validation": 0.9006535947712418,
+        "valid_macro_f1": 0.8731064381669742,
+        "valid_nll": 0.40519213676452637,
+        "best_epoch": 33
+      },
+      {
+        "ref": "amazonpho/seed1/R0/clean/S32/GROUP_A0.0_C1.0",
+        "validation": 0.8862745098039215,
+        "valid_macro_f1": 0.8461303250136493,
+        "valid_nll": 0.4003060460090637,
+        "best_epoch": 30
+      },
+      {
+        "ref": "amazonpho/seed1/R0/clean/S32/GROUP_A0.25_C1.0",
+        "validation": 0.8915032679738563,
+        "valid_macro_f1": 0.8560163835943204,
+        "valid_nll": 0.37914320826530457,
+        "best_epoch": 34
+      },
+      {
+        "ref": "amazonpho/seed1/R0/clean/S32/GROUP_A1.0_C0.25",
+        "validation": 0.9032679738562092,
+        "valid_macro_f1": 0.8779310118857147,
+        "valid_nll": 0.3566098213195801,
+        "best_epoch": 25
+      },
+      {
+        "ref": "amazonpho/seed1/R0/clean/S32/GROUP_A1.0_C0.0",
+        "validation": 0.8915032679738563,
+        "valid_macro_f1": 0.8686439718709249,
+        "valid_nll": 0.38893914222717285,
+        "best_epoch": 52
+      }
+    ],
+    "ADAPTIVE_GLOBAL": [
+      {
+        "ref": "amazonpho/seed1/R0/clean/S64/CE",
+        "validation": 0.9019607843137255,
+        "valid_macro_f1": 0.8807248079351256,
+        "valid_nll": 0.3476479649543762,
+        "best_epoch": 26
+      },
+      {
+        "ref": "amazonpho/seed1/R0/clean/S64/L0.25",
+        "validation": 0.9045751633986928,
+        "valid_macro_f1": 0.8847529012817392,
+        "valid_nll": 0.34369972348213196,
+        "best_epoch": 26
+      },
+      {
+        "ref": "amazonpho/seed1/R0/clean/S64/L0.5",
+        "validation": 0.8993464052287582,
+        "valid_macro_f1": 0.8743949606828416,
+        "valid_nll": 0.3750525712966919,
+        "best_epoch": 39
+      },
+      {
+        "ref": "amazonpho/seed1/R0/clean/S64/L1.0",
+        "validation": 0.8849673202614379,
+        "valid_macro_f1": 0.8332163047558294,
+        "valid_nll": 0.42906877398490906,
+        "best_epoch": 32
+      }
+    ],
+    "ADAPTIVE_EXPANDED": [
+      {
+        "ref": "amazonpho/seed1/R0/clean/S64/CE",
+        "validation": 0.9019607843137255,
+        "valid_macro_f1": 0.8807248079351256,
+        "valid_nll": 0.3476479649543762,
+        "best_epoch": 26
+      },
+      {
+        "ref": "amazonpho/seed1/R0/clean/S64/L0.25",
+        "validation": 0.9045751633986928,
+        "valid_macro_f1": 0.8847529012817392,
+        "valid_nll": 0.34369972348213196,
+        "best_epoch": 26
+      },
+      {
+        "ref": "amazonpho/seed1/R0/clean/S64/L0.5",
+        "validation": 0.8993464052287582,
+        "valid_macro_f1": 0.8743949606828416,
+        "valid_nll": 0.3750525712966919,
+        "best_epoch": 39
+      },
+      {
+        "ref": "amazonpho/seed1/R0/clean/S64/L1.0",
+        "validation": 0.8849673202614379,
+        "valid_macro_f1": 0.8332163047558294,
+        "valid_nll": 0.42906877398490906,
+        "best_epoch": 32
+      },
+      {
+        "ref": "amazonpho/seed1/R0/clean/S64/GROUP_A0.0_C1.0",
+        "validation": 0.8849673202614379,
+        "valid_macro_f1": 0.8272943777906819,
+        "valid_nll": 0.4036601185798645,
+        "best_epoch": 40
+      },
+      {
+        "ref": "amazonpho/seed1/R0/clean/S64/GROUP_A0.25_C1.0",
+        "validation": 0.8888888888888888,
+        "valid_macro_f1": 0.8450734433925804,
+        "valid_nll": 0.4055679142475128,
+        "best_epoch": 33
+      },
+      {
+        "ref": "amazonpho/seed1/R0/clean/S64/GROUP_A1.0_C0.25",
+        "validation": 0.9071895424836601,
+        "valid_macro_f1": 0.8864975783936018,
+        "valid_nll": 0.34271907806396484,
+        "best_epoch": 31
+      },
+      {
+        "ref": "amazonpho/seed1/R0/clean/S64/GROUP_A1.0_C0.0",
+        "validation": 0.8888888888888888,
+        "valid_macro_f1": 0.8588669370426258,
+        "valid_nll": 0.3722270429134369,
+        "best_epoch": 32
+      }
+    ],
+    "ORIGINAL_C1": [
+      {
+        "ref": "amazonpho/seed1/R0/clean/S64/L0.25",
+        "validation": 0.9045751633986928,
+        "valid_macro_f1": 0.8847529012817392,
+        "valid_nll": 0.34369972348213196,
+        "best_epoch": 26
+      }
+    ],
+    "FIXED_S32": [
+      {
+        "ref": "amazonpho/seed1/R0/clean/S32/L1.0",
+        "validation": 0.9006535947712418,
+        "valid_macro_f1": 0.8731064381669742,
+        "valid_nll": 0.40519213676452637,
+        "best_epoch": 33
+      }
+    ],
+    "SINGLE_MODULE_VAL": [
+      {
+        "ref": "amazonpho/seed1/R0/clean/S64/CE",
+        "validation": 0.9019607843137255,
+        "valid_macro_f1": 0.8807248079351256,
+        "valid_nll": 0.3476479649543762,
+        "best_epoch": 26
+      },
+      {
+        "ref": "amazonpho/seed1/R0/clean/S64/L0.25",
+        "validation": 0.9045751633986928,
+        "valid_macro_f1": 0.8847529012817392,
+        "valid_nll": 0.34369972348213196,
+        "best_epoch": 26
+      },
+      {
+        "ref": "amazonpho/seed1/R0/clean/S64/L0.5",
+        "validation": 0.8993464052287582,
+        "valid_macro_f1": 0.8743949606828416,
+        "valid_nll": 0.3750525712966919,
+        "best_epoch": 39
+      },
+      {
+        "ref": "amazonpho/seed1/R0/clean/S64/L1.0",
+        "validation": 0.8849673202614379,
+        "valid_macro_f1": 0.8332163047558294,
+        "valid_nll": 0.42906877398490906,
+        "best_epoch": 32
+      },
+      {
+        "ref": "amazonpho/seed1/R0/clean/S32/CE",
+        "validation": 0.9019607843137255,
+        "valid_macro_f1": 0.8807248079351256,
+        "valid_nll": 0.3476479649543762,
+        "best_epoch": 26
+      },
+      {
+        "ref": "amazonpho/seed1/R0/clean/S32/L0.25",
+        "validation": 0.9006535947712418,
+        "valid_macro_f1": 0.8748183523838293,
+        "valid_nll": 0.34459221363067627,
+        "best_epoch": 27
+      },
+      {
+        "ref": "amazonpho/seed1/R0/clean/S32/L0.5",
+        "validation": 0.9006535947712418,
+        "valid_macro_f1": 0.8679712710118523,
+        "valid_nll": 0.3524421751499176,
+        "best_epoch": 31
+      },
+      {
+        "ref": "amazonpho/seed1/R0/clean/S32/L1.0",
+        "validation": 0.9006535947712418,
+        "valid_macro_f1": 0.8731064381669742,
+        "valid_nll": 0.40519213676452637,
+        "best_epoch": 33
+      },
+      {
+        "ref": "amazonpho/seed1/R0/clean/S32/GROUP_A0.0_C1.0",
+        "validation": 0.8862745098039215,
+        "valid_macro_f1": 0.8461303250136493,
+        "valid_nll": 0.4003060460090637,
+        "best_epoch": 30
+      },
+      {
+        "ref": "amazonpho/seed1/R0/clean/S32/GROUP_A0.25_C1.0",
+        "validation": 0.8915032679738563,
+        "valid_macro_f1": 0.8560163835943204,
+        "valid_nll": 0.37914320826530457,
+        "best_epoch": 34
+      },
+      {
+        "ref": "amazonpho/seed1/R0/clean/S32/GROUP_A1.0_C0.25",
+        "validation": 0.9032679738562092,
+        "valid_macro_f1": 0.8779310118857147,
+        "valid_nll": 0.3566098213195801,
+        "best_epoch": 25
+      },
+      {
+        "ref": "amazonpho/seed1/R0/clean/S32/GROUP_A1.0_C0.0",
+        "validation": 0.8915032679738563,
+        "valid_macro_f1": 0.8686439718709249,
+        "valid_nll": 0.38893914222717285,
+        "best_epoch": 52
+      }
+    ]
+  },
+  "choices": {
+    "accuracy": {
+      "CE": "amazonpho/seed1/R0/clean/LEGACY/CE",
+      "LEGACY_GLOBAL": "amazonpho/seed1/R0/clean/LEGACY/L0.25",
+      "LEGACY_EXPANDED": "amazonpho/seed1/R0/clean/LEGACY/L0.25",
+      "LEGACY_FORCED": "amazonpho/seed1/R0/clean/LEGACY/GROUP_A1.0_C0.25",
+      "KM_GLOBAL": "amazonpho/seed1/R0/clean/KM/L0.25",
+      "KM_EXPANDED": "amazonpho/seed1/R0/clean/KM/GROUP_A1.0_C0.25",
+      "FIXED_GLOBAL": "amazonpho/seed1/R0/clean/S32/CE",
+      "FIXED_EXPANDED": "amazonpho/seed1/R0/clean/S32/GROUP_A1.0_C0.25",
+      "ADAPTIVE_GLOBAL": "amazonpho/seed1/R0/clean/S64/L0.25",
+      "ADAPTIVE_EXPANDED": "amazonpho/seed1/R0/clean/S64/GROUP_A1.0_C0.25",
+      "ORIGINAL_C1": "amazonpho/seed1/R0/clean/S64/L0.25",
+      "FIXED_S32": "amazonpho/seed1/R0/clean/S32/L1.0",
+      "SINGLE_MODULE_VAL": "amazonpho/seed1/R0/clean/S64/L0.25"
+    },
+    "balanced": {
+      "CE": "amazonpho/seed1/R0/clean/LEGACY/CE",
+      "LEGACY_GLOBAL": "amazonpho/seed1/R0/clean/LEGACY/L0.25",
+      "LEGACY_EXPANDED": "amazonpho/seed1/R0/clean/LEGACY/L0.25",
+      "LEGACY_FORCED": "amazonpho/seed1/R0/clean/LEGACY/GROUP_A1.0_C0.25",
+      "KM_GLOBAL": "amazonpho/seed1/R0/clean/KM/L0.25",
+      "KM_EXPANDED": "amazonpho/seed1/R0/clean/KM/GROUP_A1.0_C0.25",
+      "FIXED_GLOBAL": "amazonpho/seed1/R0/clean/S32/CE",
+      "FIXED_EXPANDED": "amazonpho/seed1/R0/clean/S32/CE",
+      "ADAPTIVE_GLOBAL": "amazonpho/seed1/R0/clean/S64/L0.25",
+      "ADAPTIVE_EXPANDED": "amazonpho/seed1/R0/clean/S64/GROUP_A1.0_C0.25",
+      "ORIGINAL_C1": "amazonpho/seed1/R0/clean/S64/L0.25",
+      "FIXED_S32": "amazonpho/seed1/R0/clean/S32/L1.0",
+      "SINGLE_MODULE_VAL": "amazonpho/seed1/R0/clean/S64/L0.25"
+    }
+  },
+  "frozen": "2026-10-24T09:05:53.660086+00:00"
+}

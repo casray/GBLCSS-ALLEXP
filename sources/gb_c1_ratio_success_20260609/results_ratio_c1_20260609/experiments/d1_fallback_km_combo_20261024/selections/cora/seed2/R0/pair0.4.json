@@ -1,0 +1,563 @@
+{
+  "dataset": "cora",
+  "seed": 2,
+  "backbone": "R0",
+  "condition": "pair0.4",
+  "meta": {
+    "legacy_tie_lambda": 1.0,
+    "retrospective_fallback": true,
+    "adaptive_support": 128,
+    "PROBE": "S128_L1.0",
+    "probe_sha256": "707c500b6dd673304864cca44d85b82b5fe4989c7fbfc73d21dcb159171eadab",
+    "deep_ties": {
+      "S32": 1.0,
+      "S128": 1.0
+    },
+    "adaptive_cost": {
+      "upstream_probe_with_ce": 1200,
+      "prefix_epochs": {
+        "S128_L0.25": 75,
+        "S128_L0.5": 75,
+        "S128_L1.0": 200
+      },
+      "additional_global_updates": 250,
+      "additional_group_updates": 800,
+      "global_total_updates": 1450,
+      "expanded_total_updates": 2250
+    },
+    "fixed_global_updates": 800,
+    "fixed_expanded_updates": 1600,
+    "matched_legacy_km_global_updates": 800,
+    "matched_legacy_km_expanded_updates": 1600
+  },
+  "pools": {
+    "CE": [
+      {
+        "ref": "cora/seed2/R0/pair0.4/LEGACY/CE",
+        "validation": 0.5259259259259259,
+        "valid_macro_f1": 0.46697837052139,
+        "valid_nll": 2.0481534004211426,
+        "best_epoch": 139
+      }
+    ],
+    "LEGACY_GLOBAL": [
+      {
+        "ref": "cora/seed2/R0/pair0.4/LEGACY/CE",
+        "validation": 0.5259259259259259,
+        "valid_macro_f1": 0.46697837052139,
+        "valid_nll": 2.0481534004211426,
+        "best_epoch": 139
+      },
+      {
+        "ref": "cora/seed2/R0/pair0.4/LEGACY/L0.25",
+        "validation": 0.5555555555555556,
+        "valid_macro_f1": 0.503058831420281,
+        "valid_nll": 1.3867839574813843,
+        "best_epoch": 194
+      },
+      {
+        "ref": "cora/seed2/R0/pair0.4/LEGACY/L0.5",
+        "validation": 0.5481481481481482,
+        "valid_macro_f1": 0.4784440172725873,
+        "valid_nll": 1.3014119863510132,
+        "best_epoch": 196
+      },
+      {
+        "ref": "cora/seed2/R0/pair0.4/LEGACY/L1.0",
+        "validation": 0.5592592592592592,
+        "valid_macro_f1": 0.48055797197135747,
+        "valid_nll": 1.256073236465454,
+        "best_epoch": 184
+      }
+    ],
+    "LEGACY_EXPANDED": [
+      {
+        "ref": "cora/seed2/R0/pair0.4/LEGACY/CE",
+        "validation": 0.5259259259259259,
+        "valid_macro_f1": 0.46697837052139,
+        "valid_nll": 2.0481534004211426,
+        "best_epoch": 139
+      },
+      {
+        "ref": "cora/seed2/R0/pair0.4/LEGACY/L0.25",
+        "validation": 0.5555555555555556,
+        "valid_macro_f1": 0.503058831420281,
+        "valid_nll": 1.3867839574813843,
+        "best_epoch": 194
+      },
+      {
+        "ref": "cora/seed2/R0/pair0.4/LEGACY/L0.5",
+        "validation": 0.5481481481481482,
+        "valid_macro_f1": 0.4784440172725873,
+        "valid_nll": 1.3014119863510132,
+        "best_epoch": 196
+      },
+      {
+        "ref": "cora/seed2/R0/pair0.4/LEGACY/L1.0",
+        "validation": 0.5592592592592592,
+        "valid_macro_f1": 0.48055797197135747,
+        "valid_nll": 1.256073236465454,
+        "best_epoch": 184
+      },
+      {
+        "ref": "cora/seed2/R0/pair0.4/LEGACY/GROUP_A0.0_C1.0",
+        "validation": 0.5703703703703704,
+        "valid_macro_f1": 0.49979443881507657,
+        "valid_nll": 1.2514452934265137,
+        "best_epoch": 51
+      },
+      {
+        "ref": "cora/seed2/R0/pair0.4/LEGACY/GROUP_A0.25_C1.0",
+        "validation": 0.5555555555555556,
+        "valid_macro_f1": 0.48219920446352177,
+        "valid_nll": 1.267576813697815,
+        "best_epoch": 118
+      },
+      {
+        "ref": "cora/seed2/R0/pair0.4/LEGACY/GROUP_A1.0_C0.25",
+        "validation": 0.5333333333333333,
+        "valid_macro_f1": 0.47892445892293123,
+        "valid_nll": 1.387827754020691,
+        "best_epoch": 191
+      },
+      {
+        "ref": "cora/seed2/R0/pair0.4/LEGACY/GROUP_A1.0_C0.0",
+        "validation": 0.4888888888888889,
+        "valid_macro_f1": 0.4340646373215405,
+        "valid_nll": 1.5860986709594727,
+        "best_epoch": 196
+      }
+    ],
+    "LEGACY_FORCED": [
+      {
+        "ref": "cora/seed2/R0/pair0.4/LEGACY/GROUP_A0.0_C1.0",
+        "validation": 0.5703703703703704,
+        "valid_macro_f1": 0.49979443881507657,
+        "valid_nll": 1.2514452934265137,
+        "best_epoch": 51
+      },
+      {
+        "ref": "cora/seed2/R0/pair0.4/LEGACY/GROUP_A0.25_C1.0",
+        "validation": 0.5555555555555556,
+        "valid_macro_f1": 0.48219920446352177,
+        "valid_nll": 1.267576813697815,
+        "best_epoch": 118
+      },
+      {
+        "ref": "cora/seed2/R0/pair0.4/LEGACY/GROUP_A1.0_C0.25",
+        "validation": 0.5333333333333333,
+        "valid_macro_f1": 0.47892445892293123,
+        "valid_nll": 1.387827754020691,
+        "best_epoch": 191
+      },
+      {
+        "ref": "cora/seed2/R0/pair0.4/LEGACY/GROUP_A1.0_C0.0",
+        "validation": 0.4888888888888889,
+        "valid_macro_f1": 0.4340646373215405,
+        "valid_nll": 1.5860986709594727,
+        "best_epoch": 196
+      }
+    ],
+    "KM_GLOBAL": [
+      {
+        "ref": "cora/seed2/R0/pair0.4/KM/CE",
+        "validation": 0.5259259259259259,
+        "valid_macro_f1": 0.46697837052139,
+        "valid_nll": 2.0481534004211426,
+        "best_epoch": 139
+      },
+      {
+        "ref": "cora/seed2/R0/pair0.4/KM/L0.25",
+        "validation": 0.562962962962963,
+        "valid_macro_f1": 0.503330064699321,
+        "valid_nll": 1.381271243095398,
+        "best_epoch": 173
+      },
+      {
+        "ref": "cora/seed2/R0/pair0.4/KM/L0.5",
+        "validation": 0.5740740740740741,
+        "valid_macro_f1": 0.5153504893351889,
+        "valid_nll": 1.2781518697738647,
+        "best_epoch": 122
+      },
+      {
+        "ref": "cora/seed2/R0/pair0.4/KM/L1.0",
+        "validation": 0.5814814814814815,
+        "valid_macro_f1": 0.5226779812183878,
+        "valid_nll": 1.2543569803237915,
+        "best_epoch": 194
+      }
+    ],
+    "KM_EXPANDED": [
+      {
+        "ref": "cora/seed2/R0/pair0.4/KM/CE",
+        "validation": 0.5259259259259259,
+        "valid_macro_f1": 0.46697837052139,
+        "valid_nll": 2.0481534004211426,
+        "best_epoch": 139
+      },
+      {
+        "ref": "cora/seed2/R0/pair0.4/KM/L0.25",
+        "validation": 0.562962962962963,
+        "valid_macro_f1": 0.503330064699321,
+        "valid_nll": 1.381271243095398,
+        "best_epoch": 173
+      },
+      {
+        "ref": "cora/seed2/R0/pair0.4/KM/L0.5",
+        "validation": 0.5740740740740741,
+        "valid_macro_f1": 0.5153504893351889,
+        "valid_nll": 1.2781518697738647,
+        "best_epoch": 122
+      },
+      {
+        "ref": "cora/seed2/R0/pair0.4/KM/L1.0",
+        "validation": 0.5814814814814815,
+        "valid_macro_f1": 0.5226779812183878,
+        "valid_nll": 1.2543569803237915,
+        "best_epoch": 194
+      },
+      {
+        "ref": "cora/seed2/R0/pair0.4/KM/GROUP_A0.0_C1.0",
+        "validation": 0.5962962962962963,
+        "valid_macro_f1": 0.5231239846339483,
+        "valid_nll": 1.2798994779586792,
+        "best_epoch": 155
+      },
+      {
+        "ref": "cora/seed2/R0/pair0.4/KM/GROUP_A0.25_C1.0",
+        "validation": 0.6074074074074074,
+        "valid_macro_f1": 0.5470194909554289,
+        "valid_nll": 1.2549031972885132,
+        "best_epoch": 191
+      },
+      {
+        "ref": "cora/seed2/R0/pair0.4/KM/GROUP_A1.0_C0.25",
+        "validation": 0.5444444444444444,
+        "valid_macro_f1": 0.4914118176266272,
+        "valid_nll": 1.3491308689117432,
+        "best_epoch": 193
+      },
+      {
+        "ref": "cora/seed2/R0/pair0.4/KM/GROUP_A1.0_C0.0",
+        "validation": 0.4888888888888889,
+        "valid_macro_f1": 0.45526974381947916,
+        "valid_nll": 1.617453694343567,
+        "best_epoch": 12
+      }
+    ],
+    "FIXED_GLOBAL": [
+      {
+        "ref": "cora/seed2/R0/pair0.4/S32/CE",
+        "validation": 0.5259259259259259,
+        "valid_macro_f1": 0.46697837052139,
+        "valid_nll": 2.0481534004211426,
+        "best_epoch": 139
+      },
+      {
+        "ref": "cora/seed2/R0/pair0.4/S32/L0.25",
+        "validation": 0.5555555555555556,
+        "valid_macro_f1": 0.503058831420281,
+        "valid_nll": 1.3867839574813843,
+        "best_epoch": 194
+      },
+      {
+        "ref": "cora/seed2/R0/pair0.4/S32/L0.5",
+        "validation": 0.5481481481481482,
+        "valid_macro_f1": 0.4784440172725873,
+        "valid_nll": 1.3014119863510132,
+        "best_epoch": 196
+      },
+      {
+        "ref": "cora/seed2/R0/pair0.4/S32/L1.0",
+        "validation": 0.5592592592592592,
+        "valid_macro_f1": 0.48055797197135747,
+        "valid_nll": 1.256073236465454,
+        "best_epoch": 184
+      }
+    ],
+    "FIXED_EXPANDED": [
+      {
+        "ref": "cora/seed2/R0/pair0.4/S32/CE",
+        "validation": 0.5259259259259259,
+        "valid_macro_f1": 0.46697837052139,
+        "valid_nll": 2.0481534004211426,
+        "best_epoch": 139
+      },
+      {
+        "ref": "cora/seed2/R0/pair0.4/S32/L0.25",
+        "validation": 0.5555555555555556,
+        "valid_macro_f1": 0.503058831420281,
+        "valid_nll": 1.3867839574813843,
+        "best_epoch": 194
+      },
+      {
+        "ref": "cora/seed2/R0/pair0.4/S32/L0.5",
+        "validation": 0.5481481481481482,
+        "valid_macro_f1": 0.4784440172725873,
+        "valid_nll": 1.3014119863510132,
+        "best_epoch": 196
+      },
+      {
+        "ref": "cora/seed2/R0/pair0.4/S32/L1.0",
+        "validation": 0.5592592592592592,
+        "valid_macro_f1": 0.48055797197135747,
+        "valid_nll": 1.256073236465454,
+        "best_epoch": 184
+      },
+      {
+        "ref": "cora/seed2/R0/pair0.4/S32/GROUP_A0.0_C1.0",
+        "validation": 0.5703703703703704,
+        "valid_macro_f1": 0.49979443881507657,
+        "valid_nll": 1.2514452934265137,
+        "best_epoch": 51
+      },
+      {
+        "ref": "cora/seed2/R0/pair0.4/S32/GROUP_A0.25_C1.0",
+        "validation": 0.5555555555555556,
+        "valid_macro_f1": 0.48219920446352177,
+        "valid_nll": 1.267576813697815,
+        "best_epoch": 118
+      },
+      {
+        "ref": "cora/seed2/R0/pair0.4/S32/GROUP_A1.0_C0.25",
+        "validation": 0.5333333333333333,
+        "valid_macro_f1": 0.47892445892293123,
+        "valid_nll": 1.387827754020691,
+        "best_epoch": 191
+      },
+      {
+        "ref": "cora/seed2/R0/pair0.4/S32/GROUP_A1.0_C0.0",
+        "validation": 0.4888888888888889,
+        "valid_macro_f1": 0.4340646373215405,
+        "valid_nll": 1.5860986709594727,
+        "best_epoch": 196
+      }
+    ],
+    "ADAPTIVE_GLOBAL": [
+      {
+        "ref": "cora/seed2/R0/pair0.4/S128/CE",
+        "validation": 0.5259259259259259,
+        "valid_macro_f1": 0.46697837052139,
+        "valid_nll": 2.0481534004211426,
+        "best_epoch": 139
+      },
+      {
+        "ref": "cora/seed2/R0/pair0.4/S128/L0.25",
+        "validation": 0.5666666666666667,
+        "valid_macro_f1": 0.5107615648999325,
+        "valid_nll": 1.4013633728027344,
+        "best_epoch": 190
+      },
+      {
+        "ref": "cora/seed2/R0/pair0.4/S128/L0.5",
+        "validation": 0.5703703703703704,
+        "valid_macro_f1": 0.5167743087178948,
+        "valid_nll": 1.302541732788086,
+        "best_epoch": 195
+      },
+      {
+        "ref": "cora/seed2/R0/pair0.4/S128/L1.0",
+        "validation": 0.5925925925925926,
+        "valid_macro_f1": 0.5023461352555416,
+        "valid_nll": 1.2550780773162842,
+        "best_epoch": 147
+      }
+    ],
+    "ADAPTIVE_EXPANDED": [
+      {
+        "ref": "cora/seed2/R0/pair0.4/S128/CE",
+        "validation": 0.5259259259259259,
+        "valid_macro_f1": 0.46697837052139,
+        "valid_nll": 2.0481534004211426,
+        "best_epoch": 139
+      },
+      {
+        "ref": "cora/seed2/R0/pair0.4/S128/L0.25",
+        "validation": 0.5666666666666667,
+        "valid_macro_f1": 0.5107615648999325,
+        "valid_nll": 1.4013633728027344,
+        "best_epoch": 190
+      },
+      {
+        "ref": "cora/seed2/R0/pair0.4/S128/L0.5",
+        "validation": 0.5703703703703704,
+        "valid_macro_f1": 0.5167743087178948,
+        "valid_nll": 1.302541732788086,
+        "best_epoch": 195
+      },
+      {
+        "ref": "cora/seed2/R0/pair0.4/S128/L1.0",
+        "validation": 0.5925925925925926,
+        "valid_macro_f1": 0.5023461352555416,
+        "valid_nll": 1.2550780773162842,
+        "best_epoch": 147
+      },
+      {
+        "ref": "cora/seed2/R0/pair0.4/S128/GROUP_A0.0_C1.0",
+        "validation": 0.6,
+        "valid_macro_f1": 0.5175691310601797,
+        "valid_nll": 1.2646842002868652,
+        "best_epoch": 51
+      },
+      {
+        "ref": "cora/seed2/R0/pair0.4/S128/GROUP_A0.25_C1.0",
+        "validation": 0.5851851851851851,
+        "valid_macro_f1": 0.5117446935829286,
+        "valid_nll": 1.290216326713562,
+        "best_epoch": 185
+      },
+      {
+        "ref": "cora/seed2/R0/pair0.4/S128/GROUP_A1.0_C0.25",
+        "validation": 0.5444444444444444,
+        "valid_macro_f1": 0.4900185907241813,
+        "valid_nll": 1.3906290531158447,
+        "best_epoch": 117
+      },
+      {
+        "ref": "cora/seed2/R0/pair0.4/S128/GROUP_A1.0_C0.0",
+        "validation": 0.5,
+        "valid_macro_f1": 0.4509140329252217,
+        "valid_nll": 1.6793220043182373,
+        "best_epoch": 62
+      }
+    ],
+    "ORIGINAL_C1": [
+      {
+        "ref": "cora/seed2/R0/pair0.4/S128/L1.0",
+        "validation": 0.5925925925925926,
+        "valid_macro_f1": 0.5023461352555416,
+        "valid_nll": 1.2550780773162842,
+        "best_epoch": 147
+      }
+    ],
+    "FIXED_S32": [
+      {
+        "ref": "cora/seed2/R0/pair0.4/S32/L1.0",
+        "validation": 0.5592592592592592,
+        "valid_macro_f1": 0.48055797197135747,
+        "valid_nll": 1.256073236465454,
+        "best_epoch": 184
+      }
+    ],
+    "SINGLE_MODULE_VAL": [
+      {
+        "ref": "cora/seed2/R0/pair0.4/S128/CE",
+        "validation": 0.5259259259259259,
+        "valid_macro_f1": 0.46697837052139,
+        "valid_nll": 2.0481534004211426,
+        "best_epoch": 139
+      },
+      {
+        "ref": "cora/seed2/R0/pair0.4/S128/L0.25",
+        "validation": 0.5666666666666667,
+        "valid_macro_f1": 0.5107615648999325,
+        "valid_nll": 1.4013633728027344,
+        "best_epoch": 190
+      },
+      {
+        "ref": "cora/seed2/R0/pair0.4/S128/L0.5",
+        "validation": 0.5703703703703704,
+        "valid_macro_f1": 0.5167743087178948,
+        "valid_nll": 1.302541732788086,
+        "best_epoch": 195
+      },
+      {
+        "ref": "cora/seed2/R0/pair0.4/S128/L1.0",
+        "validation": 0.5925925925925926,
+        "valid_macro_f1": 0.5023461352555416,
+        "valid_nll": 1.2550780773162842,
+        "best_epoch": 147
+      },
+      {
+        "ref": "cora/seed2/R0/pair0.4/S32/CE",
+        "validation": 0.5259259259259259,
+        "valid_macro_f1": 0.46697837052139,
+        "valid_nll": 2.0481534004211426,
+        "best_epoch": 139
+      },
+      {
+        "ref": "cora/seed2/R0/pair0.4/S32/L0.25",
+        "validation": 0.5555555555555556,
+        "valid_macro_f1": 0.503058831420281,
+        "valid_nll": 1.3867839574813843,
+        "best_epoch": 194
+      },
+      {
+        "ref": "cora/seed2/R0/pair0.4/S32/L0.5",
+        "validation": 0.5481481481481482,
+        "valid_macro_f1": 0.4784440172725873,
+        "valid_nll": 1.3014119863510132,
+        "best_epoch": 196
+      },
+      {
+        "ref": "cora/seed2/R0/pair0.4/S32/L1.0",
+        "validation": 0.5592592592592592,
+        "valid_macro_f1": 0.48055797197135747,
+        "valid_nll": 1.256073236465454,
+        "best_epoch": 184
+      },
+      {
+        "ref": "cora/seed2/R0/pair0.4/S32/GROUP_A0.0_C1.0",
+        "validation": 0.5703703703703704,
+        "valid_macro_f1": 0.49979443881507657,
+        "valid_nll": 1.2514452934265137,
+        "best_epoch": 51
+      },
+      {
+        "ref": "cora/seed2/R0/pair0.4/S32/GROUP_A0.25_C1.0",
+        "validation": 0.5555555555555556,
+        "valid_macro_f1": 0.48219920446352177,
+        "valid_nll": 1.267576813697815,
+        "best_epoch": 118
+      },
+      {
+        "ref": "cora/seed2/R0/pair0.4/S32/GROUP_A1.0_C0.25",
+        "validation": 0.5333333333333333,
+        "valid_macro_f1": 0.47892445892293123,
+        "valid_nll": 1.387827754020691,
+        "best_epoch": 191
+      },
+      {
+        "ref": "cora/seed2/R0/pair0.4/S32/GROUP_A1.0_C0.0",
+        "validation": 0.4888888888888889,
+        "valid_macro_f1": 0.4340646373215405,
+        "valid_nll": 1.5860986709594727,
+        "best_epoch": 196
+      }
+    ]
+  },
+  "choices": {
+    "accuracy": {
+      "CE": "cora/seed2/R0/pair0.4/LEGACY/CE",
+      "LEGACY_GLOBAL": "cora/seed2/R0/pair0.4/LEGACY/L1.0",
+      "LEGACY_EXPANDED": "cora/seed2/R0/pair0.4/LEGACY/GROUP_A0.0_C1.0",
+      "LEGACY_FORCED": "cora/seed2/R0/pair0.4/LEGACY/GROUP_A0.0_C1.0",
+      "KM_GLOBAL": "cora/seed2/R0/pair0.4/KM/L1.0",
+      "KM_EXPANDED": "cora/seed2/R0/pair0.4/KM/GROUP_A0.25_C1.0",
+      "FIXED_GLOBAL": "cora/seed2/R0/pair0.4/S32/L1.0",
+      "FIXED_EXPANDED": "cora/seed2/R0/pair0.4/S32/GROUP_A0.0_C1.0",
+      "ADAPTIVE_GLOBAL": "cora/seed2/R0/pair0.4/S128/L1.0",
+      "ADAPTIVE_EXPANDED": "cora/seed2/R0/pair0.4/S128/GROUP_A0.0_C1.0",
+      "ORIGINAL_C1": "cora/seed2/R0/pair0.4/S128/L1.0",
+      "FIXED_S32": "cora/seed2/R0/pair0.4/S32/L1.0",
+      "SINGLE_MODULE_VAL": "cora/seed2/R0/pair0.4/S128/L1.0"
+    },
+    "balanced": {
+      "CE": "cora/seed2/R0/pair0.4/LEGACY/CE",
+      "LEGACY_GLOBAL": "cora/seed2/R0/pair0.4/LEGACY/L0.25",
+      "LEGACY_EXPANDED": "cora/seed2/R0/pair0.4/LEGACY/GROUP_A0.0_C1.0",
+      "LEGACY_FORCED": "cora/seed2/R0/pair0.4/LEGACY/GROUP_A0.0_C1.0",
+      "KM_GLOBAL": "cora/seed2/R0/pair0.4/KM/L1.0",
+      "KM_EXPANDED": "cora/seed2/R0/pair0.4/KM/GROUP_A0.25_C1.0",
+      "FIXED_GLOBAL": "cora/seed2/R0/pair0.4/S32/L0.25",
+      "FIXED_EXPANDED": "cora/seed2/R0/pair0.4/S32/GROUP_A0.0_C1.0",
+      "ADAPTIVE_GLOBAL": "cora/seed2/R0/pair0.4/S128/L1.0",
+      "ADAPTIVE_EXPANDED": "cora/seed2/R0/pair0.4/S128/GROUP_A0.0_C1.0",
+      "ORIGINAL_C1": "cora/seed2/R0/pair0.4/S128/L1.0",
+      "FIXED_S32": "cora/seed2/R0/pair0.4/S32/L1.0",
+      "SINGLE_MODULE_VAL": "cora/seed2/R0/pair0.4/S128/L1.0"
+    }
+  },
+  "frozen": "2026-10-24T08:20:02.148612+00:00"
+}

@@ -1,0 +1,563 @@
+{
+  "dataset": "citeseer",
+  "seed": 0,
+  "backbone": "R0",
+  "condition": "uniform0.6",
+  "meta": {
+    "legacy_tie_lambda": 1.0,
+    "retrospective_fallback": true,
+    "adaptive_support": 128,
+    "PROBE": "S128_L1.0",
+    "probe_sha256": "78022647f5301bcccd005f68b67d0db176a37139395e94b202a720bf41ff4e62",
+    "deep_ties": {
+      "S32": 1.0,
+      "S128": 1.0
+    },
+    "adaptive_cost": {
+      "upstream_probe_with_ce": 1200,
+      "prefix_epochs": {
+        "S128_L0.25": 25,
+        "S128_L0.5": 25,
+        "S128_L1.0": 200
+      },
+      "additional_global_updates": 350,
+      "additional_group_updates": 800,
+      "global_total_updates": 1550,
+      "expanded_total_updates": 2350
+    },
+    "fixed_global_updates": 800,
+    "fixed_expanded_updates": 1600,
+    "matched_legacy_km_global_updates": 800,
+    "matched_legacy_km_expanded_updates": 1600
+  },
+  "pools": {
+    "CE": [
+      {
+        "ref": "citeseer/seed0/R0/uniform0.6/LEGACY/CE",
+        "validation": 0.31626506024096385,
+        "valid_macro_f1": 0.30874640192306524,
+        "valid_nll": 2.9528286457061768,
+        "best_epoch": 157
+      }
+    ],
+    "LEGACY_GLOBAL": [
+      {
+        "ref": "citeseer/seed0/R0/uniform0.6/LEGACY/CE",
+        "validation": 0.31626506024096385,
+        "valid_macro_f1": 0.30874640192306524,
+        "valid_nll": 2.9528286457061768,
+        "best_epoch": 157
+      },
+      {
+        "ref": "citeseer/seed0/R0/uniform0.6/LEGACY/L0.25",
+        "validation": 0.37650602409638556,
+        "valid_macro_f1": 0.37168035128877885,
+        "valid_nll": 1.964436411857605,
+        "best_epoch": 200
+      },
+      {
+        "ref": "citeseer/seed0/R0/uniform0.6/LEGACY/L0.5",
+        "validation": 0.3885542168674699,
+        "valid_macro_f1": 0.37580948533883185,
+        "valid_nll": 1.7652570009231567,
+        "best_epoch": 148
+      },
+      {
+        "ref": "citeseer/seed0/R0/uniform0.6/LEGACY/L1.0",
+        "validation": 0.40963855421686746,
+        "valid_macro_f1": 0.394201746296103,
+        "valid_nll": 1.5912340879440308,
+        "best_epoch": 83
+      }
+    ],
+    "LEGACY_EXPANDED": [
+      {
+        "ref": "citeseer/seed0/R0/uniform0.6/LEGACY/CE",
+        "validation": 0.31626506024096385,
+        "valid_macro_f1": 0.30874640192306524,
+        "valid_nll": 2.9528286457061768,
+        "best_epoch": 157
+      },
+      {
+        "ref": "citeseer/seed0/R0/uniform0.6/LEGACY/L0.25",
+        "validation": 0.37650602409638556,
+        "valid_macro_f1": 0.37168035128877885,
+        "valid_nll": 1.964436411857605,
+        "best_epoch": 200
+      },
+      {
+        "ref": "citeseer/seed0/R0/uniform0.6/LEGACY/L0.5",
+        "validation": 0.3885542168674699,
+        "valid_macro_f1": 0.37580948533883185,
+        "valid_nll": 1.7652570009231567,
+        "best_epoch": 148
+      },
+      {
+        "ref": "citeseer/seed0/R0/uniform0.6/LEGACY/L1.0",
+        "validation": 0.40963855421686746,
+        "valid_macro_f1": 0.394201746296103,
+        "valid_nll": 1.5912340879440308,
+        "best_epoch": 83
+      },
+      {
+        "ref": "citeseer/seed0/R0/uniform0.6/LEGACY/GROUP_A0.0_C1.0",
+        "validation": 0.4246987951807229,
+        "valid_macro_f1": 0.4084601674118671,
+        "valid_nll": 1.6269049644470215,
+        "best_epoch": 144
+      },
+      {
+        "ref": "citeseer/seed0/R0/uniform0.6/LEGACY/GROUP_A0.25_C1.0",
+        "validation": 0.42771084337349397,
+        "valid_macro_f1": 0.4101162079685448,
+        "valid_nll": 1.6361922025680542,
+        "best_epoch": 149
+      },
+      {
+        "ref": "citeseer/seed0/R0/uniform0.6/LEGACY/GROUP_A1.0_C0.25",
+        "validation": 0.3674698795180723,
+        "valid_macro_f1": 0.3596200377936206,
+        "valid_nll": 1.9219779968261719,
+        "best_epoch": 165
+      },
+      {
+        "ref": "citeseer/seed0/R0/uniform0.6/LEGACY/GROUP_A1.0_C0.0",
+        "validation": 0.2891566265060241,
+        "valid_macro_f1": 0.22981878369283454,
+        "valid_nll": 1.7597202062606812,
+        "best_epoch": 2
+      }
+    ],
+    "LEGACY_FORCED": [
+      {
+        "ref": "citeseer/seed0/R0/uniform0.6/LEGACY/GROUP_A0.0_C1.0",
+        "validation": 0.4246987951807229,
+        "valid_macro_f1": 0.4084601674118671,
+        "valid_nll": 1.6269049644470215,
+        "best_epoch": 144
+      },
+      {
+        "ref": "citeseer/seed0/R0/uniform0.6/LEGACY/GROUP_A0.25_C1.0",
+        "validation": 0.42771084337349397,
+        "valid_macro_f1": 0.4101162079685448,
+        "valid_nll": 1.6361922025680542,
+        "best_epoch": 149
+      },
+      {
+        "ref": "citeseer/seed0/R0/uniform0.6/LEGACY/GROUP_A1.0_C0.25",
+        "validation": 0.3674698795180723,
+        "valid_macro_f1": 0.3596200377936206,
+        "valid_nll": 1.9219779968261719,
+        "best_epoch": 165
+      },
+      {
+        "ref": "citeseer/seed0/R0/uniform0.6/LEGACY/GROUP_A1.0_C0.0",
+        "validation": 0.2891566265060241,
+        "valid_macro_f1": 0.22981878369283454,
+        "valid_nll": 1.7597202062606812,
+        "best_epoch": 2
+      }
+    ],
+    "KM_GLOBAL": [
+      {
+        "ref": "citeseer/seed0/R0/uniform0.6/KM/CE",
+        "validation": 0.31626506024096385,
+        "valid_macro_f1": 0.30874640192306524,
+        "valid_nll": 2.9528286457061768,
+        "best_epoch": 157
+      },
+      {
+        "ref": "citeseer/seed0/R0/uniform0.6/KM/L0.25",
+        "validation": 0.3704819277108434,
+        "valid_macro_f1": 0.3644236643574215,
+        "valid_nll": 1.916661262512207,
+        "best_epoch": 160
+      },
+      {
+        "ref": "citeseer/seed0/R0/uniform0.6/KM/L0.5",
+        "validation": 0.3855421686746988,
+        "valid_macro_f1": 0.37817017124028496,
+        "valid_nll": 1.760491967201233,
+        "best_epoch": 158
+      },
+      {
+        "ref": "citeseer/seed0/R0/uniform0.6/KM/L1.0",
+        "validation": 0.41566265060240964,
+        "valid_macro_f1": 0.40604930763510494,
+        "valid_nll": 1.5887495279312134,
+        "best_epoch": 92
+      }
+    ],
+    "KM_EXPANDED": [
+      {
+        "ref": "citeseer/seed0/R0/uniform0.6/KM/CE",
+        "validation": 0.31626506024096385,
+        "valid_macro_f1": 0.30874640192306524,
+        "valid_nll": 2.9528286457061768,
+        "best_epoch": 157
+      },
+      {
+        "ref": "citeseer/seed0/R0/uniform0.6/KM/L0.25",
+        "validation": 0.3704819277108434,
+        "valid_macro_f1": 0.3644236643574215,
+        "valid_nll": 1.916661262512207,
+        "best_epoch": 160
+      },
+      {
+        "ref": "citeseer/seed0/R0/uniform0.6/KM/L0.5",
+        "validation": 0.3855421686746988,
+        "valid_macro_f1": 0.37817017124028496,
+        "valid_nll": 1.760491967201233,
+        "best_epoch": 158
+      },
+      {
+        "ref": "citeseer/seed0/R0/uniform0.6/KM/L1.0",
+        "validation": 0.41566265060240964,
+        "valid_macro_f1": 0.40604930763510494,
+        "valid_nll": 1.5887495279312134,
+        "best_epoch": 92
+      },
+      {
+        "ref": "citeseer/seed0/R0/uniform0.6/KM/GROUP_A0.0_C1.0",
+        "validation": 0.4397590361445783,
+        "valid_macro_f1": 0.42964090964301943,
+        "valid_nll": 1.5809367895126343,
+        "best_epoch": 160
+      },
+      {
+        "ref": "citeseer/seed0/R0/uniform0.6/KM/GROUP_A0.25_C1.0",
+        "validation": 0.4246987951807229,
+        "valid_macro_f1": 0.4139783514940392,
+        "valid_nll": 1.5907599925994873,
+        "best_epoch": 155
+      },
+      {
+        "ref": "citeseer/seed0/R0/uniform0.6/KM/GROUP_A1.0_C0.25",
+        "validation": 0.3644578313253012,
+        "valid_macro_f1": 0.35951084559696006,
+        "valid_nll": 1.8469234704971313,
+        "best_epoch": 160
+      },
+      {
+        "ref": "citeseer/seed0/R0/uniform0.6/KM/GROUP_A1.0_C0.0",
+        "validation": 0.286144578313253,
+        "valid_macro_f1": 0.2841862018065754,
+        "valid_nll": 2.3717267513275146,
+        "best_epoch": 144
+      }
+    ],
+    "FIXED_GLOBAL": [
+      {
+        "ref": "citeseer/seed0/R0/uniform0.6/S32/CE",
+        "validation": 0.31626506024096385,
+        "valid_macro_f1": 0.30874640192306524,
+        "valid_nll": 2.9528286457061768,
+        "best_epoch": 157
+      },
+      {
+        "ref": "citeseer/seed0/R0/uniform0.6/S32/L0.25",
+        "validation": 0.37650602409638556,
+        "valid_macro_f1": 0.37168035128877885,
+        "valid_nll": 1.964436411857605,
+        "best_epoch": 200
+      },
+      {
+        "ref": "citeseer/seed0/R0/uniform0.6/S32/L0.5",
+        "validation": 0.3885542168674699,
+        "valid_macro_f1": 0.37580948533883185,
+        "valid_nll": 1.7652570009231567,
+        "best_epoch": 148
+      },
+      {
+        "ref": "citeseer/seed0/R0/uniform0.6/S32/L1.0",
+        "validation": 0.40963855421686746,
+        "valid_macro_f1": 0.394201746296103,
+        "valid_nll": 1.5912340879440308,
+        "best_epoch": 83
+      }
+    ],
+    "FIXED_EXPANDED": [
+      {
+        "ref": "citeseer/seed0/R0/uniform0.6/S32/CE",
+        "validation": 0.31626506024096385,
+        "valid_macro_f1": 0.30874640192306524,
+        "valid_nll": 2.9528286457061768,
+        "best_epoch": 157
+      },
+      {
+        "ref": "citeseer/seed0/R0/uniform0.6/S32/L0.25",
+        "validation": 0.37650602409638556,
+        "valid_macro_f1": 0.37168035128877885,
+        "valid_nll": 1.964436411857605,
+        "best_epoch": 200
+      },
+      {
+        "ref": "citeseer/seed0/R0/uniform0.6/S32/L0.5",
+        "validation": 0.3885542168674699,
+        "valid_macro_f1": 0.37580948533883185,
+        "valid_nll": 1.7652570009231567,
+        "best_epoch": 148
+      },
+      {
+        "ref": "citeseer/seed0/R0/uniform0.6/S32/L1.0",
+        "validation": 0.40963855421686746,
+        "valid_macro_f1": 0.394201746296103,
+        "valid_nll": 1.5912340879440308,
+        "best_epoch": 83
+      },
+      {
+        "ref": "citeseer/seed0/R0/uniform0.6/S32/GROUP_A0.0_C1.0",
+        "validation": 0.4246987951807229,
+        "valid_macro_f1": 0.4084601674118671,
+        "valid_nll": 1.6269049644470215,
+        "best_epoch": 144
+      },
+      {
+        "ref": "citeseer/seed0/R0/uniform0.6/S32/GROUP_A0.25_C1.0",
+        "validation": 0.42771084337349397,
+        "valid_macro_f1": 0.4101162079685448,
+        "valid_nll": 1.6361922025680542,
+        "best_epoch": 149
+      },
+      {
+        "ref": "citeseer/seed0/R0/uniform0.6/S32/GROUP_A1.0_C0.25",
+        "validation": 0.3674698795180723,
+        "valid_macro_f1": 0.3596200377936206,
+        "valid_nll": 1.9219779968261719,
+        "best_epoch": 165
+      },
+      {
+        "ref": "citeseer/seed0/R0/uniform0.6/S32/GROUP_A1.0_C0.0",
+        "validation": 0.2891566265060241,
+        "valid_macro_f1": 0.22981878369283454,
+        "valid_nll": 1.7597202062606812,
+        "best_epoch": 2
+      }
+    ],
+    "ADAPTIVE_GLOBAL": [
+      {
+        "ref": "citeseer/seed0/R0/uniform0.6/S128/CE",
+        "validation": 0.31626506024096385,
+        "valid_macro_f1": 0.30874640192306524,
+        "valid_nll": 2.9528286457061768,
+        "best_epoch": 157
+      },
+      {
+        "ref": "citeseer/seed0/R0/uniform0.6/S128/L0.25",
+        "validation": 0.3674698795180723,
+        "valid_macro_f1": 0.3623891970439484,
+        "valid_nll": 1.8849148750305176,
+        "best_epoch": 89
+      },
+      {
+        "ref": "citeseer/seed0/R0/uniform0.6/S128/L0.5",
+        "validation": 0.3885542168674699,
+        "valid_macro_f1": 0.38123650879196314,
+        "valid_nll": 1.7419837713241577,
+        "best_epoch": 89
+      },
+      {
+        "ref": "citeseer/seed0/R0/uniform0.6/S128/L1.0",
+        "validation": 0.4246987951807229,
+        "valid_macro_f1": 0.4147210570374145,
+        "valid_nll": 1.6019541025161743,
+        "best_epoch": 89
+      }
+    ],
+    "ADAPTIVE_EXPANDED": [
+      {
+        "ref": "citeseer/seed0/R0/uniform0.6/S128/CE",
+        "validation": 0.31626506024096385,
+        "valid_macro_f1": 0.30874640192306524,
+        "valid_nll": 2.9528286457061768,
+        "best_epoch": 157
+      },
+      {
+        "ref": "citeseer/seed0/R0/uniform0.6/S128/L0.25",
+        "validation": 0.3674698795180723,
+        "valid_macro_f1": 0.3623891970439484,
+        "valid_nll": 1.8849148750305176,
+        "best_epoch": 89
+      },
+      {
+        "ref": "citeseer/seed0/R0/uniform0.6/S128/L0.5",
+        "validation": 0.3885542168674699,
+        "valid_macro_f1": 0.38123650879196314,
+        "valid_nll": 1.7419837713241577,
+        "best_epoch": 89
+      },
+      {
+        "ref": "citeseer/seed0/R0/uniform0.6/S128/L1.0",
+        "validation": 0.4246987951807229,
+        "valid_macro_f1": 0.4147210570374145,
+        "valid_nll": 1.6019541025161743,
+        "best_epoch": 89
+      },
+      {
+        "ref": "citeseer/seed0/R0/uniform0.6/S128/GROUP_A0.0_C1.0",
+        "validation": 0.4427710843373494,
+        "valid_macro_f1": 0.42546791545440305,
+        "valid_nll": 1.6306616067886353,
+        "best_epoch": 144
+      },
+      {
+        "ref": "citeseer/seed0/R0/uniform0.6/S128/GROUP_A0.25_C1.0",
+        "validation": 0.43373493975903615,
+        "valid_macro_f1": 0.41953262968985944,
+        "valid_nll": 1.6133843660354614,
+        "best_epoch": 145
+      },
+      {
+        "ref": "citeseer/seed0/R0/uniform0.6/S128/GROUP_A1.0_C0.25",
+        "validation": 0.34036144578313254,
+        "valid_macro_f1": 0.32948061970325554,
+        "valid_nll": 1.9828051328659058,
+        "best_epoch": 174
+      },
+      {
+        "ref": "citeseer/seed0/R0/uniform0.6/S128/GROUP_A1.0_C0.0",
+        "validation": 0.2891566265060241,
+        "valid_macro_f1": 0.28593949687611514,
+        "valid_nll": 2.6232259273529053,
+        "best_epoch": 185
+      }
+    ],
+    "ORIGINAL_C1": [
+      {
+        "ref": "citeseer/seed0/R0/uniform0.6/S128/L1.0",
+        "validation": 0.4246987951807229,
+        "valid_macro_f1": 0.4147210570374145,
+        "valid_nll": 1.6019541025161743,
+        "best_epoch": 89
+      }
+    ],
+    "FIXED_S32": [
+      {
+        "ref": "citeseer/seed0/R0/uniform0.6/S32/L1.0",
+        "validation": 0.40963855421686746,
+        "valid_macro_f1": 0.394201746296103,
+        "valid_nll": 1.5912340879440308,
+        "best_epoch": 83
+      }
+    ],
+    "SINGLE_MODULE_VAL": [
+      {
+        "ref": "citeseer/seed0/R0/uniform0.6/S128/CE",
+        "validation": 0.31626506024096385,
+        "valid_macro_f1": 0.30874640192306524,
+        "valid_nll": 2.9528286457061768,
+        "best_epoch": 157
+      },
+      {
+        "ref": "citeseer/seed0/R0/uniform0.6/S128/L0.25",
+        "validation": 0.3674698795180723,
+        "valid_macro_f1": 0.3623891970439484,
+        "valid_nll": 1.8849148750305176,
+        "best_epoch": 89
+      },
+      {
+        "ref": "citeseer/seed0/R0/uniform0.6/S128/L0.5",
+        "validation": 0.3885542168674699,
+        "valid_macro_f1": 0.38123650879196314,
+        "valid_nll": 1.7419837713241577,
+        "best_epoch": 89
+      },
+      {
+        "ref": "citeseer/seed0/R0/uniform0.6/S128/L1.0",
+        "validation": 0.4246987951807229,
+        "valid_macro_f1": 0.4147210570374145,
+        "valid_nll": 1.6019541025161743,
+        "best_epoch": 89
+      },
+      {
+        "ref": "citeseer/seed0/R0/uniform0.6/S32/CE",
+        "validation": 0.31626506024096385,
+        "valid_macro_f1": 0.30874640192306524,
+        "valid_nll": 2.9528286457061768,
+        "best_epoch": 157
+      },
+      {
+        "ref": "citeseer/seed0/R0/uniform0.6/S32/L0.25",
+        "validation": 0.37650602409638556,
+        "valid_macro_f1": 0.37168035128877885,
+        "valid_nll": 1.964436411857605,
+        "best_epoch": 200
+      },
+      {
+        "ref": "citeseer/seed0/R0/uniform0.6/S32/L0.5",
+        "validation": 0.3885542168674699,
+        "valid_macro_f1": 0.37580948533883185,
+        "valid_nll": 1.7652570009231567,
+        "best_epoch": 148
+      },
+      {
+        "ref": "citeseer/seed0/R0/uniform0.6/S32/L1.0",
+        "validation": 0.40963855421686746,
+        "valid_macro_f1": 0.394201746296103,
+        "valid_nll": 1.5912340879440308,
+        "best_epoch": 83
+      },
+      {
+        "ref": "citeseer/seed0/R0/uniform0.6/S32/GROUP_A0.0_C1.0",
+        "validation": 0.4246987951807229,
+        "valid_macro_f1": 0.4084601674118671,
+        "valid_nll": 1.6269049644470215,
+        "best_epoch": 144
+      },
+      {
+        "ref": "citeseer/seed0/R0/uniform0.6/S32/GROUP_A0.25_C1.0",
+        "validation": 0.42771084337349397,
+        "valid_macro_f1": 0.4101162079685448,
+        "valid_nll": 1.6361922025680542,
+        "best_epoch": 149
+      },
+      {
+        "ref": "citeseer/seed0/R0/uniform0.6/S32/GROUP_A1.0_C0.25",
+        "validation": 0.3674698795180723,
+        "valid_macro_f1": 0.3596200377936206,
+        "valid_nll": 1.9219779968261719,
+        "best_epoch": 165
+      },
+      {
+        "ref": "citeseer/seed0/R0/uniform0.6/S32/GROUP_A1.0_C0.0",
+        "validation": 0.2891566265060241,
+        "valid_macro_f1": 0.22981878369283454,
+        "valid_nll": 1.7597202062606812,
+        "best_epoch": 2
+      }
+    ]
+  },
+  "choices": {
+    "accuracy": {
+      "CE": "citeseer/seed0/R0/uniform0.6/LEGACY/CE",
+      "LEGACY_GLOBAL": "citeseer/seed0/R0/uniform0.6/LEGACY/L1.0",
+      "LEGACY_EXPANDED": "citeseer/seed0/R0/uniform0.6/LEGACY/GROUP_A0.25_C1.0",
+      "LEGACY_FORCED": "citeseer/seed0/R0/uniform0.6/LEGACY/GROUP_A0.25_C1.0",
+      "KM_GLOBAL": "citeseer/seed0/R0/uniform0.6/KM/L1.0",
+      "KM_EXPANDED": "citeseer/seed0/R0/uniform0.6/KM/GROUP_A0.0_C1.0",
+      "FIXED_GLOBAL": "citeseer/seed0/R0/uniform0.6/S32/L1.0",
+      "FIXED_EXPANDED": "citeseer/seed0/R0/uniform0.6/S32/GROUP_A0.25_C1.0",
+      "ADAPTIVE_GLOBAL": "citeseer/seed0/R0/uniform0.6/S128/L1.0",
+      "ADAPTIVE_EXPANDED": "citeseer/seed0/R0/uniform0.6/S128/GROUP_A0.0_C1.0",
+      "ORIGINAL_C1": "citeseer/seed0/R0/uniform0.6/S128/L1.0",
+      "FIXED_S32": "citeseer/seed0/R0/uniform0.6/S32/L1.0",
+      "SINGLE_MODULE_VAL": "citeseer/seed0/R0/uniform0.6/S32/GROUP_A0.25_C1.0"
+    },
+    "balanced": {
+      "CE": "citeseer/seed0/R0/uniform0.6/LEGACY/CE",
+      "LEGACY_GLOBAL": "citeseer/seed0/R0/uniform0.6/LEGACY/L1.0",
+      "LEGACY_EXPANDED": "citeseer/seed0/R0/uniform0.6/LEGACY/GROUP_A0.25_C1.0",
+      "LEGACY_FORCED": "citeseer/seed0/R0/uniform0.6/LEGACY/GROUP_A0.25_C1.0",
+      "KM_GLOBAL": "citeseer/seed0/R0/uniform0.6/KM/L1.0",
+      "KM_EXPANDED": "citeseer/seed0/R0/uniform0.6/KM/GROUP_A0.0_C1.0",
+      "FIXED_GLOBAL": "citeseer/seed0/R0/uniform0.6/S32/L1.0",
+      "FIXED_EXPANDED": "citeseer/seed0/R0/uniform0.6/S32/GROUP_A0.25_C1.0",
+      "ADAPTIVE_GLOBAL": "citeseer/seed0/R0/uniform0.6/S128/L1.0",
+      "ADAPTIVE_EXPANDED": "citeseer/seed0/R0/uniform0.6/S128/GROUP_A0.0_C1.0",
+      "ORIGINAL_C1": "citeseer/seed0/R0/uniform0.6/S128/L1.0",
+      "FIXED_S32": "citeseer/seed0/R0/uniform0.6/S32/L1.0",
+      "SINGLE_MODULE_VAL": "citeseer/seed0/R0/uniform0.6/S128/L1.0"
+    }
+  },
+  "frozen": "2026-10-24T08:20:46.331007+00:00"
+}

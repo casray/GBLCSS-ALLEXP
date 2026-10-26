@@ -1,0 +1,110 @@
+{
+  "dataset": "cora",
+  "seed": 0,
+  "backbone": "R2",
+  "condition": "pair0.4",
+  "frozen": "2026-10-26T03:39:04.117181+00:00",
+  "choices": {
+    "CE": "cora/seed0/R2/pair0.4/CE",
+    "GCE": "cora/seed0/R2/pair0.4/GCE",
+    "OLD64": "cora/seed0/R2/pair0.4/OLD64",
+    "LEGACY_SUPPORT32": "cora/seed0/R2/pair0.4/LEGACY_SUPPORT32",
+    "FIXED_GLOBAL": "cora/seed0/R2/pair0.4/S32_L1.0",
+    "FIXED_EXPANDED": "cora/seed0/R2/pair0.4/S32_G_A0.0_C1.0",
+    "ADAPTIVE_GLOBAL": "cora/seed0/R2/pair0.4/S64_L1.0",
+    "ADAPTIVE_EXPANDED": "cora/seed0/R2/pair0.4/S64_G_A0.0_C1.0",
+    "SINGLE_MODULE_VAL": "cora/seed0/R2/pair0.4/S32_G_A0.0_C1.0",
+    "FIXED_S32": "cora/seed0/R2/pair0.4/S32_L1.0"
+  },
+  "fixed_scores": [
+    {
+      "arm": "CE",
+      "support": 0,
+      "mean_lambda": 0.0,
+      "epoch": 200,
+      "best_epoch": 45,
+      "valid_correct": 183,
+      "valid_total": 270,
+      "valid_nll": 1.0629981756210327
+    },
+    {
+      "arm": "S32_L0.25",
+      "support": 32,
+      "mean_lambda": 0.25,
+      "epoch": 200,
+      "best_epoch": 51,
+      "valid_correct": 188,
+      "valid_total": 270,
+      "valid_nll": 1.0230907201766968
+    },
+    {
+      "arm": "S32_L0.5",
+      "support": 32,
+      "mean_lambda": 0.5,
+      "epoch": 200,
+      "best_epoch": 52,
+      "valid_correct": 190,
+      "valid_total": 270,
+      "valid_nll": 0.998908281326294
+    },
+    {
+      "arm": "S32_L1.0",
+      "support": 32,
+      "mean_lambda": 1.0,
+      "epoch": 200,
+      "best_epoch": 59,
+      "valid_correct": 190,
+      "valid_total": 270,
+      "valid_nll": 0.9455188512802124
+    },
+    {
+      "arm": "S32_G_A0.0_C1.0",
+      "support": 32,
+      "mean_lambda": 0.5914972273567468,
+      "epoch": 200,
+      "best_epoch": 31,
+      "valid_correct": 197,
+      "valid_total": 270,
+      "valid_nll": 1.0391136407852173
+    },
+    {
+      "arm": "S32_G_A0.25_C1.0",
+      "support": 32,
+      "mean_lambda": 0.69362292051756,
+      "epoch": 200,
+      "best_epoch": 30,
+      "valid_correct": 195,
+      "valid_total": 270,
+      "valid_nll": 1.0580955743789673
+    },
+    {
+      "arm": "S32_G_A1.0_C0.25",
+      "support": 32,
+      "mean_lambda": 0.6270794824399261,
+      "epoch": 200,
+      "best_epoch": 49,
+      "valid_correct": 173,
+      "valid_total": 270,
+      "valid_nll": 1.0762447118759155
+    },
+    {
+      "arm": "S32_G_A1.0_C0.0",
+      "support": 32,
+      "mean_lambda": 0.5027726432532348,
+      "epoch": 200,
+      "best_epoch": 34,
+      "valid_correct": 167,
+      "valid_total": 270,
+      "valid_nll": 1.1830525398254395
+    }
+  ],
+  "joint_sha256": "4f2c34cd8e178a728ba61ab4c2584e3f8bc3bb3c1245083d8bfd0fbfa2a30f3f",
+  "global_sha256": "79df2fb25c0b0fc064dedb84a566d7bd0290936c3dd7595b50788fd5e66f490e",
+  "fixed_controls_after_joint": true,
+  "rank": "rules.rank_key; GLOBAL original pilot rank",
+  "joint_candidate_updates": 2250,
+  "global_candidate_updates": 1000,
+  "ce_updates": 200,
+  "fixed_global_updates": 800,
+  "fixed_expanded_updates": 1600
+}

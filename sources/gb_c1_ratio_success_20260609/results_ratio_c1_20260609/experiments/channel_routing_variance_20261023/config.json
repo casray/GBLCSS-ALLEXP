@@ -1,0 +1,16 @@
+{
+  "experiment_id": "channel_routing_variance_20261023",
+  "source_experiment": "sc_support_channel_pilot_20261023",
+  "datasets": ["cora", "citeseer", "corafull", "coauthorcs", "amazonpho"],
+  "conditions": ["clean", "uniform0.4", "uniform0.6", "pair0.4"],
+  "protocol_seed": 0,
+  "reference_student_seed": 0,
+  "new_student_seed": 1,
+  "arms": {"A300": 300, "C_head": 200},
+  "gate": {"primary_datasets": ["cora", "citeseer", "corafull"], "min_positive_datasets": 2, "min_gap_pp": 2.0, "split": "test", "exploratory": true, "cross_pair": "A0_C0", "same_pair": "per_cell_max_A0_A1_C0_C1", "gray_zone": "stop"},
+  "routing": {"student_pair": "A0_C0", "logistic_C": 1.0, "folds": 5, "fold_seed": 42, "grid_step": 0.05, "branch_gain_pp": 0.5, "branch_positive_datasets": 2, "clean_max_deficit_pp": 1.0, "selection_split": "validation", "source_checkpoint_validation_reused": true},
+  "training": {"hidden": 64, "dropout": 0.5, "learning_rate": 0.01, "weight_decay": 0.0005, "threads": 4, "gpu_required": true, "min_free_gpu_gb": 4},
+  "automatic_fused_student_training": false,
+  "automatic_new_alignment": false,
+  "automatic_E3_E5": false
+}

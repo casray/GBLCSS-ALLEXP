@@ -1,0 +1,19 @@
+{
+  "experiment": "d1_fallback_km_combo_20261024",
+  "datasets": ["cora", "citeseer", "corafull", "coauthorcs", "amazonpho"],
+  "seeds": [0,1,2], "backbones": ["R0","R2"],
+  "conditions": ["clean","uniform0.4","uniform0.6","pair0.4"],
+  "supports": [4,8,16,32,64,128], "strengths": [0.25,0.5,1.0],
+  "group_pairs": [[0.0,1.0],[0.25,1.0],[1.0,0.25],[1.0,0.0]],
+  "epochs": 200, "fit_upper_bound": 840, "smoke_limit": 4,
+  "selectors": ["accuracy","balanced"],
+  "stable_pool_order": "CE,L0.25,L0.5,L1.0,G0,G1,G2,G3",
+  "group_tied_nodes_lambda": "same partition global validation accuracy descending, then smaller lambda",
+  "adaptive_ce": "retain CE; no support inferred",
+  "cost_policy": "include historical PROBE 1000+CE200, unfinished same-support globals, and four group fits",
+  "reuse": "read-only external aliases verified by source,input,target,init,checkpoint,probabilities",
+  "storage": {"minimum_free_bytes":3221225472,"target_content_addressed":true,"historical_deletion":false,"other_drive_writes":false},
+  "selection": "validation_only_at_first_strict_best_accuracy_checkpoint",
+  "test_access": "after_all_selections_frozen",
+  "ssl": "fixed_historical_no_retraining", "threads":1
+}

@@ -1,0 +1,74 @@
+{
+  "design_id": "lcss_strength_support_design_20261023",
+  "status": "PLANNED_NOT_RUN",
+  "execution_authorized": false,
+  "automatic_start": false,
+  "implementation_present": false,
+  "datasets_all": ["cora", "citeseer", "corafull", "coauthorcs", "amazonpho"],
+  "datasets_mechanism": ["cora", "corafull", "amazonpho"],
+  "conditions": ["clean", "uniform0.4", "uniform0.6", "pair0.4"],
+  "pilot_seed": 0,
+  "conditional_development_seeds": [1, 2],
+  "proposed_confirmation_seeds": [100, 101, 102, 103, 104],
+  "confirmation_requires_history_audit_and_authorization": true,
+  "fixed_historical_ssl": true,
+  "head_epochs": 200,
+  "checkpoint_selection": "first_strict_max_validation_accuracy",
+  "test_access": "after_all_config_and_checkpoint_selections_are_frozen",
+  "target": {"beta": 0.5, "min_votes": 2, "leave_one_out": true, "tie_boost": 0.0},
+  "A": {
+    "backbone": "SIMMLP_FROZEN",
+    "arms": ["CE", "GCE_0.7", "LEGACY_SUPPORT32_LCSS", "MATCHED_KM_LCSS"],
+    "optimizer": "AdamW",
+    "learning_rate": 0.01,
+    "weight_decay": 0.0005,
+    "new_ce_required": true,
+    "pilot_fit_upper_bound": 80,
+    "validation_gate": {
+      "noisy_macro_gain_vs_ce_pp_min": 0.5,
+      "positive_datasets_min": 3,
+      "clean_dataset_floor_vs_ce_pp": -1.0,
+      "noisy_macro_f1_floor_vs_ce_pp": -0.5
+    }
+  },
+  "B1": {
+    "backbones": ["R0", "R2_FROZEN"],
+    "partition": "LEGACY_SUPPORT32",
+    "lambda_grid": [0.0, 0.25, 0.5, 1.0],
+    "target_families": ["SUPPORT_LCSS", "MATCHED_KM_LCSS", "SUPPORT_MASS"],
+    "gce_q_grid": [0.3, 0.5, 0.7, 0.9],
+    "optimizer": "Adam",
+    "learning_rate": 0.01,
+    "weight_decay": 0.0005,
+    "unique_fits_per_cell": 14,
+    "pilot_fit_upper_bound": 336,
+    "parameter_scope": "one_per_dataset_backbone_method_across_all_four_conditions",
+    "parameter_score": "equal_mean_validation_accuracy_across_conditions_and_development_seeds",
+    "feasibility": {
+      "clean_dataset_floor_vs_ce_pp": -1.0,
+      "all_condition_macro_f1_floor_vs_ce_pp": -0.5
+    },
+    "tie_break": "smaller_lambda_or_smaller_q",
+    "validation_gate": {
+      "evaluate_each_backbone_separately": true,
+      "noisy_macro_gain_vs_original_support_pp_min": 0.5,
+      "positive_datasets_min": 2,
+      "clean_dataset_floor_vs_ce_pp": -1.0,
+      "noisy_macro_f1_floor_vs_original_support_pp": -0.5
+    }
+  },
+  "B2": {
+    "backbones": ["R0", "R2_FROZEN"],
+    "tree_source": "sc_support_channel_pilot_20261023_deep_tree",
+    "support_grid": [8, 32, 128],
+    "reference_support": 32,
+    "arms": ["N8", "N32", "N128", "D8", "M8", "DM8", "D128", "M128", "DM128"],
+    "identifiability_epsilon": 1e-8,
+    "controlled_outside_common_mask": "exact_N32_target",
+    "pilot_fit_upper_bound": 216,
+    "automatic_expansion": false
+  },
+  "future_conditional_only": ["agreement_group_strength", "meta_validation_gradient_gate"],
+  "manuscript_changes": false,
+  "upload_files": false
+}

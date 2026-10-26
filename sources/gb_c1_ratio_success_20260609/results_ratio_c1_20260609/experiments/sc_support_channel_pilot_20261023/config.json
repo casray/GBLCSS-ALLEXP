@@ -1,0 +1,17 @@
+{
+  "experiment_id": "sc_support_channel_pilot_20261023",
+  "not_before": "2026-10-23T02:09:00+08:00",
+  "datasets": ["cora", "citeseer", "corafull", "coauthorcs", "amazonpho"],
+  "seeds": [0, 1, 2],
+  "conditions": {"clean": ["uniform", 0.0], "uniform0.4": ["uniform", 0.4], "uniform0.6": ["uniform", 0.6], "pair0.4": ["pair", 0.4]},
+  "support_grid": [4, 8, 16, 32, 64, 128],
+  "tree": {"max_leaves": 4096, "snapshot_leaves": 64, "min_nodes": 8, "min_train": 3},
+  "target": {"beta": 0.5, "min_votes": 2},
+  "selector": {"score": "mean probability assigned to observed label by uniform distribution on tied LOO majority classes", "tie_tolerance": 1e-12, "tie_break": "largest nominal support", "global_selection_preserves_loo_independence": false},
+  "pilot": {"E1_datasets": ["cora", "corafull", "amazonpho"], "E1_seed": 0, "E2_datasets": ["cora", "coauthorcs", "amazonpho"], "E2_epochs": [100, 300, 600], "E4_seed": 0, "E4_arms": ["A200", "A300", "B", "D", "C_full", "C_head"]},
+  "training": {"hidden": 64, "dropout": 0.5, "learning_rate": 0.01, "weight_decay": 0.0005, "R0_epochs": 200, "R2_head_epochs": 100, "alignment_epochs": 100, "KD_epochs": 200, "temperature": 1.0, "threads": 4, "gpu_required": true},
+  "gates": {"E1_pilot_validation_uniform_SC_minus_VAL_pp_min": -0.5, "E1_pilot_positive_datasets": 2, "E1_full_positive_datasets": 3, "clean_deficit_pp_max": 1.0, "E4_pilot_validation_gain_pp_min": 1.0, "E4_pilot_positive_datasets": 3, "practical_not_significance_test": true},
+  "historical_grace_fixed": true,
+  "test_selection_allowed": false,
+  "automatic_E3_E5_launch": false
+}

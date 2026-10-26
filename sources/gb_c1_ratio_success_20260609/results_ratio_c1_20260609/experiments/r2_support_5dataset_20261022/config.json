@@ -1,0 +1,38 @@
+{
+  "datasets": ["cora", "citeseer", "corafull", "coauthorcs", "amazonpho"],
+  "new_datasets": ["coauthorcs", "amazonpho"],
+  "reused_datasets": ["cora", "citeseer", "corafull"],
+  "conditions": {
+    "uniform0.4": ["uniform", 0.4],
+    "uniform0.6": ["uniform", 0.6],
+    "pair0.4": ["pair", 0.4]
+  },
+  "seeds": [0, 1, 2],
+  "support": {
+    "reference_k": 32,
+    "max_leaves": 256,
+    "snapshot_leaves": 64,
+    "min_nodes": 32,
+    "min_train": 3,
+    "beta": 0.5,
+    "min_votes": 2
+  },
+  "model": {
+    "hidden": 64,
+    "dropout": 0.5,
+    "alignment_epochs": 100,
+    "head_epochs": 100,
+    "learning_rate": 0.01,
+    "weight_decay": 0.0005,
+    "threads": 4,
+    "timeout_seconds_per_fit": 900
+  },
+  "expected_cells": 45,
+  "expected_reused_cells": 27,
+  "expected_new_fits": 18,
+  "expected_new_alignments": 6,
+  "clean_training_condition": false,
+  "knn_or_kmeans_arms": false,
+  "test_selection_allowed": false,
+  "independent_grace_repeats": false
+}
