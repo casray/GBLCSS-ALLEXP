@@ -51,3 +51,15 @@ See [the complete source inventory](manifests/files.csv),
 
 Original source files and the original project's `orgrin` remote were not modified.
 The independent local archive checkout is `C:/Users/Admin/Desktop/GBLCSS-ALLEXP`.
+
+
+## 2026-10-29 incremental archive
+
+Recent experiment records through 2026-10-29 were added to `main` in content commit [576b6c900439f104dacde474ad05e8780ca70442](https://github.com/casray/GBLCSS-ALLEXP/commit/576b6c900439f104dacde474ad05e8780ca70442).
+
+- Added 281 files across 9 experiment and supporting-code directories (4,414,849 source bytes).
+- Updated 3 project context documents (181,843 source bytes); 284 source files are listed in [the SHA-256 manifest](manifests/update_20261029/files.csv).
+- Added [the 2026-10-29 results summary](RECENT_RESULTS_20261029.md), updated the experiment index and README, and recorded the scoped archive summary.
+- The included experiment files are text records, scripts, configurations, logs, result tables and reports. Model weights, array caches and raw datasets remain local.
+- Source files were read back from GitHub and compared with local copies; 9 primary experiment artifacts, 3 updated context documents, README, index and both update manifests matched exactly. GitHub API refs for `main` and `codex/research-update-20261029` both resolved to the content commit before this status-only verification commit.
+- The original experiment files were not modified.
