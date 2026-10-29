@@ -1,0 +1,18 @@
+{
+  "id": "context_ecl_budget_revision_20261028",
+  "reason": "User requested lower compute while preserving accuracy and the core matched comparison.",
+  "primary_datasets": ["cora", "citeseer", "corafull", "coauthorcs", "amazonpho"],
+  "full_dose_datasets": ["cora", "citeseer", "corafull"],
+  "core_arms": ["ecl", "gb100", "cos100", "shuffle100"],
+  "retained_arms": ["ecl", "gb025", "cos025", "shuffle025", "gb100", "cos100", "shuffle100"],
+  "seeds": [0, 1],
+  "cached_baseline_datasets": ["coauthorcs", "amazonpho"],
+  "ssl_endpoints": 58,
+  "heads": 492,
+  "deferred": {"roman": "all 14 endpoints", "coauthorcs_amazonpho": "12 low-dose endpoints"},
+  "epoch_policy": "unchanged full terminal budgets; replay baseline to midpoint only where its frozen terminal artifact is reusable",
+  "primary_gate_arm": "gb100",
+  "classification_head_epochs": 200,
+  "test_labels": "after all 58 retained endpoints and 492 heads are fitted",
+  "performance_selection_used_for_scope_change": false
+}

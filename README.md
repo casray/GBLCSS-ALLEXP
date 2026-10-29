@@ -5,7 +5,7 @@ GB-LCSS and related GB–GCL research archive, assembled on 2026-10-21 from the 
 
 ## Start here / 阅读入口
 
-- [2026-10-26近期实验与主线判断](RECENT_RESULTS_20261026.md)：R2、SUPPORT、D1、C1整合及教师蒸馏待测问题。
+- [2026-10-29近期实验与阶段判断](RECENT_RESULTS_20261029.md)：GraphECL 粒球关系、交叉拟合、R2 读出及三 seed 学生结果。\r\n- [2026-10-29增量归档清单](manifests/update_20261029/summary.json)与[逐文件SHA-256清单](manifests/update_20261029/files.csv)。\r\n- [2026-10-26近期实验与主线判断](RECENT_RESULTS_20261026.md)：R2、SUPPORT、D1、C1整合及教师蒸馏待测问题。
 - [本次增量归档清单](manifests/update_20261026/summary.json)：原2026-10-21清单保留为初始快照，新文件与本地大文件清单单独记录。
 - [实验目录索引](EXPERIMENT_INDEX.md)：包括本次增量在内的历史实验分支。
 - [初始项目核心上下文](sources/项目核心总结_新窗口上下文.md)、[最新实验交接](sources/gb_c1_ratio_success_20260609/results_ratio_c1_20260609/99_session_handoff.md)。

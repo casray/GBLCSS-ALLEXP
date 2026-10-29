@@ -2,6 +2,12 @@
 
 生成时间：2026-06-30
 
+## 2026-10-26 最新方向：先比较成熟SSL空间，再设计粒球方法
+
+准备阶段现已完成：[冻结方案](research/ssl_backbone_selection_20261026/EXPERIMENT_PLAN_zh.md)、[一句话接续](research/ssl_backbone_selection_20261026/START_HERE.md)、[源码与核验报告](research/ssl_backbone_selection_20261026/PREPARATION_REPORT_zh.md)。5份官方源已拉取并锁定；首轮GRACE/GCA/ProGCL/GraphECL，RELGCL待官方实现、BGRL仅归档。145哈希/5仓库/3准备测试通过；已确认GCA零列和ProGCL原分块核的适配需求。统一训练适配器待启动时实现，本轮无新训练。
+
+用户决定暂缓AG-EC后续，转向原算法接入当前下游的系统比较。本轮[候选筛选与实验建议](research/ssl_backbone_selection_20261026/RECOMMENDATION_zh.md)推荐GRACE、GCA、ProGCL-weight、RELGCL、GraphECL；BGRL作无负样本补充，ReGCL/HEATS/模糊边界/MVGRL列第二批。GCA/ProGCL/GraphECL作者仓库已确认；RELGCL原文方法已核、官方代码未确认。统一比较H探针、局部监督质量、R2+CE/SUPPORT32，并保留原方法充分训练及历史强GRACE参照。仍按两seed、暂缓kNN/KMeans的偏好设计。本轮仅文献与方案，无新训练。
+
 ## 2026-10-14 最新增补：GREET与HALF独立验证
 
 用户附件交流引出两篇分别实验后融合的需求。新增[建议与顺序](research/greet_half_review_20261014/00_建议与执行顺序.md)、[原文与代码核查](research/greet_half_review_20261014/01_两篇文献与代码核查.md)、[详细实验设计](research/greet_half_review_20261014/02_独立验证与融合实验设计.md)。GREET全文/作者实现已核，HALF仍有全文及官方实现缺口；本轮无训练。推荐先完整表示适配、再独立自标签可靠性、最后2×2；保留原split和普通近邻、均值收缩等强对照。GREET源码采样与论文/代码差别须在移植时明确。
@@ -139,3 +145,21 @@ GBGCL的OFA来自HeterGCL [42]，其属性MLP证据[64]来自HOG-GCN，CCA目标
 用户随后授权先修改生成器。核读卡research/algorithm_redesign_20261013/reviews/core/granular_generation_sqrt_and_geometry.md记录GBGCL的sqrt初始经验、AAAI2025密度/流形方法及Xia2024摘要级证据。新SSE预算分裂不是这些完整算法的复现。
 
 两轮已完成并审计，见experiments/adaptive_support16_ball_20261014/综合结论与接续.md。支持4五协议目标数量14/16/151/141/136达标，但只有Roman/CoraFull过带噪Brier筛查，小图学生退化；固定支持16单seed部分修复小图，CoraFull相对旧版三条件+3.10/+2.66/+1.02pp，其余图无统一收益。普通KM/KNN仍不能忽略。下一阶段先定位证据质量，不能把sqrt经验或支持数波动界写成最优分球理论，也不能主张新图对比算法已经验证。
+
+## 2026-10-28 GraphECL 上游设计更新
+
+最新已审计实验 GB-ContextECL 的五图带噪平均收益接近零：固定原目标 −0.023pp，重新构球 −0.065pp；CS 重新构球 +0.342pp，Photo −0.728pp。Photo 高分边具有语义一致性，同时软目标 Brier 恶化。后续应沿“表示几何—支持集合—共识目标”检查具体机制，暂缓本轮正边重加权的扩展训练。
+
+历史 GB-EC 相对 Base-Attr 的带噪同底座增量为 +0.995±0.178pp，保留群体证据模块的研究价值。当前两条候选为：A，保留 GraphECL 正向耦合，以带质量、可控误差的粒球近似全局对比参考集合，主攻效率–效果折中；B，在 GraphECL 底座上用结构语义替换旧属性重构代理，学习粒球证据集合的相对关系，主攻带噪共识质量。首轮分别验证。
+
+路线 A 承接 10 月 19 日按失真决定粒度的思路，计算对象改为对比参考和；路线 B 承接旧 AG-EC 与软关系建议。相关原始来源为 GraphECL（ICML 2024）、RELGCL（IJCAI 2025）、MGBCC（AAAI 2025）、PCL（ICLR 2021）和 PLReMix（WACV 2025）。当前分阶段流水线优先研究空间与下游适配；若引入类别监督联合训练，再检查 PLReMix 所讨论的损失冲突。
+
+详细证据、公式、风险和最小验证：[设计备忘录](research/graphecl_next_design_20261028/RECOMMENDATION_zh.md)。这是候选设计，本轮未启动训练或冻结新实验配置；继续遵守两个 seed、带噪优先、暂缓 kNN/KMeans 对照和控制算力的偏好。
+
+## 2026-10-29 交叉拟合与两条效果路线评议
+
+保留无标签粒球集合关系蒸馏和交叉拟合标签感知粒球对比，压缩参考计算降为独立备选。已直接核查用户指定 final_metadata_clean.zip 内 main.tex 的命题1与推论1：折间标签隔离可支持条件化扩展，同时需保留对称独立噪声、正票差及完整信息路径要求；Pair 噪声单独处理。交叉拟合初期应检查支持量与真实类别票差的共同变化。
+
+新增直接相关论文：[CrossSplit，ICML2023](https://proceedings.mlr.press/v202/kim23a.html)，其 Algorithm1 包含全数据监督预热与同伴标签修正。当前候选以无标签起点、固定折划分、一次性目标生成维持所需隔离。无标签集合 KL 与 [VQGraph](https://arxiv.org/html/2308.02117v3) 的软码本蒸馏直接相关。交互增益保留为机制诊断，与最终带噪净收益共同判断。
+
+详细核查、旧数值修正、依赖规则、读出接口及分阶段预算见：[CLAUDE_REVIEW_20261029.md](research/graphecl_next_design_20261028/CLAUDE_REVIEW_20261029.md)。本轮未执行新训练；两 seed 偏好保留，k-means 仅提议作为缓存级诊断对照，正式方法对照仍待后续设计。

@@ -1,0 +1,18 @@
+{
+  "id":"ssl_readout_control_20261027_v1",
+  "datasets":["coauthorcs","amazonpho"],"seeds":[0,1],
+  "conditions":["clean","uniform0.4","uniform0.6","pair0.4"],
+  "representations":["pca64","r2_unit64"],"heads":["CE","SUPPORT32"],
+  "runtime":"D:/codex_temp/ssl_readout_control_20261027",
+  "parent_runtime":"D:/codex_temp/ssl_backbone_csphoto_20261027",
+  "parent_code":"experiments/ssl_backbone_csphoto_20261027",
+  "dimension":64,"pca":"float64_full_centered_covariance_eigh; no whitening; full-node unlabeled transductive fit",
+  "normalization":"row_L2_all_readouts; preserve_zero_rows",
+  "targets":"same_cached_GraphECL_targets_for_all_representations",
+  "epochs":200,"lr":0.01,"weight_decay":0.0005,"bias":true,
+  "selection":"first_strict_maximum_clean_validation_correct",
+  "threads":4,"device":"cuda","new_heads":64,
+  "native_aliases":32,"raw_r2_reference_aliases":32,"engineering_native_replays":4,
+  "gate":{"validation_mean_gain_pp":0.5,"positive_seeds":2,"validation_clean_floor_pp":-0.5},
+  "automatic_next_stage":false
+}

@@ -1,0 +1,15 @@
+{
+  "datasets": ["coauthorcs", "amazonpho"],
+  "conditions": ["clean", "uniform0.4", "uniform0.6"],
+  "seeds": [0, 1, 2, 3, 4],
+  "new_seeds": [0, 1, 2, 3, 4],
+  "teacher_routes": {"R2_CE": "CE", "R2_FULL": "ADAPTIVE_EXPANDED"},
+  "historical_main": "r2_integrated_20261026",
+  "new_main_runtime": "D:/codex_temp/r2_integrated_seeds34_20261026",
+  "previous_dist_runtime": "D:/codex_temp/r2_teacher_dist_five_seed_20261026",
+  "runtime": "D:/codex_temp/r2_teacher_dist_csphoto_20261027",
+  "storage": {"minimum_free_bytes": 3221225472},
+  "student": {"hidden": 64, "layers": 2, "dropout": 0.5, "epochs": 200, "lr": 0.01, "weight_decay": 0.0005, "loss": "official_DIST", "temperature": 1.0, "beta": 1.0, "gamma": 1.0, "scope": "all nodes", "initialization": "protocol seed random; all parameters trainable", "selection": "first_strict_max_validation_accuracy"},
+  "gpu_queue": {"poll_seconds": 60, "preserve_other_processes": true, "minimum_free_gib": 8},
+  "automatic_expansion": false
+}

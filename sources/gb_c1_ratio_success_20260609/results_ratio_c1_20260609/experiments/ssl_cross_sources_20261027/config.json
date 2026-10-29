@@ -1,0 +1,17 @@
+{
+  "id":"ssl_cross_sources_20261027_v1",
+  "pairs":{"coauthorcs":["grace","graphecl"],"amazonpho":["gca_degree","graphecl"]},
+  "seeds":[0,1],
+  "conditions":["clean","uniform0.4","uniform0.6","pair0.4"],
+  "runtime":"D:/codex_temp/ssl_cross_sources_20261027",
+  "parent_runtime":"D:/codex_temp/ssl_backbone_csphoto_20261027",
+  "parent_code":"experiments/ssl_backbone_csphoto_20261027",
+  "epochs":200,"hidden":64,"dropout":0.5,"lr":0.01,"weight_decay":0.0005,
+  "target":"cached_SUPPORT32_beta05_LOO_tie_safe",
+  "encoder":"reuse_frozen_R2_encoder_and_BN_exactly",
+  "selection":"first_strict_maximum_clean_validation_correct",
+  "threads":4,"device":"cuda",
+  "gate":{"validation_noisy_gain_pp":0.5,"positive_seeds":2,"validation_clean_floor_pp":-0.5},
+  "formal_heads":32,"engineering_diagonal_replays":4,
+  "no_new_SSL":true,"no_new_R2":true,"no_knn_kmeans":true,"automatic_next_stage":false
+}

@@ -1,0 +1,62 @@
+{
+  "parent_receipt_sha256": "3a18f7cc50b06c72035aba96b56e814f3f3fc4281205d00e8285463424d0ea04",
+  "signature": {
+    "C:\\Users\\Admin\\Desktop\\实验8去噪5.19-\\gb_c1_ratio_success_20260609\\results_ratio_c1_20260609\\experiments\\graphecl_gb_context_20261028\\budget\\analyze_budget.py": "38cf27997f170947afeff2d7ff073eb43e033ec14e5383ac71a88a9fcc56fab2",
+    "C:\\Users\\Admin\\Desktop\\实验8去噪5.19-\\gb_c1_ratio_success_20260609\\results_ratio_c1_20260609\\experiments\\graphecl_gb_context_20261028\\budget\\launch_budget.py": "6d734dbdc6677b4f1fae84f4f66dd8796018271164d41dadeb86f480aa940c6d",
+    "C:\\Users\\Admin\\Desktop\\实验8去噪5.19-\\gb_c1_ratio_success_20260609\\results_ratio_c1_20260609\\experiments\\graphecl_gb_context_20261028\\budget\\reuse.py": "8d91551833d2d51a59188fbd258347225975319bb1af13002af556cc91284fd6",
+    "C:\\Users\\Admin\\Desktop\\实验8去噪5.19-\\gb_c1_ratio_success_20260609\\results_ratio_c1_20260609\\experiments\\graphecl_gb_context_20261028\\budget\\run_budget.py": "622a03e36e0061b3469ff41e1c571d42ceae70c474e6def852e2fffc96a28e10",
+    "C:\\Users\\Admin\\Desktop\\实验8去噪5.19-\\gb_c1_ratio_success_20260609\\results_ratio_c1_20260609\\experiments\\graphecl_gb_context_20261028\\budget\\schedule.py": "4ef8756a7bdd7264191385b9491c652f8744d8d5c5969f87bb0915bbd11905ca",
+    "C:\\Users\\Admin\\Desktop\\实验8去噪5.19-\\gb_c1_ratio_success_20260609\\results_ratio_c1_20260609\\experiments\\graphecl_gb_context_20261028\\budget\\test_budget.py": "d1fa84568817bcb58caa9f22c6fdd216c629d6ed5f1ca801b0c4db2a69aa4619",
+    "C:\\Users\\Admin\\Desktop\\实验8去噪5.19-\\gb_c1_ratio_success_20260609\\results_ratio_c1_20260609\\experiments\\graphecl_gb_context_20261028\\budget\\plan.json": "cf8607d400dd3de0b91bbe3d3e34af8314befe2b9cfb0be8d18a0e5fcc0d2d7d"
+  },
+  "plan": {
+    "id": "context_ecl_budget_revision_20261028",
+    "reason": "User requested lower compute while preserving accuracy and the core matched comparison.",
+    "primary_datasets": [
+      "cora",
+      "citeseer",
+      "corafull",
+      "coauthorcs",
+      "amazonpho"
+    ],
+    "full_dose_datasets": [
+      "cora",
+      "citeseer",
+      "corafull"
+    ],
+    "core_arms": [
+      "ecl",
+      "gb100",
+      "cos100",
+      "shuffle100"
+    ],
+    "retained_arms": [
+      "ecl",
+      "gb025",
+      "cos025",
+      "shuffle025",
+      "gb100",
+      "cos100",
+      "shuffle100"
+    ],
+    "seeds": [
+      0,
+      1
+    ],
+    "cached_baseline_datasets": [
+      "coauthorcs",
+      "amazonpho"
+    ],
+    "ssl_endpoints": 58,
+    "heads": 492,
+    "deferred": {
+      "roman": "all 14 endpoints",
+      "coauthorcs_amazonpho": "12 low-dose endpoints"
+    },
+    "epoch_policy": "unchanged full terminal budgets; replay baseline to midpoint only where its frozen terminal artifact is reusable",
+    "primary_gate_arm": "gb100",
+    "classification_head_epochs": 200,
+    "test_labels": "after all 58 retained endpoints and 492 heads are fitted",
+    "performance_selection_used_for_scope_change": false
+  }
+}

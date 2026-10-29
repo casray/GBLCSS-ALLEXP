@@ -1,0 +1,17 @@
+{
+ "id":"graphecl_context_v2_20261028",
+ "runtime":"D:/codex_temp/graphecl_gb_context_20261028",
+ "datasets":["cora","citeseer","corafull","coauthorcs","amazonpho","roman"],
+ "primary_datasets":["cora","citeseer","corafull","coauthorcs","amazonpho"],
+ "seeds":[0,1],"conditions":["uniform0.4","uniform0.6","pair0.4"],
+ "arms":{"ecl":0,"gb025":0.25,"cos025":0.25,"shuffle025":0.25,"gb100":1.0,"cos100":1.0,"shuffle100":1.0},
+ "warmup_fraction":0.5,"ramp_fraction":0.1,"max_leaves":256,"min_nodes":32,
+ "roman":{"hidden":1024,"layers":2,"epochs":100,"lr":0.0005,"weight_decay":0.0,"num_mlp":1,"temperature":0.5,"lam":0.001,"lambda_loss":1.0,"source":"project adaptation: CoraFull architecture with 100-epoch mechanism budget; not official GraphECL Roman"},
+ "head_epochs":200,"head_lr":0.01,"head_wd":0.0005,"chunk":512,"threads":4,
+ "primary_readout":"native preprojector row-L2 H; all arms same initial linear head",
+ "preflight":"terminal caches offline; actual midpoint diagnostics after replay; no labels",
+ "advisory":{"spearman":0.8,"edge_fraction_above_10pct":0.2},
+ "hard_gate":"finite weights; row mass/self-loop/bounds; nonzero intervention; exact eta0 and engineering replay",
+ "minimum_free_gib":30,
+ "clean_gate":false,"knn_kmeans_comparison":false,"r2":false,"test_read":"after complete fit lock"
+}

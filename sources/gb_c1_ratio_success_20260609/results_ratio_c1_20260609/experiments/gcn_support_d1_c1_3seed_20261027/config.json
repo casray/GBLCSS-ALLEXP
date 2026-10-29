@@ -1,0 +1,18 @@
+{
+  "datasets": ["cora", "citeseer", "corafull", "coauthorcs", "amazonpho"],
+  "seeds": [0, 1, 2],
+  "conditions": ["clean", "uniform0.4", "uniform0.6"],
+  "supports": [4, 8, 16, 32, 64, 128],
+  "joint_race": [[25, 14], [75, 4], [200, 1]],
+  "forced_anchor": "S32_L1.0",
+  "teacher_routes": ["CE", "OLD64", "LEGACY_SUPPORT32", "DEEP_S32", "FIXED_D1", "JOINT"],
+  "threads": 4,
+  "runtime": "D:/codex_temp/gcn_support_d1_c1_3seed_20261027",
+  "historical": "teacher_integrated_dist_pilot_20261026",
+  "teacher": {"hidden": 64, "layers": 2, "dropout": 0.5, "epochs": 200, "lr": 0.01, "weight_decay": 0.0005, "initialization": "seed=s, reference MLP allocated then GCN", "adjacency": "original coalesced sparse COO"},
+  "student": {"hidden": 64, "layers": 2, "dropout": 0.5, "batch_norm": true, "epochs": 200, "lr": 0.01, "weight_decay": 0.0005, "loss": "official_DIST", "temperature": 1.0, "beta": 1.0, "gamma": 1.0, "nodes": "all", "initialization": "random seed=s"},
+  "target": {"beta": 0.5, "min_votes": 2, "leave_one_out": true, "tie_unsharpened": true, "D1_tie_lambda": 1.0},
+  "storage": {"minimum_free_bytes": 3221225472},
+  "test_selection_allowed": false,
+  "automatic_expansion": false
+}
